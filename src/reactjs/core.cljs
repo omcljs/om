@@ -7,4 +7,8 @@
       "shouldComponentUpdate"
       (fn [next-props next-state]
         (this-as this
-          (not (= (.-props this) next-props)))))))
+          (not (= (.. this -props -value) (.-value next-props)))))
+      "render"
+      (fn []
+        (this-as this
+          ((.. this -props -children)))))))
