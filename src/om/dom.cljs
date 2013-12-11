@@ -16,3 +16,5 @@
            (this-as this
              ((.. this -props -children))))}))
 
+(defn render [component el]
+  (React/renderComponent component el))
