@@ -1,4 +1,5 @@
 (ns reactjs.dom
+  (:refer-clojure :exclude [map meta time])
   (:require-macros [reactjs.dom :as dom])
   (:require React))
 
