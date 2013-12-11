@@ -1,6 +1,6 @@
-(ns reactjs.dom
+(ns om.dom
   (:refer-clojure :exclude [map meta time])
-  (:require-macros [reactjs.dom :as dom])
+  (:require-macros [om.dom :as dom])
   (:require React))
 
 (dom/gen-react-dom-fns)

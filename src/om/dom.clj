@@ -1,4 +1,4 @@
-(ns reactjs.dom
+(ns om.dom
   (:refer-clojure :exclude [map meta time]))
 
 (def tags
@@ -140,4 +140,4 @@
      ~@(clojure.core/map gen-react-dom-fn tags)))
 
 (defmacro pure [value children]
-  `(Pure. (cljs.core/js-obj "value" ~value) (fn [] ~children)))
+  `(om.dom/Pure. (cljs.core/js-obj "value" ~value) (fn [] ~children)))

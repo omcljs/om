@@ -1,3 +1,3 @@
-# reactjs
+# om
 
-Wrapping up React.js into a JAR
+A ClojureScript interface to Facebook's React.
