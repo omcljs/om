@@ -7,6 +7,24 @@
 
 (def ^:dynamic *owner* nil)
 
+(defprotocol IWillMount
+  (-will-mount [this]))
+
+(defprotocol IDidMount
+  (-did-mount [this node]))
+
+(defprotocol IWillUnmount
+  (-will-unmount [this]))
+
+(defprotocol IWillUpdate
+  (-will-update [this next-props next-state]))
+
+(defprotocol IDidUpdate
+  (-did-update [this prev-props prev-state root-node]))
+
+(defprotocol IRender
+  (-render [this]))
+
 (def Pure
   (React/createClass
     #js {:shouldComponentUpdate
