@@ -15,9 +15,8 @@
     (rootf)))
 
 (defn render [f data ks]
-  (let [data' (get-in data ks)
-        state *state*]
-    (dom/pure data' (binding [*state* state] (f data' ks)))))
+  (let [state *state*]
+    (dom/pure data (binding [*state* state] (f data ks)))))
 
 (defn bind
   ([f] (bind f nil))
