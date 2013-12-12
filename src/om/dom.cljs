@@ -21,3 +21,6 @@
 
 (defn render [component el]
   (React/renderComponent component el))
+
+(defn get-dom-node [owner name]
+  (.getDOMNode (aget (.-refs owner) name)))
