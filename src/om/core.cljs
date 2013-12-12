@@ -4,7 +4,9 @@
 (def ^:dynamic *state* nil)
 
 (defn root [value f target]
-  (let [state (atom value)
+  (let [state (if (instance? Atom value)
+                value
+                (atom value))
         rootf (fn []
                 (dom/render
                   (dom/pure @state
