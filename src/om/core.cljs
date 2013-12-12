@@ -19,6 +19,10 @@
         state *state*]
     (dom/pure data' (binding [*state* state] (f data' ks)))))
 
+(defn bind [f]
+  (let [state *state*]
+    (fn [e] (f e state))))
+
 (defn update! [path f]
   (let [state *state*]
     (fn [e] (swap! state update-in path f))))
