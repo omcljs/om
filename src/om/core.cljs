@@ -29,7 +29,7 @@
   ([f path]
     (let [state *state*
           owner dom/*owner*
-          m (if path
+          m (if-not (nil? path)
               {:state state :owner owner :path path}
               {:state state :owner owner})]
       (fn [e] (f e m)))))
