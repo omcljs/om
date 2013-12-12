@@ -11,7 +11,7 @@
                 (dom/render
                   (dom/pure @state
                     (binding [*state* state] (f @state []))) target))]
-    (add-watch state ::root (fn [_ _] (rootf)))
+    (add-watch state ::root (fn [_ _ _ _] (rootf)))
     (rootf)))
 
 (defn render
