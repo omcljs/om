@@ -5,6 +5,8 @@
 
 (dom/gen-react-dom-fns)
 
+(def ^:dynamic *owner* nil)
+
 (def Pure
   (React/createClass
     #js {:shouldComponentUpdate
@@ -14,7 +16,8 @@
          :render
          (fn []
            (this-as this
-             ((.. this -props -children))))}))
+             (binding [*owner* this]
+               ((.. this -props -children)))))}))
 
 (defn render [component el]
   (React/renderComponent component el))
