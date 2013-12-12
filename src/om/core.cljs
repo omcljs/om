@@ -18,7 +18,7 @@
   ([f data path] (render f data path ::no-key))
   ([f data path key]
     (let [state *state*]
-      (if-not (keyword-identical? key ::no-key)
+      (if (keyword-identical? key ::no-key)
         (dom/pure data (binding [*state* state] (f data path)))
         (let [data (get data key)
               path (conj path key)]
