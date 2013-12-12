@@ -19,10 +19,15 @@
         state *state*]
     (dom/pure data' (binding [*state* state] (f data' ks)))))
 
-(defn bind [f]
-  (let [state *state*
-        owner dom/*owner*]
-    (fn [e] (f e {:state state :owner owner}))))
+(defn bind
+  ([f] (bind f nil))
+  ([f path]
+    (let [state *state*
+          owner dom/*owner*
+          m (if path
+              {:state state :owner owner :path path}
+              {:state state :owner owner})]
+      (fn [e] (f e m)))))
 
 (defn update! [path f]
   (let [state *state*]
