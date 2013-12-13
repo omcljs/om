@@ -62,10 +62,11 @@
                (when (satisfies? IDidUpdate c)
                  (-did-update c prev-props prev-state root-node)))))
          :render
-         (this-as this
-           (binding [vars/*state* (aget (.-props this) "state")
-                     vars/*owner* this]
-             (-render (.. this -props -children))))}))
+         (fn []
+           (this-as this
+             (binding [vars/*state* (aget (.-props this) "state")
+                        vars/*owner* this]
+               (-render (.. this -props -children)))))}))
 
 (defn render [component el]
   (React/renderComponent component el))
