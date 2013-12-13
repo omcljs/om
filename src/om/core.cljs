@@ -1,7 +1,7 @@
 (ns om.core
   (:require React
-           [om.vars :as vars]
-           [om.dom :as dom :include-macros true]))
+            [om.vars :as vars]
+            [om.dom :as dom :include-macros true]))
 
 (defn root [value f target]
   (let [state (if (instance? Atom value)
