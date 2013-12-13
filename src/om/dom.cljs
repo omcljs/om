@@ -71,5 +71,5 @@
 (defn render [component el]
   (React/renderComponent component el))
 
-(defn get-node [owner name]
-  (.getDOMNode (aget (.-refs owner) name)))
+(defn get-node [data name]
+  (.getDOMNode (aget (.-refs (-> data meta :om.core/owner)) name)))

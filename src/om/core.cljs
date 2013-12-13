@@ -11,10 +11,9 @@
                 (atom value))
         rootf (fn []
                 (set! refresh-queued false)
-                (binding [vars/*state* state]
-                  (dom/render
-                    (dom/pure @state (f @state []))
-                    target)))]
+                (dom/render
+                  (dom/pure @state (f (with-meta @state {::path [] ::state state})))
+                  target))]
     (add-watch state ::root
       (fn [_ _ _ _]
         (when-not refresh-queued
@@ -25,23 +24,19 @@
     (rootf)))
 
 (defn render
-  ([f data path] (render f data path ::no-key))
-  ([f data path key]
+  ([f data] (render f data ::no-key))
+  ([f data key]
     (if (keyword-identical? key ::no-key)
       (dom/pure data (f data path))
       (let [data (get data key)
-            path (conj path key)]
-        (dom/pure data (f data path))))))
+            new-path (conj path key)]
+        (dom/pure data
+          (f (vary-meta data assoc ::path new-path)))))))
 
-(defn bind
-  ([f] (bind f nil nil))
-  ([f data path]
-    (let [state vars/*state*
-          owner vars/*owner*
-          m (if (nil? data)
-              {:state state :owner owner}
-              {:state state :owner owner :data data :path path})]
-      (fn [e] (f e m)))))
+(defn bind [f data]
+  (let [data (vary-meta data assoc ::owner vars/*owner*)]
+    (fn [e] (f e data))))
 
-(defn update! [{:keys [state path]} f k val]
-  (swap! state update-in (conj path k) f val))
+(defn update! [data f k val]
+  (let [m (meta data)]
+    (swap! (::state meta) update-in (conj (-) k) f val)))
