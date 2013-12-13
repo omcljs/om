@@ -142,5 +142,11 @@
 (defmacro pure [value children]
   `(om.dom/Pure. (cljs.core/js-obj "value" ~value) (fn [] ~children)))
 
+(defmacro component [& body]
+  `(reify
+     cljs.dom/IRender
+     (-render [this]
+       ~@body)))
+
 (defmacro render [component el]
   `(React/renderComponent ~component ~el))
