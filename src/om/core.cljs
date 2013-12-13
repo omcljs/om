@@ -39,4 +39,4 @@
 
 (defn update! [data f k val]
   (let [m (meta data)]
-    (swap! (::state meta) update-in (conj (-) k) f val)))
+    (swap! (::state meta) update-in (conj (::path meta) k) f val)))
