@@ -57,7 +57,7 @@
                  (-will-update c next-props next-state)))))
          :componentDidUpdate
          (fn [prev-props prev-state root-node]
-           (this-as
+           (this-as this
              (let [c (.. this -props -children)]
                (when (satisfies? IDidUpdate c)
                  (-will-update c prev-props prev-state root-node)))))
