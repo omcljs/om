@@ -1,4 +1,5 @@
 (ns om.core
+  (:refer-clojure :exclude [set!])
   (:require React
             [om.dom :as dom :include-macros true]))
 
