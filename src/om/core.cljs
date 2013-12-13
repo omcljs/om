@@ -61,3 +61,14 @@
   ([data k f a b c d & args]
     (let [m (meta data)]
       (apply swap! (::state m) update-in (conj (::path m) k) f a b c d args))))
+
+(defn get-opt
+  ([] (get-opt nil))
+  ([data]
+    (let [owner (or (and (not (nil? data))
+                         (-> data meta ::owner))
+                    var/*owner*)]
+      (if (nil? owner)
+        (throw (js/Error. (str "om.core/get-opt may only be called "
+                               "during component rendering or on bound data")))
+        (aget (.-props owner -props "opts"))))))
