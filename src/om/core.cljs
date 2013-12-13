@@ -8,9 +8,10 @@
                 value
                 (atom value))
         rootf (fn []
-                (dom/render
-                  (dom/pure @state
-                    (binding [vars/*state* state] (f @state []))) target))]
+                (bindings [vars/*state state]
+                  (dom/render
+                    (dom/pure @state (f @state []))
+                    target)))]
     (add-watch state ::root (fn [_ _ _ _] (rootf)))
     (rootf)))
 
