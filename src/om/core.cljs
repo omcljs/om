@@ -12,7 +12,8 @@
         rootf (fn []
                 (set! refresh-queued false)
                 (dom/render
-                  (dom/pure @state (f (with-meta @state {::path [] ::state state})))
+                  (dom/pure #js {:value @state :opts null}
+                    (f (with-meta @state {::path [] ::state state})))
                   target))]
     (add-watch state ::root
       (fn [_ _ _ _]
@@ -25,12 +26,13 @@
 
 (defn render
   ([f data] (render f data ::no-key))
-  ([f data key]
+  ([f data key] (render data nil key))
+  ([f data opts key]
     (if (keyword-identical? key ::no-key)
-      (dom/pure data (f data path))
+      (dom/pure #js {:value data :opts opts} (f data path))
       (let [data (get data key)
             new-path (conj path key)]
-        (dom/pure data
+        (dom/pure #js {:value data :opts opts}
           (f (vary-meta data assoc ::path new-path)))))))
 
 (defn bind [f data]
