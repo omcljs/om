@@ -64,8 +64,7 @@
          :render
          (fn []
            (this-as this
-             (binding [vars/*state* (aget (.-props this) "state")
-                       vars/*owner* this]
+             (binding [vars/*owner* this]
                (-render (.. this -props -children)))))}))
 
 (defn render [component el]

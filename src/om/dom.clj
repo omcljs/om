@@ -141,7 +141,7 @@
 
 (defmacro pure [value children]
   `(om.dom/Pure.
-     (cljs.core/js-obj "value" ~value "state" om.vars/*state*)
+     (cljs.core/js-obj "value" ~value)
      ~children))
 
 (defmacro component [& body]
