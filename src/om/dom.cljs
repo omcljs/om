@@ -1,8 +1,7 @@
 (ns om.dom
   (:refer-clojure :exclude [map meta time])
   (:require-macros [om.dom :as dom])
-  (:require React
-            [om.vars :as vars]))
+  (:require React))
 
 (dom/gen-react-dom-fns)
 
@@ -22,7 +21,7 @@
   (-did-update [this prev-props prev-state root-node]))
 
 (defprotocol IRender
-  (-render [this]))
+  (-render [this owner]))
 
 (def Pure
   (React/createClass
@@ -64,8 +63,7 @@
          :render
          (fn []
            (this-as this
-             (binding [vars/*owner* this]
-               (-render (.. this -props -children)))))}))
+             (-render (.. this -props -children) this)))}))
 
 (defn render [component el]
   (React/renderComponent component el))

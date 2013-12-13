@@ -1,6 +1,5 @@
 (ns om.core
   (:require React
-            [om.vars :as vars]
             [om.dom :as dom :include-macros true]))
 
 (def refresh-queued false)
@@ -34,10 +33,6 @@
         (dom/pure #js {:value data' :opts opts}
           (f (with-meta data' (update-in (meta data) [::path] conj key))))))))
 
-(defn bind [f data]
-  (let [data (vary-meta data assoc ::owner vars/*owner*)]
-    (fn [e] (f e data))))
-
 (defn set! [data k v]
   (let [m (meta data)]
     (swap! (::state m) assoc-in (conj (::path m) k) v)))
@@ -63,12 +58,7 @@
       (apply swap! (::state m) update-in (conj (::path m) k) f a b c d args))))
 
 (defn get-opts
-  ([] (get-opts nil))
-  ([data]
-    (let [owner (or (and (not (nil? data))
-                         (-> data meta ::owner))
-                    var/*owner*)]
-      (if (nil? owner)
-        (throw (js/Error. (str "om.core/get-opts may only be called "
-                               "during component rendering or on bound data")))
-        (aget (.-props owner) "opts")))))
+  ([owner]
+    (aget (.-props owner) "opts"))
+  ([owner k]
+    (get (get-opts (.-props owner)) k)))
