@@ -34,13 +34,13 @@
         (dom/pure data (f data path))))))
 
 (defn bind
-  ([f] (bind f nil))
-  ([f path]
+  ([f] (bind f nil nil))
+  ([f data path]
     (let [state vars/*state*
           owner vars/*owner*
-          m (if-not (nil? path)
-              {:state state :owner owner :path path}
-              {:state state :owner owner})]
+          m (if (nil? data)
+              {:state state :owner owner}
+              {:state state :owner owner :data data :path path})]
       (fn [e] (f e m)))))
 
 (defn update! [path f]
