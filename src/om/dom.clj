@@ -140,7 +140,9 @@
      ~@(clojure.core/map gen-react-dom-fn tags)))
 
 (defmacro pure [value children]
-  `(om.dom/Pure. (cljs.core/js-obj "value" ~value) (fn [] ~children)))
+  `(om.dom/Pure.
+     (cljs.core/js-obj "value" ~value "state" om.vars/*state*)
+     ~children))
 
 (defmacro component [& body]
   `(reify

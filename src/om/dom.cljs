@@ -1,11 +1,10 @@
 (ns om.dom
   (:refer-clojure :exclude [map meta time])
   (:require-macros [om.dom :as dom])
-  (:require React))
+  (:require React
+            [om.vars :as vars]))
 
 (dom/gen-react-dom-fns)
-
-(def ^:dynamic *owner* nil)
 
 (defprotocol IWillMount
   (-will-mount [this]))
@@ -30,7 +29,8 @@
     #js {:shouldComponentUpdate
          (fn [next-props next-state]
            (this-as this
-             (not (identical? (.. this -props -value) (.-value next-props)))))
+             (not (identical? (aget (.-props this) "value")
+                              (aget next-props "value")))))
          :componentWillMount
          (fn []
            (this-as this
@@ -62,10 +62,10 @@
                (when (satisfies? IDidUpdate c)
                  (-did-update c prev-props prev-state root-node)))))
          :render
-         (fn []
-           (this-as this
-             (binding [*owner* this]
-               (-render (.. this -props -children)))))}))
+         (this-as this
+           (binding [vars/*state* (aget (.-props this) "state")
+                     vars/*owner* this]
+             (-render (.. this -props -children))))}))
 
 (defn render [component el]
   (React/renderComponent component el))
