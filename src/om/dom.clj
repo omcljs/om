@@ -146,8 +146,8 @@
 
 (defmacro component [& body]
   `(reify
-     cljs.dom/IRender
-     (-render [this]
+     om.dom/IRender
+     (~'-render [this#]
        ~@body)))
 
 (defmacro render [component el]
