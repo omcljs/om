@@ -8,7 +8,7 @@
                 value
                 (atom value))
         rootf (fn []
-                (binding [vars/*state state]
+                (binding [vars/*state* state]
                   (dom/render
                     (dom/pure @state (f @state []))
                     target)))]
