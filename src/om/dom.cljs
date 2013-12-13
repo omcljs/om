@@ -6,19 +6,19 @@
 (dom/gen-react-dom-fns)
 
 (defprotocol IWillMount
-  (-will-mount [this]))
+  (-will-mount [this owner]))
 
 (defprotocol IDidMount
-  (-did-mount [this node]))
+  (-did-mount [this owner node]))
 
 (defprotocol IWillUnmount
-  (-will-unmount [this]))
+  (-will-unmount [this owner]))
 
 (defprotocol IWillUpdate
-  (-will-update [this next-props next-state]))
+  (-will-update [this owner next-props next-state]))
 
 (defprotocol IDidUpdate
-  (-did-update [this prev-props prev-state root-node]))
+  (-did-update [this owner prev-props prev-state root-node]))
 
 (defprotocol IRender
   (-render [this owner]))
@@ -35,31 +35,31 @@
            (this-as this
              (let [c (.. this -props -children)]
                (when (satisfies? IWillMount c)
-                 (-will-mount c)))))
+                 (-will-mount c this)))))
          :componentDidMount
          (fn [node]
            (this-as this
              (let [c (.. this -props -children)]
                (when (satisfies? IDidMount c)
-                 (-did-mount c node)))))
+                 (-did-mount c this node)))))
          :componentWillUnmount
          (fn []
            (this-as this
              (let [c (.. this -props -children)]
                (when (satisfies? IWillUnmount c)
-                 (-will-unmount c)))))
+                 (-will-unmount c this)))))
          :componentWillUpdate
          (fn [next-props next-state]
            (this-as this
              (let [c (.. this -props -children)]
                (when (satisfies? IWillUpdate c)
-                 (-will-update c next-props next-state)))))
+                 (-will-update c this next-props next-state)))))
          :componentDidUpdate
          (fn [prev-props prev-state root-node]
            (this-as this
              (let [c (.. this -props -children)]
                (when (satisfies? IDidUpdate c)
-                 (-did-update c prev-props prev-state root-node)))))
+                 (-did-update c this prev-props prev-state root-node)))))
          :render
          (fn []
            (this-as this
