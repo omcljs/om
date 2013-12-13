@@ -60,7 +60,7 @@
            (this-as this
              (let [c (.. this -props -children)]
                (when (satisfies? IDidUpdate c)
-                 (-will-update c prev-props prev-state root-node)))))
+                 (-did-update c prev-props prev-state root-node)))))
          :render
          (fn []
            (this-as this
