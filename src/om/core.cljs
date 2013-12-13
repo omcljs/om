@@ -12,8 +12,8 @@
         rootf (fn []
                 (set! refresh-queued false)
                 (dom/render
-                  (dom/pure #js {:value @state :opts null}
-                    (f (with-meta @state {::path [] ::state state})))
+                  (dom/pure #js {:value @state :opts nil}
+                    (f (with-meta @state {::state state ::path []})))
                   target))]
     (add-watch state ::root
       (fn [_ _ _ _]
@@ -25,15 +25,14 @@
     (rootf)))
 
 (defn render
-  ([f data] (render f data ::no-key))
-  ([f data key] (render data nil key))
+  ([f data] (render f data nil ::no-key))
+  ([f data key] (render f data nil key))
   ([f data opts key]
     (if (keyword-identical? key ::no-key)
       (dom/pure #js {:value data :opts opts} (f data))
-      (let [data (get data key)
-            new-path (conj path key)]
-        (dom/pure #js {:value data :opts opts}
-          (f (vary-meta data assoc ::path new-path)))))))
+      (let [data' (get data key)]
+        (dom/pure #js {:value data' :opts opts}
+          (f (with-meta data' (update-in (meta data) [::path] conj key))))))))
 
 (defn bind [f data]
   (let [data (vary-meta data assoc ::owner vars/*owner*)]
@@ -42,19 +41,19 @@
 (defn update!
   ([data k f]
     (let [m (meta data)]
-      (swap! (::state meta) update-in (conj (::path meta) k) f)))
+      (swap! (::state m) update-in (conj (::path m) k) f)))
   ([data k f a]
     (let [m (meta data)]
-      (swap! (::state meta) update-in (conj (::path meta) k) f a)))
+      (swap! (::state m) update-in (conj (::path m) k) f a)))
   ([data k f a b]
     (let [m (meta data)]
-      (swap! (::state meta) update-in (conj (::path meta) k) f a b)))
+      (swap! (::state m) update-in (conj (::path m) k) f a b)))
   ([data k f a b c]
     (let [m (meta data)]
-      (swap! (::state meta) update-in (conj (::path meta) k) f a b c)))
+      (swap! (::state m) update-in (conj (::path m) k) f a b c)))
   ([data k f a b c d]
     (let [m (meta data)]
-      (swap! (::state meta) update-in (conj (::path meta) k) f a b c d)))
+      (swap! (::state m) update-in (conj (::path m) k) f a b c d)))
   ([data k f a b c d & args]
     (let [m (meta data)]
-      (apply swap! (::state meta) update-in (conj (::path meta) k) f a b c d args))))
+      (apply swap! (::state m) update-in (conj (::path m) k) f a b c d args))))
