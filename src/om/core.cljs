@@ -38,6 +38,10 @@
   (let [data (vary-meta data assoc ::owner vars/*owner*)]
     (fn [e] (f e data))))
 
+(defn set! [data k v]
+  (let [m (meta data)]
+    (swap! (::state m) assoc-in (conj (::path m) k) v)))
+
 (defn update!
   ([data k f]
     (let [m (meta data)]
