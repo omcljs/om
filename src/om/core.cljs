@@ -43,6 +43,5 @@
               {:state state :owner owner :data data :path path})]
       (fn [e] (f e m)))))
 
-(defn update! [path f]
-  (let [state vars/*state*]
-    (fn [e] (swap! state update-in path f))))
+(defn update! [{:keys [state path]} f k val]
+  (swap! state update-in (conj path k) f val))
