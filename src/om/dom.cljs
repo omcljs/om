@@ -33,24 +33,34 @@
              (not (identical? (.. this -props -value) (.-value next-props)))))
          :componentWillMount
          (fn []
-           (let [c (.. this -props -children)]
-             (when (satisfies? IWillMount c)
-               (-will-mount c))))
+           (this-as this
+             (let [c (.. this -props -children)]
+               (when (satisfies? IWillMount c)
+                 (-will-mount c)))))
+         :componentDidMount
+         (fn [node]
+           (this-as this
+             (let [c (.. this -props -children)]
+               (when (satisfies? IDidMount c)
+                 (-did-mount c node)))))
          :componentWillUnmount
          (fn []
-           (let [c (.. this -props -children)]
-             (when (satisfies? IWillUnmount c)
-               (-will-unmount c))))
+           (this-as this
+             (let [c (.. this -props -children)]
+               (when (satisfies? IWillUnmount c)
+                 (-will-unmount c)))))
          :componentWillUpdate
          (fn [next-props next-state]
-           (let [c (.. this -props -children)]
-             (when (satisfies? IWillUpdate c)
-               (-will-update c next-props next-state))))
+           (this-as this
+             (let [c (.. this -props -children)]
+               (when (satisfies? IWillUpdate c)
+                 (-will-update c next-props next-state)))))
          :componentDidUpdate
          (fn [prev-props prev-state root-node]
-           (let [c (.. this -props -children)]
-             (when (satisfies? IDidUpdate c)
-               (-will-update c prev-props prev-state root-node))))
+           (this-as
+             (let [c (.. this -props -children)]
+               (when (satisfies? IDidUpdate c)
+                 (-will-update c prev-props prev-state root-node)))))
          :render
          (fn []
            (this-as this
