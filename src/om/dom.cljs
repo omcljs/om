@@ -5,6 +5,9 @@
 
 (dom/gen-react-dom-fns)
 
+(defprotocol IShouldUpdate
+  (-should-update [this owner next-props next-state]))
+
 (defprotocol IWillMount
   (-will-mount [this owner]))
 
@@ -28,8 +31,11 @@
     #js {:shouldComponentUpdate
          (fn [next-props next-state]
            (this-as this
-             (not (identical? (aget (.-props this) "value")
-                              (aget next-props "value")))))
+             (let [c (.. this -props -children)]
+               (if (satisfies? IShouldUpdate c)
+                 (-should-update c this next-props next-state)
+                 (not (identical? (aget (.-props this) "value")
+                                  (aget next-props "value")))))))
          :componentWillMount
          (fn []
            (this-as this
