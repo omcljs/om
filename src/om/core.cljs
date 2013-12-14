@@ -66,4 +66,4 @@
   ([owner]
     (aget (.-props owner) "opts"))
   ([owner ks]
-    (get-in (get-opts (.-props owner)) ks)))
+    (get-in (get-opts owner) ks)))
