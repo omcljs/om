@@ -25,10 +25,10 @@
     (rootf)))
 
 (defn render
-  ([f data] (render f data nil ::no-keys))
+  ([f data] (render f data nil nil))
   ([f data ks] (render f data nil ks))
   ([f data opts ks]
-    (if (keyword-identical? ks ::no-keys)
+    (if-not (vector? ks)
       (dom/pure #js {:value data :opts opts} (f data))
       (let [data' (get-in data ks)]
         (dom/pure #js {:value data' :opts opts}
