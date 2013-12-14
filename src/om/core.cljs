@@ -1,5 +1,4 @@
 (ns om.core
-  (:refer-clojure :exclude [set!])
   (:require React
             [om.dom :as dom :include-macros true]))
 
@@ -34,7 +33,7 @@
         (dom/pure #js {:value data' :opts opts}
           (f (with-meta data' (update-in (meta data) [::path] into ks))))))))
 
-(defn set!
+(defn replace!
   ([data v]
     (let [m (meta data)]
       (swap! (::state m) assoc-in (::path m) v)))
