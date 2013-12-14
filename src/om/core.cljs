@@ -60,9 +60,3 @@
   ([data ks f a b c d & args]
     (let [m (meta data)]
       (apply swap! (::state m) update-in (into (::path m) ks) f a b c d args))))
-
-(defn get-opts
-  ([owner]
-    (aget (.-props owner) "opts"))
-  ([owner ks]
-    (get-in (get-opts owner) ks)))
