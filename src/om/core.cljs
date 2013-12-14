@@ -26,40 +26,44 @@
 
 (defn render
   ([f data] (render f data nil nil))
-  ([f data ks] (render f data nil ks))
-  ([f data opts ks]
+  ([f data ks] (render f data ks nil))
+  ([f data ks opts]
     (if-not (vector? ks)
       (dom/pure #js {:value data :opts opts} (f data))
       (let [data' (get-in data ks)]
         (dom/pure #js {:value data' :opts opts}
           (f (with-meta data' (update-in (meta data) [::path] into ks))))))))
 
-(defn set! [data k v]
-  (let [m (meta data)]
-    (swap! (::state m) assoc-in (conj (::path m) k) v)))
+(defn set!
+  ([data v]
+    (let [m (meta data)]
+      (swap! (::state m) assoc-in (::path m) v)))
+  ([data ks v]
+    (let [m (meta data)]
+      (swap! (::state m) assoc-in (into (::path m) ks) v))))
 
 (defn update!
-  ([data k f]
+  ([data ks f]
     (let [m (meta data)]
-      (swap! (::state m) update-in (conj (::path m) k) f)))
-  ([data k f a]
+      (swap! (::state m) update-in (into (::path m) ks) f)))
+  ([data ks f a]
     (let [m (meta data)]
-      (swap! (::state m) update-in (conj (::path m) k) f a)))
-  ([data k f a b]
+      (swap! (::state m) update-in (into (::path m) ks) f a)))
+  ([data ks f a b]
     (let [m (meta data)]
-      (swap! (::state m) update-in (conj (::path m) k) f a b)))
-  ([data k f a b c]
+      (swap! (::state m) update-in (into (::path m) ks) f a b)))
+  ([data ks f a b c]
     (let [m (meta data)]
-      (swap! (::state m) update-in (conj (::path m) k) f a b c)))
-  ([data k f a b c d]
+      (swap! (::state m) update-in (into (::path m) ks) f a b c)))
+  ([data ks f a b c d]
     (let [m (meta data)]
-      (swap! (::state m) update-in (conj (::path m) k) f a b c d)))
-  ([data k f a b c d & args]
+      (swap! (::state m) update-in (into (::path m) ks) f a b c d)))
+  ([data ks f a b c d & args]
     (let [m (meta data)]
-      (apply swap! (::state m) update-in (conj (::path m) k) f a b c d args))))
+      (apply swap! (::state m) update-in (into (::path m) ks) f a b c d args))))
 
 (defn get-opts
   ([owner]
     (aget (.-props owner) "opts"))
-  ([owner k]
-    (get (get-opts (.-props owner)) k)))
+  ([owner ks]
+    (get-in (get-opts (.-props owner)) ks)))
