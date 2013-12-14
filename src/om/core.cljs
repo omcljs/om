@@ -25,14 +25,14 @@
     (rootf)))
 
 (defn render
-  ([f data] (render f data nil ::no-key))
-  ([f data key] (render f data nil key))
-  ([f data opts key]
-    (if (keyword-identical? key ::no-key)
+  ([f data] (render f data nil ::no-keys))
+  ([f data ks] (render f data nil ks))
+  ([f data opts ks]
+    (if (keyword-identical? ks ::no-keys)
       (dom/pure #js {:value data :opts opts} (f data))
-      (let [data' (get data key)]
+      (let [data' (get-in data ks)]
         (dom/pure #js {:value data' :opts opts}
-          (f (with-meta data' (update-in (meta data) [::path] conj key))))))))
+          (f (with-meta data' (update-in (meta data) [::path] into ks))))))))
 
 (defn set! [data k v]
   (let [m (meta data)]
