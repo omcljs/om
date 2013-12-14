@@ -2,7 +2,7 @@
 
 A ClojureScript interface to Facebook's React.
 
-# Example
+## Example
 
 ```clj
 (ns example
