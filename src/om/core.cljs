@@ -28,7 +28,7 @@
   ([f data] (render f data nil nil))
   ([f data ks] (render f data ks nil))
   ([f data ks opts]
-    (if-not (vector? ks)
+    (if-not (sequential? ks)
       (dom/pure #js {:value data :opts opts} (f data))
       (let [data' (get-in data ks)]
         (dom/pure #js {:value data' :opts opts}
