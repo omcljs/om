@@ -28,10 +28,10 @@
   ([f data ks] (render f data ks nil))
   ([f data ks opts]
     (if-not (sequential? ks)
-      (dom/pure #js {:value data} (f data))
+      (dom/pure #js {:value data :key (get opts ::key)} (f data))
       (let [data' (get-in data ks)
             mdata' (with-meta data' (update-in (meta data) [::path] into ks))]
-        (dom/pure #js {:value data'}
+        (dom/pure #js {:value data' :key (get opts ::key)}
           (if (nil? opts)
             (f mdata')
             (f mdata' opts)))))))
