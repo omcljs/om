@@ -11,7 +11,7 @@
         rootf (fn []
                 (set! refresh-queued false)
                 (dom/render
-                  (dom/pure #js {:value @state :opts nil}
+                  (dom/pure #js {:value @state}
                     (f (with-meta @state {::state state ::path []})))
                   target))]
     (add-watch state ::root
@@ -28,10 +28,13 @@
   ([f data ks] (render f data ks nil))
   ([f data ks opts]
     (if-not (sequential? ks)
-      (dom/pure #js {:value data :opts opts} (f data))
-      (let [data' (get-in data ks)]
-        (dom/pure #js {:value data' :opts opts}
-          (f (with-meta data' (update-in (meta data) [::path] into ks))))))))
+      (dom/pure #js {:value data} (f data))
+      (let [data' (get-in data ks)
+            mdata' (with-meta data' (update-in (meta data) [::path] into ks))]
+        (dom/pure #js {:value data'}
+          (if (nil? opts)
+            (f mdata')
+            (f mdata' opts)))))))
 
 (defn replace!
   ([data v]
