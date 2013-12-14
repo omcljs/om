@@ -60,6 +60,10 @@
              (let [c (.. this -props -children)]
                (when (satisfies? IDidUpdate c)
                  (-did-update c this prev-props prev-state root-node)))))
+         :componentWillReceiveProps
+         (fn [next-props]
+           (this-as this
+             (aset next-props "opts" (aget (.-props this) "opts"))))
          :render
          (fn []
            (this-as this
