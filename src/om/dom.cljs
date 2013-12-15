@@ -28,7 +28,10 @@
 
 (def Pure
   (React/createClass
-    #js {:shouldComponentUpdate
+    #js {:getInitialState
+         (fn [] #js {:__om_state {}})
+
+         :shouldComponentUpdate
          (fn [next-props next-state]
            (this-as this
              (let [c (.. this -props -children)]
