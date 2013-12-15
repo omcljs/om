@@ -42,8 +42,9 @@
             data'  (if-not (nil? dataf)
                      (dataf data')
                      data')
+            rkey   (get data' key)
             mdata' (with-meta data' (update-in (meta data) [::path] into path))]
-        (dom/pure #js {:value data' :key key}
+        (dom/pure #js {:value data' :key rkey}
           (if (nil? opts)
             (f mdata')
             (f mdata' opts)))))))
