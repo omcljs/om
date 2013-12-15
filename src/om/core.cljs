@@ -28,16 +28,19 @@
   ([f data ks] (render f data ks nil))
   ([f data ks opts] (render f data ks opts nil))
   ([f data ks opts keykey]
-    (if-not (sequential? ks)
-      (let [key (when-not (nil? keykey) (get data keykey))]
-        (dom/pure #js {:value data :key key} (f data)))
-      (let [data'  (get-in data ks)
-            key    (when-not (nil? keykey) (get data' keykey)) 
-            mdata' (with-meta data' (update-in (meta data) [::path] into ks))]
-        (dom/pure #js {:value data' :key key}
-          (if (nil? opts)
-            (f mdata')
-            (f mdata' opts)))))))
+    (let [keykey (or keykey (get opts ::key))
+          dataf  (get opts ::fn)
+          data   (if-not (nil? dataf) (dataf data) data)]
+      (if-not (sequential? ks)
+        (let [key (when-not (nil? keykey) (get data keykey))]
+          (dom/pure #js {:value data :key key} (f data)))
+        (let [data'  (get-in data ks)
+              key    (when-not (nil? keykey) (get data' keykey)) 
+              mdata' (with-meta data' (update-in (meta data) [::path] into ks))]
+          (dom/pure #js {:value data' :key key}
+            (if (nil? opts)
+              (f mdata')
+              (f mdata' opts))))))))
 
 (defn replace!
   ([data v]
