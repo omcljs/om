@@ -76,3 +76,10 @@
 
 (defn get-node [owner name]
   (.getDOMNode (aget (.-refs owner) name)))
+
+(defn set-state! [owner k v]
+  (.setState owner
+    #js {"__om_state" (assoc (aget (.-state owner) "__om_state") k v)}))
+
+(defn get-state [owner k]
+  (get (aget (.-state owner) "__om_state") k))
