@@ -5,6 +5,9 @@
 
 (dom/gen-react-dom-fns)
 
+(defprotocol IInitState
+  (-init-state [this owner]))
+
 (defprotocol IShouldUpdate
   (-should-update [this owner next-props next-state]))
 
@@ -29,7 +32,12 @@
 (def Pure
   (React/createClass
     #js {:getInitialState
-         (fn [] #js {:__om_state {}})
+         (fn []
+           (this-as this
+             (let [c (.. this -props -children)
+                   user-state (when (satisfies? IInitState c)
+                                (-init-state c this))]
+               #js {:__om_state (merge {} user-state)})))
 
          :shouldComponentUpdate
          (fn [next-props next-state]
