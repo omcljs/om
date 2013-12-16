@@ -10,10 +10,11 @@
                 (atom value))
         rootf (fn []
                 (set! refresh-queued false)
-                (dom/render
-                  (dom/pure #js {:value @state}
-                    (f (with-meta @state {::state state ::path []})))
-                  target))]
+                (let [path []]
+                  (dom/render
+                    (dom/pure #js {:value @state :state state :path path}
+                      (f (with-meta @state {::state state ::path path})))
+                    target)))]
     (add-watch state ::root
       (fn [_ _ _ _]
         (when-not refresh-queued
@@ -28,12 +29,17 @@
   ([f data sorm]
     (cond
       (nil? sorm)
-      (dom/pure #js {:value data} (f data))
+      (let [m (meta data)]
+        (dom/pure #js {:value data :state (::state m) :path (::path m)}
+          (f data)))
 
       (sequential? sorm)
       (let [data'  (get-in data sorm)
-            mdata' (with-meta data' (update-in (meta data) [::path] into sorm))]
-        (dom/pure #js {:value data'} (f mdata')))
+            m      (meta data)
+            m'     (update-in m [::path] into sorm)
+            mdata' (with-meta data' m')]
+        (dom/pure #js {:value data' :state (::state m) :path (::path m')}
+          (f mdata')))
 
       :else
       (let [{:keys [path key opts]} sorm
@@ -43,8 +49,10 @@
                      (dataf data')
                      data')
             rkey   (get data' key)
-            mdata' (with-meta data' (update-in (meta data) [::path] into path))]
-        (dom/pure #js {:value data' :key rkey}
+            m      (meta data)
+            m'     (update-in m [::path] into path)
+            mdata' (with-meta data' m')]
+        (dom/pure #js {:value data' :state (::state m) :path (::path m') :key rkey}
           (if (nil? opts)
             (f mdata')
             (f mdata' opts)))))))
