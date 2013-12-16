@@ -91,9 +91,9 @@
 (defn get-node [owner name]
   (.getDOMNode (aget (.-refs owner) name)))
 
-(defn set-state! [owner k v]
+(defn set-state! [owner ks v]
   (.setState owner
-    #js {"__om_state" (assoc (aget (.-state owner) "__om_state") k v)}))
+    #js {"__om_state" (assoc-in (aget (.-state owner) "__om_state") ks v)}))
 
-(defn get-state [owner k]
-  (get (aget (.-state owner) "__om_state") k))
+(defn get-state [owner ks]
+  (get-in (aget (.-state owner) "__om_state") ks))
