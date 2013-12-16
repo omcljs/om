@@ -92,8 +92,10 @@
   (.getDOMNode (aget (.-refs owner) name)))
 
 (defn set-state! [owner ks v]
-  (.setState owner
-    #js {"__om_state" (assoc-in (aget (.-state owner) "__om_state") ks v)}))
+  (.setState owner #js {"__om_state" (assoc-in (aget (.-state owner) "__om_state") ks v)})
+  ;; need to invalidate the path to component that changed state
+  (let [props (.-props owner)]
+    (swap! (aget props "state") assoc-in (aget props "path") (aget props "value"))))
 
 (defn get-state [owner ks]
   (get-in (aget (.-state owner) "__om_state") ks))
