@@ -46,8 +46,10 @@
              (let [c (.. this -props -children)]
                (if (satisfies? IShouldUpdate c)
                  (-should-update c this next-props next-state)
-                 (not (identical? (aget (.-props this) "value")
-                                  (aget next-props "value")))))))
+                 (or (not (identical? (aget (.-props this) "value")
+                                      (aget next-props "value"))
+                          (identical? (aget (.-state this) "__om_state")
+                                      (aget next-state "__om_state"))))))))
          :componentWillMount
          (fn []
            (this-as this
