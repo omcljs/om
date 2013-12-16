@@ -63,6 +63,9 @@
       (swap! (::state m) assoc-in (into (::path m) ks) v))))
 
 (defn update!
+  ([data f]
+    (let [m (meta data)]
+      (swap! (::state m) update-in (::path m) f)))
   ([data ks f]
     (let [m (meta data)]
       (swap! (::state m) update-in (into (::path m) ks) f)))
