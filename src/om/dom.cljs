@@ -34,10 +34,11 @@
     #js {:getInitialState
          (fn []
            (this-as this
-             (let [c (.. this -props -children)
-                   user-state (when (satisfies? IInitState c)
-                                (-init-state c this))]
-               #js {:__om_state (merge {} user-state)})))
+             (let [c (.. this -props -children)]
+               #js {:__om_state
+                    (merge {}
+                      (when (satisfies? IInitState c)
+                        (-init-state c this)))})))
 
          :shouldComponentUpdate
          (fn [next-props next-state]
