@@ -56,16 +56,22 @@
 
 (defn replace!
   ([data v]
-    (let [m (meta data)]
-      (swap! (::state m) assoc-in (::path m) v)))
+    (let [m (meta data)
+          path (::path m)]
+      (if (empty? path)
+        (reset! (::state m) v)
+        (swap! (::state m) assoc-in path v))))
   ([data ks v]
     (let [m (meta data)]
       (swap! (::state m) assoc-in (into (::path m) ks) v))))
 
 (defn update!
   ([data f]
-    (let [m (meta data)]
-      (swap! (::state m) update-in (::path m) f)))
+    (let [m (meta data)
+          path (::path m)]
+      (if (empty? path)
+        (swap! (::state m) f)
+        (swap! (::state m) update-in path f))))
   ([data ks f]
     (let [m (meta data)]
       (swap! (::state m) update-in (into (::path m) ks) f)))
