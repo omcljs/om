@@ -39,17 +39,14 @@
                     (merge {}
                       (when (satisfies? IInitState c)
                         (-init-state c this)))})))
-
          :shouldComponentUpdate
          (fn [next-props next-state]
            (this-as this
              (let [c (.. this -props -children)]
                (if (satisfies? IShouldUpdate c)
                  (-should-update c this next-props next-state)
-                 (or (not (identical? (aget (.-props this) "value")
-                                      (aget next-props "value")))
-                     (not (identical? (aget (.-state this) "__om_state")
-                                      (aget next-state "__om_state"))))))))
+                 (not (identical? (aget (.-props this) "value")
+                                  (aget next-props "value")))))))
          :componentWillMount
          (fn []
            (this-as this
@@ -93,10 +90,7 @@
 
 (defn set-state! [owner ks v]
   (aset (.-state owner) "__om_state"
-    (assoc-in (aget (.-state owner) "__om_state") ks v))
-  ;; need to invalidate the path to component that changed state
-  (let [props (.-props owner)]
-    (swap! (aget props "state") assoc-in (aget props "path") (aget props "value"))))
+    (assoc-in (aget (.-state owner) "__om_state") ks v)))
 
 (defn get-state [owner ks]
   (get-in (aget (.-state owner) "__om_state") ks))

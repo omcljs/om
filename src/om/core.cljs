@@ -12,7 +12,7 @@
                 (set! refresh-queued false)
                 (let [path []]
                   (dom/render
-                    (dom/pure #js {:value @state :state state :path path}
+                    (dom/pure #js {:value @state}
                       (f (with-meta @state {::state state ::path path})))
                     target)))]
     (add-watch state ::root
@@ -30,15 +30,13 @@
     (cond
       (nil? sorm)
       (let [m (meta data)]
-        (dom/pure #js {:value data :state (::state m) :path (::path m)}
+        (dom/pure #js {:value data}
           (f data)))
 
       (sequential? sorm)
       (let [data'  (get-in data sorm)
-            m      (meta data)
-            m'     (update-in m [::path] into sorm)
-            mdata' (with-meta data' m')]
-        (dom/pure #js {:value data' :state (::state m) :path (::path m')}
+            mdata' (with-meta data' (update-in (meta data) [::path] into sorm))]
+        (dom/pure #js {:value data'}
           (f mdata')))
 
       :else
@@ -49,10 +47,8 @@
                      (dataf data')
                      data')
             rkey   (get data' key)
-            m      (meta data)
-            m'     (update-in m [::path] into path)
-            mdata' (with-meta data' m')]
-        (dom/pure #js {:value data' :state (::state m) :path (::path m') :key rkey}
+            mdata' (with-meta data' (update-in (meta data) [::path] into path))]
+        (dom/pure #js {:value data' :key rkey}
           (if (nil? opts)
             (f mdata')
             (f mdata' opts)))))))
