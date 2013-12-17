@@ -1,7 +1,6 @@
 (ns om.core
   (:require-macros [om.core :refer [pure component]])
-  (:require React
-            [om.dom :as dom :include-macros true]))
+  (:require [om.dom :as dom :include-macros true]))
 
 (defprotocol IInitState
   (-init-state [this owner]))
@@ -28,7 +27,7 @@
   (-render [this owner]))
 
 (def ^:private Pure
-  (React/createClass
+  (js/React.createClass
     #js {:getInitialState
          (fn []
            (this-as this
