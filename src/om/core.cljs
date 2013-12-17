@@ -54,17 +54,6 @@
             (f mdata')
             (f mdata' opts)))))))
 
-(defn replace!
-  ([data v]
-    (let [m (meta data)
-          path (::path m)]
-      (if (empty? path)
-        (reset! (::state m) v)
-        (swap! (::state m) assoc-in path v))))
-  ([data ks v]
-    (let [m (meta data)]
-      (swap! (::state m) assoc-in (into (::path m) ks) v))))
-
 (defn update!
   ([data f]
     (let [m (meta data)
