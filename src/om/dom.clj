@@ -139,14 +139,5 @@
   `(do
      ~@(clojure.core/map gen-react-dom-fn tags)))
 
-(defmacro pure [obj children]
-  `(om.dom/Pure. ~obj ~children))
-
-(defmacro component [& body]
-  `(reify
-     om.dom/IRender
-     (~'-render [this# _#]
-       ~@body)))
-
 (defmacro render [component el]
   `(React/renderComponent ~component ~el))
