@@ -18,8 +18,8 @@ A ClojureScript interface to Facebook's React.
 
 ## Using it
 
-Om is pre-alpha software. You also need to clone ClojureScript from
-master and install it via `script/build`. You can clone the Om repo
+Om is pre-alpha software. You need to clone ClojureScript from
+master and install it via `script/build`. Then clone the Om repo
 and install it locally with `lein install`.
 
 For local development your [lein-cljsbuild](http://github.com/emezeske/lein-cljsbuild) settings should look something like
@@ -37,13 +37,13 @@ this:
               :externs ["om/externs/react.js"]}}]}
 ```
 
-Your local development markup should look something like the following:
+Your local development markup should include something like the following:
 
-```
+```html
 <script src="http://fb.me/react-0.5.1.js"></script>
 <script src="out/goog/base.js" type="text/javascript"></script>
-<script src="app.js" type="text/javascript"></script>
-<script type="text/javascript">goog.require("todomvc.app");</script>
+<script src="main.js" type="text/javascript"></script>
+<script type="text/javascript">goog.require("main.core");</script>
 ```
 
 For production your [lein-cljsbuild](http://github.com/emezeske/lein-cljsbuild) settings should look something
@@ -54,7 +54,7 @@ like this:
   :builds [{:id "release"
             :source-paths ["src"]
             :compiler {
-              :output-to "app.js"
+              :output-to "main.js"
               :optimizations :advanced
               :pretty-print false
               :preamble ["om/react.min.js"]
@@ -63,4 +63,4 @@ like this:
               {:non-standard-jsdoc :off}}}]}
 ```
 
-This will generate a single file `app.js`.
+This will generate a single file `main.js`.
