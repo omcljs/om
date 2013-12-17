@@ -6,7 +6,7 @@ A ClojureScript interface to Facebook's React.
 
 ```clj
 (ns example
-  (:require [om.core :as om]
+  (:require [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]))
 
 (defn widget [data]
