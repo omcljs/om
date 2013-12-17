@@ -1,6 +1,6 @@
-(defproject om "0.1.0"
+(defproject om "0.1.0-SNAPSHOT"
   :description "ClojureScript interface to Facebook's react"
-  :url "http://facebook.github.io/react/"
+  :url "http://github.com/swannodette/om"
   :license {:name "Apache"
             :url "http://www.apache.org/licenses/"}
 
