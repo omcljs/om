@@ -25,57 +25,51 @@
     (rootf)))
 
 (defn render
-  ([f data] (render f data nil))
-  ([f data sorm]
+  ([f cursor] (render f cursor nil))
+  ([f cursor sorm]
     (cond
       (nil? sorm)
-      (let [m (meta data)]
-        (dom/pure #js {:value data}
-          (f data)))
+      (dom/pure #js {:value cursor} (f cursor))
 
       (sequential? sorm)
-      (let [data'  (get-in data sorm)
-            mdata' (with-meta data' (update-in (meta data) [::path] into sorm))]
-        (dom/pure #js {:value data'}
-          (f mdata')))
+      (let [data    (get-in cursor sorm)
+            cursor' (with-meta data (update-in (meta cursor) [::path] into sorm))]
+        (dom/pure #js {:value data} (f cursor)))
 
       :else
       (let [{:keys [path key opts]} sorm
-            dataf  (get sorm :fn)
-            data'  (get-in data path)
-            data'  (if-not (nil? dataf)
-                     (dataf data')
-                     data')
-            rkey   (when-not (nil? key)
-                     (get data' key))
-            mdata' (with-meta data' (update-in (meta data) [::path] into path))]
-        (dom/pure #js {:value data' :key rkey}
+            dataf   (get sorm :fn)
+            data    (get-in cursor path)
+            data    (if-not (nil? dataf) (dataf data) data)
+            rkey    (when-not (nil? key) (get data key))
+            cursor' (with-meta data (update-in (meta cursor) [::path] into path))]
+        (dom/pure #js {:value data :key rkey}
           (if (nil? opts)
-            (f mdata')
-            (f mdata' opts)))))))
+            (f cursor')
+            (f cursor' opts)))))))
 
 (defn update!
-  ([data f]
-    (let [m (meta data)
+  ([cursor f]
+    (let [m (meta cursor)
           path (::path m)]
       (if (empty? path)
         (swap! (::state m) f)
         (swap! (::state m) update-in path f))))
-  ([data ks f]
-    (let [m (meta data)]
+  ([cursor ks f]
+    (let [m (meta cursor)]
       (swap! (::state m) update-in (into (::path m) ks) f)))
-  ([data ks f a]
-    (let [m (meta data)]
+  ([cursor ks f a]
+    (let [m (meta cursor)]
       (swap! (::state m) update-in (into (::path m) ks) f a)))
-  ([data ks f a b]
-    (let [m (meta data)]
+  ([cursor ks f a b]
+    (let [m (meta cursor)]
       (swap! (::state m) update-in (into (::path m) ks) f a b)))
-  ([data ks f a b c]
-    (let [m (meta data)]
+  ([cursor ks f a b c]
+    (let [m (meta cursor)]
       (swap! (::state m) update-in (into (::path m) ks) f a b c)))
-  ([data ks f a b c d]
-    (let [m (meta data)]
+  ([cursor ks f a b c d]
+    (let [m (meta cursor)]
       (swap! (::state m) update-in (into (::path m) ks) f a b c d)))
-  ([data ks f a b c d & args]
-    (let [m (meta data)]
+  ([cursor ks f a b c d & args]
+    (let [m (meta cursor)]
       (apply swap! (::state m) update-in (into (::path m) ks) f a b c d args))))
