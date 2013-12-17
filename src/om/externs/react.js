@@ -9,12 +9,6 @@
  * @type {Object}
  * @const
  */
-window.React = {};
-
-/**
- * @type {Object}
- * @const
- */
 var React = {};
 
 /**
