@@ -2,6 +2,9 @@
   (:require-macros [om.core :refer [pure component]])
   (:require [om.dom :as dom :include-macros true]))
 
+;; =============================================================================
+;; React Life Cycle Protocols
+
 (defprotocol IInitState
   (init-state [this owner]))
 
@@ -25,6 +28,14 @@
 
 (defprotocol IRender
   (render [this owner]))
+
+;; =============================================================================
+;; A Truly Pure Component
+;; 
+;; This React class takes an immutable value as its props and an instance that
+;; must at a minimum implement IRender as its children.
+;;
+;; (Pure. {:foo "bar"} irender-instance)
 
 (def ^:private Pure
   (js/React.createClass
@@ -79,9 +90,24 @@
            (this-as this
              (render (.. this -props -children) this)))}))
 
-(def refresh-queued false)
+(def ^:private refresh-queued false)
 
-(defn root [value f target]
+(defn root
+  "Takes an immutable value, an initial function f, and a DOM
+   target. Installs an Om/React render loop. f must return an instance
+   that at a minimum implements IRender (it may implement other
+   React life cycle protocols). f must take a single argument which
+   will be the root cursor. A cursor is simply data that has been
+   annotated via metadata with state and path information - :om.core/state
+   and :om.core/path respectively.
+
+   Example:
+
+   (root {:message :hello}
+     (fn [data]
+       ...)
+     js/document.body)"
+  [value f target]
   (let [state (if (instance? Atom value)
                 value
                 (atom value))
@@ -102,6 +128,36 @@
     (rootf)))
 
 (defn build
+  "Builds a Om component. Takes an IRender instance returning function
+   f, a cursor, and an optional third argument which may be a vector
+   representing the path or a map of build specifications. 
+
+   f - is a function of two arguments the first argument will be the
+   cursor and the second argument will be a map of optional values
+   passed to build. f must return at a minimum an IRender instance,
+   this instance may implement other React life cycle protocols.
+
+   cursor - an immutable value annotated with :om.core/state and
+   :om.core/path
+
+   sorm - If a vector, specifies the relative path into the tree that
+   the component will be built from. If a map the following
+   keys are allowed:
+
+     :path - the relative path in the tree to build the component with
+     :key  - a keyword that should be used to look up the key used by
+             React itself when rendering sequential things.
+     :fn   - a function to apply to the data at the relative path before
+             invoking f.
+     :opts - a map of options to pass to component.
+
+   Example:
+
+     (build list-of-gadgets cursor
+        {:path [:gadgets]
+         :opts {:event-chan ...
+                :narble ...}})
+  "
   ([f cursor] (build f cursor nil))
   ([f cursor sorm]
     (cond
@@ -126,6 +182,10 @@
             (f cursor' opts)))))))
 
 (defn update!
+  "Given a cursor, a list of keys ks, mutate the tree at the path
+   specified by the cursor + the keys by applying f to the specified
+   value in the tree. If only given two arguments, assumed no list
+   of keys was specified."
   ([cursor f]
     (let [m (meta cursor)
           path (::path m)]
@@ -151,12 +211,19 @@
     (let [m (meta cursor)]
       (apply swap! (::state m) update-in (into (::path m) ks) f a b c d args))))
 
-(defn set-state! [owner ks v]
+(defn get-node
+  "A helper function to get at React refs. Given a owning pure node
+  extract the ref specified by name."
+  [owner name]
+  (.getDOMNode (aget (.-refs owner) name)))
+
+(defn set-state!
+  "EXPERIMENTAL"
+  [owner ks v]
   (aset (.-state owner) "__om_state"
     (assoc-in (aget (.-state owner) "__om_state") ks v)))
 
-(defn get-state [owner ks]
+(defn get-state
+  "EXPERIMENTAL"
+  [owner ks]
   (get-in (aget (.-state owner) "__om_state") ks))
-
-(defn get-node [owner name]
-  (.getDOMNode (aget (.-refs owner) name)))
