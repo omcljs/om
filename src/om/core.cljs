@@ -144,12 +144,13 @@
    the component will be built from. If a map the following
    keys are allowed:
 
-     :path - the relative path in the tree to build the component with
-     :key  - a keyword that should be used to look up the key used by
-             React itself when rendering sequential things.
-     :fn   - a function to apply to the data at the relative path before
-             invoking f.
-     :opts - a map of options to pass to component.
+     :path      - the relative path in the tree to build the component with
+     :key       - a keyword that should be used to look up the key used by
+                  React itself when rendering sequential things.
+     :react-key - an explicit react key
+     :fn        - a function to apply to the data at the relative path before
+                  invoking f.
+     :opts      - a map of options to pass to component.
 
    Example:
 
@@ -170,11 +171,14 @@
         (pure #js {:value data} (f cursor)))
 
       :else
-      (let [{:keys [path key opts]} sorm
+      (let [{:keys [path key react-key opts]} sorm
             dataf   (get sorm :fn)
             data    (get-in cursor path)
             data    (if-not (nil? dataf) (dataf data) data)
-            rkey    (when-not (nil? key) (get data key))
+            rkey    (if-not (nil? key)
+                      (get data key)
+                      (if-not (nil? react-key)
+                        react-key))
             cursor' (with-meta data (update-in (meta cursor) [::path] into path))]
         (pure #js {:value data :key rkey}
           (if (nil? opts)
