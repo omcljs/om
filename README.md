@@ -1,6 +1,6 @@
 # Om
 
-A ClojureScript interface to Facebook's React.
+A [ClojureScript](http://github.com/clojure/clojurescript) interface to [Facebook's React](http://facebook.github.io/react/).
 
 ## Example
 
