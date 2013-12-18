@@ -185,7 +185,7 @@
   "Given a cursor, a list of keys ks, mutate the tree at the path
    specified by the cursor + the keys by applying f to the specified
    value in the tree. If only given two arguments, assumed no list
-   of keys was specified."
+   of keys was specified. An Om re-render will be triggered."
   ([cursor f]
     (let [m (meta cursor)
           path (::path m)]
@@ -213,7 +213,8 @@
 
 (defn get-node
   "A helper function to get at React refs. Given a owning pure node
-  extract the ref specified by name."
+  extract the ref specified by name. Note the life cycle protocol methods
+  all pass the owner as argument, ie. IRender."
   [owner name]
   (.getDOMNode (aget (.-refs owner) name)))
 
