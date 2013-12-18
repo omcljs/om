@@ -3,28 +3,28 @@
   (:require [om.dom :as dom :include-macros true]))
 
 (defprotocol IInitState
-  (-init-state [this owner]))
+  (init-state [this owner]))
 
 (defprotocol IShouldUpdate
-  (-should-update [this owner next-props next-state]))
+  (should-update [this owner next-props next-state]))
 
 (defprotocol IWillMount
-  (-will-mount [this owner]))
+  (will-mount [this owner]))
 
 (defprotocol IDidMount
-  (-did-mount [this owner node]))
+  (did-mount [this owner node]))
 
 (defprotocol IWillUnmount
-  (-will-unmount [this owner]))
+  (will-unmount [this owner]))
 
 (defprotocol IWillUpdate
-  (-will-update [this owner next-props next-state]))
+  (will-update [this owner next-props next-state]))
 
 (defprotocol IDidUpdate
-  (-did-update [this owner prev-props prev-state root-node]))
+  (did-update [this owner prev-props prev-state root-node]))
 
 (defprotocol IRender
-  (-render [this owner]))
+  (render [this owner]))
 
 (def ^:private Pure
   (js/React.createClass
@@ -35,13 +35,13 @@
                #js {:__om_state
                     (merge {}
                       (when (satisfies? IInitState c)
-                        (-init-state c this)))})))
+                        (init-state c this)))})))
          :shouldComponentUpdate
          (fn [next-props next-state]
            (this-as this
              (let [c (.. this -props -children)]
                (if (satisfies? IShouldUpdate c)
-                 (-should-update c this next-props next-state)
+                 (should-update c this next-props next-state)
                  (not (identical? (aget (.-props this) "value")
                                   (aget next-props "value")))))))
          :componentWillMount
@@ -49,35 +49,35 @@
            (this-as this
              (let [c (.. this -props -children)]
                (when (satisfies? IWillMount c)
-                 (-will-mount c this)))))
+                 (will-mount c this)))))
          :componentDidMount
          (fn [node]
            (this-as this
              (let [c (.. this -props -children)]
                (when (satisfies? IDidMount c)
-                 (-did-mount c this node)))))
+                 (did-mount c this node)))))
          :componentWillUnmount
          (fn []
            (this-as this
              (let [c (.. this -props -children)]
                (when (satisfies? IWillUnmount c)
-                 (-will-unmount c this)))))
+                 (will-unmount c this)))))
          :componentWillUpdate
          (fn [next-props next-state]
            (this-as this
              (let [c (.. this -props -children)]
                (when (satisfies? IWillUpdate c)
-                 (-will-update c this next-props next-state)))))
+                 (will-update c this next-props next-state)))))
          :componentDidUpdate
          (fn [prev-props prev-state root-node]
            (this-as this
              (let [c (.. this -props -children)]
                (when (satisfies? IDidUpdate c)
-                 (-did-update c this prev-props prev-state root-node)))))
+                 (did-update c this prev-props prev-state root-node)))))
          :render
          (fn []
            (this-as this
-             (-render (.. this -props -children) this)))}))
+             (render (.. this -props -children) this)))}))
 
 (def refresh-queued false)
 
