@@ -93,13 +93,13 @@
 (def ^:private refresh-queued false)
 
 (defn root
-  "Takes an immutable value, an initial function f, and a DOM
-   target. Installs an Om/React render loop. f must return an instance
-   that at a minimum implements IRender (it may implement other
-   React life cycle protocols). f must take a single argument which
-   will be the root cursor. A cursor is simply data that has been
-   annotated via metadata with state and path information - :om.core/state
-   and :om.core/path respectively.
+  "Takes an immutable value or value wrapped in an atom, an initial
+   function f, and a DOM target. Installs an Om/React render loop. f
+   must return an instance that at a minimum implements IRender (it
+   may implement other React life cycle protocols). f must take a
+   single argument which will be the root cursor. A cursor is simply
+   data that has been annotated via metadata with state and path
+   information - :om.core/state and :om.core/path respectively.
 
    Example:
 
