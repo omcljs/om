@@ -17,7 +17,7 @@ A [ClojureScript](http://github.com/clojure/clojurescript) interface to [Faceboo
 ```
 
 An implementation of [TodoMVC](http://todomvc.com) implemented in Om
-[exists here](http://github.com/swannodette/todomvc/tree/om/labs/architecture-examples/om/).
+[exists here](http://github.com/swannodette/todomvc/blob/gh-pages/labs/architecture-examples/om/src/todomvc/app.cljs).
 
 ## Using it
 
