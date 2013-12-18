@@ -16,6 +16,9 @@ A [ClojureScript](http://github.com/clojure/clojurescript) interface to [Faceboo
 (om/root {} widget js/document.body)
 ```
 
+An implementation of [TodoMVC](http://todomvc.com) implemented in Om
+[exists here](http://github.com/swannodette/todomvc/tree/om/labs/architecture-examples/om/).
+
 ## Using it
 
 Om is pre-alpha software. You need to clone ClojureScript from
