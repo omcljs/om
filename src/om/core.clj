@@ -6,5 +6,5 @@
 (defmacro component [& body]
   `(reify
      om.core/IRender
-     (~'-render [this# _#]
+     (~'render [this# _#]
        ~@body)))
