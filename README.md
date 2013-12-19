@@ -1,6 +1,14 @@
 # Om
 
-A [ClojureScript](http://github.com/clojure/clojurescript) interface to [Facebook's React](http://facebook.github.io/react/).
+A [ClojureScript](http://github.com/clojure/clojurescript) interface
+to [Facebook's React](http://facebook.github.io/react/).
+
+Om allows users to represent their UIs simply as
+[EDN](http://github.com/edn-format/edn). Because ClojureScript data is
+immutable data, Om can always rapidly re-render the UI from the
+root. Thus Om UIs are out of the box snapshotable, and undoable and
+these operations have no implementation complexity and little
+overhead.
 
 ## Example
 
