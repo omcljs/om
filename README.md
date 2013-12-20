@@ -27,14 +27,33 @@ overhead.
 An implementation of [TodoMVC](http://todomvc.com) implemented in Om
 [exists here](http://github.com/swannodette/todomvc/blob/gh-pages/labs/architecture-examples/om/src/todomvc/app.cljs).
 
+## Documention
+
+There's no commitment yet to an API. Still, the code has fairly
+verbose docstrings for the existing functionality.
+
 ## Using it
 
-Om is pre-alpha software. You need to clone ClojureScript from
-master and install it via `script/build`. Then clone the Om repo
-and install it locally with `lein install`.
+Om is pre-alpha software.
 
-For local development your [lein-cljsbuild](http://github.com/emezeske/lein-cljsbuild) settings should look something like
-this:
+Make sure you have [Leiningen](http://leiningen.org/)
+installed, then clone the Om repo and install it locally with `lein
+install`.
+
+Your `project.clj` should include something like the following:
+
+```clj
+(defproject foo "0.1.0-SPAPSHOT"
+  ...
+  :dependencies [[org.clojure/clojure "1.5.1"]
+                 [org.clojure/clojurescript "0.0-2127"]
+                 [om "0.1.0-SNAPSHOT"]]
+  ...)
+```
+
+For local development your
+[lein-cljsbuild](http://github.com/emezeske/lein-cljsbuild) settings
+should look something like this:
 
 ```clj
 :cljsbuild { 
