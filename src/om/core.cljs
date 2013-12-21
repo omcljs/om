@@ -169,7 +169,7 @@
       (sequential? sorm)
       (let [data    (get-in cursor sorm)
             cursor' (with-meta data (update-in (meta cursor) [::path] into sorm))]
-        (pure #js {:value data} (f cursor)))
+        (pure #js {:value data} (f cursor')))
 
       (let [{:keys [path key react-key opts]} sorm
             dataf   (get sorm :fn)
