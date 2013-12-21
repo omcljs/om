@@ -145,6 +145,7 @@
    keys are allowed:
 
      :path      - the relative path in the tree to build the component with
+     :abs-path  - an absolute path from the root
      :key       - a keyword that should be used to look up the key used by
                   React itself when rendering sequential things.
      :react-key - an explicit react key
@@ -170,16 +171,18 @@
             cursor' (with-meta data (update-in (meta cursor) [::path] into sorm))]
         (pure #js {:value data} (f cursor)))
 
-      :else
       (let [{:keys [path key react-key opts]} sorm
             dataf   (get sorm :fn)
+            path    (if (nil? path) (:abs-path opts))
             data    (get-in cursor path)
             data    (if-not (nil? dataf) (dataf data) data)
             rkey    (if-not (nil? key)
                       (get data key)
                       (if-not (nil? react-key)
                         react-key))
-            cursor' (with-meta data (update-in (meta cursor) [::path] into path))]
+            cursor' (if (contains? sorm :abs-path)
+                      (with-meta data (assoc (meta cursor) ::path path))
+                      (with-meta data (update-in (meta cursor) [::path] into path)))]
         (pure #js {:value data :key rkey}
           (if (nil? opts)
             (f cursor')
