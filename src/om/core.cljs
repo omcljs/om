@@ -218,7 +218,7 @@
 (defn get-node
   "A helper function to get at React refs. Given a owning pure node
   extract the ref specified by name. Note the life cycle protocol methods
-  all pass the owner as argument, ie. IRender."
+  all pass the owner as an argument, ie. IRender."
   [owner name]
   (.getDOMNode (aget (.-refs owner) name)))
 
