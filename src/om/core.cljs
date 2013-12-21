@@ -171,6 +171,7 @@
             cursor' (with-meta data (update-in (meta cursor) [::path] into sorm))]
         (pure #js {:value data} (f cursor')))
 
+      :else
       (let [{:keys [path key react-key opts]} sorm
             dataf   (get sorm :fn)
             path    (if (nil? path) (:abs-path opts))
