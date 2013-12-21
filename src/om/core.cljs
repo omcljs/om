@@ -150,7 +150,7 @@
      :react-key - an explicit react key
      :fn        - a function to apply to the data at the relative path before
                   invoking f.
-     :opts      - a map of options to pass to component.
+     :opts      - a map of options to pass to the component.
 
    Example:
 
