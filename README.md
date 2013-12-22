@@ -32,6 +32,14 @@ An implementation of [TodoMVC](http://todomvc.com) implemented in Om
 There's no commitment yet to an API. Still, the code has fairly
 verbose docstrings for the existing functionality.
 
+## HTML Syntax
+
+Om is not opinionated about HTML syntax, third parties can provide the
+preferred flavors over the `React.DOM` api. Alternative syntaxes will
+be listed here:
+
+* [sablono](http://github.com/r0man/sablono), Hiccup-style
+
 ## Using it
 
 Om is pre-alpha software.
