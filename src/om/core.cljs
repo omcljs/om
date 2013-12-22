@@ -224,7 +224,8 @@
   extract the ref specified by name. Note the life cycle protocol methods
   all pass the owner as an argument, ie. IRender."
   [owner name]
-  (.getDOMNode (aget (.-refs owner) name)))
+  (when-let [refs (.-refs owner)]
+    (.getDOMNode (aget refs name))))
 
 (defn set-state!
   "EXPERIMENTAL"
