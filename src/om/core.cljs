@@ -174,7 +174,7 @@
       :else
       (let [{:keys [path key react-key opts]} sorm
             dataf   (get sorm :fn)
-            path    (if (nil? path) (:abs-path opts))
+            path    (if (nil? path) (:abs-path sorm) path)
             data    (get-in cursor path)
             data    (if-not (nil? dataf) (dataf data) data)
             rkey    (if-not (nil? key)
