@@ -72,7 +72,7 @@ should look something like this:
               :output-dir "out"
               :optimizations :none
               :source-map true
-              :externs ["om/externs/react.js"]}}]}
+              :externs ["react/externs/react.js"]}}]}
 ```
 
 Your local development markup should include something like the following:
@@ -95,8 +95,8 @@ like this:
               :output-to "main.js"
               :optimizations :advanced
               :pretty-print false
-              :preamble ["om/react.min.js"]
-              :externs ["om/externs/react.js"]
+              :preamble ["react/react.min.js"]
+              :externs ["react/externs/react.js"]
               :closure-warnings
               {:non-standard-jsdoc :off}}}]}
 ```
