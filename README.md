@@ -102,3 +102,14 @@ like this:
 ```
 
 This will generate a single file `main.js`.
+
+## Contributing
+
+No pull requests at this time please.
+
+Om is still in the design phase so enhancements are low
+priority. However, bug reports are welcome for the existing
+functionality.
+
+For a sense of where Om is going the existing issues give a rough
+idea.
