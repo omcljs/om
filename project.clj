@@ -7,7 +7,8 @@
   :source-paths  ["src"]
 
   :dependencies [[org.clojure/clojure "1.5.1"]
-                 [org.clojure/clojurescript "0.0-2120"]]
+                 [org.clojure/clojurescript "0.0-2127"]
+                 [com.facebook/react "0.8.0"]]
 
   :plugins [[lein-cljsbuild "1.0.0"]]
 
