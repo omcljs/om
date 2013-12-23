@@ -18,7 +18,7 @@
      :render
      (fn []
        (this-as this
-         (.transferPropsTo
+         (.transferPropsTo this
            ;; NOTE: if switch to macro we remove a closure allocation
            (ctor #js {:value (.. this -state -value)}))))}))
 
