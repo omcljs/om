@@ -10,17 +10,23 @@
     {:getInitialState
      (fn []
        (this-as this
-         #js {:value (.. this -props -value)}))
+         #js {:value (aget (.-props this) "value")}))
+     :onChange
+     (fn [e]
+       (this-as this
+         ((aget (.-props this) "onChange") e)
+         (.setState this #js {:value (. e -target -value)})))
      :componentWillReceiveProps
      (fn [new-props]
        (this-as this
-         (.setState this #js {:value (.-value new-props)})))
+         (.setState this #js {:value (aget new-props "value")})))
      :render
      (fn []
        (this-as this
          (.transferPropsTo this
            ;; NOTE: if switch to macro we remove a closure allocation
-           (ctor #js {:value (.. this -state -value)}))))}))
+           (ctor #js {:value (aget (.-state this) "value")
+                      :onChange (aget this "onChange")}))))}))
 
 (def input (wrap-form-element js/React.DOM.input))
 
