@@ -15,7 +15,7 @@
      (fn [e]
        (this-as this
          ((aget (.-props this) "onChange") e)
-         (.setState this #js {:value (. e -target -value)})))
+         (.setState this #js {:value (.. e -target -value)})))
      :componentWillReceiveProps
      (fn [new-props]
        (this-as this
