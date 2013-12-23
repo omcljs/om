@@ -52,7 +52,6 @@
     i
     iframe
     img
-    input
     ins
     kbd
     keygen
@@ -97,7 +96,6 @@
     table
     tbody
     td
-    textarea
     tfoot
     th
     thead
