@@ -78,7 +78,7 @@ should look something like this:
 Your local development markup should include something like the following:
 
 ```html
-<script src="http://fb.me/react-0.5.1.js"></script>
+<script src="http://fb.me/react-0.8.0.js"></script>
 <script src="out/goog/base.js" type="text/javascript"></script>
 <script src="main.js" type="text/javascript"></script>
 <script type="text/javascript">goog.require("main.core");</script>
