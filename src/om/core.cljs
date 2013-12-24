@@ -55,8 +55,11 @@
              (let [c (.. this -props -children)]
                (if (satisfies? IShouldUpdate c)
                  (should-update c this next-props next-state)
-                 (not (identical? (aget (.-props this) "value")
-                                  (aget next-props "value")))))))
+                 (or (not (identical? (aget (.-props this) "__om_value")
+                                      (aget next-props "__om_value")))
+                     ;; since we don't use setState, next-state not useful
+                     (not (identical? (aget (.-state this) "__om_state")
+                                      (aget (.-state this) "__om_pending_state"))))))))
          :componentWillMount
          (fn []
            (this-as this
@@ -80,7 +83,13 @@
            (this-as this
              (let [c (.. this -props -children)]
                (when (satisfies? IWillUpdate c)
-                 (will-update c this next-props next-state)))))
+                 (will-update c this next-props next-state)))
+             ;; merge any pending state
+             (let [state (.-state this)]
+               (when-let [pending-state (aget state "__om_pending_state")]
+                 (doto state
+                   (aset "__om_state" pending-state)
+                   (aset "__om_pending_state" nil))))))
          :componentDidUpdate
          (fn [prev-props prev-state root-node]
            (this-as this
@@ -115,9 +124,13 @@
                 (atom value))
         rootf (fn []
                 (set! refresh-queued false)
-                (let [path []]
+                (let [path []
+                      state-value @state]
                   (dom/render
-                    (pure #js {:value @state}
+                    (pure #js {:__om_tvalue state-value
+                               :__om_value state-value
+                               :__om_app_state state
+                               :__om_path path}
                       (f (with-meta @state {::state state ::path path})))
                     target)))]
     (add-watch state ::root
@@ -166,27 +179,45 @@
   ([f cursor sorm]
     (cond
       (nil? sorm)
-      (pure #js {:value cursor} (f cursor))
+      (let [m (meta cursor)]
+        (pure #js {:__om_tvalue cursor
+                   :__om_value cursor
+                   :__om_app_state (::state m)
+                   :__om_path (::path m)}
+          (f cursor)))
 
       (sequential? sorm)
       (let [data    (get-in cursor sorm)
-            cursor' (with-meta data (update-in (meta cursor) [::path] into sorm))]
-        (pure #js {:value data} (f cursor')))
+            m       (meta cursor)
+            path    (into (::path m) sorm)
+            cursor' (with-meta data (assoc m ::path path))]
+        (pure #js {:__om_tvalue data
+                   :__om_value data
+                   :__om_app_state (::state m)
+                   :__om_path path}
+          (f cursor')))
 
       :else
       (let [{:keys [path key react-key opts]} sorm
             dataf   (get sorm :fn)
             path    (if (nil? path) (:abs-path sorm) path)
             data    (get-in cursor path)
+            tdata   data
             data    (if-not (nil? dataf) (dataf data) data)
             rkey    (if-not (nil? key)
                       (get data key)
                       (if-not (nil? react-key)
                         react-key))
-            cursor' (if (contains? sorm :abs-path)
-                      (with-meta data (assoc (meta cursor) ::path path))
-                      (with-meta data (update-in (meta cursor) [::path] into path)))]
-        (pure #js {:value data :key rkey}
+            m       (meta cursor)
+            path    (if (contains? sorm :abs-path)
+                      path
+                      (into (::path m) path))
+            cursor' (with-meta data (assoc m ::path path))]
+        (pure #js {:__om_tvalue tdata
+                   :__om_value data
+                   :__om_app_state (::state m)
+                   :__om_path path
+                   :key rkey}
           (if (nil? opts)
             (f cursor')
             (f cursor' opts)))))))
@@ -230,12 +261,28 @@
     (.getDOMNode (aget refs name))))
 
 (defn set-state!
-  "EXPERIMENTAL"
+  "Takes a pure owning component, a sequential list of keys and value and
+   sets the state of the component. Conceptually analagous to React
+   setState."
   [owner ks v]
-  (aset (.-state owner) "__om_state"
-    (assoc-in (aget (.-state owner) "__om_state") ks v)))
+  (let [props     (.-props owner)
+        state     (.-state owner)
+        app-state (aget props "__om_app_state")
+        path      (aget props "__om_path")
+        value     (aget props "__om_tvalue")
+        pstate    (or (aget state "__om_pending_state")
+                      (aget state "__om_state"))]
+    (aset state "__om_pending_state" (assoc-in pstate ks v))
+    ;; invalidate path to component
+    (if-not (empty? path)
+      (swap! app-state assoc-in path value)
+      (reset! app-state value))))
 
 (defn get-state
-  "EXPERIMENTAL"
-  [owner ks]
-  (get-in (aget (.-state owner) "__om_state") ks))
+  "Takes a pure owning component and sequential list of keys and returns
+   a property if it exists. Will never return pending state values."
+  ([owner] (aget (.-state owner) "__om_state"))
+  ([owner ks]
+    (if-not (empty? ks)
+      (get-in (aget (.-state owner) "__om_state") ks)
+      (get-state owner))))
