@@ -124,9 +124,11 @@
                 (atom value))
         rootf (fn []
                 (set! refresh-queued false)
-                (let [path []]
+                (let [path []
+                      state-value @state]
                   (dom/render
-                    (pure #js {:__om_value @state
+                    (pure #js {:__om_tvalue state-value
+                               :__om_value state-value
                                :__om_app_state state
                                :__om_path path}
                       (f (with-meta @state {::state state ::path path})))
@@ -178,7 +180,8 @@
     (cond
       (nil? sorm)
       (let [m (meta cursor)]
-        (pure #js {:__om_value cursor
+        (pure #js {:__om_tvalue cursor
+                   :__om_value cursor
                    :__om_app_state (::state m)
                    :__om_path (::path m)}
           (f cursor)))
@@ -188,7 +191,8 @@
             m       (meta cursor)
             path    (into (::path m) sorm)
             cursor' (with-meta data (assoc m ::path path))]
-        (pure #js {:__om_value data
+        (pure #js {:__om_tvalue data
+                   :__om_value data
                    :__om_app_state (::state m)
                    :__om_path path}
           (f cursor')))
@@ -198,6 +202,7 @@
             dataf   (get sorm :fn)
             path    (if (nil? path) (:abs-path sorm) path)
             data    (get-in cursor path)
+            tdata   data
             data    (if-not (nil? dataf) (dataf data) data)
             rkey    (if-not (nil? key)
                       (get data key)
@@ -208,7 +213,8 @@
                       path
                       (into (::path m) path))
             cursor' (with-meta data (assoc m ::path path))]
-        (pure #js {:__om_value data
+        (pure #js {:__om_tvalue tdata
+                   :__om_value data
                    :__om_app_state (::state m)
                    :__om_path path
                    :key rkey}
@@ -263,7 +269,7 @@
         state     (.-state owner)
         app-state (aget props "__om_app_state")
         path      (aget props "__om_path")
-        value     (aget props "__om_value")
+        value     (aget props "__om_tvalue")
         pstate    (or (aget state "__om_pending_state")
                       (aget state "__om_state"))]
     (aset state "__om_pending_state" (assoc-in pstate ks v))
