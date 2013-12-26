@@ -13,9 +13,10 @@
   :plugins [[lein-cljsbuild "1.0.0"]]
 
   :cljsbuild { 
-    :builds [{:id "dev"
-              :source-paths ["src"]
+    :builds [{:id "simple"
+              :source-paths ["src" "test"]
               :compiler {
-                :output-to "om.dev.js"
-                :output-dir "out"
-                :optimizations :none}}]})
+                :preamble ["react/react.min.js"]
+                :output-to "script/tests.simple.js"
+                :output-wrapper false
+                :optimizations :simple}}]})

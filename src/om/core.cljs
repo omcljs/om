@@ -207,6 +207,7 @@
   (satisfies? ICursor x))
 
 (defn to-cursor
+  ([val] (to-cursor val nil []))
   ([val state] (to-cursor val state []))
   ([val state path]
     (cond
