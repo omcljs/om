@@ -71,8 +71,7 @@ should look something like this:
               :output-to "main.js"
               :output-dir "out"
               :optimizations :none
-              :source-map true
-              :externs ["react/externs/react.js"]}}]}
+              :source-map true}}]}
 ```
 
 Your local development markup should include something like the following:
