@@ -108,6 +108,9 @@
 
 (defprotocol ICursor)
 
+(defn cursor? [x]
+  (satisfies? ICursor x))
+
 (deftype MapCursor [value state path]
   ICursor
   ICounted
@@ -144,10 +147,12 @@
   (-dissoc [_ k]
     (MapCursor. (-dissoc value k) state path))
   IEquiv
-  (-equiv [this other]
-    (and (= (.-value this) (.-value other))
-         (= (.-state this) (.-state other))
-         (= (.-path this) (.-path other))))
+  (-equiv [_ other]
+    (if (cursor? other)
+      (and (= value (.-value other))
+           (= state (.-state other))
+           (= path (.-path other)))
+      (= value other)))
   IPrintWithWriter
   (-pr-writer [_ writer opts]
     (-pr-writer value writer opts)))
@@ -195,16 +200,15 @@
   (-pop [_]
     (to-cursor (-pop value) state path))
   IEquiv
-  (-equiv [this other]
-    (and (= (.-value this) (.-value other))
-         (= (.-state this) (.-state other))
-         (= (.-path this) (.-path other))))
+  (-equiv [_ other]
+    (if (cursor? other)
+      (and (= value (.-value other))
+           (= state (.-state other))
+           (= path (.-path other)))
+      (= value other)))
   IPrintWithWriter
   (-pr-writer [_ writer opts]
     (-pr-writer value writer opts)))
-
-(defn cursor? [x]
-  (satisfies? ICursor x))
 
 (defn to-cursor
   ([val] (to-cursor val nil []))
