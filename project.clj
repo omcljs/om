@@ -7,7 +7,7 @@
   :source-paths  ["src"]
 
   :dependencies [[org.clojure/clojure "1.5.1"]
-                 [org.clojure/clojurescript "0.0-2127" :scope "provided"]
+                 [org.clojure/clojurescript "0.0-2131" :scope "provided"]
                  [com.facebook/react "0.8.0.1"]]
 
   :plugins [[lein-cljsbuild "1.0.0"]]
@@ -16,6 +16,6 @@
     :builds [{:id "dev"
               :source-paths ["src"]
               :compiler {
-                :output-to "dev.js"
+                :output-to "om.dev.js"
                 :output-dir "out"
                 :optimizations :none}}]})

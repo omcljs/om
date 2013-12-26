@@ -101,6 +101,123 @@
            (this-as this
              (render (.. this -props -children) this)))}))
 
+;; =============================================================================
+;; Cursors
+
+(declare to-cursor)
+
+(defprotocol ICursor)
+
+(deftype MapCursor [value state path]
+  ICursor
+  ICounted
+  (-count [_]
+    (-count value))
+  ICollection
+  (-conj [_ o]
+    (MapCursor. (-conj value o) state path))
+  ILookup
+  (-lookup [this k]
+    (-lookup this k nil))
+  (-lookup [_ k not-found]
+    (let [v (-lookup value k)]
+      (if-not (nil? v)
+        (to-cursor v state (conj path k))
+        not-found)))
+  ISeqable
+  (-seq [this]
+    (map (fn [[k v]] [k (to-cursor v state (conj path k))]) value))
+  ISeq
+  (-first [this]
+    (-first (-seq this)))
+  (-rest [this]
+    (-rest (-seq this)))
+  INext
+  (-next [this]
+    (-next (-seq this)))
+  IAssociative
+  (-contains-key? [_ k]
+    (-contains-key? value k))
+  (-assoc [_ k v]
+    (MapCursor. (-assoc value k v) state path))
+  IMap
+  (-dissoc [_ k]
+    (MapCursor. (-dissoc value k) state path))
+  IEquiv
+  (-equiv [this other]
+    (and (= (.-value this) (.-value other))
+         (= (.-state this) (.-state other))
+         (= (.-path this) (.-path other))))
+  IPrintWithWriter
+  (-pr-writer [_ writer opts]
+    (-pr-writer value writer opts)))
+
+(deftype VectorCursor [value state path]
+  ICursor
+  ISequential
+  ICounted
+  (-count [_]
+    (-count value))
+  ICollection
+  (-conj [_ o]
+    (VectorCursor. (-conj value o) state path))
+  ILookup
+  (-lookup [this n]
+    (-nth this n nil))
+  (-lookup [this n not-found]
+    (-nth this n not-found))
+  IIndexed
+  (-nth [_ n]
+    (to-cursor (-nth value n) state (conj path n)))
+  (-nth [_ n not-found]
+    (if (< n (-count value))
+      (to-cursor (-nth value n) state (conj path n))
+      not-found))
+  ISeqable
+  (-seq [this]
+    (map (fn [v i] (to-cursor v state (conj path i))) value (range)))
+  ISeq
+  (-first [this]
+    (-first (-seq this)))
+  (-rest [this]
+    (-rest (-seq this)))
+  INext
+  (-next [this]
+    (-next (-seq this)))
+  IAssociative
+  (-contains-key? [_ k]
+    (-contains-key? value k))
+  (-assoc [_ n v]
+    (to-cursor (-assoc-n value n v) state path))
+  IStack
+  (-peek [_]
+    (to-cursor (-peek value) state path))
+  (-pop [_]
+    (to-cursor (-pop value) state path))
+  IEquiv
+  (-equiv [this other]
+    (and (= (.-value this) (.-value other))
+         (= (.-state this) (.-state other))
+         (= (.-path this) (.-path other))))
+  IPrintWithWriter
+  (-pr-writer [_ writer opts]
+    (-pr-writer value writer opts)))
+
+(defn cursor? [x]
+  (satisfies? ICursor x))
+
+(defn to-cursor
+  ([val state] (to-cursor val state []))
+  ([val state path]
+    (cond
+      (cursor? val) val
+      (map? val) (MapCursor. val state path)
+      (vector? val) (VectorCursor. val state path)
+      :else val)))
+
+;; =============================================================================
+;; API
+
 (def ^:private refresh-queued false)
 
 (defn root
