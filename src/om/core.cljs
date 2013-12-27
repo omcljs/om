@@ -247,13 +247,10 @@
         rootf (fn []
                 (set! refresh-queued false)
                 (let [path []
-                      state-value @state]
+                      state-value @state
+                      cursor (to-cursor state-value)]
                   (dom/render
-                    (pure #js {:__om_tvalue state-value
-                               :__om_value state-value
-                               :__om_app_state state
-                               :__om_path path}
-                      (f (with-meta @state {::state state ::path path})))
+                    (pure #js {:__om_cursor cursor} (f cursor))
                     target)))]
     (add-watch state ::root
       (fn [_ _ _ _]
@@ -266,23 +263,18 @@
 
 (defn build
   "Builds a Om component. Takes an IRender instance returning function
-   f, a cursor, and an optional third argument which may be a vector
-   representing the path or a map of build specifications. 
+   f, a cursor, and an optional third argument which may be a map of
+   build specifications.
 
    f - is a function of two arguments the first argument will be the
    cursor and the second argument will be a map of optional values
    passed to build. f must return at a minimum an IRender instance,
    this instance may implement other React life cycle protocols.
 
-   cursor - an immutable value annotated with :om.core/state and
-   :om.core/path
+   cursor - a ICursor instance
 
-   sorm - If a vector, specifies the relative path into the tree that
-   the component will be built from. If a map the following
-   keys are allowed:
+   m - a map the following keys are allowed:
 
-     :path      - the relative path in the tree to build the component with
-     :abs-path  - an absolute path from the root
      :key       - a keyword that should be used to look up the key used by
                   React itself when rendering sequential things.
      :react-key - an explicit react key
@@ -293,52 +285,24 @@
    Example:
 
      (build list-of-gadgets cursor
-        {:path [:gadgets]
-         :opts {:event-chan ...
+        {:opts {:event-chan ...
                 :narble ...}})
   "
   ([f cursor] (build f cursor nil))
-  ([f cursor sorm]
+  ([f cursor m]
     (cond
-      (nil? sorm)
-      (let [m (meta cursor)]
-        (pure #js {:__om_tvalue cursor
-                   :__om_value cursor
-                   :__om_app_state (::state m)
-                   :__om_path (::path m)}
-          (f cursor)))
-
-      (sequential? sorm)
-      (let [data    (get-in cursor sorm)
-            m       (meta cursor)
-            path    (into (::path m) sorm)
-            cursor' (with-meta data (assoc m ::path path))]
-        (pure #js {:__om_tvalue data
-                   :__om_value data
-                   :__om_app_state (::state m)
-                   :__om_path path}
-          (f cursor')))
+      (nil? m)
+      (pure #js {:__om_cursor cursor} (f cursor))
 
       :else
-      (let [{:keys [path key react-key opts]} sorm
+      (let [{:keys [key react-key opts]} sorm
             dataf   (get sorm :fn)
-            path    (if (nil? path) (:abs-path sorm) path)
-            data    (get-in cursor path)
-            tdata   data
-            data    (if-not (nil? dataf) (dataf data) data)
+            cursor' (if-not (nil? dataf) (dataf cursor) cursor)
             rkey    (if-not (nil? key)
-                      (get data key)
+                      (get cursor' key)
                       (if-not (nil? react-key)
-                        react-key))
-            m       (meta cursor)
-            path    (if (contains? sorm :abs-path)
-                      path
-                      (into (::path m) path))
-            cursor' (with-meta data (assoc m ::path path))]
-        (pure #js {:__om_tvalue tdata
-                   :__om_value data
-                   :__om_app_state (::state m)
-                   :__om_path path
+                        react-key))]
+        (pure #js {:__om_cursor cursor'
                    :key rkey}
           (if (nil? opts)
             (f cursor')
@@ -350,29 +314,22 @@
    value in the tree. If only given two arguments, assumed no list
    of keys was specified. An Om re-render will be triggered."
   ([cursor f]
-    (let [m (meta cursor)
-          path (::path m)]
+    (let [path (.-path cursor)]
       (if (empty? path)
-        (swap! (::state m) f)
-        (swap! (::state m) update-in path f))))
+        (swap! (.-state cursor) f)
+        (swap! (.-state cursor) update-in path f))))
   ([cursor ks f]
-    (let [m (meta cursor)]
-      (swap! (::state m) update-in (into (::path m) ks) f)))
+    (swap! (.-state cursor) update-in (into (.-path cursor) ks) f))
   ([cursor ks f a]
-    (let [m (meta cursor)]
-      (swap! (::state m) update-in (into (::path m) ks) f a)))
+    (swap! (.-state cursor) update-in (into (.-path cursor) ks) f a))
   ([cursor ks f a b]
-    (let [m (meta cursor)]
-      (swap! (::state m) update-in (into (::path m) ks) f a b)))
+    (swap! (.-state cursor) update-in (into (.-path cursor) ks) f a b))
   ([cursor ks f a b c]
-    (let [m (meta cursor)]
-      (swap! (::state m) update-in (into (::path m) ks) f a b c)))
+    (swap! (.-state cursor) update-in (into (.-path cursor) ks) f a b c))
   ([cursor ks f a b c d]
-    (let [m (meta cursor)]
-      (swap! (::state m) update-in (into (::path m) ks) f a b c d)))
+    (swap! (.-state cursor) update-in (into (.-path cursor) ks) f a b c d))
   ([cursor ks f a b c d & args]
-    (let [m (meta cursor)]
-      (apply swap! (::state m) update-in (into (::path m) ks) f a b c d args))))
+    (apply swap! (.-state cursor) update-in (into (.-path cursor) ks) f a b c d args)))
 
 (defn get-node
   "A helper function to get at React refs. Given a owning pure node
@@ -387,18 +344,15 @@
    sets the state of the component. Conceptually analagous to React
    setState."
   [owner ks v]
-  (let [props     (.-props owner)
-        state     (.-state owner)
-        app-state (aget props "__om_app_state")
-        path      (aget props "__om_path")
-        value     (aget props "__om_tvalue")
-        pstate    (or (aget state "__om_pending_state")
-                      (aget state "__om_state"))]
+  (let [props  (.-props owner)
+        state  (.-state owner)
+        cursor (aget props "__om_cursor")
+        pstate (or (aget state "__om_pending_state")
+                   (aget state "__om_state"))]
     (aset state "__om_pending_state" (assoc-in pstate ks v))
     ;; invalidate path to component
-    (if-not (empty? path)
-      (swap! app-state assoc-in path value)
-      (reset! app-state value))))
+    (when-not (empty? path)
+      (swap! (.-state cursor) update-in (.-path cursor) identity))))
 
 (defn get-state
   "Takes a pure owning component and sequential list of keys and returns
