@@ -302,10 +302,10 @@
 
 (defn build-all
   ([f xs] (build-all f xs nil))
-  ([f xs opts]
+  ([f xs m]
     (into-array
       (map (fn [x i]
-             (build f x (assoc opts ::index i)))
+             (build f x (assoc m ::index i)))
         xs (range)))))
 
 (defn update!
