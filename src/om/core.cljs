@@ -131,21 +131,13 @@
   (-lookup [this k]
     (-lookup this k nil))
   (-lookup [_ k not-found]
-    (let [v (-lookup value k)]
-      (if-not (nil? v)
+    (let [v (-lookup value k not-found)]
+      (if-not (= v not-found)
         (to-cursor v state (conj path k))
         not-found)))
   ISeqable
   (-seq [this]
     (map (fn [[k v]] [k (to-cursor v state (conj path k))]) value))
-  ISeq
-  (-first [this]
-    (-first (-seq this)))
-  (-rest [this]
-    (-rest (-seq this)))
-  INext
-  (-next [this]
-    (-next (-seq this)))
   IAssociative
   (-contains-key? [_ k]
     (-contains-key? value k))
