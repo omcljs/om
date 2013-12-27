@@ -238,9 +238,9 @@
    function f, and a DOM target. Installs an Om/React render loop. f
    must return an instance that at a minimum implements IRender (it
    may implement other React life cycle protocols). f must take a
-   single argument which will be the root cursor. A cursor is simply
-   data that has been annotated via metadata with state and path
-   information - :om.core/state and :om.core/path respectively.
+   single argument which will be the root cursor. A cursor is just
+   the original data wrapped in an ICursor instance which maintains
+   path information.
 
    Example:
 
@@ -279,7 +279,7 @@
    passed to build. f must return at a minimum an IRender instance,
    this instance may implement other React life cycle protocols.
 
-   cursor - a ICursor instance
+   cursor - an ICursor instance
 
    m - a map the following keys are allowed:
 
