@@ -55,11 +55,14 @@
              (let [c (.. this -props -children)]
                (if (satisfies? IShouldUpdate c)
                  (should-update c this next-props next-state)
-                 (or (not (identical? (.-value (aget (.-props this) "__om_cursor"))
-                                      (.-value (aget next-props "__om_cursor"))))
-                     ;; since we don't use setState, next-state not useful
-                     (not (identical? (aget (.-state this) "__om_state")
-                                      (aget (.-state this) "__om_pending_state"))))))))
+                 (cond
+                   (not (identical? (.-value (aget (.-props this) "__om_cursor"))
+                                    (.-value (aget next-props "__om_cursor"))))
+                   true
+                   (not (identical? (aget (.-state this) "__om_state")
+                                    (aget (.-state this) "__om_pending_state")))
+                   true
+                   :else false)))))
          :componentWillMount
          (fn []
            (this-as this
@@ -352,7 +355,8 @@
                    (aget state "__om_state"))]
     (aset state "__om_pending_state" (assoc-in pstate ks v))
     ;; invalidate path to component
-    (when-not (empty? path)
+    (if (empty? path)
+      (swap! (.-state cursor) identity)
       (swap! (.-state cursor) update-in path identity))))
 
 (defn get-state
@@ -360,6 +364,6 @@
    a property if it exists. Will never return pending state values."
   ([owner] (aget (.-state owner) "__om_state"))
   ([owner ks]
-    (if-not (empty? ks)
-      (get-in (aget (.-state owner) "__om_state") ks)
-      (get-state owner))))
+    (if (empty? ks)
+      (get-state owner)
+      (get-in (aget (.-state owner) "__om_state") ks))))
