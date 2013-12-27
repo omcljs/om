@@ -317,11 +317,13 @@
             (f cursor')
             (f cursor' opts)))))))
 
-(defn build-all [f xs opts]
-  (into-array
-    (map (fn [x i]
-           (build f x (assoc opts ::index i)))
-      xs (range))))
+(defn build-all
+  ([f xs] (build-all f xs nil))
+  ([f xs opts]
+    (into-array
+      (map (fn [x i]
+             (build f x (assoc opts ::index i)))
+        xs (range)))))
 
 (defn update!
   "Given a cursor, a list of keys ks, mutate the tree at the path
