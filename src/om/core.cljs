@@ -55,8 +55,8 @@
              (let [c (.. this -props -children)]
                (if (satisfies? IShouldUpdate c)
                  (should-update c this next-props next-state)
-                 (or (not (identical? (aget (.-props this) "__om_value")
-                                      (aget next-props "__om_value")))
+                 (or (not (identical? (.-value (aget (.-props this) "__om_cursor"))
+                                      (.-value (aget next-props "__om_cursor"))))
                      ;; since we don't use setState, next-state not useful
                      (not (identical? (aget (.-state this) "__om_state")
                                       (aget (.-state this) "__om_pending_state"))))))))
@@ -295,8 +295,8 @@
       (pure #js {:__om_cursor cursor} (f cursor))
 
       :else
-      (let [{:keys [key react-key opts]} sorm
-            dataf   (get sorm :fn)
+      (let [{:keys [key react-key opts]} m
+            dataf   (get m :fn)
             cursor' (if-not (nil? dataf) (dataf cursor) cursor)
             rkey    (if-not (nil? key)
                       (get cursor' key)
@@ -347,12 +347,13 @@
   (let [props  (.-props owner)
         state  (.-state owner)
         cursor (aget props "__om_cursor")
+        path   (.-path cursor)
         pstate (or (aget state "__om_pending_state")
                    (aget state "__om_state"))]
     (aset state "__om_pending_state" (assoc-in pstate ks v))
     ;; invalidate path to component
     (when-not (empty? path)
-      (swap! (.-state cursor) update-in (.-path cursor) identity))))
+      (swap! (.-state cursor) update-in path identity))))
 
 (defn get-state
   "Takes a pure owning component and sequential list of keys and returns
