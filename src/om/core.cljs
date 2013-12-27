@@ -246,9 +246,9 @@
                 (atom value))
         rootf (fn []
                 (set! refresh-queued false)
-                (let [path []
-                      state-value @state
-                      cursor (to-cursor state-value)]
+                (let [path   []
+                      value  @state
+                      cursor (to-cursor value state)]
                   (dom/render
                     (pure #js {:__om_cursor cursor} (f cursor))
                     target)))]
