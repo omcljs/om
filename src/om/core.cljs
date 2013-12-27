@@ -52,16 +52,21 @@
          :shouldComponentUpdate
          (fn [next-props next-state]
            (this-as this
-             (let [c (.. this -props -children)]
+             (let [props (.-props this)
+                   c     (.-children props)]
                (if (satisfies? IShouldUpdate c)
                  (should-update c this next-props next-state)
                  (cond
-                   (not (identical? (.-value (aget (.-props this) "__om_cursor"))
+                   (not (identical? (.-value (aget props "__om_cursor"))
                                     (.-value (aget next-props "__om_cursor"))))
                    true
                    (not (identical? (aget (.-state this) "__om_state")
                                     (aget (.-state this) "__om_pending_state")))
                    true
+
+                   (not (== (aget props "__om_index") (aget next-props "__om_index")))
+                   true
+
                    :else false)))))
          :componentWillMount
          (fn []
@@ -306,10 +311,17 @@
                       (if-not (nil? react-key)
                         react-key))]
         (pure #js {:__om_cursor cursor'
+                   :__om_index (::index m)
                    :key rkey}
           (if (nil? opts)
             (f cursor')
             (f cursor' opts)))))))
+
+(defn build-all [f xs opts]
+  (into-array
+    (map (fn [x i]
+           (build f x (assoc opts ::index i)))
+      xs (range))))
 
 (defn update!
   "Given a cursor, a list of keys ks, mutate the tree at the path
