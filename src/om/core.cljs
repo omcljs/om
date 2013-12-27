@@ -180,7 +180,8 @@
       not-found))
   ISeqable
   (-seq [this]
-    (map (fn [v i] (to-cursor v state (conj path i))) value (range)))
+    (when (pos? (count value))
+      (map (fn [v i] (to-cursor v state (conj path i))) value (range))))
   IAssociative
   (-contains-key? [_ k]
     (-contains-key? value k))
