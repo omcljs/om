@@ -303,13 +303,12 @@
       (pure #js {:__om_cursor cursor} (f cursor))
 
       :else
-      (let [{:keys [key react-key opts]} m
+      (let [{:keys [key opts]} m
             dataf   (get m :fn)
             cursor' (if-not (nil? dataf) (dataf cursor) cursor)
             rkey    (if-not (nil? key)
                       (get cursor' key)
-                      (if-not (nil? react-key)
-                        react-key))]
+                      (get m :react-key))]
         (pure #js {:__om_cursor cursor'
                    :__om_index (::index m)
                    :key rkey}
