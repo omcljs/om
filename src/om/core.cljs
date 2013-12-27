@@ -181,14 +181,6 @@
   ISeqable
   (-seq [this]
     (map (fn [v i] (to-cursor v state (conj path i))) value (range)))
-  ISeq
-  (-first [this]
-    (-first (-seq this)))
-  (-rest [this]
-    (-rest (-seq this)))
-  INext
-  (-next [this]
-    (-next (-seq this)))
   IAssociative
   (-contains-key? [_ k]
     (-contains-key? value k))
