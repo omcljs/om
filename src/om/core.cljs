@@ -309,7 +309,7 @@
              (build f x (assoc m ::index i)))
         xs (range)))))
 
-(defn update!
+(defn transact!
   "Given a cursor, a list of keys ks, mutate the tree at the path
    specified by the cursor + the keys by applying f to the specified
    value in the tree. If only given two arguments, assumed no list
