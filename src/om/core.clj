@@ -23,5 +23,5 @@
        ~@body)
      (throw
        (js/Error.
-         (str "Cannot manipulate cursor outside of render, only "
+         (str "Cannot manipulate cursor outside of render phase, only "
               "om.core/transact! and om.core/read operations allowed")))))
