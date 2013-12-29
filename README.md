@@ -25,8 +25,9 @@ overhead.
 ```
 
 The repo includes several simple examples you can build yourself. If
-you view the `project.clj` you will see their build identifiers. To
-build an example run:
+you view the `project.clj` you will see their build
+identifiers. Assuming you have [Leiningen](http://leiningen.org/)
+installed, to build an example run:
 
 ```
 lein cljsbuild once build-id
