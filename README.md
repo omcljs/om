@@ -112,3 +112,9 @@ functionality.
 
 For a sense of where Om is going the existing issues give a rough
 idea.
+
+## Copyright and license
+
+Copyright © 2013-2014 David Nolen
+
+Licensed under the EPL (see the file epl.html).
