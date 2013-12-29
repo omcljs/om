@@ -10,7 +10,7 @@ root. Thus Om UIs are out of the box snapshotable and undoable and
 these operations have no implementation complexity and little
 overhead.
 
-## Example
+## Examples
 
 ```clj
 (ns example
@@ -24,7 +24,16 @@ overhead.
 (om/root {} widget js/document.body)
 ```
 
-An implementation of [TodoMVC](http://todomvc.com) implemented in Om
+The repo includes several simple examples you can build yourself. If
+you view the `project.clj` you will see their build identifiers. To
+build an example run:
+
+``` lein cljsbuild once build-id ```
+
+Then open the corresponding `index.html` in your favorite browser.
+
+For a more fleshed-out example, please see the Om implementation of
+[TodoMVC](http://todomvc.com)
 [exists here](http://github.com/swannodette/todomvc/blob/gh-pages/labs/architecture-examples/om/src/todomvc/app.cljs).
 
 ## Documention
