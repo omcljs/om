@@ -10,7 +10,7 @@
                  [org.clojure/clojurescript "0.0-2127" :scope "provided"]
                  [com.facebook/react "0.8.0.1"]]
 
-  :plugins [[lein-cljsbuild "1.0.0"]]
+  :plugins [[lein-cljsbuild "1.0.1"]]
 
   :cljsbuild { 
     :builds [{:id "simple"
