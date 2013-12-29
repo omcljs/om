@@ -10,7 +10,7 @@
   [& body]
   `(reify
      om.core/IRender
-     (~'render [this# _#]
+     (~'render [this#]
        ~@body)))
 
 (defmacro allow-reads [& body]

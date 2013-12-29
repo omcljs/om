@@ -10,28 +10,28 @@
 ;; http://facebook.github.io/react/docs/component-specs.html
 
 (defprotocol IInitState
-  (init-state [this owner]))
+  (init-state [this]))
 
 (defprotocol IShouldUpdate
-  (should-update [this owner next-props next-state]))
+  (should-update [this next-props next-state]))
 
 (defprotocol IWillMount
-  (will-mount [this owner]))
+  (will-mount [this]))
 
 (defprotocol IDidMount
-  (did-mount [this owner node]))
+  (did-mount [this node]))
 
 (defprotocol IWillUnmount
-  (will-unmount [this owner]))
+  (will-unmount [this]))
 
 (defprotocol IWillUpdate
-  (will-update [this owner next-props next-state]))
+  (will-update [this next-props next-state]))
 
 (defprotocol IDidUpdate
-  (did-update [this owner prev-props prev-state root-node]))
+  (did-update [this prev-props prev-state root-node]))
 
 (defprotocol IRender
-  (render [this owner]))
+  (render [this]))
 
 ;; =============================================================================
 ;; A Truly Pure Component
@@ -41,23 +41,29 @@
 ;;
 ;; (Pure. {:foo "bar"} irender-instance)
 
+(defn children [node]
+  (let [c (.. node -props -children)]
+    (if (fn? c)
+      (set! (.. node -props -children) (allow-reads (c node)))
+      c)))
+
 (def ^:private Pure
   (js/React.createClass
     #js {:getInitialState
          (fn []
            (this-as this
-             (let [c (.. this -props -children)]
+             (let [c (children this)]
                #js {:__om_state
                     (merge {}
                       (when (satisfies? IInitState c)
-                        (allow-reads (init-state c this))))})))
+                        (allow-reads (init-state c))))})))
          :shouldComponentUpdate
          (fn [next-props next-state]
            (this-as this
              (let [props (.-props this)
-                   c     (.-children props)]
+                   c     (children this)]
                (if (satisfies? IShouldUpdate c)
-                 (allow-reads (should-update c this next-props next-state))
+                 (allow-reads (should-update c next-props next-state))
                  (cond
                    (not (identical? (.-value (aget props "__om_cursor"))
                                     (.-value (aget next-props "__om_cursor"))))
@@ -73,27 +79,27 @@
          :componentWillMount
          (fn []
            (this-as this
-             (let [c (.. this -props -children)]
+             (let [c (children this)]
                (when (satisfies? IWillMount c)
-                 (allow-reads (will-mount c this))))))
+                 (allow-reads (will-mount c))))))
          :componentDidMount
          (fn [node]
            (this-as this
-             (let [c (.. this -props -children)]
+             (let [c (children this)]
                (when (satisfies? IDidMount c)
-                 (allow-reads (did-mount c this node))))))
+                 (allow-reads (did-mount c node))))))
          :componentWillUnmount
          (fn []
            (this-as this
-             (let [c (.. this -props -children)]
+             (let [c (children this)]
                (when (satisfies? IWillUnmount c)
-                 (allow-reads (will-unmount c this))))))
+                 (allow-reads (will-unmount c))))))
          :componentWillUpdate
          (fn [next-props next-state]
            (this-as this
-             (let [c (.. this -props -children)]
+             (let [c (children this)]
                (when (satisfies? IWillUpdate c)
-                 (allow-reads (will-update c this next-props next-state))))
+                 (allow-reads (will-update c next-props next-state))))
              ;; merge any pending state
              (let [state (.-state this)]
                (when-let [pending-state (aget state "__om_pending_state")]
@@ -103,15 +109,15 @@
          :componentDidUpdate
          (fn [prev-props prev-state root-node]
            (this-as this
-             (let [c (.. this -props -children)]
+             (let [c (children this)]
                (when (satisfies? IDidUpdate c)
                  (allow-reads
-                   (did-update c this prev-props prev-state root-node))))))
+                   (did-update c prev-props prev-state root-node))))))
          :render
          (fn []
            (this-as this
              (allow-reads
-               (render (.. this -props -children) this))))}))
+               (render (children this)))))}))
 
 ;; =============================================================================
 ;; Cursors
@@ -252,7 +258,8 @@
                       value  @state
                       cursor (to-cursor value state)]
                   (dom/render
-                    (pure #js {:__om_cursor cursor} (allow-reads (f cursor)))
+                    (pure #js {:__om_cursor cursor}
+                      (fn [this] (allow-reads (f cursor this))))
                     target)))]
     (add-watch state ::root
       (fn [_ _ _ _]
@@ -294,7 +301,8 @@
   ([f cursor m]
     (cond
       (nil? m)
-      (pure #js {:__om_cursor cursor} (allow-reads (f cursor)))
+      (pure #js {:__om_cursor cursor}
+        (fn [this] (allow-reads (f cursor this))))
 
       :else
       (let [{:keys [key opts]} m
@@ -306,10 +314,9 @@
         (pure #js {:__om_cursor cursor'
                    :__om_index (::index m)
                    :key rkey}
-          (allow-reads
-            (if (nil? opts)
-              (f cursor')
-              (f cursor' opts))))))))
+          (if (nil? opts)
+            (fn [this] (allow-reads (f cursor' this)))
+            (fn [this] (allow-reads (f cursor' this opts)))))))))
 
 (defn build-all
   ([f xs] (build-all f xs nil))
