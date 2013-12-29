@@ -332,6 +332,27 @@
   ([cursor ks f a b c d & args]
     (apply swap! (.-state cursor) update-in (into (.-path cursor) ks) f a b c d args)))
 
+(defn read
+  "Given a cursor, read its current value. Can take an optional sequence
+   of keys ks. Used for interacting with cursors outside of render."
+  ([cursor] (read cursor nil))
+  ([cursor ks]
+    (let [path  (into (.-path cursor) ks)
+          state (.-state cursor)
+          value @state]
+      (if (empty? path)
+        (to-cursor value state [])
+        (to-cursor (get-in value path) state path)))))
+
+(defn join
+  "Given a cursor, get value from the root at the path specified by a
+   sequential list of keys ks."
+  [cursor ks]
+  (let [state (.-state cursor)
+        value @state]
+    (to-cursor (get-in value ks)
+      state (if (vector? ks) ks (into [] ks)))))
+
 (defn get-node
   "A helper function to get at React refs. Given a owning pure node
   extract the ref specified by name. Note the life cycle protocol methods
