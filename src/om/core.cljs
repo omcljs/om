@@ -1,5 +1,6 @@
 (ns om.core
-  (:require-macros [om.core :refer [pure component check allow-reads]])
+  (:require-macros
+    [om.core :refer [pure component check allow-reads safe-swap!]])
   (:require [om.dom :as dom :include-macros true]))
 
 (def ^{:tag boolean :dynamic true} *read-enabled* false)
@@ -350,13 +351,7 @@
 (defn transact!
   "Given a cursor, a list of keys ks, mutate the tree at the path
    specified by the cursor + the keys by applying f to the specified
-   value in the tree. If only given two arguments, assumed no list
-   of keys was specified. An Om re-render will be triggered."
-  ([cursor f]
-    (let [path (.-path cursor)]
-      (if (empty? path)
-        (swap! (.-state cursor) f)
-        (swap! (.-state cursor) update-in path f))))
+   value in the tree. An Om re-render will be triggered."
   ([cursor ks f]
     (swap! (.-state cursor) update-in (into (.-path cursor) ks) f))
   ([cursor ks f a]
@@ -369,6 +364,26 @@
     (swap! (.-state cursor) update-in (into (.-path cursor) ks) f a b c d))
   ([cursor ks f a b c d & args]
     (apply swap! (.-state cursor) update-in (into (.-path cursor) ks) f a b c d args)))
+
+(defn update!
+  "Like transact! but no list of keys given. An Om re-render
+   will be triggered."
+  ([cursor f]
+    (safe-swap! cursor f))
+  ([cursor f a]
+    (safe-swap! cursor f a))
+  ([cursor f a b]
+    (safe-swap! cursor f a b))
+  ([cursor f a b c]
+    (safe-swap! cursor f a b c))
+  ([cursor f a b c d]
+    (safe-swap! cursor f a b c d))
+  ([cursor f a b c d & args]
+    (let [path  (.-path cursor)
+          state (.-state cursor)]
+      (if (empty? path)
+        (swap! state #(apply f % a b c d args))
+        (apply swap! state update-in path f a b c d args)))))
 
 (defn read
   "Given a cursor, read its current value. Can take an optional sequence
