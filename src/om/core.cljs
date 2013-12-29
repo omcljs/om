@@ -47,6 +47,15 @@
       (set! (.. node -props -children) (allow-reads (c node)))
       c)))
 
+(defn get-props
+  "Given an owning Pure node return the Om props. Analogous to React 
+   component props."
+  [x]
+  (let [ret {:value (aget (.-props x) "__om_cursor" "value")}]
+    (if-let [idx (aget (.-props x) "__om_index")]
+      (assoc ret :index idx)
+      ret)))
+
 (def ^:private Pure
   (js/React.createClass
     #js {:getInitialState
@@ -63,7 +72,10 @@
              (let [props (.-props this)
                    c     (children this)]
                (if (satisfies? IShouldUpdate c)
-                 (allow-reads (should-update c next-props next-state))
+                 (allow-reads
+                   (should-update c
+                     (get-props #js {:props next-props})
+                     (aget (.-state this) "__om_pending_state")))
                  (cond
                    (not (identical? (.-value (aget props "__om_cursor"))
                                     (.-value (aget next-props "__om_cursor"))))
@@ -99,11 +111,15 @@
            (this-as this
              (let [c (children this)]
                (when (satisfies? IWillUpdate c)
-                 (allow-reads (will-update c next-props next-state))))
+                 (allow-reads
+                   (will-update c
+                     (get-props #js {:props next-props})
+                     (aget (.-state this) "__om_pending_state")))))
              ;; merge any pending state
              (let [state (.-state this)]
                (when-let [pending-state (aget state "__om_pending_state")]
                  (doto state
+                   (aset "__om_prev_state" (aget state "__om_state"))
                    (aset "__om_state" pending-state)
                    (aset "__om_pending_state" nil))))))
          :componentDidUpdate
@@ -112,7 +128,11 @@
              (let [c (children this)]
                (when (satisfies? IDidUpdate c)
                  (allow-reads
-                   (did-update c prev-props prev-state root-node))))))
+                   (did-update c
+                     (get-props #js {:props prev-props})
+                     (aget (.-state this) "__om_prev_state")
+                     root-node)))
+               (aset (.-state this) "__om_prev_state" nil))))
          :render
          (fn []
            (this-as this
