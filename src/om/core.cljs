@@ -295,10 +295,11 @@
    f, a cursor, and an optional third argument which may be a map of
    build specifications.
 
-   f - is a function of two arguments the first argument will be the
-   cursor and the second argument will be a map of optional values
-   passed to build. f must return at a minimum an IRender instance,
-   this instance may implement other React life cycle protocols.
+   f - is a function of up to three arguments. The first argument will
+   be the cursor and the second argument will be the owning pure node.
+   If a map of options m is passed in this will be the third
+   argument. f must return at a minimum an IRender instance, this
+   instance may implement other React life cycle protocols.
 
    cursor - an ICursor instance
 
