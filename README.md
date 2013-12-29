@@ -28,7 +28,9 @@ The repo includes several simple examples you can build yourself. If
 you view the `project.clj` you will see their build identifiers. To
 build an example run:
 
-``` lein cljsbuild once build-id ```
+```
+lein cljsbuild once build-id
+```
 
 Then open the corresponding `index.html` in your favorite browser.
 
