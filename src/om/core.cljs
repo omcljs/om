@@ -349,9 +349,14 @@
         xs (range)))))
 
 (defn transact!
-  "Given a cursor, a list of keys ks, mutate the tree at the path
-   specified by the cursor + the keys by applying f to the specified
-   value in the tree. An Om re-render will be triggered."
+  "Given a cursor, an optional list of keys ks, mutate the tree at the
+   path specified by the cursor + the optional keys by applying f to the
+   specified value in the tree. An Om re-render will be triggered."
+  ([cursor f]
+    (let [path (.-path cursor)]
+      (if (empty? path)
+        (swap! (.-state cursor) f)
+        (swap! (.-state cursor) update-in path f))))
   ([cursor ks f]
     (swap! (.-state cursor) update-in (into (.-path cursor) ks) f))
   ([cursor ks f a]
