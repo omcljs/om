@@ -43,6 +43,12 @@ For a more fleshed-out example, please see the Om implementation of
 There's no commitment yet to an API. Still, the code has fairly
 verbose docstrings for the existing functionality.
 
+There is a
+[conceptual overview](http://github.com/swannodette/om/wiki/Conceptual-overview)
+that we recommend reading as there are some design choices in Om that
+make it quite different from other client side solutions and even
+React itself.
+
 ## HTML Syntax
 
 Om is not opinionated about HTML syntax, third parties can provide the
