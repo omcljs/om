@@ -41,7 +41,7 @@
 ;;
 ;; (Pure. {:foo "bar"} irender-instance)
 
-(defn children [node]
+(defn ^:private children [node]
   (let [c (.. node -props -children)]
     (if (fn? c)
       (set! (.. node -props -children) (allow-reads (c node)))
