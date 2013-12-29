@@ -82,8 +82,7 @@
                                     (.-value (aget next-props "__om_cursor"))))
                    true
 
-                   (not (identical? (aget (.-state this) "__om_state")
-                                    (aget (.-state this) "__om_pending_state")))
+                   (not (nil? (aget (.-state this) "__om_pending_state")))
                    true
 
                    (not (== (aget props "__om_index") (aget next-props "__om_index")))
