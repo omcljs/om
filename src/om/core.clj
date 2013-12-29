@@ -12,3 +12,16 @@
      om.core/IRender
      (~'render [this# _#]
        ~@body)))
+
+(defmacro allow-reads [& body]
+  `(binding [om.core/*read-enabled* true]
+    ~@body))
+
+(defmacro check [& body]
+  `(if om.core/*read-enabled*
+     (do
+       ~@body)
+     (throw
+       (js/Error.
+         (str "Cannot manipulate cursor outside of render, only "
+              "om.core/transact! and om.core/read operations allowed")))))

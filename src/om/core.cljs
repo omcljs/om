@@ -1,6 +1,8 @@
 (ns om.core
-  (:require-macros [om.core :refer [pure component]])
+  (:require-macros [om.core :refer [pure component check allow-reads]])
   (:require [om.dom :as dom :include-macros true]))
+
+(def ^{:tag boolean :dynamic true} *read-enabled* false)
 
 ;; =============================================================================
 ;; React Life Cycle Protocols
@@ -48,14 +50,14 @@
                #js {:__om_state
                     (merge {}
                       (when (satisfies? IInitState c)
-                        (init-state c this)))})))
+                        (allow-reads (init-state c this))))})))
          :shouldComponentUpdate
          (fn [next-props next-state]
            (this-as this
              (let [props (.-props this)
                    c     (.-children props)]
                (if (satisfies? IShouldUpdate c)
-                 (should-update c this next-props next-state)
+                 (allow-reads (should-update c this next-props next-state))
                  (cond
                    (not (identical? (.-value (aget props "__om_cursor"))
                                     (.-value (aget next-props "__om_cursor"))))
@@ -73,25 +75,25 @@
            (this-as this
              (let [c (.. this -props -children)]
                (when (satisfies? IWillMount c)
-                 (will-mount c this)))))
+                 (allow-reads (will-mount c this))))))
          :componentDidMount
          (fn [node]
            (this-as this
              (let [c (.. this -props -children)]
                (when (satisfies? IDidMount c)
-                 (did-mount c this node)))))
+                 (allow-reads (did-mount c this node))))))
          :componentWillUnmount
          (fn []
            (this-as this
              (let [c (.. this -props -children)]
                (when (satisfies? IWillUnmount c)
-                 (will-unmount c this)))))
+                 (allow-reads (will-unmount c this))))))
          :componentWillUpdate
          (fn [next-props next-state]
            (this-as this
              (let [c (.. this -props -children)]
                (when (satisfies? IWillUpdate c)
-                 (will-update c this next-props next-state)))
+                 (allow-reads (will-update c this next-props next-state))))
              ;; merge any pending state
              (let [state (.-state this)]
                (when-let [pending-state (aget state "__om_pending_state")]
@@ -103,11 +105,13 @@
            (this-as this
              (let [c (.. this -props -children)]
                (when (satisfies? IDidUpdate c)
-                 (did-update c this prev-props prev-state root-node)))))
+                 (allow-reads
+                   (did-update c this prev-props prev-state root-node))))))
          :render
          (fn []
            (this-as this
-             (render (.. this -props -children) this)))}))
+             (allow-reads
+               (render (.. this -props -children) this))))}))
 
 ;; =============================================================================
 ;; Cursors
@@ -123,85 +127,90 @@
   ICursor
   ICounted
   (-count [_]
-    (-count value))
+    (check (-count value)))
   ICollection
   (-conj [_ o]
-    (MapCursor. (-conj value o) state path))
+    (check (MapCursor. (-conj value o) state path)))
   ILookup
   (-lookup [this k]
     (-lookup this k nil))
   (-lookup [_ k not-found]
-    (let [v (-lookup value k not-found)]
-      (if-not (= v not-found)
-        (to-cursor v state (conj path k))
-        not-found)))
+    (check
+      (let [v (-lookup value k not-found)]
+        (if-not (= v not-found)
+          (to-cursor v state (conj path k))
+          not-found))))
   ISeqable
   (-seq [this]
-    (map (fn [[k v]] [k (to-cursor v state (conj path k))]) value))
+    (check (map (fn [[k v]] [k (to-cursor v state (conj path k))]) value)))
   IAssociative
   (-contains-key? [_ k]
-    (-contains-key? value k))
+    (check (-contains-key? value k)))
   (-assoc [_ k v]
-    (MapCursor. (-assoc value k v) state path))
+    (check (MapCursor. (-assoc value k v) state path)))
   IMap
   (-dissoc [_ k]
-    (MapCursor. (-dissoc value k) state path))
+    (check (MapCursor. (-dissoc value k) state path)))
   IEquiv
   (-equiv [_ other]
-    (if (cursor? other)
-      (and (= value (.-value other))
-           (= state (.-state other))
-           (= path (.-path other)))
-      (= value other)))
+    (check
+      (if (cursor? other)
+        (and (= value (.-value other))
+             (= state (.-state other))
+             (= path (.-path other)))
+        (= value other))))
   IPrintWithWriter
   (-pr-writer [_ writer opts]
-    (-pr-writer value writer opts)))
+    (check (-pr-writer value writer opts))))
 
 (deftype VectorCursor [value state path]
   ICursor
   ISequential
   ICounted
   (-count [_]
-    (-count value))
+    (check (-count value)))
   ICollection
   (-conj [_ o]
-    (VectorCursor. (-conj value o) state path))
+    (check (VectorCursor. (-conj value o) state path)))
   ILookup
   (-lookup [this n]
-    (-nth this n nil))
+    (check (-nth this n nil)))
   (-lookup [this n not-found]
-    (-nth this n not-found))
+    (check (-nth this n not-found)))
   IIndexed
   (-nth [_ n]
-    (to-cursor (-nth value n) state (conj path n)))
+    (check (to-cursor (-nth value n) state (conj path n))))
   (-nth [_ n not-found]
-    (if (< n (-count value))
-      (to-cursor (-nth value n) state (conj path n))
-      not-found))
+    (check
+      (if (< n (-count value))
+        (to-cursor (-nth value n) state (conj path n))
+        not-found)))
   ISeqable
   (-seq [this]
-    (when (pos? (count value))
-      (map (fn [v i] (to-cursor v state (conj path i))) value (range))))
+    (check
+      (when (pos? (count value))
+        (map (fn [v i] (to-cursor v state (conj path i))) value (range)))))
   IAssociative
   (-contains-key? [_ k]
-    (-contains-key? value k))
+    (check (-contains-key? value k)))
   (-assoc [_ n v]
-    (to-cursor (-assoc-n value n v) state path))
+    (check (to-cursor (-assoc-n value n v) state path)))
   IStack
   (-peek [_]
-    (to-cursor (-peek value) state path))
+    (check (to-cursor (-peek value) state path)))
   (-pop [_]
-    (to-cursor (-pop value) state path))
+    (check (to-cursor (-pop value) state path)))
   IEquiv
   (-equiv [_ other]
-    (if (cursor? other)
-      (and (= value (.-value other))
-           (= state (.-state other))
-           (= path (.-path other)))
-      (= value other)))
+    (check
+      (if (cursor? other)
+        (and (= value (.-value other))
+             (= state (.-state other))
+             (= path (.-path other)))
+        (= value other))))
   IPrintWithWriter
   (-pr-writer [_ writer opts]
-    (-pr-writer value writer opts)))
+    (check (-pr-writer value writer opts))))
 
 (defn to-cursor
   ([val] (to-cursor val nil []))
@@ -243,7 +252,7 @@
                       value  @state
                       cursor (to-cursor value state)]
                   (dom/render
-                    (pure #js {:__om_cursor cursor} (f cursor))
+                    (pure #js {:__om_cursor cursor} (allow-reads (f cursor)))
                     target)))]
     (add-watch state ::root
       (fn [_ _ _ _]
@@ -285,7 +294,7 @@
   ([f cursor m]
     (cond
       (nil? m)
-      (pure #js {:__om_cursor cursor} (f cursor))
+      (pure #js {:__om_cursor cursor} (allow-reads (f cursor)))
 
       :else
       (let [{:keys [key opts]} m
@@ -297,9 +306,10 @@
         (pure #js {:__om_cursor cursor'
                    :__om_index (::index m)
                    :key rkey}
-          (if (nil? opts)
-            (f cursor')
-            (f cursor' opts)))))))
+          (allow-reads
+            (if (nil? opts)
+              (f cursor')
+              (f cursor' opts))))))))
 
 (defn build-all
   ([f xs] (build-all f xs nil))
