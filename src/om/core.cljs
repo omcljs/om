@@ -391,16 +391,18 @@
         (apply swap! state update-in path f a b c d args)))))
 
 (defn read
-  "Given a cursor, read its current value. Can take an optional sequence
-   of keys ks. Used for interacting with cursors outside of render."
-  ([cursor] (read cursor nil))
-  ([cursor ks]
+  "Given a cursor and a function f, read its current value. f will be
+   passed a cursor which can only be read in the scope of f. Can take
+   an optional sequence of keys ks. Used for interacting with cursors
+   outside of render phase."
+  ([cursor f] (read cursor nil f))
+  ([cursor ks f]
     (let [path  (into (.-path cursor) ks)
           state (.-state cursor)
           value @state]
       (if (empty? path)
-        (to-cursor value state [])
-        (to-cursor (get-in value path) state path)))))
+        (allow-reads (f (to-cursor value state [])))
+        (allow-reads (f (to-cursor (get-in value path) state path)))))))
 
 (defn join
   "Given a cursor, get value from the root at the path specified by a
