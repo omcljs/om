@@ -21,7 +21,7 @@ overhead.
   (om/component
     (dom/div nil "Hello world!")))
 
-(om/root {} widget js/document.body)
+(om/root {} widget (.getElementById js/document "some-id"))
 ```
 
 The repo includes several simple examples you can build yourself. If
@@ -92,13 +92,18 @@ should look something like this:
               :source-map true}}]}
 ```
 
-Your local development markup should include something like the following:
+Your local development markup should look something like the following:
 
 ```html
-<script src="http://fb.me/react-0.8.0.js"></script>
-<script src="out/goog/base.js" type="text/javascript"></script>
-<script src="main.js" type="text/javascript"></script>
-<script type="text/javascript">goog.require("main.core");</script>
+<html>
+    <body>
+       <div id="some-id"></div>
+       <script src="http://fb.me/react-0.8.0.js"></script>
+       <script src="out/goog/base.js" type="text/javascript"></script>
+       <script src="main.js" type="text/javascript"></script>
+       <script type="text/javascript">goog.require("main.core");</script>
+    </body>
+</html>
 ```
 
 For production your [lein-cljsbuild](http://github.com/emezeske/lein-cljsbuild) settings should look something
