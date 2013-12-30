@@ -72,7 +72,7 @@ Your `project.clj` should include something like the following:
 (defproject foo "0.1.0-SPAPSHOT"
   ...
   :dependencies [[org.clojure/clojure "1.5.1"]
-                 [org.clojure/clojurescript "0.0-2127"]
+                 [org.clojure/clojurescript "0.0-2134"]
                  [om "0.1.0-SNAPSHOT"]]
   ...)
 ```

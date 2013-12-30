@@ -453,8 +453,8 @@
       (aset state "__om_pending_state" (assoc-in pstate korks v)))
     ;; invalidate path to component
     (if (empty? path)
-      (swap! (.-state cursor) identity)
-      (swap! (.-state cursor) update-in path identity))))
+      (swap! (.-state cursor) clone)
+      (swap! (.-state cursor) update-in path clone))))
 
 (defn get-state
   "Takes a pure owning component and sequential list of keys and returns
