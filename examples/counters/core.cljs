@@ -18,11 +18,11 @@
         #js {:onClick
              (fn [e]
                (do
-                 (om/transact! data [:count] inc)
+                 (om/transact! data :count inc)
                  (put! (:last-clicked chans) (.-path data))))}
         "+")
       (dom/button
-        #js {:onClick (fn [e] (om/transact! data [:count] dec))}
+        #js {:onClick (fn [e] (om/transact! data :count dec))}
         "-")
       (dom/label nil (:shared data)))))
 
@@ -37,17 +37,17 @@
           (will-mount [_]
             (go (while true
                   (let [lc (<! last-clicked)]
-                    (om/set-state! owner [:message] lc)))))
+                    (om/set-state! owner :message lc)))))
           om/IRender
           (render [_]
             (dom/div nil
               (dom/h1 #js {:key "head"} "A Counting Widget!")
               (dom/div #js {:key "message"
                             :style 
-                            (if (om/get-state owner [:message])
+                            (if (om/get-state owner :message)
                               #js {:display "block"}
                               #js {:display "none"})}
-                (when-let [lc (om/get-state owner [:message])]
+                (when-let [lc (om/get-state owner :message)]
                   (str "Last clicked item was " (last lc))))
               (om/build-all counter
                 (map

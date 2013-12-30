@@ -357,18 +357,30 @@
       (if (empty? path)
         (swap! (.-state cursor) f)
         (swap! (.-state cursor) update-in path f))))
-  ([cursor ks f]
-    (swap! (.-state cursor) update-in (into (.-path cursor) ks) f))
-  ([cursor ks f a]
-    (swap! (.-state cursor) update-in (into (.-path cursor) ks) f a))
-  ([cursor ks f a b]
-    (swap! (.-state cursor) update-in (into (.-path cursor) ks) f a b))
-  ([cursor ks f a b c]
-    (swap! (.-state cursor) update-in (into (.-path cursor) ks) f a b c))
-  ([cursor ks f a b c d]
-    (swap! (.-state cursor) update-in (into (.-path cursor) ks) f a b c d))
-  ([cursor ks f a b c d & args]
-    (apply swap! (.-state cursor) update-in (into (.-path cursor) ks) f a b c d args)))
+  ([cursor korks f]
+    (if-not (sequential? korks)
+      (swap! (.-state cursor) update-in (conj (.-path cursor) korks) f)
+      (swap! (.-state cursor) update-in (into (.-path cursor) korks) f)))
+  ([cursor korks f a]
+    (if-not (sequential? korks)
+      (swap! (.-state cursor) update-in (conj (.-path cursor) korks) f a)
+      (swap! (.-state cursor) update-in (into (.-path cursor) korks) f a)))
+  ([cursor korks f a b]
+    (if-not (sequential? korks)
+      (swap! (.-state cursor) update-in (conj (.-path cursor) korks) f a b)
+      (swap! (.-state cursor) update-in (into (.-path cursor) korks) f a b)))
+  ([cursor korks f a b c]
+    (if-not (sequential? korks)
+      (swap! (.-state cursor) update-in (conj (.-path cursor) korks) f a b c)
+      (swap! (.-state cursor) update-in (into (.-path cursor) korks) f a b c)))
+  ([cursor korks f a b c d]
+    (if-not (sequential? korks)
+      (swap! (.-state cursor) update-in (conj (.-path cursor) korks) f a b c d)
+      (swap! (.-state cursor) update-in (into (.-path cursor) korks) f a b c d)))
+  ([cursor korks f a b c d & args]
+    (if-not (sequential? korks)
+      (apply swap! (.-state cursor) update-in (conj (.-path cursor) korks) f a b c d args)
+      (apply swap! (.-state cursor) update-in (into (.-path cursor) korks) f a b c d args))))
 
 (defn update!
   "Like transact! but no list of keys given. An Om re-render
@@ -396,8 +408,10 @@
    an optional sequence of keys ks. Used for interacting with cursors
    outside of render phase."
   ([cursor f] (read cursor nil f))
-  ([cursor ks f]
-    (let [path  (into (.-path cursor) ks)
+  ([cursor korks f]
+    (let [path  (if-not (sequential? korks)
+                  (conj (.-path cursor) korks)
+                  (into (.-path cursor) korks))
           state (.-state cursor)
           value @state]
       (if (empty? path)
@@ -407,11 +421,13 @@
 (defn join
   "Given a cursor, get value from the root at the path specified by a
    sequential list of keys ks."
-  [cursor ks]
+  [cursor korks]
   (let [state (.-state cursor)
         value @state]
-    (to-cursor (get-in value ks)
-      state (if (vector? ks) ks (into [] ks)))))
+    (if-not (sequential? korks)
+      (to-cursor (get value korks) state [korks])
+      (to-cursor (get-in value korks) state
+        (if (vector? korks) korks (into [] korks))))))
 
 (defn get-node
   "A helper function to get at React refs. Given a owning pure node
@@ -425,14 +441,16 @@
   "Takes a pure owning component, a sequential list of keys and value and
    sets the state of the component. Conceptually analagous to React
    setState."
-  [owner ks v]
+  [owner korks v]
   (let [props  (.-props owner)
         state  (.-state owner)
         cursor (aget props "__om_cursor")
         path   (.-path cursor)
         pstate (or (aget state "__om_pending_state")
                    (aget state "__om_state"))]
-    (aset state "__om_pending_state" (assoc-in pstate ks v))
+    (if-not (sequential? korks)
+      (aset state "__om_pending_state" (assoc pstate korks v))
+      (aset state "__om_pending_state" (assoc-in pstate korks v)))
     ;; invalidate path to component
     (if (empty? path)
       (swap! (.-state cursor) identity)
@@ -442,7 +460,13 @@
   "Takes a pure owning component and sequential list of keys and returns
    a property if it exists. Will never return pending state values."
   ([owner] (aget (.-state owner) "__om_state"))
-  ([owner ks]
-    (if (empty? ks)
+  ([owner korks]
+    (cond
+      (not (sequential? korks))
+      (get (aget (.-state owner) "__om_state") korks)
+
+      (empty? korks)
       (get-state owner)
-      (get-in (aget (.-state owner) "__om_state") ks))))
+
+      :else
+      (get-in (aget (.-state owner) "__om_state") korks))))
