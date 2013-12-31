@@ -33,7 +33,7 @@
        (swap! state# #(~f % ~@args))
        (swap! state# update-in path# ~f ~@args))))
 
-(defmacro safe-transact! [cursor f korks & args]
+(defmacro safe-transact! [cursor korks f & args]
   `(let [path#  (.-path ~cursor)
          state# (.-state ~cursor)]
      (if-not (sequential? ~korks)

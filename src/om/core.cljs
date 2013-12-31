@@ -369,15 +369,15 @@
         (swap! (.-state cursor) f)
         (swap! (.-state cursor) update-in path f))))
   ([cursor korks f]
-    (safe-transact! cursor f korks f))
+    (safe-transact! cursor korks f))
   ([cursor korks f a]
-    (safe-transact! cursor f korks f a))
+    (safe-transact! cursor korks f a))
   ([cursor korks f a b]
-    (safe-transact! cursor f korks f a b))
+    (safe-transact! cursor korks f a b))
   ([cursor korks f a b c]
-    (safe-transact! cursor f korks f a b c))
+    (safe-transact! cursor korks f a b c))
   ([cursor korks f a b c d]
-    (safe-transact! cursor f korks f a b c d))
+    (safe-transact! cursor korks f a b c d))
   ([cursor korks f a b c d & args]
     (if-not (sequential? korks)
       (apply swap! (.-state cursor) update-in (conj (.-path cursor) korks) f a b c d args)
