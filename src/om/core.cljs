@@ -145,13 +145,18 @@
 
 (declare to-cursor)
 
-(defprotocol ICursor)
+(defprotocol ICursor
+  (-path [cursor]))
+
+(defn path [cursor]
+  (-path cursor))
 
 (defn cursor? [x]
   (satisfies? ICursor x))
 
 (deftype MapCursor [value state path]
   ICursor
+  (-path [_] path)
   ICloneable
   (-clone [_]
     (MapCursor. value state path))
@@ -194,8 +199,9 @@
     (check (-pr-writer value writer opts))))
 
 (deftype VectorCursor [value state path]
-  ICursor
   ISequential
+  ICursor
+  (-path [_] path)
   ICloneable
   (-clone [_]
     (VectorCursor. value state path))
