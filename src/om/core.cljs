@@ -440,7 +440,7 @@
 (defn set-state!
   "Takes a pure owning component, a sequential list of keys and value and
    sets the state of the component. Conceptually analagous to React
-   setState."
+   setState. Will schedule an Om re-render."
   [owner korks v]
   (let [props  (.-props owner)
         state  (.-state owner)
