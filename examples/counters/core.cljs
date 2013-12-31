@@ -21,7 +21,10 @@
                (put! (:last-clicked chans) (.-path data)))}
         "+")
       (dom/button
-        #js {:onClick (fn [e] (om/transact! data :count dec))}
+        #js {:onClick
+             (fn [e]
+               (om/transact! data :count dec)
+               (put! (:last-clicked chans) (.-path data)))}
         "-")
       (dom/label nil (:shared data)))))
 
