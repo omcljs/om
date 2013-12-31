@@ -24,7 +24,7 @@
      (throw
        (js/Error.
          (str "Cannot manipulate cursor outside of render phase, only "
-              "om.core/transact! and om.core/read operations allowed")))))
+              "om.core/transact!, om.core/update!, and om.core/read operations allowed")))))
 
 (defmacro safe-swap! [cursor f & args]
   `(let [path#  (.-path ~cursor)
