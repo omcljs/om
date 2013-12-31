@@ -364,10 +364,11 @@
    path specified by the cursor + the optional keys by applying f to the
    specified value in the tree. An Om re-render will be triggered."
   ([cursor f]
-    (let [path (.-path cursor)]
+    (let [state (.-state cursor)
+          path  (.-path cursor)]
       (if (empty? path)
-        (swap! (.-state cursor) f)
-        (swap! (.-state cursor) update-in path f))))
+        (swap! state f)
+        (swap! state update-in path f))))
   ([cursor korks f]
     (safe-transact! cursor korks f))
   ([cursor korks f a]
@@ -379,9 +380,11 @@
   ([cursor korks f a b c d]
     (safe-transact! cursor korks f a b c d))
   ([cursor korks f a b c d & args]
-    (if-not (sequential? korks)
-      (apply swap! (.-state cursor) update-in (conj (.-path cursor) korks) f a b c d args)
-      (apply swap! (.-state cursor) update-in (into (.-path cursor) korks) f a b c d args))))
+    (let [state (.-state cursor)
+          path  (.-path cursor)]
+      (if-not (sequential? korks)
+        (apply swap! state update-in (conj path korks) f a b c d args)
+        (apply swap! state update-in (into path korks) f a b c d args)))))
 
 (defn update!
   "Like transact! but no list of keys given. An Om re-render
