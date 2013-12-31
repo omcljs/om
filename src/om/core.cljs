@@ -152,6 +152,9 @@
 
 (deftype MapCursor [value state path]
   ICursor
+  ICloneable
+  (-clone [_]
+    (MapCursor. value state path))
   ICounted
   (-count [_]
     (check (-count value)))
@@ -193,6 +196,9 @@
 (deftype VectorCursor [value state path]
   ICursor
   ISequential
+  ICloneable
+  (-clone [_]
+    (VectorCursor. value state path))
   ICounted
   (-count [_]
     (check (-count value)))
