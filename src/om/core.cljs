@@ -407,7 +407,7 @@
    passed a cursor which can only be read in the scope of f. Can take
    an optional sequence of keys ks. Used for interacting with cursors
    outside of render phase."
-  ([cursor f] (read cursor nil f))
+  ([cursor f] (read cursor () f))
   ([cursor korks f]
     (let [path  (if-not (sequential? korks)
                   (conj (.-path cursor) korks)
@@ -470,3 +470,39 @@
 
       :else
       (get-in (aget (.-state owner) "__om_state") korks))))
+
+(defn bind
+  "Convenience function for creating event handlers on cursors. Takes
+   a function f which should receive the event as the first argument,
+   the cursor as the second argument, and any number of optional
+   arguments beyond that. Inside of f the cursor will be readable."
+  ([f cursor]
+    (fn [e]
+      (read cursor
+        (fn [cursor]
+          (f e cursor)))))
+  ([f cursor a]
+    (fn [e]
+      (read cursor
+        (fn [cursor]
+          (f e cursor a)))))
+  ([f cursor a b]
+    (fn [e]
+      (read cursor
+        (fn [cursor]
+          (f e cursor a b)))))
+  ([f cursor a b c]
+    (fn [e]
+      (read cursor
+        (fn [cursor]
+          (f e cursor a b c)))))
+  ([f cursor a b c d]
+    (fn [e]
+      (read cursor
+        (fn [cursor]
+          (f e cursor a b c d)))))
+  ([f cursor a b c d & args]
+    (fn [e]
+      (read cursor
+        (fn [cursor]
+          (apply f e cursor a b c d args))))))
