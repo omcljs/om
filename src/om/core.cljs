@@ -1,6 +1,6 @@
 (ns om.core
   (:require-macros
-    [om.core :refer [pure component check allow-reads safe-swap!]])
+    [om.core :refer [pure component check allow-reads safe-swap! safe-transact!]])
   (:require [om.dom :as dom :include-macros true]))
 
 (def ^{:tag boolean :dynamic true} *read-enabled* false)
@@ -369,25 +369,15 @@
         (swap! (.-state cursor) f)
         (swap! (.-state cursor) update-in path f))))
   ([cursor korks f]
-    (if-not (sequential? korks)
-      (swap! (.-state cursor) update-in (conj (.-path cursor) korks) f)
-      (swap! (.-state cursor) update-in (into (.-path cursor) korks) f)))
+    (safe-transact! cursor f korks f))
   ([cursor korks f a]
-    (if-not (sequential? korks)
-      (swap! (.-state cursor) update-in (conj (.-path cursor) korks) f a)
-      (swap! (.-state cursor) update-in (into (.-path cursor) korks) f a)))
+    (safe-transact! cursor f korks f a))
   ([cursor korks f a b]
-    (if-not (sequential? korks)
-      (swap! (.-state cursor) update-in (conj (.-path cursor) korks) f a b)
-      (swap! (.-state cursor) update-in (into (.-path cursor) korks) f a b)))
+    (safe-transact! cursor f korks f a b))
   ([cursor korks f a b c]
-    (if-not (sequential? korks)
-      (swap! (.-state cursor) update-in (conj (.-path cursor) korks) f a b c)
-      (swap! (.-state cursor) update-in (into (.-path cursor) korks) f a b c)))
+    (safe-transact! cursor f korks f a b c))
   ([cursor korks f a b c d]
-    (if-not (sequential? korks)
-      (swap! (.-state cursor) update-in (conj (.-path cursor) korks) f a b c d)
-      (swap! (.-state cursor) update-in (into (.-path cursor) korks) f a b c d)))
+    (safe-transact! cursor f korks f a b c d))
   ([cursor korks f a b c d & args]
     (if-not (sequential? korks)
       (apply swap! (.-state cursor) update-in (conj (.-path cursor) korks) f a b c d args)
