@@ -17,9 +17,8 @@
       (dom/button
         #js {:onClick
              (fn [e]
-               (do
-                 (om/transact! data :count inc)
-                 (put! (:last-clicked chans) (.-path data))))}
+               (om/transact! data :count inc)
+               (put! (:last-clicked chans) (.-path data)))}
         "+")
       (dom/button
         #js {:onClick (fn [e] (om/transact! data :count dec))}
