@@ -26,16 +26,16 @@
          (str "Cannot manipulate cursor outside of render phase, only "
               "om.core/transact!, om.core/update!, and om.core/read operations allowed")))))
 
-(defmacro safe-swap! [cursor f & args]
-  `(let [path#  (.-path ~cursor)
-         state# (.-state ~cursor)]
-     (if (empty? path#)
-       (swap! state# #(~f % ~@args))
-       (swap! state# update-in path# ~f ~@args))))
-
 (defmacro safe-transact! [cursor korks f & args]
   `(let [path#  (.-path ~cursor)
          state# (.-state ~cursor)]
      (if-not (sequential? ~korks)
        (swap! state# update-in (conj path# ~korks) ~f ~@args)
        (swap! state# update-in (into path# ~korks) ~f ~@args))))
+
+(defmacro safe-update! [cursor f & args]
+  `(let [path#  (.-path ~cursor)
+         state# (.-state ~cursor)]
+     (if (empty? path#)
+       (swap! state# #(~f % ~@args))
+       (swap! state# update-in path# ~f ~@args))))

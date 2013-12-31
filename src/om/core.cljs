@@ -1,6 +1,6 @@
 (ns om.core
   (:require-macros
-    [om.core :refer [pure component check allow-reads safe-swap! safe-transact!]])
+    [om.core :refer [pure component check allow-reads safe-update! safe-transact!]])
   (:require [om.dom :as dom :include-macros true]))
 
 (def ^{:tag boolean :dynamic true} *read-enabled* false)
@@ -387,15 +387,15 @@
   "Like transact! but no list of keys given. An Om re-render
    will be triggered."
   ([cursor f]
-    (safe-swap! cursor f))
+    (safe-update! cursor f))
   ([cursor f a]
-    (safe-swap! cursor f a))
+    (safe-update! cursor f a))
   ([cursor f a b]
-    (safe-swap! cursor f a b))
+    (safe-update! cursor f a b))
   ([cursor f a b c]
-    (safe-swap! cursor f a b c))
+    (safe-update! cursor f a b c))
   ([cursor f a b c d]
-    (safe-swap! cursor f a b c d))
+    (safe-update! cursor f a b c d))
   ([cursor f a b c d & args]
     (let [path  (.-path cursor)
           state (.-state cursor)]
