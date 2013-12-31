@@ -156,7 +156,7 @@
 
 (deftype MapCursor [value state path]
   ICursor
-  (-path [_] path)
+  (-path [_] (check path))
   ICloneable
   (-clone [_]
     (MapCursor. value state path))
@@ -201,7 +201,7 @@
 (deftype VectorCursor [value state path]
   ISequential
   ICursor
-  (-path [_] path)
+  (-path [_] (check path))
   ICloneable
   (-clone [_]
     (VectorCursor. value state path))
