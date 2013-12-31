@@ -57,6 +57,6 @@
                     (update-in counter [:shared] #(om/join counter [:shared %])))
                   (:counters app))
                 {:opts chans :key :id})))))
-      js/document.body)))
+      (.getElementById js/document "app"))))
 
 (counters)
