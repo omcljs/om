@@ -44,17 +44,17 @@
           (render [_]
             (dom/div nil
               (dom/h1 #js {:key "head"} "A Counting Widget!")
-              (dom/div #js {:key "message"
-                            :style 
-                            (if (om/get-state owner :message)
-                              #js {:display "block"}
-                              #js {:display "none"})}
+              (dom/div
+                #js {:key "message"
+                     :style 
+                      (if (om/get-state owner :message)
+                        #js {:display "block"}
+                        #js {:display "none"})}
                 (when-let [lc (om/get-state owner :message)]
                   (str "Last clicked item was " (last lc))))
               (om/build-all counter
-                (map
-                  (fn [counter]
-                    (update-in counter [:shared] #(om/join counter [:shared %])))
+                (map (fn [counter]
+                       (update-in counter [:shared] #(om/join counter [:shared %])))
                   (:counters app))
                 {:opts chans :key :id})))))
       (.getElementById js/document "app"))))
