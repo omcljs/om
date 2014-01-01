@@ -10,6 +10,8 @@ root. Thus Om UIs are out of the box snapshotable and undoable and
 these operations have no implementation complexity and little
 overhead.
 
+[See](http://swannodette.github.io/todomvc/labs/architecture-examples/om-undo/index.html) for [yourself](http://swannodette.github.io/2013/12/31/time-travel/).
+
 ## Examples
 
 ```clj
