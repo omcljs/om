@@ -270,10 +270,10 @@
   "Takes an immutable value or value wrapped in an atom, an initial
    function f, and a DOM target. Installs an Om/React render loop. f
    must return an instance that at a minimum implements IRender (it
-   may implement other React life cycle protocols). f must take a
-   single argument which will be the root cursor. A cursor is just
-   the original data wrapped in an ICursor instance which maintains
-   path information.
+   may implement other React life cycle protocols). f must take
+   two arguments, the root cursor and the owning pure node. A
+   cursor is just the original data wrapped in an ICursor instance
+   which maintains path information.
 
    Example:
 
@@ -307,7 +307,7 @@
    f, a cursor, and an optional third argument which may be a map of
    build specifications.
 
-   f - is a function of up to three arguments. The first argument will
+   f - is a function of 2 or 3 arguments. The first argument will
    be the cursor and the second argument will be the owning pure node.
    If a map of options m is passed in this will be the third
    argument. f must return at a minimum an IRender instance, this
@@ -352,6 +352,9 @@
             (fn [this] (allow-reads (f cursor' this opts)))))))))
 
 (defn build-all
+  "Build a sequence of components. f is the component constructor
+   function, xs a sequence of cursors, and m a map of options the
+   same as provided to om.core/build."
   ([f xs] (build-all f xs nil))
   ([f xs m]
     (into-array
@@ -423,8 +426,8 @@
         (allow-reads (f (to-cursor (get-in value path) state path)))))))
 
 (defn join
-  "Given a cursor, get value from the root at the path specified by a
-   sequential list of keys ks."
+  "EXPERIMENTAL: Given a cursor, get value from the root at the path
+   specified by a sequential list of keys ks."
   [cursor korks]
   (let [state (.-state cursor)
         value @state]
