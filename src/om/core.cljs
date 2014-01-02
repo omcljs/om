@@ -1,6 +1,8 @@
 (ns om.core
   (:require-macros
-    [om.core :refer [pure component check allow-reads safe-update! safe-transact!]])
+    [om.core :refer
+      [pure component check allow-reads safe-update!
+       safe-transact! cursor-check]])
   (:require [om.dom :as dom :include-macros true]))
 
 (def ^{:tag boolean :dynamic true} *read-enabled* false)
@@ -37,8 +39,14 @@
 ;; =============================================================================
 ;; Om Protocols
 
+(defprotocol IToCursor
+  (-to-cursor [value state] [value state path]))
+
 (defprotocol ICursor
   (-path [cursor]))
+
+(defprotocol IValueCursor
+  (-value [cursor]))
 
 ;; =============================================================================
 ;; A Truly Pure Component
@@ -157,6 +165,9 @@
 (defn path [cursor]
   (-path cursor))
 
+(defn value [cursor]
+  (check (-value cursor)))
+
 (defn cursor? [x]
   (satisfies? ICursor x))
 
@@ -265,6 +276,7 @@
       (cursor? val) val
       (map? val) (MapCursor. val state path)
       (vector? val) (VectorCursor. val state path)
+      (satisfies? IToCursor val) (-to-cursor val state path)
       :else val)))
 
 ;; =============================================================================
@@ -341,7 +353,8 @@
     (cond
       (nil? m)
       (pure #js {:__om_cursor cursor}
-        (fn [this] (allow-reads (f cursor this))))
+        (fn [this]
+          (cursor-check cursor (allow-reads (f cursor this)))))
 
       :else
       (let [{:keys [key opts]} m
@@ -354,8 +367,10 @@
                    :__om_index (::index m)
                    :key rkey}
           (if (nil? opts)
-            (fn [this] (allow-reads (f cursor' this)))
-            (fn [this] (allow-reads (f cursor' this opts)))))))))
+            (fn [this]
+              (cursor-check cursor' (allow-reads (f cursor' this))))
+            (fn [this]
+              (cursor-check cursor' (allow-reads (f cursor' this opts))))))))))
 
 (defn build-all
   "Build a sequence of components. f is the component constructor

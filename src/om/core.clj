@@ -26,6 +26,11 @@
          (str "Cannot manipulate cursor outside of render phase, only "
               "om.core/transact!, om.core/update!, and om.core/read operations allowed")))))
 
+(defmacro cursor-check [cursor & body]
+  `(if (om.core/cursor? ~cursor)
+     (do ~@body)
+     (throw (js/Error. (str "Cannot build Om component from non-cursor " ~cursor)))))
+
 (defmacro safe-transact! [cursor korks f & args]
   `(let [path#  (.-path ~cursor)
          state# (.-state ~cursor)]
