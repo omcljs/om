@@ -35,6 +35,12 @@
   (render [this]))
 
 ;; =============================================================================
+;; Om Protocols
+
+(defprotocol ICursor
+  (-path [cursor]))
+
+;; =============================================================================
 ;; A Truly Pure Component
 ;; 
 ;; This React class takes an immutable value as its props and an instance that
@@ -147,9 +153,6 @@
 ;; Cursors
 
 (declare to-cursor)
-
-(defprotocol ICursor
-  (-path [cursor]))
 
 (defn path [cursor]
   (-path cursor))
