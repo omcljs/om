@@ -271,6 +271,13 @@
   (-pr-writer [_ writer opts]
     (check (-pr-writer value writer opts))))
 
+(defn to-cursor* [val state path]
+  (specify val
+    ICursor
+    (-value [_] val)
+    (-state [_] state)
+    (-path [_] path)))
+
 (defn to-cursor
   ([val] (to-cursor val nil []))
   ([val state] (to-cursor val state []))
@@ -280,6 +287,7 @@
       (satisfies? IToCursor val) (-to-cursor val state path)
       (indexed? val) (IndexedCursor. val state path)
       (map? val) (MapCursor. val state path)
+      (satisfies? ICloneable val) (to-cursor* val state path)
       :else val)))
 
 ;; =============================================================================
