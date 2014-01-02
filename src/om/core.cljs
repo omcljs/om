@@ -39,14 +39,13 @@
 ;; =============================================================================
 ;; Om Protocols
 
+(defprotocol ICursor
+  (-value [cursor])
+  (-path [cursor])
+  (-state [cursor]))
+
 (defprotocol IToCursor
   (-to-cursor [value state] [value state path]))
-
-(defprotocol ICursor
-  (-path [cursor]))
-
-(defprotocol IValueCursor
-  (-value [cursor]))
 
 ;; =============================================================================
 ;; A Truly Pure Component
@@ -92,25 +91,25 @@
          :shouldComponentUpdate
          (fn [next-props next-state]
            (this-as this
-             (let [props (.-props this)
-                   c     (children this)]
-               (if (satisfies? IShouldUpdate c)
-                 (allow-reads
+             (allow-reads
+               (let [props (.-props this)
+                     c     (children this)]
+                 (if (satisfies? IShouldUpdate c)
                    (should-update c
                      (get-props #js {:props next-props})
-                     (aget (.-state this) "__om_pending_state")))
-                 (cond
-                   (not (identical? (.-value (aget props "__om_cursor"))
-                                    (.-value (aget next-props "__om_cursor"))))
-                   true
+                     (aget (.-state this) "__om_pending_state"))
+                   (cond
+                     (not (identical? (-value (aget props "__om_cursor"))
+                                      (-value (aget next-props "__om_cursor"))))
+                     true
 
-                   (not (nil? (aget (.-state this) "__om_pending_state")))
-                   true
+                     (not (nil? (aget (.-state this) "__om_pending_state")))
+                     true
 
-                   (not (== (aget props "__om_index") (aget next-props "__om_index")))
-                   true
+                     (not (== (aget props "__om_index") (aget next-props "__om_index")))
+                     true
 
-                   :else false)))))
+                     :else false))))))
          :componentWillMount
          (fn []
            (this-as this
@@ -173,7 +172,9 @@
 
 (deftype MapCursor [value state path]
   ICursor
+  (-value [_] (check value))
   (-path [_] (check path))
+  (-state [_] (check state))
   ICloneable
   (-clone [_]
     (MapCursor. value state path))
@@ -207,9 +208,9 @@
   (-equiv [_ other]
     (check
       (if (cursor? other)
-        (and (= value (.-value other))
-             (= state (.-state other))
-             (= path (.-path other)))
+        (and (= value (-value other))
+             (= state (-state other))
+             (= path  (-path other)))
         (= value other))))
   IPrintWithWriter
   (-pr-writer [_ writer opts]
@@ -218,7 +219,9 @@
 (deftype IndexedCursor [value state path]
   ISequential
   ICursor
+  (-value [_] (check value))
   (-path [_] (check path))
+  (-state [_] (check state))
   ICloneable
   (-clone [_]
     (IndexedCursor. value state path))
@@ -260,9 +263,9 @@
   (-equiv [_ other]
     (check
       (if (cursor? other)
-        (and (= value (.-value other))
-             (= state (.-state other))
-             (= path (.-path other)))
+        (and (= value (-value other))
+             (= state (-state other))
+             (= path  (-path other)))
         (= value other))))
   IPrintWithWriter
   (-pr-writer [_ writer opts]
@@ -388,11 +391,12 @@
    path specified by the cursor + the optional keys by applying f to the
    specified value in the tree. An Om re-render will be triggered."
   ([cursor f]
-    (let [state (.-state cursor)
-          path  (.-path cursor)]
-      (if (empty? path)
-        (swap! state f)
-        (swap! state update-in path f))))
+    (allow-reads
+      (let [state (-state cursor)
+            path  (-path cursor)]
+        (if (empty? path)
+          (swap! state f)
+          (swap! state update-in path f)))))
   ([cursor korks f]
     (safe-transact! cursor korks f))
   ([cursor korks f a]
@@ -404,11 +408,12 @@
   ([cursor korks f a b c d]
     (safe-transact! cursor korks f a b c d))
   ([cursor korks f a b c d & args]
-    (let [state (.-state cursor)
-          path  (.-path cursor)]
-      (if-not (sequential? korks)
-        (apply swap! state update-in (conj path korks) f a b c d args)
-        (apply swap! state update-in (into path korks) f a b c d args)))))
+    (allow-reads
+      (let [state (-state cursor)
+            path  (-path cursor)]
+        (if-not (sequential? korks)
+          (apply swap! state update-in (conj path korks) f a b c d args)
+          (apply swap! state update-in (into path korks) f a b c d args))))))
 
 (defn update!
   "Like transact! but no list of keys given. An Om re-render
@@ -424,11 +429,12 @@
   ([cursor f a b c d]
     (safe-update! cursor f a b c d))
   ([cursor f a b c d & args]
-    (let [path  (.-path cursor)
-          state (.-state cursor)]
-      (if (empty? path)
-        (swap! state #(apply f % a b c d args))
-        (apply swap! state update-in path f a b c d args)))))
+    (allow-reads
+      (let [path  (-path cursor)
+            state (-state cursor)]
+        (if (empty? path)
+          (swap! state #(apply f % a b c d args))
+          (apply swap! state update-in path f a b c d args))))))
 
 (defn read
   "Given a cursor and a function f, read its current value. f will be
@@ -437,25 +443,27 @@
    outside of render phase."
   ([cursor f] (read cursor () f))
   ([cursor korks f]
-    (let [path  (if-not (sequential? korks)
-                  (conj (.-path cursor) korks)
-                  (into (.-path cursor) korks))
-          state (.-state cursor)
-          value @state]
-      (if (empty? path)
-        (allow-reads (f (to-cursor value state [])))
-        (allow-reads (f (to-cursor (get-in value path) state path)))))))
+    (allow-reads
+      (let [path  (if-not (sequential? korks)
+                    (conj (-path cursor) korks)
+                    (into (-path cursor) korks))
+            state (-state cursor)
+            value @state]
+        (if (empty? path)
+          (f (to-cursor value state []))
+          (f (to-cursor (get-in value path) state path)))))))
 
 (defn join
   "EXPERIMENTAL: Given a cursor, get value from the root at the path
    specified by a sequential list of keys ks."
   [cursor korks]
-  (let [state (.-state cursor)
-        value @state]
-    (if-not (sequential? korks)
-      (to-cursor (get value korks) state [korks])
-      (to-cursor (get-in value korks) state
-        (if (vector? korks) korks (into [] korks))))))
+  (allow-reads
+    (let [state (-state cursor)
+          value @state]
+      (if-not (sequential? korks)
+        (to-cursor (get value korks) state [korks])
+        (to-cursor (get-in value korks) state
+          (if (vector? korks) korks (into [] korks)))))))
 
 (defn get-node
   "A helper function to get at React refs. Given a owning pure node
@@ -472,16 +480,17 @@
   (let [props  (.-props owner)
         state  (.-state owner)
         cursor (aget props "__om_cursor")
-        path   (.-path cursor)
+        path   (-path cursor)
         pstate (or (aget state "__om_pending_state")
                    (aget state "__om_state"))]
     (if-not (sequential? korks)
       (aset state "__om_pending_state" (assoc pstate korks v))
       (aset state "__om_pending_state" (assoc-in pstate korks v)))
     ;; invalidate path to component
-    (if (empty? path)
-      (swap! (.-state cursor) clone)
-      (swap! (.-state cursor) update-in path clone))))
+    (allow-reads
+      (if (empty? path)
+        (swap! (-state cursor) clone)
+        (swap! (-state cursor) update-in path clone)))))
 
 (defn get-state
   "Takes a pure owning component and sequential list of keys and returns

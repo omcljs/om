@@ -32,15 +32,17 @@
      (throw (js/Error. (str "Cannot build Om component from non-cursor " ~cursor)))))
 
 (defmacro safe-transact! [cursor korks f & args]
-  `(let [path#  (.-path ~cursor)
-         state# (.-state ~cursor)]
-     (if-not (sequential? ~korks)
-       (swap! state# update-in (conj path# ~korks) ~f ~@args)
-       (swap! state# update-in (into path# ~korks) ~f ~@args))))
+  `(om.core/allow-reads
+     (let [path#  (om.core/-path ~cursor)
+           state# (om.core/-state ~cursor)]
+       (if-not (sequential? ~korks)
+         (swap! state# update-in (conj path# ~korks) ~f ~@args)
+         (swap! state# update-in (into path# ~korks) ~f ~@args)))))
 
 (defmacro safe-update! [cursor f & args]
-  `(let [path#  (.-path ~cursor)
-         state# (.-state ~cursor)]
-     (if (empty? path#)
-       (swap! state# #(~f % ~@args))
-       (swap! state# update-in path# ~f ~@args))))
+  `(om.core/allow-reads
+     (let [path#  (om.core/-path ~cursor)
+           state# (om.core/-state ~cursor)]
+       (if (empty? path#)
+         (swap! state# #(~f % ~@args))
+         (swap! state# update-in path# ~f ~@args)))))
