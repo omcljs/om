@@ -57,6 +57,14 @@
       (assoc ret :index idx)
       ret)))
 
+(defn ^:private merge-pending-state [owner]
+  (let [state (.-state owner)]
+    (when-let [pending-state (aget state "__om_pending_state")]
+      (doto state
+        (aset "__om_prev_state" (aget state "__om_state"))
+        (aset "__om_state" pending-state)
+        (aset "__om_pending_state" nil)))))
+
 (def ^:private Pure
   (js/React.createClass
     #js {:getInitialState
@@ -94,7 +102,8 @@
            (this-as this
              (let [c (children this)]
                (when (satisfies? IWillMount c)
-                 (allow-reads (will-mount c))))))
+                 (allow-reads (will-mount c))))
+             (merge-pending-state this)))
          :componentDidMount
          (fn [node]
            (this-as this
@@ -116,13 +125,7 @@
                    (will-update c
                      (get-props #js {:props next-props})
                      (aget (.-state this) "__om_pending_state")))))
-             ;; merge any pending state
-             (let [state (.-state this)]
-               (when-let [pending-state (aget state "__om_pending_state")]
-                 (doto state
-                   (aset "__om_prev_state" (aget state "__om_state"))
-                   (aset "__om_state" pending-state)
-                   (aset "__om_pending_state" nil))))))
+             (merge-pending-state this)))
          :componentDidUpdate
          (fn [prev-props prev-state root-node]
            (this-as this
