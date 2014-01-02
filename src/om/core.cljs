@@ -215,19 +215,19 @@
   (-pr-writer [_ writer opts]
     (check (-pr-writer value writer opts))))
 
-(deftype VectorCursor [value state path]
+(deftype IndexedCursor [value state path]
   ISequential
   ICursor
   (-path [_] (check path))
   ICloneable
   (-clone [_]
-    (VectorCursor. value state path))
+    (IndexedCursor. value state path))
   ICounted
   (-count [_]
     (check (-count value)))
   ICollection
   (-conj [_ o]
-    (check (VectorCursor. (-conj value o) state path)))
+    (check (IndexedCursor. (-conj value o) state path)))
   ILookup
   (-lookup [this n]
     (check (-nth this n nil)))
@@ -274,9 +274,9 @@
   ([val state path]
     (cond
       (cursor? val) val
-      (map? val) (MapCursor. val state path)
-      (vector? val) (VectorCursor. val state path)
       (satisfies? IToCursor val) (-to-cursor val state path)
+      (indexed? val) (IndexedCursor. val state path)
+      (map? val) (MapCursor. val state path)
       :else val)))
 
 ;; =============================================================================
