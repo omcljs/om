@@ -274,9 +274,9 @@
 (defn to-cursor* [val state path]
   (specify val
     ICursor
-    (-value [_] val)
-    (-state [_] state)
-    (-path [_] path)))
+    (-value [_] (check val))
+    (-state [_] (check state))
+    (-path [_] (check path))))
 
 (defn to-cursor
   ([val] (to-cursor val nil []))
