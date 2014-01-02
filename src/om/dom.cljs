@@ -28,7 +28,8 @@
          (.transferPropsTo this
            ;; NOTE: if switch to macro we remove a closure allocation
            (ctor #js {:value (aget (.-state this) "value")
-                      :onChange (aget this "onChange")}))))}))
+                      :onChange (aget this "onChange")
+                      :children (aget (.-props this) "children")}))))}))
 
 (def input (wrap-form-element js/React.DOM.input))
 
