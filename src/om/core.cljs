@@ -488,17 +488,17 @@
    sets the state of the component. Conceptually analagous to React
    setState. Will schedule an Om re-render."
   [owner korks v]
-  (let [props  (.-props owner)
-        state  (.-state owner)
-        cursor (aget props "__om_cursor")
-        path   (-path cursor)
-        pstate (or (aget state "__om_pending_state")
-                   (aget state "__om_state"))]
-    (if-not (sequential? korks)
-      (aset state "__om_pending_state" (assoc pstate korks v))
-      (aset state "__om_pending_state" (assoc-in pstate korks v)))
-    ;; invalidate path to component
-    (allow-reads
+  (allow-reads
+    (let [props  (.-props owner)
+          state  (.-state owner)
+          cursor (aget props "__om_cursor")
+          path   (-path cursor)
+          pstate (or (aget state "__om_pending_state")
+                     (aget state "__om_state"))]
+      (if-not (sequential? korks)
+        (aset state "__om_pending_state" (assoc pstate korks v))
+        (aset state "__om_pending_state" (assoc-in pstate korks v)))
+      ;; invalidate path to component
       (if (empty? path)
         (swap! (-state cursor) clone)
         (swap! (-state cursor) update-in path clone)))))
