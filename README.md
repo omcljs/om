@@ -70,11 +70,11 @@ Make sure you have [Leiningen](http://leiningen.org/) installed.
 Your `project.clj` should include something like the following:
 
 ```clj
-(defproject foo "0.1.2-SNAPSHOT"
+(defproject foo "0.1.3-SNAPSHOT"
   ...
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/clojurescript "0.0-2138"]
-                 [om "0.1.2"]]
+                 [om "0.1.3"]]
   ...)
 ```
 
