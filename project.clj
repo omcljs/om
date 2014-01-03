@@ -1,4 +1,4 @@
-(defproject om "0.1.0"
+(defproject om "0.1.1"
   :description "ClojureScript interface to Facebook's react"
   :url "http://github.com/swannodette/om"
   :license {:name "Eclipse"
@@ -45,5 +45,12 @@
               :compiler {
                 :output-to "examples/counters/main.js"
                 :output-dir "examples/counters/out"
+                :source-map true
+                :optimizations :none}}
+             {:id "tests"
+              :source-paths ["src" "examples/tests"]
+              :compiler {
+                :output-to "examples/tests/main.js"
+                :output-dir "examples/tests/out"
                 :source-map true
                 :optimizations :none}}]})
