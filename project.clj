@@ -47,6 +47,13 @@
                 :output-dir "examples/counters/out"
                 :source-map true
                 :optimizations :none}}
+             {:id "typeahead"
+              :source-paths ["src" "examples/typeahead"]
+              :compiler {
+                :output-to "examples/typeahead/main.js"
+                :output-dir "examples/typeahead/out"
+                :source-map true
+                :optimizations :none}}
              {:id "tests"
               :source-paths ["src" "examples/tests"]
               :compiler {
