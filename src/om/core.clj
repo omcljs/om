@@ -46,3 +46,8 @@
        (if (empty? path#)
          (swap! state# #(~f % ~@args))
          (swap! state# update-in path# ~f ~@args)))))
+
+(defmacro tag [pure t]
+  `(let [pure# ~pure]
+     (set! (.-constructor pure#) (goog/getUid ~t))
+     pure#))

@@ -2,7 +2,7 @@
   (:require-macros
     [om.core :refer
       [pure component check allow-reads safe-update!
-       safe-transact! cursor-check]])
+       safe-transact! cursor-check tag]])
   (:require [om.dom :as dom :include-macros true]))
 
 (def ^{:tag boolean :dynamic true} *read-enabled* false)
@@ -331,9 +331,6 @@
             (js/setTimeout rootf 16)))))
     (rootf)))
 
-(defn ^:private om-key [f]
-  (str "_om_" (goog/getUid f)))
-
 (defn build
   "Builds a Om component. Takes an IRender instance returning function
    f, a cursor, and an optional third argument which may be a map of
@@ -366,10 +363,11 @@
   ([f cursor m]
     (cond
       (nil? m)
-      (pure #js {:__om_cursor cursor
-                 :key (om-key f)}
-        (fn [this]
-          (cursor-check cursor (allow-reads (f cursor this)))))
+      (tag
+        (pure #js {:__om_cursor cursor}
+          (fn [this]
+            (cursor-check cursor (allow-reads (f cursor this)))))
+        f)
 
       :else
       (let [{:keys [key opts]} m
@@ -378,14 +376,15 @@
             rkey    (if-not (nil? key)
                       (get cursor' key)
                       (get m :react-key))]
-        (pure #js {:__om_cursor cursor'
-                   :__om_index (::index m)
-                   :key (or rkey (om-key f))}
-          (if (nil? opts)
-            (fn [this]
-              (cursor-check cursor' (allow-reads (f cursor' this))))
-            (fn [this]
-              (cursor-check cursor' (allow-reads (f cursor' this opts))))))))))
+        (tag
+          (pure #js {:__om_cursor cursor'
+                     :__om_index (::index m)}
+            (if (nil? opts)
+              (fn [this]
+                (cursor-check cursor' (allow-reads (f cursor' this))))
+              (fn [this]
+                (cursor-check cursor' (allow-reads (f cursor' this opts))))))
+          f)))))
 
 (defn build-all
   "Build a sequence of components. f is the component constructor
