@@ -65,9 +65,7 @@ be listed here:
 
 Om is pre-alpha software.
 
-Make sure you have [Leiningen](http://leiningen.org/)
-installed, then clone the Om repo and install it locally with `lein
-install`.
+Make sure you have [Leiningen](http://leiningen.org/) installed.
 
 Your `project.clj` should include something like the following:
 
@@ -75,8 +73,8 @@ Your `project.clj` should include something like the following:
 (defproject foo "0.1.0-SNAPSHOT"
   ...
   :dependencies [[org.clojure/clojure "1.5.1"]
-                 [org.clojure/clojurescript "0.0-2134"]
-                 [om "0.1.0-SNAPSHOT"]]
+                 [org.clojure/clojurescript "0.0-2138"]
+                 [om "0.1.0"]]
   ...)
 ```
 
