@@ -1,5 +1,5 @@
 (defproject om "0.1.2"
-  :description "ClojureScript interface to Facebook's react"
+  :description "ClojureScript interface to Facebook's React"
   :url "http://github.com/swannodette/om"
   :license {:name "Eclipse"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
