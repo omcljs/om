@@ -331,6 +331,9 @@
             (js/setTimeout rootf 16)))))
     (rootf)))
 
+(defn ^:private om-key [f]
+  (str "_om_" (goog/getUid f)))
+
 (defn build
   "Builds a Om component. Takes an IRender instance returning function
    f, a cursor, and an optional third argument which may be a map of
@@ -363,7 +366,8 @@
   ([f cursor m]
     (cond
       (nil? m)
-      (pure #js {:__om_cursor cursor}
+      (pure #js {:__om_cursor cursor
+                 :key (om-key f)}
         (fn [this]
           (cursor-check cursor (allow-reads (f cursor this)))))
 
@@ -376,7 +380,7 @@
                       (get m :react-key))]
         (pure #js {:__om_cursor cursor'
                    :__om_index (::index m)
-                   :key rkey}
+                   :key (or rkey (om-key f))}
           (if (nil? opts)
             (fn [this]
               (cursor-check cursor' (allow-reads (f cursor' this))))
