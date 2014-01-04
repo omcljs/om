@@ -37,16 +37,18 @@
             mouse-move (fn [e] (println "window mouse move"))]
         (om/set-state! owner :window-listener
           [mouse-down mouse-up mouse-move])
-        (events/listen js/window events/EventType.MOUSEDOWN mouse-down)
-        (events/listen js/window events/EventType.MOUSEUP mouse-up)
-        (events/listen js/window events/EventType.MOUSEMOVE mouse-move)))
+        (doto js/window
+          (events/listen EventType.MOUSEDOWN mouse-down)
+          (events/listen EventType.MOUSEUP mouse-up)
+          (events/listen EventType.MOUSEMOVE mouse-move))))
     om/IWillUnmount
     (will-unmount [_]
       (let [[mouse-down mouse-up mouse-move]
             (om/get-state! owner :window-listeners)]
-        (events/unlisten js/window events/EventType.MOUSEDOWN mouse-down)
-        (events/unlisten js/window events/EventType.MOUSEUP mouse-up)
-        (events/unlisten js/window events/EventType.MOUSEMOVE mouse-move)))
+        (doto js/window
+          (events/unlisten EventType.MOUSEDOWN mouse-down)
+          (events/unlisten EventType.MOUSEUP mouse-up)
+          (events/unlisten EventType.MOUSEMOVE mouse-move))))
     om/IRender
     (render [_]
       (dom/ul nil (om/build-all sortable-item items {:opts opts})))))
