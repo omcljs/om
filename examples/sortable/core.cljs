@@ -81,6 +81,29 @@
 
 (defn draggable [item owner {:keys [chans] :as opts}]
   (reify
+    om/IWillMount
+    (will-mount [_]
+      (when-let [delg (:delegate opts)]
+        (go (while true
+              (let [[e c] (<! (:remote-control delg))]
+                (case (:type e)
+                  :dimensions (set-state! owner :dimensions e)
+                  :drag-start (set-state! owner :dragging true)
+                  :drag       (set-state! owner :location e)
+                  :drag-stop  (doto owner
+                                (set-state! :dragging false)
+                                (set-state! :location nil))
+                  nil))))))
+    om/IDidMount
+    (did-mount [_ _]
+      ;; capture the cell dimensions when it becomes available
+      (let [dims (om/get-state owner :dimensions)]
+        (when-not dims
+          (let [size (-> owner (om/get-node "draggable") gstyle/getSize)
+                dims [(.-width size) (.-height size)]]
+            (om/set-state! owner :dimensions dims)
+            (when-let [delg (:delegate opts)]
+              (put! (:dimensions delg) dims))))))
     om/IWillUpdate
     (will-update [_ next-props next-state]
       ;; begin dragging
@@ -100,27 +123,15 @@
             (events/unlisten EventType.MOUSEUP mouse-up)
             (events/unlisten EventType.MOUSEMOVE mouse-move))
           #_(put! (:drop chans) item))))
-    om/IDidMount
-    (did-mount [_ _]
-      ;; capture the cell dimensions when it becomes available
-      (let [dims (om/get-state owner :dimensions)]
-        (when-not dims
-          (let [size (-> owner (om/get-node "draggable") gstyle/getSize)
-                dims [(.-width size) (.-height size)]]
-            (om/set-state! owner :dimensions dims)
-            (when-let [delg (:delegate opts)]
-              (put! (:dimensions delg) dims))))))
     om/IRender
     (render [_]
       (let [dragging (om/get-state owner :dragging)
             style (cond
                     dragging
-                    (if-let [del (:delegate opts)]
-                      #js {:position "static" :z-index 0}
-                      (let [[x y] (om/get-state owner :location)
-                            [w h] (om/get-state owner :dimensions)]
-                        #js {:position "absolute" :top y :left x :z-index 1
-                             :width w :height h}))
+                    (let [[x y] (om/get-state owner :location)
+                          [w h] (om/get-state owner :dimensions)]
+                      #js {:position "absolute" :top y :left x :z-index 1
+                           :width w :height h})
                     :else
                     #js {:position "static" :z-index 0})]
         (dom/li
