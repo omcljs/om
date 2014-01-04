@@ -196,7 +196,7 @@
   IFn
   (-invoke [this k]
     (-lookup this k))
-  (-invoke [_ k not-found]
+  (-invoke [this k not-found]
     (-lookup this k not-found))
   ISeqable
   (-seq [this]
@@ -244,7 +244,7 @@
   IFn
   (-invoke [this k]
     (-lookup this k))
-  (-invoke [_ k not-found]
+  (-invoke [this k not-found]
     (-lookup this k not-found))
   IIndexed
   (-nth [_ n]
