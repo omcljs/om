@@ -88,14 +88,7 @@
         (go (while true
               (let [[e c] (<! (:remote-control delg))]
                 (case (:type e)
-                  :dimensions (om/set-state! owner :dimensions
-                                (:dimensions e))
-                  :drag-start (om/set-state! owner :dragging true)
-                  :drag       (om/set-state! owner :location
-                                (:location e))
-                  :drag-stop  (doto owner
-                                (om/set-state! :dragging false)
-                                (om/set-state! :location nil))
+                  :drag (om/set-state! owner :location (:location e))
                   nil))))))
     om/IDidMount
     (did-mount [_ _]
@@ -106,7 +99,7 @@
                 dims [(.-width size) (.-height size)]]
             (om/set-state! owner :dimensions dims)
             (when-let [delg (:delegate opts)]
-              (put! (:dimensions delg) dims))))))
+              (put! (:chan delg) {:event :dimensions :value dims}))))))
     om/IWillUpdate
     (will-update [_ next-props next-state]
       ;; begin dragging
@@ -124,15 +117,16 @@
               (om/get-state owner :window-listeners)]
           (doto js/window
             (events/unlisten EventType.MOUSEUP mouse-up)
-            (events/unlisten EventType.MOUSEMOVE mouse-move))
-          #_(put! (:drop chans) item))))
+            (events/unlisten EventType.MOUSEMOVE mouse-move)))))
     om/IRender
     (render [_]
       (let [dragging (om/get-state owner :dragging)
+            loc (:location item) ;; remote controlled
             style (cond
-                    dragging
-                    (let [[x y] (om/get-state owner :location)
-                          [w h] (om/get-state owner :dimensions)]
+                    (or dragging loc)
+                    (let [[x y] (or (om/get-state owner :location) loc)
+                          [w h] (or (om/get-state owner :dimensions)
+                                    (:dimensions item))]
                       #js {:position "absolute" :top y :left x :z-index 1
                            :width w :height h})
                     :else
@@ -152,14 +146,6 @@
 (defn sortable-spacer [info owner opts]
   (om/component
     (dom/li #js {:style #js {:visibility "hidden" :height (:height info)}})))
-
-(defn handle-mouse-up [e owner]
-  (when (om/get-state owner :dragging)
-    (om/set-state! owner :dragging false)))
-
-(defn handle-mouse-move [e owner]
-  (when (om/get-state owner :dragging)
-    (.log js/console e)))
 
 (defn start-sort [owner e]
   (om/set-state! owner :sorting true))
@@ -188,6 +174,8 @@
         (go (while true
               (let [[e c] (<! drag-chan)]
                 (case (:type e)
+                  :dimensions (om/set-state! owner
+                                :cell-dimensions (:dimensions e))
                   :drag-start (start-sort owner e) 
                   :drag-stop  (handle-drop owner e)
                   :drag       (update-drop owner (:location e))
@@ -199,16 +187,16 @@
       (dom/div #js {:className "om-sortable"}
         (when-let [item (om/get-state owner :sorting)]
           (om/build draggable
-            (assoc (items item) :location (om/get-state owner :location))
-            {:opts opts}))
-        (dom/ul #js {:key "list" :ref "list"
-                     :onMouseUp #(handle-mouse-up % owner)
-                     :onMouseMove #(handle-mouse-move % owner)}
+            (assoc (items item)
+              :location   (om/get-state owner :cell-location)
+              :dimensions (om/get-state owner :cell-dimensions))
+            {:opts opts :react-key "sortable-cell"}))
+        (dom/ul #js {:key "list" :ref "list"}
           (into-array
             (map (fn [id]
                    (if-not (= id ::spacer)
                      (om/build draggable (items id) {:key :id :opts opts})
-                     (om/build sortable-spacer (items id) {:react-key "spacer"})))
+                     (om/build sortable-spacer (items id) {:react-key "spacer-cell"})))
               (om/get-state owner :sort))))))))
 
 ;; =============================================================================
