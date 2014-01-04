@@ -30,7 +30,7 @@
 ;; =============================================================================
 ;; Generic Sortable
 
-(defn sortable-item [item owner opts]
+(defn draggable [item owner opts]
   (om/component
     (if-not (= (:type item) ::spacer)
       (dom/li
@@ -40,6 +40,14 @@
         (om/build (:view opts) item {:opts opts}))
       (dom/li #js {:style #js {:visibility "hidden" :height (:height item)}}))))
 
+(defn handle-mouse-up [e owner]
+  (when (om/get-state owner :dragging)
+    (om/set-state! owner :dragging false)))
+
+(defn handle-mouse-move [e owner]
+  (when (om/get-state owner :dragging)
+    (.log js/console e)))
+
 (defn sortable [{:keys [items sort]} owner opts]
   (reify
     om/IInitState
@@ -48,11 +56,13 @@
     (will-mount [_]
       ;; sadly need to listen to window events, too
       (let [cancel (chan)
-            [mdc muc mmc] (take 3 (repeatedly #(chan (sliding-buffer 1))))
+            [mdc muc mmc :as chans]
+            (take 3 (repeatedly #(chan (sliding-buffer 1))))
             mouse-down #(put! mdc %)
             mouse-up   #(put! muc %)
             mouse-move #(put! mmc %)]
-        (om/set-state! owner :window-listener
+        (om/set-state! owner :chans chans)
+        (om/set-state! owner :window-listeners
           [mouse-down mouse-up mouse-move])
         (doto js/window
           (events/listen EventType.MOUSEDOWN mouse-down)
@@ -87,12 +97,14 @@
     om/IRender
     (render [_]
       (dom/div #js {:className "om-sortable"}
-        (when-let [item (om/get-state owner :dragging)]
-          (om/build sortable-item (items item)
-            {:fn (fn [x] (assoc x :dragging true))
-             :opts opts}))
-        (dom/ul #js {:key "list" :ref "list"}
-          (om/build-all sortable-item (om/get-state owner :sort)
+        (when-let [item (om/get-state owner :dragged)]
+          (om/build draggable
+            (assoc (items item) :dragged true)
+            {:opts opts}))
+        (dom/ul #js {:key "list" :ref "list"
+                     :onMouseUp #(handle-mouse-up % owner)
+                     :onMouseMove #(handle-mouse-move % owner)}
+          (om/build-all draggable (om/get-state owner :sort)
             {:fn (fn [id]
                    (if (= id ::spacer)
                      {:type ::spacer :height 10}
