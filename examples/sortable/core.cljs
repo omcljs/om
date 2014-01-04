@@ -45,21 +45,18 @@
   (let [offset (gstyle/getPageOffset el)]
     [(.-x offset) (.-y offset)]))
 
-(defn default-constrain [location offset]
-  location)
-
 (defn drag-start [e owner opts]
   (let [el (om/get-node owner "draggable")
-        drag-start  (location e)
-        drag-offset (vec (map - (element-offset el) drag-start))] 
+        drag-start (location e)
+        el-offset (element-offset el)
+        drag-offset (vec (map - el-offset drag-start))] 
     (doto owner
       (om/set-state! :dragging true)
       (om/set-state! :location
-        ((or (:constrain opts) default-constrain)
-          drag-start))
+        ((or (:constrain opts) identity) el-offset))
       (om/set-state! :drag-offset drag-offset))))
 
-(defn drag-stop [e owner opts]
+(defn drag-stop [owner opts]
   (doto owner
     (om/set-state! :dragging false)
     (om/set-state! :location nil)
@@ -67,7 +64,8 @@
 
 (defn drag [e owner opts]
   (om/set-state! owner :location
-    ((or (:constrain opts) default-constrain) (location e))))
+    ((or (:constrain opts) identity)
+      (vec (map - (om/get-state owner :drag-offset) (location e))))))
 
 (defn draggable [item owner {:keys [chans] :as opts}]
   (reify
@@ -75,10 +73,8 @@
     (will-update [_ next-props next-state]
       ;; begin dragging
       (when (to? owner next-state :dragging)
-        (let [mouse-up (fn [e] (om/set-state! owner :dragging false))
-              mouse-move (fn [e]
-                           (when (om/get-state owner :dragging)
-                             ))]
+        (let [mouse-up (fn [e] (drag-stop owner opts))
+              mouse-move #(drag % owner opts)]
           (om/set-state! owner :window-listeners
             [mouse-up mouse-move])
           (doto js/window
@@ -91,16 +87,26 @@
           (doto js/window
             (events/unlisten EventType.MOUSEUP mouse-up)
             (events/unlisten EventType.MOUSEMOVE mouse-move))
-          (put! (:drop chans) item))))
+          #_(put! (:drop chans) item))))
     om/IRender
     (render [_]
-      (dom/li
-        #js {:style #js {}
-             :ref "draggable"
-             :onMouseDown #(drag-start % owner opts)
-             :onMouseUp   #(drag-stop % owner opts)
-             :onMouseMove #(drag % owner opts)}
-        (om/build (:view opts) item {:opts opts})))))
+      (when (om/get-state owner :dragging)
+        (println (om/get-state owner :location)))
+      (let [style (cond
+                    (om/get-state owner :dragging)
+                    (if-let [del (:delegate opts)]
+                      #js {:position "static"}
+                      (let [[x y] (om/get-state owner :location)]
+                        #js {:position "absolute" :top y :left x}))
+                    :else
+                    #js {:position "static"})]
+        (dom/li
+          #js {:style style
+               :ref "draggable"
+               :onMouseDown #(drag-start % owner opts)
+               :onMouseUp   (fn [e] (drag-stop owner opts))
+               :onMouseMove #(drag % owner opts)}
+          (om/build (:view opts) item {:opts opts}))))))
 
 ;; =============================================================================
 ;; Generic Sortable
