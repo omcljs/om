@@ -28,17 +28,22 @@
   (apply str (take (inc (rand-int 10)) (repeatedly rand-char))))
 
 ;; =============================================================================
+;; Generic Draggable
+
+(defn draggable [item owner {:keys [chans] :as opts}]
+  (om/component
+    (dom/li
+      #js {:onMouseDown #(put! (:start chan) %)
+           :onMouseUp   #(put! (:stop chan) %)
+           :onMouseMove #(put! (:drag chan) %)}
+      (om/build (:view opts) item {:opts opts}))))
+
+;; =============================================================================
 ;; Generic Sortable
 
-(defn draggable [item owner opts]
+(defn sortable-spacer [info owner opts]
   (om/component
-    (if-not (= (:type item) ::spacer)
-      (dom/li
-        #js {:onMouseDown (fn [e] (println "mouse down"))
-             :onMouseUp   (fn [e] (println "mouse up"))
-             :onMouseMove (fn [e] (println "mouse move"))}
-        (om/build (:view opts) item {:opts opts}))
-      (dom/li #js {:style #js {:visibility "hidden" :height (:height item)}}))))
+    (dom/li #js {:style #js {:visibility "hidden" :height (:height info)}})))
 
 (defn handle-mouse-up [e owner]
   (when (om/get-state owner :dragging)
@@ -87,6 +92,7 @@
           (events/unlisten EventType.MOUSEMOVE mouse-move))))
     om/IDidUpdate
     (did-update [_ _ _ _]
+      ;; capture the cell height when it becomes available
       (let [cell-height (om/get-state owner :cell-height)]
         (when-not cell-height
           (let [node (om/get-node owner "list")
@@ -104,12 +110,14 @@
         (dom/ul #js {:key "list" :ref "list"
                      :onMouseUp #(handle-mouse-up % owner)
                      :onMouseMove #(handle-mouse-move % owner)}
-          (om/build-all draggable (om/get-state owner :sort)
-            {:fn (fn [id]
-                   (if (= id ::spacer)
-                     {:type ::spacer :height 10}
-                     (items id)))
-             :key :id :opts opts}))))))
+          (into-array
+            (map (fn [id]
+                   (if-not (= id ::spacer)
+                     (om/build draggable (items id) {:key :id :opts opts})
+                     (om/build sortable-spacer (items id)
+                       {:react-key "spacer"
+                        :opts {:height (om/get-state owner :cell-height)}})))
+              (om/get-state owner :sort))))))))
 
 ;; =============================================================================
 ;; Example
