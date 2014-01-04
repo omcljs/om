@@ -5,7 +5,9 @@
             [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]
             [clojure.string :as string]
-            [goog.events :as events])
+            [goog.events :as events]
+            [goog.dom :as gdom]
+            [goog.style :as gstyle])
   (:import [goog.ui IdGenerator]
            [goog.events EventType]))
 
@@ -73,6 +75,15 @@
           (events/unlisten EventType.MOUSEDOWN mouse-down)
           (events/unlisten EventType.MOUSEUP mouse-up)
           (events/unlisten EventType.MOUSEMOVE mouse-move))))
+    om/IDidUpdate
+    (did-update [_ _ _ _]
+      (let [cell-height (om/get-state owner :cell-height)]
+        (when-not cell-height
+          (let [node (om/get-node owner "list")
+                xs   (gdom/getChildren node)]
+            (when (pos? (alength xs))
+              (om/set-state! owner :cell-height
+                (.-height (gstyle/getSize (aget xs 0)))))))))
     om/IRender
     (render [_]
       (dom/div #js {:className "om-sortable"}
@@ -80,7 +91,7 @@
           (om/build sortable-item (items item)
             {:fn (fn [x] (assoc x :dragging true))
              :opts opts}))
-        (dom/ul #js {:key "list"}
+        (dom/ul #js {:key "list" :ref "list"}
           (om/build-all sortable-item (om/get-state owner :sort)
             {:fn (fn [id]
                    (if (= id ::spacer)
