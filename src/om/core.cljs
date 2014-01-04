@@ -281,14 +281,14 @@
   (-pr-writer [_ writer opts]
     (check (-pr-writer value writer opts))))
 
-(defn to-cursor* [val state path]
+(defn ^:private to-cursor* [val state path]
   (specify val
     ICursor
     (-value [_] (check val))
     (-state [_] (check state))
     (-path [_] (check path))))
 
-(defn to-cursor
+(defn ^:private to-cursor
   ([val] (to-cursor val nil []))
   ([val state] (to-cursor val state []))
   ([val state path]
