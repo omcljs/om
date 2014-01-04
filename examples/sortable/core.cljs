@@ -90,18 +90,32 @@
             (events/unlisten EventType.MOUSEUP mouse-up)
             (events/unlisten EventType.MOUSEMOVE mouse-move))
           #_(put! (:drop chans) item))))
+    om/IDidMount
+    (did-mount [_ _]
+      ;; capture the cell height when it becomes available
+      (let [dims (om/get-state owner :dimensions)]
+        (when-not dims
+          (let [size (-> owner
+                       (om/get-node "draggable")
+                       gstyle/getSize)]
+            (println [(.-width size) (.-height size)])
+            (om/set-state! owner :dimensions [(.-width size) (.-height size)])))))
     om/IRender
     (render [_]
-      (let [style (cond
-                    (om/get-state owner :dragging)
+      (let [dragging (om/get-state owner :dragging)
+            style (cond
+                    dragging
                     (if-let [del (:delegate opts)]
                       #js {:position "static" :z-index 0}
-                      (let [[x y] (om/get-state owner :location)]
-                        #js {:position "absolute" :top y :left x :z-index 1}))
+                      (let [[x y] (om/get-state owner :location)
+                            [w h] (om/get-state owner :dimensions)]
+                        #js {:position "absolute" :top y :left x :z-index 1
+                             :width w :height h}))
                     :else
                     #js {:position "static" :z-index 0})]
         (dom/li
-          #js {:style style
+          #js {:className (when dragging "dragging")
+               :style style
                :ref "draggable"
                :onMouseDown #(drag-start % owner opts)
                :onMouseUp (fn [e] (drag-stop owner opts))
@@ -127,16 +141,6 @@
   (reify
     om/IInitState
     (init-state [_] {:sort sort})
-    om/IDidUpdate
-    (did-update [_ _ _ _]
-      ;; capture the cell height when it becomes available
-      (let [cell-height (om/get-state owner :cell-height)]
-        (when-not cell-height
-          (let [node (om/get-node owner "list")
-                xs   (gdom/getChildren node)]
-            (when (pos? (alength xs))
-              (om/set-state! owner :cell-height
-                (.-height (gstyle/getSize (aget xs 0)))))))))
     om/IRender
     (render [_]
       (dom/div #js {:className "om-sortable"}
@@ -151,9 +155,7 @@
             (map (fn [id]
                    (if-not (= id ::spacer)
                      (om/build draggable (items id) {:key :id :opts opts})
-                     (om/build sortable-spacer (items id)
-                       {:react-key "spacer"
-                        :opts {:height (om/get-state owner :cell-height)}})))
+                     (om/build sortable-spacer (items id) {:react-key "spacer"})))
               (om/get-state owner :sort))))))))
 
 ;; =============================================================================
