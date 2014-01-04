@@ -163,6 +163,12 @@
 (defn update-drop [owner [x y]]
   (om/set-state! owner :location location))
 
+(defn bound [n lb ub]
+  (cond
+    (< n lb) lb
+    (> n ub) ub
+    :else n))
+
 (defn sortable [{:keys [items sort]} owner opts]
   (reify
     om/IInitState
@@ -180,23 +186,36 @@
                   :drag-stop  (handle-drop owner e)
                   :drag       (update-drop owner (:location e))
                   nil))))))
+    ;; would want to do this in IDidUpdate or something similar
+    ;; if the number of items can change
+    om/IDidMount
+    (did-mount [_ _]
+      (let [node  (om/get-node owner "sortable") 
+            [w h] (gstyle/getSize node)
+            [x y] (element-offset node)
+            [_ ch] (om/get-state owner :cell-dimensions)]
+        (om/set-state! owner :constrain
+          (fn [[_ cy]] [x (bound cy y (- (+ y h) ch))]))))
     om/IWillUpdate
     (will-update [_ next-props next-state])
     om/IRender
     (render [_]
-      (dom/div #js {:className "om-sortable"}
+      (dom/div #js {:className "sortable"}
         (when-let [item (om/get-state owner :sorting)]
           (om/build draggable
             (assoc (items item)
               :location   (om/get-state owner :cell-location)
               :dimensions (om/get-state owner :cell-dimensions))
             {:opts opts :react-key "sortable-cell"}))
-        (dom/ul #js {:key "list" :ref "list"}
+        (dom/ul #js {:key "list" :ref "sortable"}
           (into-array
-            (map (fn [id]
-                   (if-not (= id ::spacer)
-                     (om/build draggable (items id) {:key :id :opts opts})
-                     (om/build sortable-spacer (items id) {:react-key "spacer-cell"})))
+            (map
+              (fn [id]
+                (if-not (= id ::spacer)
+                  (om/build draggable (items id)
+                    {:key :id
+                     :opts (assoc opts :constrain (om/get-state owner :constrain))})
+                  (om/build sortable-spacer (items id) {:react-key "spacer-cell"})))
               (om/get-state owner :sort))))))))
 
 ;; =============================================================================
@@ -214,22 +233,8 @@
 
 (om/root app-state
   (fn [app owner]
-    (reify
-      om/IWillMount
-      (will-mount [_]
-        (let [{:keys [start drag stop] :as chans}
-              (zipmap [:start :drag :stop]
-                      (repeatedly #(chan (sliding-buffer 1))))]
-          (om/set-state! owner :chans chans)
-          (go (while true
-                (alt!
-                  start ([v c] (println "start"))
-                  drag  ([v c] (println "drag"))
-                  stop  ([v c] (println "stop")))))))
-      om/IRender
-      (render [_]
-        (dom/div nil
-          (dom/h2 nil "Sortable example")
-          (om/build sortable app
-            {:opts {:view item :chans (om/get-state owner :chans)}})))))
+    (om/component
+      (dom/div nil
+        (dom/h2 nil "Sortable example")
+        (om/build sortable app {:opts {:view item}}))))
   (.getElementById js/document "app"))
