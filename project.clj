@@ -54,6 +54,13 @@
                 :output-dir "examples/typeahead/out"
                 :source-map true
                 :optimizations :none}}
+             {:id "sortable"
+              :source-paths ["src" "examples/sortable"]
+              :compiler {
+                :output-to "examples/sortable/main.js"
+                :output-dir "examples/sortable/out"
+                :source-map true
+                :optimizations :none}}
              {:id "tests"
               :source-paths ["src" "examples/tests"]
               :compiler {
