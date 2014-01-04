@@ -30,14 +30,18 @@
 
 (defn sortable-item [item owner opts]
   (om/component
-    (dom/li
-      #js {:onMouseDown (fn [e] (println "mouse down"))
-           :onMouseUp   (fn [e] (println "mouse up"))
-           :onMouseMove (fn [e] (println "mouse move"))}
-      (om/build (:view opts) item {:opts opts}))))
+    (if-not (= (:type item) ::spacer)
+      (dom/li
+        #js {:onMouseDown (fn [e] (println "mouse down"))
+             :onMouseUp   (fn [e] (println "mouse up"))
+             :onMouseMove (fn [e] (println "mouse move"))}
+        (om/build (:view opts) item {:opts opts}))
+      (dom/li #js {:style #js {:visibility "hidden" :height (:height item)}}))))
 
 (defn sortable [{:keys [items sort]} owner opts]
   (reify
+    om/IInitState
+    (init-state [_] {:sort sort})
     om/IWillMount
     (will-mount [_]
       ;; sadly need to listen to window events, too
@@ -73,11 +77,16 @@
     (render [_]
       (dom/div #js {:className "om-sortable"}
         (when-let [item (om/get-state owner :dragging)]
-          (om/build (:view opts) item opts))
+          (om/build sortable-item (items item)
+            {:fn (fn [x] (assoc x :dragging true))
+             :opts opts}))
         (dom/ul #js {:key "list"}
-          (om/build-all sortable-item sort
-            {:fn   items
-             :opts opts}))))))
+          (om/build-all sortable-item (om/get-state owner :sort)
+            {:fn (fn [id]
+                   (if (= id ::spacer)
+                     {:type ::spacer :height 10}
+                     (items id)))
+             :key :id :opts opts}))))))
 
 ;; =============================================================================
 ;; Example
