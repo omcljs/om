@@ -83,13 +83,16 @@
   (reify
     om/IWillMount
     (will-mount [_]
+      ;; support remote control
       (when-let [delg (:delegate opts)]
         (go (while true
               (let [[e c] (<! (:remote-control delg))]
                 (case (:type e)
-                  :dimensions (set-state! owner :dimensions e)
+                  :dimensions (set-state! owner :dimensions
+                                (:dimensions e))
                   :drag-start (set-state! owner :dragging true)
-                  :drag       (set-state! owner :location e)
+                  :drag       (set-state! owner :location
+                                (:location e))
                   :drag-stop  (doto owner
                                 (set-state! :dragging false)
                                 (set-state! :location nil))
@@ -190,8 +193,7 @@
                   :drag       (update-drop owner (:location e))
                   nil))))))
     om/IWillUpdate
-    (will-update [_ next-props next-state]
-      )
+    (will-update [_ next-props next-state])
     om/IRender
     (render [_]
       (dom/div #js {:className "om-sortable"}
