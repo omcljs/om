@@ -27,7 +27,7 @@
               "om.core/transact!, om.core/update!, and om.core/read operations allowed")))))
 
 (defmacro cursor-check [cursor m & body]
-  `(if (or (:om.core/raw m) (om.core/cursor? ~cursor))
+  `(if (or (:om.core/raw ~m) (om.core/cursor? ~cursor))
      (do ~@body)
      (throw (js/Error. (str "Cannot build Om component from non-cursor " ~cursor)))))
 
