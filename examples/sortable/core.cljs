@@ -49,7 +49,7 @@
   (let [el (om/get-node owner "draggable")
         drag-start (location e)
         el-offset (element-offset el)
-        drag-offset (vec (map - el-offset drag-start))] 
+        drag-offset (vec (map - el-offset drag-start))]
     (doto owner
       (om/set-state! :dragging true)
       (om/set-state! :location
@@ -57,15 +57,17 @@
       (om/set-state! :drag-offset drag-offset))))
 
 (defn drag-stop [owner opts]
-  (doto owner
-    (om/set-state! :dragging false)
-    (om/set-state! :location nil)
-    (om/set-state! :drag-offset nil)))
+  (when (om/get-state owner :dragging)
+    (doto owner
+      (om/set-state! :dragging false)
+      (om/set-state! :location nil)
+      (om/set-state! :drag-offset nil))))
 
 (defn drag [e owner opts]
-  (om/set-state! owner :location
-    ((or (:constrain opts) identity)
-      (vec (map - (om/get-state owner :drag-offset) (location e))))))
+  (when (om/get-state owner :dragging)
+    (om/set-state! owner :location
+      ((or (:constrain opts) identity)
+        (vec (map + (location e) (om/get-state owner :drag-offset)))))))
 
 (defn draggable [item owner {:keys [chans] :as opts}]
   (reify
@@ -90,21 +92,19 @@
           #_(put! (:drop chans) item))))
     om/IRender
     (render [_]
-      (when (om/get-state owner :dragging)
-        (println (om/get-state owner :location)))
       (let [style (cond
                     (om/get-state owner :dragging)
                     (if-let [del (:delegate opts)]
-                      #js {:position "static"}
+                      #js {:position "static" :z-index 0}
                       (let [[x y] (om/get-state owner :location)]
-                        #js {:position "absolute" :top y :left x}))
+                        #js {:position "absolute" :top y :left x :z-index 1}))
                     :else
-                    #js {:position "static"})]
+                    #js {:position "static" :z-index 0})]
         (dom/li
           #js {:style style
                :ref "draggable"
                :onMouseDown #(drag-start % owner opts)
-               :onMouseUp   (fn [e] (drag-stop owner opts))
+               :onMouseUp (fn [e] (drag-stop owner opts))
                :onMouseMove #(drag % owner opts)}
           (om/build (:view opts) item {:opts opts}))))))
 
