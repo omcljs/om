@@ -346,7 +346,7 @@
     (rootf)))
 
 (defn ^:private valid? [m]
-  (every? #{:key :react-key :fn :opts ::index} (keys m)))
+  (every? #{:key :react-key :fn :opts ::raw ::index} (keys m)))
 
 (defn build
   "Builds a Om component. Takes an IRender instance returning function
@@ -380,14 +380,14 @@
   ([f cursor m]
     (assert (valid? m)
       (apply str "build options contains invalid keys, only :key, "
-                 ":react-key, :fn, :opts and :om.core/index allowed, given"
+                 ":react-key, :fn, :and opts allowed, given "
                  (interpose ", " (keys m))))
     (cond
       (nil? m)
       (tag
         (pure #js {:__om_cursor cursor}
           (fn [this]
-            (cursor-check cursor (allow-reads (f cursor this)))))
+            (cursor-check cursor m (allow-reads (f cursor this)))))
         f)
 
       :else
@@ -403,10 +403,16 @@
                      :key rkey}
             (if (nil? opts)
               (fn [this]
-                (cursor-check cursor' (allow-reads (f cursor' this))))
+                (cursor-check cursor' m (allow-reads (f cursor' this))))
               (fn [this]
-                (cursor-check cursor' (allow-reads (f cursor' this opts))))))
+                (cursor-check cursor' m (allow-reads (f cursor' this opts))))))
           f)))))
+
+(defn build-raw
+  "EXPERIMENTAL: Like om.core/build but accepts non-cursors for second argument."
+  ([f raw] (build f raw {::raw true}))
+  ([f raw m]
+    (build f raw (assoc m ::raw true))))
 
 (defn build-all
   "Build a sequence of components. f is the component constructor
