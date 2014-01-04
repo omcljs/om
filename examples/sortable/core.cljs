@@ -36,7 +36,7 @@
            :onMouseMove (fn [e] (println "mouse move"))}
       (om/build (:view opts) item {:opts opts}))))
 
-(defn sortable [data owner opts]
+(defn sortable [{:keys [items sort]} owner opts]
   (reify
     om/IWillMount
     (will-mount [_]
@@ -74,17 +74,17 @@
       (dom/div #js {:className "om-sortable"}
         (when-let [item (om/get-state owner :dragging)]
           (om/build (:view opts) item opts))
-        (dom/ul nil
-          (om/build-all sortable-item (:sort data)
-            {:fn (:items data)
+        (dom/ul #js {:key "list"}
+          (om/build-all sortable-item sort
+            {:fn   items
              :opts opts}))))))
 
 ;; =============================================================================
 ;; Example
 
 (def app-state
-  (let [items (->> (take 10 (range))
-                (map (fn [idx] [(guid) {:text (rand-word)}]))
+  (let [items (->> (take 10 (repeatedly guid))
+                (map (fn [id] [id {:id id :text (rand-word)}]))
                 (into {}))]
     (atom {:items items
            :sort (into [] (keys items))})))
