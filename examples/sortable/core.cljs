@@ -4,8 +4,10 @@
   (:require [cljs.core.async :as async :refer [chan sliding-buffer]]
             [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]
-            [clojure.string :as string])
-  (:import [goog.ui IdGenerator]))
+            [clojure.string :as string]
+            [goog.events :as events])
+  (:import [goog.ui IdGenerator]
+           [goog.events EventType]))
 
 (enable-console-print!)
 
@@ -21,13 +23,30 @@
 (defn sortable-item [item owner opts]
   (om/component
     (dom/li
-      #js {:onMouseDown (fn [e])
-           :onMouseUp   (fn [e])
-           :onMouseMove (fn [e])}
+      #js {:onMouseDown (fn [e] (println "mouse down"))
+           :onMouseUp   (fn [e] (println "mouse up"))
+           :onMouseMove (fn [e] (println "mouse move"))}
       (om/build (:view opts) item {:opts opts}))))
 
 (defn sortable [items owner opts]
   (reify
+    om/IWillMount
+    (will-mount [_]
+      (let [mouse-down (fn [e] (println "window mouse down"))
+            mouse-up   (fn [e] (println "window mouse up"))
+            mouse-move (fn [e] (println "window mouse move"))]
+        (om/set-state! owner :window-listener
+          [mouse-down mouse-up mouse-move])
+        (events/listen js/window events/EventType.MOUSEDOWN mouse-down)
+        (events/listen js/window events/EventType.MOUSEUP mouse-up)
+        (events/listen js/window events/EventType.MOUSEMOVE mouse-move)))
+    om/IWillUnmount
+    (will-unmount [_]
+      (let [[mouse-down mouse-up mouse-move]
+            (om/get-state! owner :window-listeners)]
+        (events/unlisten js/window events/EventType.MOUSEDOWN mouse-down)
+        (events/unlisten js/window events/EventType.MOUSEUP mouse-up)
+        (events/unlisten js/window events/EventType.MOUSEMOVE mouse-move)))
     om/IRender
     (render [_]
       (dom/ul nil (om/build-all sortable-item items {:opts opts})))))
