@@ -193,6 +193,11 @@
         (if-not (= v not-found)
           (to-cursor v state (conj path k))
           not-found))))
+  IFn
+  (-invoke [this k]
+    (-lookup this k))
+  (-invoke [_ k not-found]
+    (-lookup this k not-found))
   ISeqable
   (-seq [this]
     (check (map (fn [[k v]] [k (to-cursor v state (conj path k))]) value)))
@@ -236,6 +241,11 @@
     (check (-nth this n nil)))
   (-lookup [this n not-found]
     (check (-nth this n not-found)))
+  IFn
+  (-invoke [this k]
+    (-lookup this k))
+  (-invoke [_ k not-found]
+    (-lookup this k not-found))
   IIndexed
   (-nth [_ n]
     (check (to-cursor (-nth value n) state (conj path n))))
