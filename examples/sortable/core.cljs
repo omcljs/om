@@ -149,16 +149,46 @@
   (when (om/get-state owner :dragging)
     (.log js/console e)))
 
+(defn start-sort [owner e]
+  (om/set-state! owner :sorting true))
+
+(defn handle-drop [owner e]
+  (let [sort (om/get-state owner :sort)]
+    (doto owner
+      (om/set-state! :sorting false)
+      (om/set-state! :sort
+        (->> (concat (take sort (om/get-state! owner :drop))
+                     [(:id e)]
+                    (drop sort (om/get-state! owner :drop)))
+          (into []))))))
+
+(defn update-drop [owner [x y]]
+  (om/set-state! owner :location location))
+
 (defn sortable [{:keys [items sort]} owner opts]
   (reify
     om/IInitState
     (init-state [_] {:sort sort})
+    om/IWillMount
+    (will-mount [_]
+      (let [drag-chan (chan)]
+        (om/set-state! owner :drag-chan drag-chan)
+        (go (while true
+              (let [[e c] (<! drag-chan)]
+                (case (:type e)
+                  :drag-start (start-sort owner e) 
+                  :drag-stop  (handle-drop owner e)
+                  :drag       (update-drop owner (:location e))
+                  nil))))))
+    om/IWillUpdate
+    (will-update [_ next-props next-state]
+      )
     om/IRender
     (render [_]
       (dom/div #js {:className "om-sortable"}
-        (when-let [item (om/get-state owner :dragged)]
+        (when-let [item (om/get-state owner :sorting)]
           (om/build draggable
-            (assoc (items item) :dragged true)
+            (assoc (items item) :location (om/get-state owner :location))
             {:opts opts}))
         (dom/ul #js {:key "list" :ref "list"
                      :onMouseUp #(handle-mouse-up % owner)
