@@ -1,7 +1,7 @@
 (ns examples.sortable.core
   (:refer-clojure :exclude [chars])
   (:require-macros [cljs.core.async.macros :refer [go alt!]])
-  (:require [cljs.core.async :as async :refer [chan sliding-buffer]]
+  (:require [cljs.core.async :as async :refer [put! chan sliding-buffer alts!]]
             [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]
             [clojure.string :as string]
@@ -17,6 +17,14 @@
 (defn guid []
   (.getNextUniqueId (.getInstance IdGenerator)))
 
+(def chars (into [] "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"))
+
+(defn rand-char []
+  (nth chars (rand-int (count chars))))
+
+(defn rand-word []
+  (apply str (take (inc (rand-int 10)) (repeatedly rand-char))))
+
 ;; =============================================================================
 ;; Generic Sortable
 
@@ -28,21 +36,33 @@
            :onMouseMove (fn [e] (println "mouse move"))}
       (om/build (:view opts) item {:opts opts}))))
 
-(defn sortable [items owner opts]
+(defn sortable [data owner opts]
   (reify
     om/IWillMount
     (will-mount [_]
-      (let [mouse-down (fn [e] (println "window mouse down"))
-            mouse-up   (fn [e] (println "window mouse up"))
-            mouse-move (fn [e] (println "window mouse move"))]
+      ;; sadly need to listen to window events, too
+      (let [cancel (chan)
+            [mdc muc mmc] (take 3 (repeatedly #(chan (sliding-buffer 1))))
+            mouse-down #(put! mdc %)
+            mouse-up   #(put! muc %)
+            mouse-move #(put! mmc %)]
         (om/set-state! owner :window-listener
           [mouse-down mouse-up mouse-move])
         (doto js/window
           (events/listen EventType.MOUSEDOWN mouse-down)
           (events/listen EventType.MOUSEUP mouse-up)
-          (events/listen EventType.MOUSEMOVE mouse-move))))
+          (events/listen EventType.MOUSEMOVE mouse-move))
+        (go (loop []
+              (let [[v c] (alts! [cancel mdc muc mmc] :priority true)]
+                (if (= c cancel)
+                  :ok
+                  (condp = c
+                    mdc (recur)
+                    muc (recur)
+                    mmc (recur))))))))
     om/IWillUnmount
     (will-unmount [_]
+      ;; clean up window event handlers
       (let [[mouse-down mouse-up mouse-move]
             (om/get-state! owner :window-listeners)]
         (doto js/window
@@ -51,19 +71,26 @@
           (events/unlisten EventType.MOUSEMOVE mouse-move))))
     om/IRender
     (render [_]
-      (dom/ul nil (om/build-all sortable-item items {:opts opts})))))
+      (dom/div #js {:className "om-sortable"}
+        (when-let [item (om/get-state owner :dragging)]
+          (om/build (:view opts) item opts))
+        (dom/ul nil
+          (om/build-all sortable-item (:sort data)
+            {:fn (:items data)
+             :opts opts}))))))
 
 ;; =============================================================================
 ;; Example
 
 (def app-state
-  (atom {:items
-         (->> (take 10 (range))
-           (map (fn [idx] {:id (guid) :index idx :type :item}))
-           (into []))}))
+  (let [items (->> (take 10 (range))
+                (map (fn [idx] [(guid) {:text (rand-word)}]))
+                (into {}))]
+    (atom {:items items
+           :sort (into [] (keys items))})))
 
 (defn item [the-item owner opts]
-  (om/component (dom/span nil (str "Item " (:id the-item)))))
+  (om/component (dom/span nil (str "Item " (:text the-item)))))
 
 (om/root app-state
   (fn [app owner]
@@ -83,6 +110,6 @@
       (render [_]
         (dom/div nil
           (dom/h2 nil "Sortable example")
-          (om/build sortable (:items app)
+          (om/build sortable app
             {:opts {:view item :chans (om/get-state owner :chans)}})))))
   (.getElementById js/document "app"))
