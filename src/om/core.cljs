@@ -385,7 +385,8 @@
                       (get m :react-key))]
         (tag
           (pure #js {:__om_cursor cursor'
-                     :__om_index (::index m)}
+                     :__om_index (::index m)
+                     :key rkey}
             (if (nil? opts)
               (fn [this]
                 (cursor-check cursor' (allow-reads (f cursor' this))))
