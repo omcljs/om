@@ -88,14 +88,14 @@
         (go (while true
               (let [[e c] (<! (:remote-control delg))]
                 (case (:type e)
-                  :dimensions (set-state! owner :dimensions
+                  :dimensions (om/set-state! owner :dimensions
                                 (:dimensions e))
-                  :drag-start (set-state! owner :dragging true)
-                  :drag       (set-state! owner :location
+                  :drag-start (om/set-state! owner :dragging true)
+                  :drag       (om/set-state! owner :location
                                 (:location e))
                   :drag-stop  (doto owner
-                                (set-state! :dragging false)
-                                (set-state! :location nil))
+                                (om/set-state! :dragging false)
+                                (om/set-state! :location nil))
                   nil))))))
     om/IDidMount
     (did-mount [_ _]
