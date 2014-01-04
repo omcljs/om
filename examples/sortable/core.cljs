@@ -45,13 +45,18 @@
   (let [offset (gstyle/getPageOffset el)]
     [(.-x offset) (.-y offset)]))
 
+(defn default-constrain [location offset]
+  location)
+
 (defn drag-start [e owner opts]
   (let [el (om/get-node owner "draggable")
         drag-start  (location e)
         drag-offset (vec (map - (element-offset el) drag-start))] 
     (doto owner
       (om/set-state! :dragging true)
-      (om/set-state! :location drag-start)
+      (om/set-state! :location
+        ((or (:constrain opts) default-constrain)
+          drag-start))
       (om/set-state! :drag-offset drag-offset))))
 
 (defn drag-stop [e owner opts]
@@ -61,9 +66,10 @@
     (om/set-state! :drag-offset nil)))
 
 (defn drag [e owner opts]
-  (om/set-state! owner :location (location e)))
+  (om/set-state! owner :location
+    ((or (:constrain opts) default-constrain) (location e))))
 
-(defn draggable [item owner {:keys [constrain chans] :as opts}]
+(defn draggable [item owner {:keys [chans] :as opts}]
   (reify
     om/IWillUpdate
     (will-update [_ next-props next-state]
