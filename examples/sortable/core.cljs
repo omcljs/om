@@ -105,9 +105,7 @@
       ;; capture the cell dimensions when it becomes available
       (let [dims (om/get-state owner :dimensions)]
         (when-not dims
-          (let [size (-> owner
-                       (om/get-node "draggable")
-                       gstyle/getSize)
+          (let [size (-> owner (om/get-node "draggable") gstyle/getSize)
                 dims [(.-width size) (.-height size)]]
             (om/set-state! owner :dimensions dims)
             (when-let [delg (:delegate opts)]
