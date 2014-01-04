@@ -49,25 +49,35 @@
   (let [el (om/get-node owner "draggable")
         drag-start (location e)
         el-offset (element-offset el)
-        drag-offset (vec (map - el-offset drag-start))]
-    (doto owner
-      (om/set-state! :dragging true)
-      (om/set-state! :location
-        ((or (:constrain opts) identity) el-offset))
-      (om/set-state! :drag-offset drag-offset))))
+        drag-offset (vec (map - el-offset drag-start))
+        delg (:delegate opts)]
+    (if delg
+      (put! (:chan delg)
+        {:event :drag-start
+         :location (vec (map + drag-start drag-offset))})
+      (doto owner
+        (om/set-state! :dragging true)
+        (om/set-state! :location
+          ((or (:constrain opts) identity) el-offset))
+        (om/set-state! :drag-offset drag-offset)))))
 
 (defn drag-stop [owner opts]
   (when (om/get-state owner :dragging)
-    (doto owner
-      (om/set-state! :dragging false)
-      (om/set-state! :location nil)
-      (om/set-state! :drag-offset nil))))
+    (if-let [delg (:delegate opts)]
+      (put! (:chan delg) {:event :drag-stop})
+      (doto owner
+        (om/set-state! :dragging false)
+        (om/set-state! :location nil)
+        (om/set-state! :drag-offset nil)))))
 
 (defn drag [e owner opts]
   (when (om/get-state owner :dragging)
-    (om/set-state! owner :location
-      ((or (:constrain opts) identity)
-        (vec (map + (location e) (om/get-state owner :drag-offset)))))))
+    (let [loc ((or (:constrain opts) identity)
+                (vec (map + (location e) (om/get-state owner :drag-offset))))
+          delg (:delegate opts)]
+      (if delg
+        (put! (:chan delg) {:event :drag :location loc})
+        (om/set-state! owner :location loc)))))
 
 (defn draggable [item owner {:keys [chans] :as opts}]
   (reify
@@ -92,14 +102,16 @@
           #_(put! (:drop chans) item))))
     om/IDidMount
     (did-mount [_ _]
-      ;; capture the cell height when it becomes available
+      ;; capture the cell dimensions when it becomes available
       (let [dims (om/get-state owner :dimensions)]
         (when-not dims
           (let [size (-> owner
                        (om/get-node "draggable")
-                       gstyle/getSize)]
-            (println [(.-width size) (.-height size)])
-            (om/set-state! owner :dimensions [(.-width size) (.-height size)])))))
+                       gstyle/getSize)
+                dims [(.-width size) (.-height size)]]
+            (om/set-state! owner :dimensions dims)
+            (when-let [delg (:delegate opts)]
+              (put! (:dimensions delg) dims))))))
     om/IRender
     (render [_]
       (let [dragging (om/get-state owner :dragging)
