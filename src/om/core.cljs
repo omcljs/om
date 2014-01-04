@@ -134,21 +134,25 @@
            (this-as this
              (let [c (children this)]
                (when (satisfies? IWillUpdate c)
-                 (allow-reads
-                   (will-update c
-                     (get-props #js {:props next-props})
-                     (aget (.-state this) "__om_pending_state")))))
+                 (let [state (.-state this)]
+                   (allow-reads
+                     (will-update c
+                       (get-props #js {:props next-props})
+                       (or (aget state "__om_pending_state")
+                           (aget state "__om_state")))))))
              (merge-pending-state this)))
          :componentDidUpdate
          (fn [prev-props prev-state root-node]
            (this-as this
              (let [c (children this)]
                (when (satisfies? IDidUpdate c)
-                 (allow-reads
-                   (did-update c
-                     (get-props #js {:props prev-props})
-                     (aget (.-state this) "__om_prev_state")
-                     root-node)))
+                 (let [state (.-state this)]
+                   (allow-reads
+                     (did-update c
+                       (get-props #js {:props prev-props})
+                       (or (aget state "__om_prev_state")
+                           (aget state "__om_state"))
+                       root-node))))
                (aset (.-state this) "__om_prev_state" nil))))
          :render
          (fn []
