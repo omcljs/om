@@ -331,6 +331,9 @@
             (js/setTimeout rootf 16)))))
     (rootf)))
 
+(defn ^:private valid? [m]
+  (every? #{:key :react-key :fn :opts ::index} (keys m)))
+
 (defn build
   "Builds a Om component. Takes an IRender instance returning function
    f, a cursor, and an optional third argument which may be a map of
@@ -361,6 +364,10 @@
   "
   ([f cursor] (build f cursor nil))
   ([f cursor m]
+    (assert (valid? m)
+      (apply str "build options contains invalid keys, only :key, "
+                 ":react-key, :fn, :opts and :om.core/index allowed, given"
+                 (interpose ", " (keys m))))
     (cond
       (nil? m)
       (tag
