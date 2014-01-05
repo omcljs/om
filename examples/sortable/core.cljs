@@ -54,8 +54,11 @@
         drag-start (location e)
         el-offset (element-offset el)
         drag-offset (vec (map - el-offset drag-start))]
+    ;; if in a sortable need to wait for sortable to
+    ;; initiate dragging
+    (when-not (:delegate opts)
+      (om/set-state! owner :dragging true))
     (doto owner
-      (om/set-state! :dragging true)
       (om/set-state! :location
         ((or (:constrain opts) identity) el-offset))
       (om/set-state! :drag-offset drag-offset))
@@ -101,7 +104,11 @@
     om/IWillUpdate
     (will-update [_ next-props next-state]
       ;; begin dragging, need to track events on window
-      (when (to? owner next-state :dragging)
+      (when (or (to? owner next-state :dragging)
+                (and (not (-> (om/get-props owner) :value :dragging))
+                     (-> next-props :value :dragging)))
+        (when-not (:dragging next-state)
+          (om/set-state! owner :dragging true))
         (let [mouse-up (fn [e] (drag-stop owner opts))
               mouse-move #(drag % owner opts)]
           (om/set-state! owner :window-listeners
@@ -166,7 +173,9 @@
         sort  (:sort state)
         idx   (index-of (:id e) sort)]
     (doto owner
+      (om/set-state! :sorting (:id e))
       (om/set-state! :real-sort sort)
+      (om/set-state! :drop-index idx)
       (om/set-state! :sort (insert-at ::spacer idx sort)))))
 
 (defn handle-drop [owner e]
@@ -180,9 +189,10 @@
   (let [state  (om/get-state owner)
         [_ y]  (from-loc (:location state) loc)
         [_ ch] (:cell-dimensions state)
-        drop-index (js/Math.round (/ y ch))]
+        drop-index (js/Math.round (+ (/ y ch) 0.5))]
     (when (not= (:drop-index state) drop-index)
-      )))
+      (om/set-state! owner :sort
+        (insert-at ::spacer drop-index (:real-sort state))))))
 
 (defn bound [n lb ub]
   (cond
@@ -206,7 +216,8 @@
       (let [drag-chan (chan)
             dims-chan (chan (dropping-buffer 1))]
         (om/set-state! owner :chans
-          {:drag-chan drag-chan :dims-chan dims-chan})
+          {:drag-chan drag-chan
+           :dims-chan dims-chan})
         (go
           (while true
             (alt!
@@ -243,7 +254,12 @@
                              (assoc opts 
                                :constrain constrain
                                :chan      (:drag-chan chans)
-                               :dims-chan (:dims-chan chans)))})
+                               :dims-chan (:dims-chan chans)
+                               :delegate  true))
+                     :fn (fn [x]
+                           (if (= (:id x) (:sorting state))
+                             (assoc x :dragging true)
+                             x))})
                   (sortable-spacer (second (:cell-dimensions state)))))
               (:sort state))))))))
 
