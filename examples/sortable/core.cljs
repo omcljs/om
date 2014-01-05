@@ -20,14 +20,6 @@
 (defn guid []
   (.getNextUniqueId (.getInstance IdGenerator)))
 
-(def chars (into [] "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"))
-
-(defn rand-char []
-  (nth chars (rand-int (count chars))))
-
-(defn rand-word []
-  (apply str (take (inc (rand-int 10)) (repeatedly rand-char))))
-
 (defn gsize->vec [size]
   [(.-width size) (.-height size)])
 
@@ -280,14 +272,14 @@
 ;; Example
 
 (def app-state
-  (let [items (->> (take 10 (repeatedly guid))
-                (map (fn [id] [id {:id id :text (rand-word)}]))
+  (let [items (->> (take 10 (map vector (repeatedly guid) (range)))
+                (map (fn [[id n]] [id {:id id :title n}]))
                 (into {}))]
     (atom {:items items
            :sort (into [] (keys items))})))
 
 (defn item [the-item owner opts]
-  (om/component (dom/span nil (str "Item " (:text the-item)))))
+  (om/component (dom/span nil (str "Item " (:title the-item)))))
 
 (om/root app-state
   (fn [app owner]
