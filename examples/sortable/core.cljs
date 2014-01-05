@@ -99,7 +99,7 @@
               (put! dims-chan dims))))))
     om/IWillUpdate
     (will-update [_ next-props next-state]
-      ;; begin dragging
+      ;; begin dragging, need to track events on window
       (when (to? owner next-state :dragging)
         (let [mouse-up (fn [e] (drag-stop owner opts))
               mouse-move #(drag % owner opts)]
@@ -108,7 +108,7 @@
           (doto js/window
             (events/listen EventType.MOUSEUP mouse-up)
             (events/listen EventType.MOUSEMOVE mouse-move))))
-      ;; end dragging
+      ;; end dragging, cleanup window event listeners
       (when (from? owner next-state :dragging)
         (let [[mouse-up mouse-move]
               (om/get-state owner :window-listeners)]
@@ -117,22 +117,18 @@
             (events/unlisten EventType.MOUSEMOVE mouse-move)))))
     om/IRender
     (render [_]
-      (let [dragging (om/get-state owner :dragging)
-            loc (:location item) ;; remote controlled
+      (let [state (om/get-state owner)
             style (cond
-                    ;; if dragging or given initial location
-                    ;; absolutely position the element
-                    (or dragging loc)
-                    (let [state (om/get-state owner)
-                          [x y] (or (:location state) loc)
-                          [w h] (or (:dimensions state)
-                                    (:dimensions item))]
-                      #js {:position "absolute" :top y :left x :z-index 1
+                    (:dragging state)
+                    (let [[x y] (:location state)
+                          [w h] (:dimensions state)]
+                      #js {:position "absolute"
+                           :top y :left x :z-index 1
                            :width w :height h})
                     :else
                     #js {:position "static" :z-index 0})]
         (dom/li
-          #js {:className (when dragging "dragging")
+          #js {:className (when (:dragging state) "dragging")
                :style style
                :ref "draggable"
                :onMouseDown #(drag-start % owner opts)
@@ -148,6 +144,7 @@
     (dom/li #js {:style #js {:visibility "hidden" :height (:height info)}})))
 
 (defn start-sort [owner e]
+  (println "start sort!")
   (om/set-state! owner :sorting true))
 
 (defn handle-drop [owner e]
@@ -167,7 +164,7 @@
     :else n))
 
 (defn handle-drag-event [owner e]
-  (case (:type e)
+  (case (:event e)
     :drag-start (start-sort owner e) 
     :drag-stop  (handle-drop owner e)
     :drag       (update-drop owner (:location e))
@@ -204,12 +201,6 @@
     (render [_]
       (let [state (om/get-state owner)]
         (dom/div #js {:className "sortable"}
-          (when-let [item (:sorting state)]
-            (om/build draggable
-              (assoc (items item)
-                :location   (:cell-location state)
-                :dimensions (:cell-dimensions state))
-              {:opts opts :react-key "sortable-cell"}))
           (dom/ul #js {:key "list" :ref "sortable"}
             (into-array
               (map
