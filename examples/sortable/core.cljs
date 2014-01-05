@@ -53,47 +53,36 @@
   (let [el (om/get-node owner "draggable")
         drag-start (location e)
         el-offset (element-offset el)
-        drag-offset (vec (map - el-offset drag-start))
-        delg (:delegate opts)]
-    (if delg
-      (put! (:chan delg)
+        drag-offset (vec (map - el-offset drag-start))]
+    (doto owner
+      (om/set-state! :dragging true)
+      (om/set-state! :location
+        ((or (:constrain opts) identity) el-offset))
+      (om/set-state! :drag-offset drag-offset))
+    (when-let [c (:chan opts)]
+      (put! c
         {:event :drag-start
-         :location (vec (map + drag-start drag-offset))})
-      (doto owner
-        (om/set-state! :dragging true)
-        (om/set-state! :location
-          ((or (:constrain opts) identity) el-offset))
-        (om/set-state! :drag-offset drag-offset)))))
+         :location (vec (map + drag-start drag-offset))}))))
 
 (defn drag-stop [owner opts]
   (when (om/get-state owner :dragging)
-    (if-let [delg (:delegate opts)]
-      (put! (:chan delg) {:event :drag-stop})
-      (doto owner
-        (om/set-state! :dragging false)
-        (om/set-state! :location nil)
-        (om/set-state! :drag-offset nil)))))
+    (doto owner
+      (om/set-state! :dragging false)
+      (om/set-state! :location nil)
+      (om/set-state! :drag-offset nil))
+    (when-let [c (:chan opts)]
+      (put! c {:event :drag-stop}))))
 
 (defn drag [e owner opts]
   (when (om/get-state owner :dragging)
     (let [loc ((or (:constrain opts) identity)
-                (vec (map + (location e) (om/get-state owner :drag-offset))))
-          delg (:delegate opts)]
-      (if delg
-        (put! (:chan delg) {:event :drag :location loc})
-        (om/set-state! owner :location loc)))))
+                (vec (map + (location e) (om/get-state owner :drag-offset))))]
+      (om/set-state! owner :location loc)
+      (when-let [c (:chna opts)]
+        (put! c {:event :drag :location loc})))))
 
 (defn draggable [item owner opts]
   (reify
-    om/IWillMount
-    (will-mount [_]
-      ;; support remote control
-      (when-let [delg (:delegate opts)]
-        (go (while true
-              (let [[e c] (<! (:remote-control delg))]
-                (case (:type e)
-                  :drag (om/set-state! owner :location (:location e))
-                  nil))))))
     om/IDidMount
     (did-mount [_ _]
       ;; capture the cell dimensions when it becomes available
@@ -104,6 +93,7 @@
                        gstyle/getSize
                        gsize->vec)]
             (om/set-state! owner :dimensions dims)
+            ;; let cell dimension listeners know
             (when-let [dims-chan (:dims-chan opts)]
               (put! dims-chan dims))))))
     om/IWillUpdate
@@ -129,6 +119,8 @@
       (let [dragging (om/get-state owner :dragging)
             loc (:location item) ;; remote controlled
             style (cond
+                    ;; if dragging or given initial location
+                    ;; absolutely position the element
                     (or dragging loc)
                     (let [[x y] (or (om/get-state owner :location) loc)
                           [w h] (or (om/get-state owner :dimensions)
@@ -200,6 +192,8 @@
     ;; doesn't account for change in number of items in sortable
     om/IWillUpdate
     (will-update [_ next-props next-state]
+      ;; calculate constraints from cell-dimensions when we
+      ;; receive them
       (when (to? owner next-state :cell-dimensions)
         (let [node   (om/get-node owner "sortable") 
               [w h]  (gsize->vec (gstyle/getSize node))
