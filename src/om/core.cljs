@@ -532,8 +532,9 @@
         (swap! (-state cursor) update-in path clone)))))
 
 (defn get-state
-  "Takes a pure owning component and sequential list of keys and returns
-   a property if it exists. Will never return pending state values."
+  "Takes a pure owning component and sequential list of keys and
+   returns a property in the component local state if it exists. Will
+   never return pending state values."
   ([owner] (aget (.-state owner) "__om_state"))
   ([owner korks]
     (cond
@@ -545,6 +546,26 @@
 
       :else
       (get-in (aget (.-state owner) "__om_state") korks))))
+
+(defn get-pending-state
+  "Takes a pure owning component and sequential list of keys and
+   returns a property in the component local if it exists. Returns
+   values from the pending state. If there is no pending state returns
+   values from the current state."
+  ([owner]
+    (let [state (.-state owner)]
+      (or (aget state "__om_pending_state")
+          (aget state "__om_state"))))
+  ([owner korks]
+    (cond
+      (not (sequential? korks))
+      (get (get-pending-state owner) korks)
+
+      (empty? korks)
+      (get-pending-state owner)
+
+      :else
+      (get-in (get-pending-state owner) korks))))
 
 (defn bind
   "Convenience function for creating event handlers on cursors. Takes
