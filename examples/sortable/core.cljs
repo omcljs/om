@@ -49,7 +49,7 @@
   (let [offset (gstyle/getPageOffset el)]
     [(.-x offset) (.-y offset)]))
 
-(defn drag-start [e owner opts]
+(defn drag-start [e item owner opts]
   (let [el (om/get-node owner "draggable")
         drag-start (location e)
         el-offset (element-offset el)
@@ -62,6 +62,7 @@
     (when-let [c (:chan opts)]
       (put! c
         {:event :drag-start
+         :id (:id item)
          :location (vec (map + drag-start drag-offset))}))))
 
 (defn drag-stop [owner opts]
@@ -79,7 +80,7 @@
       (let [loc ((or (:constrain opts) identity)
                   (vec (map + (location e) (:drag-offset state))))]
         (om/set-state! owner :location loc)
-        (when-let [c (:chna opts)]
+        (when-let [c (:chan opts)]
           (put! c {:event :drag :location loc}))))))
 
 (defn draggable [item owner opts]
@@ -131,7 +132,7 @@
           #js {:className (when (:dragging state) "dragging")
                :style style
                :ref "draggable"
-               :onMouseDown #(drag-start % owner opts)
+               :onMouseDown (om/bind drag-start item owner opts)
                :onMouseUp (fn [e] (drag-stop owner opts))
                :onMouseMove #(drag % owner opts)}
           (om/build (:view opts) item {:opts opts}))))))
@@ -139,23 +140,49 @@
 ;; =============================================================================
 ;; Generic Sortable
 
-(defn sortable-spacer [info owner opts]
-  (om/component
-    (dom/li #js {:style #js {:visibility "hidden" :height (:height info)}})))
+(defn from-loc [v1 v2]
+  (vec (map - v2 v1)))
+
+(defn sortable-spacer [height]
+  (dom/li
+    #js {:key "spacer-cell"
+         :style #js {:height height}}))
+
+(defn index-of [x v]
+  (loop [i 0 v (seq v)]
+    (if v
+      (if (= x (first v))
+        i
+        (recur (inc i) (next v)))
+      -1)))
+
+(defn insert-at [x idx v]
+  (if (== idx (count v))
+    (conj v x)
+    (vec (concat (take idx v) [x] (drop idx v)))))
 
 (defn start-sort [owner e]
-  (println "start sort!")
-  (om/set-state! owner :sorting true))
+  (let [state (om/get-state owner)
+        sort  (:sort state)
+        idx   (index-of (:id e) sort)]
+    (doto owner
+      (om/set-state! :real-sort sort)
+      (om/set-state! :sort (insert-at ::spacer idx sort)))))
 
 (defn handle-drop [owner e]
-  (let [{:keys [sort drop]} (om/get-state owner)]
-    (doto owner
-      (om/set-state! :sorting false)
-      (om/set-state! :sort
-        (vec (concat (take sort drop) [(:id e)] (drop sort drop)))))))
+  (let [{:keys [sort drop-index]} (om/get-state owner)
+        idx (index-of ::spacer sort)
+        sort (remove #{::spacer} sort)]
+    #_(om/set-state! :sort
+        (vec (concat (take sort drop) [(:id e)] (drop sort drop-index))))))
 
-(defn update-drop [owner [x y]]
-  (om/set-state! owner :location location))
+(defn update-drop [owner [x y :as loc]]
+  (let [state  (om/get-state owner)
+        [_ y]  (from-loc (:location state) loc)
+        [_ ch] (:cell-dimensions state)
+        drop-index (js/Math.round (/ y ch))]
+    (when (not= (:drop-index state) drop-index)
+      )))
 
 (defn bound [n lb ub]
   (cond
@@ -173,7 +200,7 @@
 (defn sortable [{:keys [items sort]} owner opts]
   (reify
     om/IInitState
-    (init-state [_] {:sort sort})
+    (init-state [_] {:sort (om/value sort)})
     om/IWillMount
     (will-mount [_]
       (let [drag-chan (chan)
@@ -186,10 +213,10 @@
               drag-chan ([e c] (handle-drag-event owner e))
               dims-chan ([e c] (om/set-state! owner :cell-dimensions e)))))))
     ;; doesn't account for change in number of items in sortable
+    ;; nor changes in sort - exercise for the reader 
     om/IWillUpdate
     (will-update [_ next-props next-state]
-      ;; calculate constraints from cell-dimensions when we
-      ;; receive them
+      ;; calculate constraints from cell-dimensions when we receive them
       (when (to? owner next-state :cell-dimensions)
         (let [node   (om/get-node owner "sortable") 
               [w h]  (gsize->vec (gstyle/getSize node))
@@ -197,25 +224,28 @@
               [_ ch] (:cell-dimensions next-state)]
           (om/set-state! owner :constrain
             (fn [[_ cy]] [(inc x) (bound cy y (- (+ y h) ch))])))))
+    om/IDidMount
+    (did-mount [_ _]
+      (when-not (om/get-state owner :location)
+        (om/set-state! owner :location
+          (element-offset (om/get-node owner "sortable")))))
     om/IRender
     (render [_]
       (let [state (om/get-state owner)]
-        (dom/div #js {:className "sortable"}
-          (dom/ul #js {:key "list" :ref "sortable"}
-            (into-array
-              (map
-                (fn [id]
-                  (if-not (= id ::spacer)
-                    (om/build draggable (items id)
-                      {:key :id
-                        :opts (let [{:keys [constrain chans]} state]
-                                (assoc opts 
-                                  :constrain constrain
-                                  :chan      (:drag-chan chans)
-                                  :dims-chan (:dims-chan chans)))})
-                    (om/build sortable-spacer (items id) 
-                      {:react-key "spacer-cell"})))
-                (:sort state)))))))))
+        (dom/ul #js {:className "sortable" :ref "sortable"}
+          (into-array
+            (map
+              (fn [id]
+                (if-not (= id ::spacer)
+                  (om/build draggable (items id)
+                    {:key :id
+                     :opts (let [{:keys [constrain chans]} state]
+                             (assoc opts 
+                               :constrain constrain
+                               :chan      (:drag-chan chans)
+                               :dims-chan (:dims-chan chans)))})
+                  (sortable-spacer (second (:cell-dimensions state)))))
+              (:sort state))))))))
 
 ;; =============================================================================
 ;; Example
