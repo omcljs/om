@@ -80,9 +80,11 @@
   (when (dragging? item owner)
     (when (om/get-state owner :dragging)
       (om/set-state! owner :dragging false))
-    (doto owner
-      (om/set-state! :location nil)
-      (om/set-state! :drag-offset nil))
+    ;; rendering order issues otherwise
+    (when-not (:delegate opts)
+      (doto owner
+        (om/set-state! :location nil)
+        (om/set-state! :drag-offset nil)))
     (when-let [c (:chan opts)]
       (put! c {:event :drag-stop :id (:id item)}))))
 
