@@ -68,14 +68,14 @@
          :id (:id item)
          :location (vec (map + drag-start drag-offset))}))))
 
-(defn drag-stop [owner opts]
+(defn drag-stop [e item owner opts]
   (when (om/get-state owner :dragging)
     (doto owner
       (om/set-state! :dragging false)
       (om/set-state! :location nil)
       (om/set-state! :drag-offset nil))
     (when-let [c (:chan opts)]
-      (put! c {:event :drag-stop}))))
+      (put! c {:event :drag-stop :id (:id item)}))))
 
 (defn drag [e owner opts]
   (let [state (om/get-state owner)]
@@ -105,11 +105,12 @@
     (will-update [_ next-props next-state]
       ;; begin dragging, need to track events on window
       (when (or (to? owner next-state :dragging)
+                ;; externally controlled
                 (and (not (-> (om/get-props owner) :value :dragging))
                      (-> next-props :value :dragging)))
         (when-not (:dragging next-state)
           (om/set-state! owner :dragging true))
-        (let [mouse-up (fn [e] (drag-stop owner opts))
+        (let [mouse-up   (om/bind drag-stop item owner opts)
               mouse-move #(drag % owner opts)]
           (om/set-state! owner :window-listeners
             [mouse-up mouse-move])
@@ -140,7 +141,7 @@
                :style style
                :ref "draggable"
                :onMouseDown (om/bind drag-start item owner opts)
-               :onMouseUp (fn [e] (drag-stop owner opts))
+               :onMouseUp (om/bind drag-stop item owner opts)
                :onMouseMove #(drag % owner opts)}
           (om/build (:view opts) item {:opts opts}))))))
 
@@ -181,9 +182,14 @@
 (defn handle-drop [owner e]
   (let [{:keys [sort drop-index]} (om/get-state owner)
         idx (index-of ::spacer sort)
-        sort (remove #{::spacer} sort)]
-    #_(om/set-state! :sort
-        (vec (concat (take sort drop) [(:id e)] (drop sort drop-index))))))
+        sort (->> sort
+               (remove #{(:id e)})
+               (replace {::spacer (:id e)})) ]
+    (doto owner
+      (om/set-state! :sorting nil)
+      (om/set-state! :drop-index nil)
+      (om/set-state! :real-sort nil)
+      (om/set-state! :sort sort))))
 
 (defn update-drop [owner [x y :as loc]]
   (let [state  (om/get-state owner)
