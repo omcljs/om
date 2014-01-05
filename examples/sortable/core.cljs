@@ -27,6 +27,9 @@
 (defn rand-word []
   (apply str (take (inc (rand-int 10)) (repeatedly rand-char))))
 
+(defn gsize->vec [size]
+  [(.-width size) (.-height size)])
+
 ;; =============================================================================
 ;; Generic Draggable
 
@@ -95,8 +98,10 @@
       ;; capture the cell dimensions when it becomes available
       (let [dims (om/get-state owner :dimensions)]
         (when-not dims
-          (let [size (-> owner (om/get-node "draggable") gstyle/getSize)
-                dims [(.-width size) (.-height size)]]
+          (let [dims (-> owner
+                       (om/get-node "draggable")
+                       gstyle/getSize
+                       gsize->vec)]
             (om/set-state! owner :dimensions dims)
             (when-let [delg (:delegate opts)]
               (put! (:chan delg) {:event :dimensions :value dims}))))))
@@ -190,9 +195,9 @@
     ;; if the number of items can change
     om/IDidMount
     (did-mount [_ _]
-      (let [node  (om/get-node owner "sortable") 
-            [w h] (gstyle/getSize node)
-            [x y] (element-offset node)
+      (let [node   (om/get-node owner "sortable") 
+            [w h]  (gsize->vec (gstyle/getSize node))
+            [x y]  (element-offset node)
             [_ ch] (om/get-state owner :cell-dimensions)]
         (om/set-state! owner :constrain
           (fn [[_ cy]] [x (bound cy y (- (+ y h) ch))]))))
