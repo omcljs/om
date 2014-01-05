@@ -74,12 +74,13 @@
       (put! c {:event :drag-stop}))))
 
 (defn drag [e owner opts]
-  (when (om/get-state owner :dragging)
-    (let [loc ((or (:constrain opts) identity)
-                (vec (map + (location e) (om/get-state owner :drag-offset))))]
-      (om/set-state! owner :location loc)
-      (when-let [c (:chna opts)]
-        (put! c {:event :drag :location loc})))))
+  (let [state (om/get-state owner)]
+    (when (:dragging state)
+      (let [loc ((or (:constrain opts) identity)
+                  (vec (map + (location e) (:drag-offset state))))]
+        (om/set-state! owner :location loc)
+        (when-let [c (:chna opts)]
+          (put! c {:event :drag :location loc}))))))
 
 (defn draggable [item owner opts]
   (reify
@@ -122,8 +123,9 @@
                     ;; if dragging or given initial location
                     ;; absolutely position the element
                     (or dragging loc)
-                    (let [[x y] (or (om/get-state owner :location) loc)
-                          [w h] (or (om/get-state owner :dimensions)
+                    (let [state (om/get-state owner)
+                          [x y] (or (:location state) loc)
+                          [w h] (or (:dimensions state)
                                     (:dimensions item))]
                       #js {:position "absolute" :top y :left x :z-index 1
                            :width w :height h})
@@ -149,14 +151,11 @@
   (om/set-state! owner :sorting true))
 
 (defn handle-drop [owner e]
-  (let [sort (om/get-state owner :sort)]
+  (let [{:keys [sort drop]} (om/get-state owner)]
     (doto owner
       (om/set-state! :sorting false)
       (om/set-state! :sort
-        (->> (concat (take sort (om/get-state! owner :drop))
-                     [(:id e)]
-                    (drop sort (om/get-state! owner :drop)))
-          (into []))))))
+        (vec (concat (take sort drop) [(:id e)] (drop sort drop)))))))
 
 (defn update-drop [owner [x y]]
   (om/set-state! owner :location location))
@@ -203,26 +202,29 @@
             (fn [[_ cy]] [(inc x) (bound cy y (- (+ y h) ch))])))))
     om/IRender
     (render [_]
-      (dom/div #js {:className "sortable"}
-        (when-let [item (om/get-state owner :sorting)]
-          (om/build draggable
-            (assoc (items item)
-              :location   (om/get-state owner :cell-location)
-              :dimensions (om/get-state owner :cell-dimensions))
-            {:opts opts :react-key "sortable-cell"}))
-        (dom/ul #js {:key "list" :ref "sortable"}
-          (into-array
-            (map
-              (fn [id]
-                (if-not (= id ::spacer)
-                  (om/build draggable (items id)
-                    {:key :id
-                     :opts (assoc opts 
-                             :constrain (om/get-state owner :constrain)
-                             :dims-chan (om/get-state owner [:chans :dims-chan]))})
-                  (om/build sortable-spacer (items id) 
-                    {:react-key "spacer-cell"})))
-              (om/get-state owner :sort))))))))
+      (let [state (om/get-state owner)]
+        (dom/div #js {:className "sortable"}
+          (when-let [item (:sorting state)]
+            (om/build draggable
+              (assoc (items item)
+                :location   (:cell-location state)
+                :dimensions (:cell-dimensions state))
+              {:opts opts :react-key "sortable-cell"}))
+          (dom/ul #js {:key "list" :ref "sortable"}
+            (into-array
+              (map
+                (fn [id]
+                  (if-not (= id ::spacer)
+                    (om/build draggable (items id)
+                      {:key :id
+                        :opts (let [{:keys [constrain chans]} state]
+                                (assoc opts 
+                                  :constrain constrain
+                                  :chan      (:drag-chan chans)
+                                  :dims-chan (:dims-chan chans)))})
+                    (om/build sortable-spacer (items id) 
+                      {:react-key "spacer-cell"})))
+                (:sort state)))))))))
 
 ;; =============================================================================
 ;; Example
