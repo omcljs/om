@@ -26,14 +26,14 @@
 (defn to? [owner next-props next-state k]
   (or (and (not (om/get-state owner k))
            (k next-state))
-      (and (not (-> (om/get-props owner) :value k))
-           (-> next-props :value k))))
+      (and (not (k (om/get-props owner)))
+           (k next-props))))
 
 (defn from? [owner next-props next-state k]
   (or (and (om/get-state owner k)
            (not (k next-state)))
-      (and (-> (om/get-props owner) :value k)
-           (not (-> next-props :value k)))))
+      (and (k (om/get-props owner))
+           (not (k next-props)))))
 
 (defn location [e]
   [(.-clientX e) (.-clientY e)])
@@ -108,8 +108,8 @@
     (will-update [_ next-props next-state]
       ;; begin dragging, need to track events on window
       (when (or (to? owner next-props next-state :dragging))
-        (let [mouse-up   (om/pure-bind drag-stop (:value next-props) owner opts)
-              mouse-move (om/pure-bind drag (:value next-props) owner opts)]
+        (let [mouse-up   (om/pure-bind drag-stop next-props owner opts)
+              mouse-move (om/pure-bind drag next-props owner opts)]
           (om/set-state! owner :window-listeners
             [mouse-up mouse-move])
           (doto js/window
