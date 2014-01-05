@@ -65,10 +65,7 @@
   "Given an owning Pure node return the Om props. Analogous to React 
    component props."
   [x]
-  (let [ret {:value (aget (.-props x) "__om_cursor" "value")}]
-    (if-let [idx (aget (.-props x) "__om_index")]
-      (assoc ret :index idx)
-      ret)))
+  (aget (.-props x) "__om_cursor"))
 
 (defn ^:private merge-pending-state [owner]
   (let [state (.-state owner)]
