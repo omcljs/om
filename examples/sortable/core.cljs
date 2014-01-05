@@ -167,6 +167,9 @@
     (conj v x)
     (vec (concat (take idx v) [x] (drop idx v)))))
 
+(defn sorting? [owner]
+  (om/get-pending-state owner :sorting))
+
 (defn start-sort [owner e]
   (let [state (om/get-state owner)
         sort  (:sort state)
@@ -178,26 +181,28 @@
       (om/set-state! :sort (insert-at ::spacer idx sort)))))
 
 (defn handle-drop [owner e]
-  (let [{:keys [sort drop-index]} (om/get-state owner)
-        idx (index-of ::spacer sort)
-        sort (->> sort
-               (remove #{(:id e)})
-               (replace {::spacer (:id e)})
-               vec)]
-    (doto owner
-      (om/set-state! :sorting nil)
-      (om/set-state! :drop-index nil)
-      (om/set-state! :real-sort nil)
-      (om/set-state! :sort sort))))
+  (when (sorting? owner)
+    (let [{:keys [sort drop-index]} (om/get-state owner)
+           idx (index-of ::spacer sort)
+           sort (->> sort
+                  (remove #{(:id e)})
+                  (replace {::spacer (:id e)})
+                  vec)]
+      (doto owner
+        (om/set-state! :sorting nil)
+        (om/set-state! :drop-index nil)
+        (om/set-state! :real-sort nil)
+        (om/set-state! :sort sort)))))
 
 (defn update-drop [owner [x y :as loc]]
-  (let [state  (om/get-state owner)
-        [_ y]  (from-loc (:location state) loc)
-        [_ ch] (:cell-dimensions state)
-        drop-index (js/Math.round (inc (/ y ch)))]
-    (when (not= (:drop-index state) drop-index)
-      (om/set-state! owner :sort
-        (vec (insert-at ::spacer drop-index (:real-sort state)))))))
+  (when (sorting? owner)
+    (let [state  (om/get-state owner)
+          [_ y]  (from-loc (:location state) loc)
+          [_ ch] (:cell-dimensions state)
+          drop-index (js/Math.round (inc (/ y ch)))]
+      (when (not= (:drop-index state) drop-index)
+        (om/set-state! owner :sort
+          (vec (insert-at ::spacer drop-index (:real-sort state))))))))
 
 (defn bound [n lb ub]
   (cond
