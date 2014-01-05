@@ -581,3 +581,19 @@
       (read cursor
         (fn [cursor]
           (apply f e cursor a b c d args))))))
+
+(defn pure-bind
+  "EXPERIMENTAL: Like om.core/bind but for event handlers that will never
+   mutate the app state."
+  ([f cursor]
+    (fn [e] (allow-reads (f e cursor))))
+  ([f cursor a]
+    (fn [e] (allow-reads (f e cursor a))))
+  ([f cursor a b]
+    (fn [e] (allow-reads (f e cursor a b))))
+  ([f cursor a b c]
+    (fn [e] (allow-reads (f e cursor a b c))))
+  ([f cursor a b c d]
+    (fn [e] (allow-reads (f e cursor a b c d))))
+  ([f cursor a b c d & args]
+    (fn [e] (allow-reads (apply f e cursor a b c d args)))))

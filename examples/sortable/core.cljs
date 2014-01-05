@@ -31,16 +31,17 @@
 (defn gsize->vec [size]
   [(.-width size) (.-height size)])
 
-;; =============================================================================
-;; Generic Draggable
+(defn to? [owner next-props next-state k]
+  (or (and (not (om/get-state owner k))
+           (k next-state))
+      (and (not (-> (om/get-props owner) :value k))
+           (-> next-props :value k))))
 
-(defn to? [owner next-state k]
-  (and (not (om/get-state owner k))
-       (k next-state)))
-
-(defn from? [owner next-state k]
-  (and (om/get-state owner k)
-       (not (k next-state))))
+(defn from? [owner next-props next-state k]
+  (or (and (om/get-state owner k)
+           (not (k next-state)))
+      (and (-> (om/get-props owner) :value k)
+           (not (-> next-props :value k)))))
 
 (defn location [e]
   [(.-clientX e) (.-clientY e)])
@@ -48,6 +49,13 @@
 (defn element-offset [el]
   (let [offset (gstyle/getPageOffset el)]
     [(.-x offset) (.-y offset)]))
+
+;; =============================================================================
+;; Generic Draggable
+
+(defn dragging? [item owner]
+  (or (:dragging item)
+      (om/get-state owner :dragging)))
 
 (defn drag-start [e item owner opts]
   (let [el (om/get-node owner "draggable")
@@ -69,17 +77,18 @@
          :location (vec (map + drag-start drag-offset))}))))
 
 (defn drag-stop [e item owner opts]
-  (when (om/get-state owner :dragging)
+  (when (dragging? item owner)
+    (when (om/get-state owner :dragging)
+      (om/set-state! owner :dragging false))
     (doto owner
-      (om/set-state! :dragging false)
       (om/set-state! :location nil)
       (om/set-state! :drag-offset nil))
     (when-let [c (:chan opts)]
       (put! c {:event :drag-stop :id (:id item)}))))
 
-(defn drag [e owner opts]
+(defn drag [e item owner opts]
   (let [state (om/get-state owner)]
-    (when (:dragging state)
+    (when (dragging? item owner)
       (let [loc ((or (:constrain opts) identity)
                   (vec (map + (location e) (:drag-offset state))))]
         (om/set-state! owner :location loc)
@@ -104,21 +113,16 @@
     om/IWillUpdate
     (will-update [_ next-props next-state]
       ;; begin dragging, need to track events on window
-      (when (or (to? owner next-state :dragging)
-                ;; externally controlled
-                (and (not (-> (om/get-props owner) :value :dragging))
-                     (-> next-props :value :dragging)))
-        (when-not (:dragging next-state)
-          (om/set-state! owner :dragging true))
+      (when (or (to? owner next-props next-state :dragging))
         (let [mouse-up   (om/bind drag-stop item owner opts)
-              mouse-move #(drag % owner opts)]
+              mouse-move (om/bind drag item owner opts)]
           (om/set-state! owner :window-listeners
             [mouse-up mouse-move])
           (doto js/window
             (events/listen EventType.MOUSEUP mouse-up)
             (events/listen EventType.MOUSEMOVE mouse-move))))
       ;; end dragging, cleanup window event listeners
-      (when (from? owner next-state :dragging)
+      (when (from? owner next-props next-state :dragging)
         (let [[mouse-up mouse-move]
               (om/get-state owner :window-listeners)]
           (doto js/window
@@ -128,7 +132,7 @@
     (render [_]
       (let [state (om/get-state owner)
             style (cond
-                    (:dragging state)
+                    (dragging? item owner)
                     (let [[x y] (:location state)
                           [w h] (:dimensions state)]
                       #js {:position "absolute"
@@ -137,12 +141,12 @@
                     :else
                     #js {:position "static" :z-index 0})]
         (dom/li
-          #js {:className (when (:dragging state) "dragging")
+          #js {:className (when (dragging? item owner) "dragging")
                :style style
                :ref "draggable"
-               :onMouseDown (om/bind drag-start item owner opts)
-               :onMouseUp (om/bind drag-stop item owner opts)
-               :onMouseMove #(drag % owner opts)}
+               :onMouseDown (om/pure-bind drag-start item owner opts)
+               :onMouseUp   (om/pure-bind drag-stop item owner opts)
+               :onMouseMove (om/pure-bind drag item owner opts)}
           (om/build (:view opts) item {:opts opts}))))))
 
 ;; =============================================================================
@@ -184,7 +188,8 @@
         idx (index-of ::spacer sort)
         sort (->> sort
                (remove #{(:id e)})
-               (replace {::spacer (:id e)})) ]
+               (replace {::spacer (:id e)})
+               vec)]
     (doto owner
       (om/set-state! :sorting nil)
       (om/set-state! :drop-index nil)
@@ -195,10 +200,10 @@
   (let [state  (om/get-state owner)
         [_ y]  (from-loc (:location state) loc)
         [_ ch] (:cell-dimensions state)
-        drop-index (js/Math.round (+ (/ y ch) 0.5))]
+        drop-index (js/Math.round (inc (/ y ch)))]
     (when (not= (:drop-index state) drop-index)
       (om/set-state! owner :sort
-        (insert-at ::spacer drop-index (:real-sort state))))))
+        (vec (insert-at ::spacer drop-index (:real-sort state)))))))
 
 (defn bound [n lb ub]
   (cond
@@ -234,7 +239,7 @@
     om/IWillUpdate
     (will-update [_ next-props next-state]
       ;; calculate constraints from cell-dimensions when we receive them
-      (when (to? owner next-state :cell-dimensions)
+      (when (to? owner next-props next-state :cell-dimensions)
         (let [node   (om/get-node owner "sortable") 
               [w h]  (gsize->vec (gstyle/getSize node))
               [x y]  (element-offset node)
