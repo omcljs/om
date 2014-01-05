@@ -1,7 +1,8 @@
 (ns examples.sortable.core
   (:refer-clojure :exclude [chars])
   (:require-macros [cljs.core.async.macros :refer [go alt!]])
-  (:require [cljs.core.async :as async :refer [put! chan sliding-buffer alts!]]
+  (:require [cljs.core.async :as async :refer
+              [put! chan sliding-buffer dropping-buffer alts!]]
             [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]
             [clojure.string :as string]
@@ -103,8 +104,8 @@
                        gstyle/getSize
                        gsize->vec)]
             (om/set-state! owner :dimensions dims)
-            (when-let [delg (:delegate opts)]
-              (put! (:chan delg) {:event :dimensions :value dims}))))))
+            (when-let [dims-chan (:dims-chan opts)]
+              (put! dims-chan dims))))))
     om/IWillUpdate
     (will-update [_ next-props next-state]
       ;; begin dragging
@@ -174,35 +175,38 @@
     (> n ub) ub
     :else n))
 
+(defn handle-drag-event [owner e]
+  (case (:type e)
+    :drag-start (start-sort owner e) 
+    :drag-stop  (handle-drop owner e)
+    :drag       (update-drop owner (:location e))
+    nil))
+
 (defn sortable [{:keys [items sort]} owner opts]
   (reify
     om/IInitState
     (init-state [_] {:sort sort})
     om/IWillMount
     (will-mount [_]
-      (let [drag-chan (chan)]
-        (om/set-state! owner :drag-chan drag-chan)
-        (go (while true
-              (let [[e c] (<! drag-chan)]
-                (case (:type e)
-                  :dimensions (om/set-state! owner
-                                :cell-dimensions (:dimensions e))
-                  :drag-start (start-sort owner e) 
-                  :drag-stop  (handle-drop owner e)
-                  :drag       (update-drop owner (:location e))
-                  nil))))))
-    ;; would want to do this in IDidUpdate or something similar
-    ;; if the number of items can change
-    om/IDidMount
-    (did-mount [_ _]
-      (let [node   (om/get-node owner "sortable") 
-            [w h]  (gsize->vec (gstyle/getSize node))
-            [x y]  (element-offset node)
-            [_ ch] (om/get-state owner :cell-dimensions)]
-        (om/set-state! owner :constrain
-          (fn [[_ cy]] [x (bound cy y (- (+ y h) ch))]))))
+      (let [drag-chan (chan)
+            dims-chan (chan (dropping-buffer 1))]
+        (om/set-state! owner :chans
+          {:drag-chan drag-chan :dims-chan dims-chan})
+        (go
+          (while true
+            (alt!
+              drag-chan ([e c] (handle-drag-event owner e))
+              dims-chan ([e c] (om/set-state! owner :cell-dimensions e)))))))
+    ;; doesn't account for change in number of items in sortable
     om/IWillUpdate
-    (will-update [_ next-props next-state])
+    (will-update [_ next-props next-state]
+      (when (to? owner next-state :cell-dimensions)
+        (let [node   (om/get-node owner "sortable") 
+              [w h]  (gsize->vec (gstyle/getSize node))
+              [x y]  (element-offset node)
+              [_ ch] (:cell-dimensions next-state)]
+          (om/set-state! owner :constrain
+            (fn [[_ cy]] [(inc x) (bound cy y (- (+ y h) ch))])))))
     om/IRender
     (render [_]
       (dom/div #js {:className "sortable"}
@@ -219,8 +223,11 @@
                 (if-not (= id ::spacer)
                   (om/build draggable (items id)
                     {:key :id
-                     :opts (assoc opts :constrain (om/get-state owner :constrain))})
-                  (om/build sortable-spacer (items id) {:react-key "spacer-cell"})))
+                     :opts (assoc opts 
+                             :constrain (om/get-state owner :constrain)
+                             :dims-chan (om/get-state owner [:chans :dims-chan]))})
+                  (om/build sortable-spacer (items id) 
+                    {:react-key "spacer-cell"})))
               (om/get-state owner :sort))))))))
 
 ;; =============================================================================
