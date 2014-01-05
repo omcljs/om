@@ -114,8 +114,8 @@
     (will-update [_ next-props next-state]
       ;; begin dragging, need to track events on window
       (when (or (to? owner next-props next-state :dragging))
-        (let [mouse-up   (om/bind drag-stop item owner opts)
-              mouse-move (om/bind drag item owner opts)]
+        (let [mouse-up   (om/pure-bind drag-stop (:value next-props) owner opts)
+              mouse-move (om/pure-bind drag (:value next-props) owner opts)]
           (om/set-state! owner :window-listeners
             [mouse-up mouse-move])
           (doto js/window
