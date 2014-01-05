@@ -83,7 +83,7 @@
         (put! (:chan delg) {:event :drag :location loc})
         (om/set-state! owner :location loc)))))
 
-(defn draggable [item owner {:keys [chans] :as opts}]
+(defn draggable [item owner opts]
   (reify
     om/IWillMount
     (will-mount [_]
