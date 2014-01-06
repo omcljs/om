@@ -199,7 +199,7 @@
     (let [state  (om/get-state owner)
           [_ y]  (from-loc (:location state) loc)
           [_ ch] (:cell-dimensions state)
-          drop-index (js/Math.round (inc (/ y ch)))]
+          drop-index (js/Math.round (+ (/ y ch) 0.499999))]
       (when (not= (:drop-index state) drop-index)
         (om/set-state! owner :sort
           (vec (insert-at ::spacer drop-index (:real-sort state))))))))
