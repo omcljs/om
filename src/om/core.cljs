@@ -545,10 +545,10 @@
       (get-in (aget (.-state owner) "__om_state") korks))))
 
 (defn get-pending-state
-  "Takes a pure owning component and sequential list of keys and
-   returns a property in the component local if it exists. Returns
-   values from the pending state. If there is no pending state returns
-   values from the current state."
+  "EXPERIMENTAL: Takes a pure owning component and sequential list of
+   keys and returns a property in the component local if it
+   exists. Returns values from the pending state. If there is no
+   pending state returns values from the current state."
   ([owner]
     (let [state (.-state owner)]
       (or (aget state "__om_pending_state")
