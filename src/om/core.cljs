@@ -620,3 +620,18 @@
     (fn [e] (allow-reads (f e cursor a b c d))))
   ([f cursor a b c d & args]
     (fn [e] (allow-reads (apply f e cursor a b c d args)))))
+
+(defn rhizome
+  "Create a cursor instance by attaching to an existing cursor. This
+   supports building components which don't need to set app state."
+  [value cursor]
+  (specify value
+    ICursor
+    (-value [_] value)
+    (-state [_] (-state cursor))
+    (-path [_] (-path cursor))
+    IEquiv
+    (-equiv [_ other]
+      (if (cursor? other)
+        (= value (-value other))
+        (= value other)))))

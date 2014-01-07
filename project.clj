@@ -61,6 +61,13 @@
                 :output-dir "examples/sortable/out"
                 :source-map true
                 :optimizations :none}}
+             {:id "rhizome"
+              :source-paths ["src" "examples/rhizome"]
+              :compiler {
+                :output-to "examples/rhizome/main.js"
+                :output-dir "examples/rhizome/out"
+                :source-map true
+                :optimizations :none}}
              {:id "tests"
               :source-paths ["src" "examples/tests"]
               :compiler {
