@@ -47,7 +47,7 @@
 
 (defn dragging? [item owner]
   (or (:dragging item)
-      (om/get-state owner :dragging)))
+      (om/get-pending-state owner :dragging)))
 
 (defn drag-start [e item owner opts]
   (let [el (om/get-node owner "draggable")
