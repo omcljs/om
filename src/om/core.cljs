@@ -214,9 +214,7 @@
   (-equiv [_ other]
     (check
       (if (cursor? other)
-        (and (= value (-value other))
-             (= state (-state other))
-             (= path  (-path other)))
+        (= value (-value other))
         (= value other))))
   IPrintWithWriter
   (-pr-writer [_ writer opts]
@@ -274,9 +272,7 @@
   (-equiv [_ other]
     (check
       (if (cursor? other)
-        (and (= value (-value other))
-             (= state (-state other))
-             (= path  (-path other)))
+        (= value (-value other))
         (= value other))))
   IPrintWithWriter
   (-pr-writer [_ writer opts]
