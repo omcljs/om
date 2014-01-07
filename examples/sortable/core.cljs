@@ -1,13 +1,9 @@
 (ns examples.sortable.core
-  (:refer-clojure :exclude [chars])
   (:require-macros [cljs.core.async.macros :refer [go alt!]])
-  (:require [cljs.core.async :as async :refer
-              [put! chan sliding-buffer dropping-buffer alts!]]
+  (:require [cljs.core.async :as async :refer [put! chan dropping-buffer]]
             [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]
-            [clojure.string :as string]
             [goog.events :as events]
-            [goog.dom :as gdom]
             [goog.style :as gstyle])
   (:import [goog.ui IdGenerator]
            [goog.events EventType]))
