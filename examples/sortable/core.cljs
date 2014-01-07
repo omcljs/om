@@ -88,7 +88,7 @@
                   (vec (map + (location e) (:drag-offset state))))]
         (om/set-state! owner :location loc)
         (when-let [c (:chan opts)]
-          (put! c {:event :drag :location loc}))))))
+          (put! c {:event :drag :location loc :id (:id item)}))))))
 
 (defn draggable [item owner opts]
   (reify
@@ -163,10 +163,17 @@
         (recur (inc i) (next v)))
       -1)))
 
-(defn insert-at [x idx v]
-  (if (== idx (count v))
-    (conj v x)
-    (vec (concat (take idx v) [x] (drop idx v)))))
+(defn insert-at [x idx ignore v]
+  (let [len (count v)]
+    (loop [i 0 v v ret []]
+      (if (>= i len)
+        (conj ret x)
+        (let [y (first v)]
+          (if (= y ignore)
+            (recur i (next v) (conj ret y))
+            (if (== i idx)
+              (into (conj ret x) v)
+              (recur (inc i) (next v) (conj ret y)))))))))
 
 (defn sorting? [owner]
   (om/get-pending-state owner :sorting))
@@ -179,7 +186,7 @@
       (om/set-state! :sorting (:id e))
       (om/set-state! :real-sort sort)
       (om/set-state! :drop-index idx)
-      (om/set-state! :sort (insert-at ::spacer idx sort)))))
+      (om/set-state! :sort (insert-at ::spacer idx (:id e) sort)))))
 
 (defn handle-drop [owner e]
   (when (sorting? owner)
@@ -195,15 +202,18 @@
         (om/set-state! :real-sort nil)
         (om/set-state! :sort sort)))))
 
-(defn update-drop [owner [x y :as loc]]
+(defn update-drop [owner e]
   (when (sorting? owner)
-    (let [state  (om/get-state owner)
+    (let [loc    (:location e)
+          state  (om/get-state owner)
           [_ y]  (from-loc (:location state) loc)
           [_ ch] (:cell-dimensions state)
-          drop-index (js/Math.round (+ (/ y ch) 0.499999))]
+          drop-index (js/Math.round (/ y ch))]
       (when (not= (:drop-index state) drop-index)
-        (om/set-state! owner :sort
-          (vec (insert-at ::spacer drop-index (:real-sort state))))))))
+        (doto owner
+          (om/set-state! :drop-index drop-index)
+          (om/set-state! :sort
+            (insert-at ::spacer drop-index (:id e) (:real-sort state))))))))
 
 (defn bound [n lb ub]
   (cond
@@ -215,7 +225,7 @@
   (case (:event e)
     :drag-start (start-sort owner e) 
     :drag-stop  (handle-drop owner e)
-    :drag       (update-drop owner (:location e))
+    :drag       (update-drop owner e)
     nil))
 
 (defn sortable [{:keys [items sort]} owner opts]
