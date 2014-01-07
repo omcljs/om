@@ -95,16 +95,12 @@
     om/IDidMount
     (did-mount [_ _]
       ;; capture the cell dimensions when it becomes available
-      (let [dims (om/get-state owner :dimensions)]
-        (when-not dims
-          (let [dims (-> owner
-                       (om/get-node "draggable")
-                       gstyle/getSize
-                       gsize->vec)]
-            (om/set-state! owner :dimensions dims)
-            ;; let cell dimension listeners know
-            (when-let [dims-chan (:dims-chan opts)]
-              (put! dims-chan dims))))))
+      (let [dims (-> (om/get-node owner "draggable")
+                     gstyle/getSize gsize->vec)]
+        (om/set-state! owner :dimensions dims)
+        ;; let cell dimension listeners know
+        (when-let [dims-chan (:dims-chan opts)]
+          (put! dims-chan dims))))
     om/IWillUpdate
     (will-update [_ next-props next-state]
       ;; begin dragging, need to track events on window
