@@ -47,6 +47,9 @@
 (defprotocol IToCursor
   (-to-cursor [value state] [value state path]))
 
+(defprotocol ITransact
+  (-transact! [cursor f]))
+
 ;; =============================================================================
 ;; A Truly Pure Component
 ;; 
@@ -176,6 +179,9 @@
   (-value [_] (check value))
   (-path [_] (check path))
   (-state [_] (check state))
+  ITransact
+  (-transact! [_ f]
+    (swap! state f path))
   ICloneable
   (-clone [_]
     (MapCursor. value state path))
@@ -226,6 +232,9 @@
   (-value [_] (check value))
   (-path [_] (check path))
   (-state [_] (check state))
+  ITransact
+  (-transact! [_ f]
+    (swap! state f path))
   ICloneable
   (-clone [_]
     (IndexedCursor. value state path))
@@ -424,11 +433,11 @@
    specified value in the tree. An Om re-render will be triggered."
   ([cursor f]
     (allow-reads
-      (let [state (-state cursor)
-            path  (-path cursor)]
-        (if (empty? path)
-          (swap! state f)
-          (swap! state update-in path f)))))
+      (-transact! cursor
+        (fn [state path]
+          (if (empty? path)
+            (f state)
+            (update-in state path f))))))
   ([cursor korks f]
     (safe-transact! cursor korks f))
   ([cursor korks f a]
@@ -441,11 +450,11 @@
     (safe-transact! cursor korks f a b c d))
   ([cursor korks f a b c d & args]
     (allow-reads
-      (let [state (-state cursor)
-            path  (-path cursor)]
-        (if-not (sequential? korks)
-          (apply swap! state update-in (conj path korks) f a b c d args)
-          (apply swap! state update-in (into path korks) f a b c d args))))))
+      (-transact! cursor
+        (fn [state path]
+          (if-not (sequential? korks)
+            (apply update-in state (conj path korks) f a b c d args)
+            (apply update-in state (into path korks) f a b c d args)))))))
 
 (defn update!
   "Like transact! but no list of keys given. An Om re-render
@@ -462,11 +471,11 @@
     (safe-update! cursor f a b c d))
   ([cursor f a b c d & args]
     (allow-reads
-      (let [path  (-path cursor)
-            state (-state cursor)]
-        (if (empty? path)
-          (swap! state #(apply f % a b c d args))
-          (apply swap! state update-in path f a b c d args))))))
+      (-transact! cursor
+        (fn [state path]
+          (if (empty? path)
+            (apply f state a b c d args)
+            (apply update-in state path f a b c d args)))))))
 
 (defn read
   "Given a cursor and a function f, read its current value. f will be

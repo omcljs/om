@@ -33,19 +33,19 @@
 
 (defmacro safe-transact! [cursor korks f & args]
   `(om.core/allow-reads
-     (let [path#  (om.core/-path ~cursor)
-           state# (om.core/-state ~cursor)]
-       (if-not (sequential? ~korks)
-         (swap! state# update-in (conj path# ~korks) ~f ~@args)
-         (swap! state# update-in (into path# ~korks) ~f ~@args)))))
+     (om.core/-transact! ~cursor
+       (fn [state# path#]
+         (if-not (sequential? ~korks)
+           (update-in state# (conj path# ~korks) ~f ~@args)
+           (update-in state# (into path# ~korks) ~f ~@args))))))
 
 (defmacro safe-update! [cursor f & args]
   `(om.core/allow-reads
-     (let [path#  (om.core/-path ~cursor)
-           state# (om.core/-state ~cursor)]
-       (if (empty? path#)
-         (swap! state# #(~f % ~@args))
-         (swap! state# update-in path# ~f ~@args)))))
+     (om.core/-transact! ~cursor
+       (fn [state# path#]
+         (if (empty? path#)
+           (~f state# ~@args)
+           (update-in state# path# ~f ~@args))))))
 
 (defmacro tag [pure t]
   `(let [pure# ~pure]
