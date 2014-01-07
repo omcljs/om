@@ -283,7 +283,13 @@
     ICursor
     (-value [_] (check val))
     (-state [_] (check state))
-    (-path [_] (check path))))
+    (-path [_] (check path))
+    IEquiv
+    (-equiv [_ other]
+      (check
+        (if (cursor? other)
+          (= val (-value other))
+          (= val other))))))
 
 (defn ^:private to-cursor
   ([val] (to-cursor val nil []))
