@@ -50,23 +50,24 @@
       (om/get-pending-state owner :dragging)))
 
 (defn drag-start [e item owner opts]
-  (let [el (om/get-node owner "draggable")
-        drag-start (location e)
-        el-offset (element-offset el)
-        drag-offset (vec (map - el-offset drag-start))]
-    ;; if in a sortable need to wait for sortable to
-    ;; initiate dragging
-    (when-not (:delegate opts)
-      (om/set-state! owner :dragging true))
-    (doto owner
-      (om/set-state! :location
-        ((or (:constrain opts) identity) el-offset))
-      (om/set-state! :drag-offset drag-offset))
-    (when-let [c (:chan opts)]
-      (put! c
-        {:event :drag-start
-         :id (:id item)
-         :location (vec (map + drag-start drag-offset))}))))
+  (when-not (dragging? item owner)
+    (let [el (om/get-node owner "draggable")
+          drag-start (location e)
+          el-offset (element-offset el)
+          drag-offset (vec (map - el-offset drag-start))]
+      ;; if in a sortable need to wait for sortable to
+      ;; initiate dragging
+      (when-not (:delegate opts)
+        (om/set-state! owner :dragging true))
+      (doto owner
+        (om/set-state! :location
+          ((or (:constrain opts) identity) el-offset))
+        (om/set-state! :drag-offset drag-offset))
+      (when-let [c (:chan opts)]
+        (put! c
+          {:event :drag-start
+           :id (:id item)
+           :location (vec (map + drag-start drag-offset))})))))
 
 (defn drag-stop [e item owner opts]
   (when (dragging? item owner)
