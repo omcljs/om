@@ -20,7 +20,7 @@ for [yourself](http://swannodette.github.io/2013/12/31/time-travel/).
   (:require [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]))
 
-(defn widget [data]
+(defn widget [data owner]
   (om/component
     (dom/div nil "Hello world!")))
 
