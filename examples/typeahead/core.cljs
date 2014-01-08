@@ -35,6 +35,10 @@
     #js {:display "none"}
     #js {:display "block"}))
 
+;; we have to use om/value because we've made
+;; strings and numbers work as cursors and React doesn't
+;; know how to handle these correctly
+
 (defn word-index [index owner]
   (om/component (dom/span nil (om/value index))))
 
