@@ -35,20 +35,22 @@
     #js {:display "none"}
     #js {:display "block"}))
 
-(defn word-count [count owner]
-  (om/component (dom/span nil count)))
-
 (defn word-index [index owner]
-  (om/component (dom/span nil index)))
+  (om/component (dom/span nil (om/value index))))
+
+(defn word-count [count owner]
+  (om/component (dom/span nil (om/value count))))
 
 (defn word [the-word owner]
-  (om/component (dom/span nil the-word)))
+  (om/component (dom/span nil (om/value the-word))))
 
 (defn item [the-item owner]
   (om/component
     (dom/li #js {:style (hidden (:hidden the-item))}
       (om/build word-index (:index the-item))
+      (dom/span nil " ")
       (om/build word (:word the-item))
+      (dom/span nil " ")
       (om/build word-count (:count the-item)))))
 
 (defn change [e owner]
