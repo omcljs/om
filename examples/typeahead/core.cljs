@@ -28,7 +28,7 @@
 
 (extend-type number
   ICloneable
-  (-clone [s] (js/Number. s)))
+  (-clone [n] (js/Number. n)))
 
 (defn hidden [^boolean bool]
   (if bool
