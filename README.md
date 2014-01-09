@@ -137,6 +137,10 @@ functionality.
 For a sense of where Om is going the existing issues give a rough
 idea.
 
+## References
+
+* [Worlds: Controlling the Scope of Side Effects](http://www.vpri.org/pdf/tr2011001_final_worlds.pdf)
+
 ## Copyright and license
 
 Copyright © 2013-2014 David Nolen
