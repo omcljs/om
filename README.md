@@ -119,9 +119,7 @@ like this:
               :optimizations :advanced
               :pretty-print false
               :preamble ["react/react.min.js"]
-              :externs ["react/externs/react.js"]
-              :closure-warnings
-              {:non-standard-jsdoc :off}}}]}
+              :externs ["react/externs/react.js"]}}]}
 ```
 
 This will generate a single file `main.js`.
