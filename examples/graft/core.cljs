@@ -1,4 +1,4 @@
-(ns examples.rhizome.core
+(ns examples.graft.core
   (:require [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]))
 
@@ -22,5 +22,5 @@
   {:some :state}
   (fn [app node]
     (om/component
-      (om/build simple (om/rhizome {:title "A Rhizome!"} app))))
+      (om/build simple (om/graft {:title "A Graft!"} app))))
   (.getElementById js/document "app"))

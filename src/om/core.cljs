@@ -621,9 +621,10 @@
   ([f cursor a b c d & args]
     (fn [e] (allow-reads (apply f e cursor a b c d args)))))
 
-(defn rhizome
+(defn graft
   "Create a cursor instance by attaching to an existing cursor. This
-   supports building components which don't need to set app state."
+   supports building components which don't need to set app state but
+   need to be added to the render tree."
   [value cursor]
   (specify value
     ICursor

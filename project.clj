@@ -61,11 +61,11 @@
                 :output-dir "examples/sortable/out"
                 :source-map true
                 :optimizations :none}}
-             {:id "rhizome"
-              :source-paths ["src" "examples/rhizome"]
+             {:id "graft"
+              :source-paths ["src" "examples/graft"]
               :compiler {
-                :output-to "examples/rhizome/main.js"
-                :output-dir "examples/rhizome/out"
+                :output-to "examples/graft/main.js"
+                :output-dir "examples/graft/out"
                 :source-map true
                 :optimizations :none}}
              {:id "tests"
