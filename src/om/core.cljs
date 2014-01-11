@@ -334,7 +334,7 @@
    Example:
 
    (root {:message :hello}
-     (fn [data]
+     (fn [data owner]
        ...)
      js/document.body)"
   [value f target]
