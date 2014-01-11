@@ -40,6 +40,13 @@
                 :output-dir "examples/mouse/out"
                 :source-map true
                 :optimizations :none}}
+             {:id "multiroot"
+              :source-paths ["src" "examples/multiroot"]
+              :compiler {
+                :output-to "examples/multiroot/main.js"
+                :output-dir "examples/multiroot/out"
+                :source-map true
+                :optimizations :none}}
              {:id "counters"
               :source-paths ["src" "examples/counters"]
               :compiler {

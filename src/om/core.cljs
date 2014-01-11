@@ -316,6 +316,11 @@
 ;; API
 
 (def ^:private refresh-queued false)
+(def ^:private refresh-set (atom #{}))
+
+(defn ^:private render-all []
+  (doseq [f @refresh-set] (f))
+  (set! refresh-queued false))
 
 (defn root
   "Takes an immutable value or value wrapped in an atom, an initial
@@ -336,21 +341,23 @@
   (let [state (if (instance? Atom value)
                 value
                 (atom value))
-        rootf (fn []
-                (set! refresh-queued false)
+        rootf (fn rootf []
+                (swap! refresh-set disj rootf)
                 (let [value  @state
                       cursor (to-cursor value state)]
                   (dom/render
                     (pure #js {:__om_cursor cursor}
                       (fn [this] (allow-reads (f cursor this))))
                     target)))]
-    (add-watch state ::root
+    (add-watch state (gensym)
       (fn [_ _ _ _]
+        (when-not (contains? @refresh-set rootf)
+          (swap! refresh-set conj rootf))
         (when-not refresh-queued
           (set! refresh-queued true)
           (if (exists? js/requestAnimationFrame)
-            (js/requestAnimationFrame rootf)
-            (js/setTimeout rootf 16)))))
+            (js/requestAnimationFrame render-all)
+            (js/setTimeout render-all 16)))))
     (rootf)))
 
 (defn ^:private valid? [m]
