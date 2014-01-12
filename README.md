@@ -138,6 +138,8 @@ idea.
 ## References
 
 * [Worlds: Controlling the Scope of Side Effects](http://www.vpri.org/pdf/tr2011001_final_worlds.pdf)
+* [A Functional I/O System](http://www.ccs.neu.edu/racket/pubs/icfp09-fffk.pdf)
+* [Learnable Programming](http://worrydream.com/LearnableProgramming/)
 
 ## Copyright and license
 
