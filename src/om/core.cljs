@@ -157,8 +157,11 @@
          :render
          (fn []
            (this-as this
-             (allow-reads
-               (render (children this)))))}))
+             (let [c (children this)]
+               (allow-reads
+                 (if (satisfies? IRender c)
+                   (render c)
+                   (.render c))))))}))
 
 ;; =============================================================================
 ;; Cursors
