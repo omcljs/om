@@ -159,9 +159,11 @@
            (this-as this
              (let [c (children this)]
                (allow-reads
-                 (if (satisfies? IRender c)
-                   (render c)
-                   (.render c))))))}))
+                 (cond
+                   (satisfies? IRender c) (render c)
+                   (.-render c) (.render c)
+                   (array? c ) c
+                   :else (throw (js/Error. (str "Cannot render " c))))))))}))
 
 ;; =============================================================================
 ;; Cursors
