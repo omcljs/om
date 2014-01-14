@@ -298,6 +298,9 @@
     (-value [_] (check val))
     (-state [_] (check state))
     (-path [_] (check path))
+    ITransact
+    (-transact! [_ f]
+      (swap! state f path))
     IEquiv
     (-equiv [_ other]
       (check
