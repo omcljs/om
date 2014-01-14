@@ -27,56 +27,56 @@
                 :optimizations :simple}}
              ;; examples
              {:id "hello"
-              :source-paths ["src" "examples/hello"]
+              :source-paths ["src" "examples/hello/src"]
               :compiler {
                 :output-to "examples/hello/main.js"
                 :output-dir "examples/hello/out"
                 :source-map true
                 :optimizations :none}}
              {:id "mouse"
-              :source-paths ["src" "examples/mouse"]
+              :source-paths ["src" "examples/mouse/src"]
               :compiler {
                 :output-to "examples/mouse/main.js"
                 :output-dir "examples/mouse/out"
                 :source-map true
                 :optimizations :none}}
              {:id "multiroot"
-              :source-paths ["src" "examples/multiroot"]
+              :source-paths ["src" "examples/multiroot/src"]
               :compiler {
                 :output-to "examples/multiroot/main.js"
                 :output-dir "examples/multiroot/out"
                 :source-map true
                 :optimizations :none}}
              {:id "counters"
-              :source-paths ["src" "examples/counters"]
+              :source-paths ["src" "examples/counters/src"]
               :compiler {
                 :output-to "examples/counters/main.js"
                 :output-dir "examples/counters/out"
                 :source-map true
                 :optimizations :none}}
              {:id "typeahead"
-              :source-paths ["src" "examples/typeahead"]
+              :source-paths ["src" "examples/typeahead/src"]
               :compiler {
                 :output-to "examples/typeahead/main.js"
                 :output-dir "examples/typeahead/out"
                 :source-map true
                 :optimizations :none}}
              {:id "sortable"
-              :source-paths ["src" "examples/sortable"]
+              :source-paths ["src" "examples/sortable/src"]
               :compiler {
                 :output-to "examples/sortable/main.js"
                 :output-dir "examples/sortable/out"
                 :source-map true
                 :optimizations :none}}
              {:id "graft"
-              :source-paths ["src" "examples/graft"]
+              :source-paths ["src" "examples/graft/src"]
               :compiler {
                 :output-to "examples/graft/main.js"
                 :output-dir "examples/graft/out"
                 :source-map true
                 :optimizations :none}}
              {:id "tests"
-              :source-paths ["src" "examples/tests"]
+              :source-paths ["src" "examples/tests/src"]
               :compiler {
                 :output-to "examples/tests/main.js"
                 :output-dir "examples/tests/out"
