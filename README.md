@@ -60,6 +60,7 @@ preferred flavors over the `React.DOM` api. Alternative syntaxes will
 be listed here:
 
 * [sablono](http://github.com/r0man/sablono), Hiccup-style
+* [kioo](http://github.com/ckirkendall/kioo), Enlive-style
 
 ## Using it
 
@@ -83,7 +84,7 @@ For local development your
 should look something like this:
 
 ```clj
-:cljsbuild { 
+:cljsbuild {
   :builds [{:id "dev"
             :source-paths ["src"]
             :compiler {
@@ -111,7 +112,7 @@ For production your [lein-cljsbuild](http://github.com/emezeske/lein-cljsbuild) 
 like this:
 
 ```clj
-:cljsbuild { 
+:cljsbuild {
   :builds [{:id "release"
             :source-paths ["src"]
             :compiler {
