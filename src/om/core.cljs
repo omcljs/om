@@ -330,14 +330,17 @@
   (doseq [f @refresh-set] (f))
   (set! refresh-queued false))
 
+(def ^:private roots (atom {}))
+
 (defn root
   "Takes an immutable value or value wrapped in an atom, an initial
    function f, and a DOM target. Installs an Om/React render loop. f
    must return an instance that at a minimum implements IRender (it
-   may implement other React life cycle protocols). f must take
-   two arguments, the root cursor and the owning pure node. A
-   cursor is just the original data wrapped in an ICursor instance
-   which maintains path information.
+   may implement other React life cycle protocols). f must take two
+   arguments, the root cursor and the owning pure node. A cursor is
+   just the original data wrapped in an ICursor instance which
+   maintains path information. Only one root render loop allowed per
+   target element. You can remove a root with om.core/remove-root.
 
    Example:
 
@@ -346,27 +349,38 @@
        ...)
      js/document.body)"
   [value f target]
-  (let [state (if (instance? Atom value)
-                value
-                (atom value))
-        rootf (fn rootf []
-                (swap! refresh-set disj rootf)
-                (let [value  @state
-                      cursor (to-cursor value state)]
-                  (dom/render
-                    (pure #js {:__om_cursor cursor}
-                      (fn [this] (allow-reads (f cursor this))))
-                    target)))]
-    (add-watch state (gensym)
-      (fn [_ _ _ _]
-        (when-not (contains? @refresh-set rootf)
-          (swap! refresh-set conj rootf))
-        (when-not refresh-queued
-          (set! refresh-queued true)
-          (if (exists? js/requestAnimationFrame)
-            (js/requestAnimationFrame render-all)
-            (js/setTimeout render-all 16)))))
-    (rootf)))
+  (when-not (contains? roots target)
+    (let [state (if (instance? Atom value)
+                  value
+                  (atom value))
+          rootf (fn rootf []
+                  (swap! refresh-set disj rootf)
+                  (let [value  @state
+                        cursor (to-cursor value state)]
+                    (dom/render
+                      (pure #js {:__om_cursor cursor}
+                        (fn [this] (allow-reads (f cursor this))))
+                      target)))
+          watch-key (gensym)]
+      (add-watch state watch-key
+        (fn [_ _ _ _]
+          (when-not (contains? @refresh-set rootf)
+            (swap! refresh-set conj rootf))
+          (when-not refresh-queued
+            (set! refresh-queued true)
+            (if (exists? js/requestAnimationFrame)
+              (js/requestAnimationFrame render-all)
+              (js/setTimeout render-all 16)))))
+      (swap! roots assoc target
+        (fn []
+          (remove-watch state watch-key)
+          (swap! roots dissoc target)))
+      (rootf))))
+
+(defn remove-root
+  "Remove a om.core/root render loop on the target element."
+  [target]
+  ((get @roots target)))
 
 (defn ^:private valid? [m]
   (every? #{:key :react-key :fn :opts ::index} (keys m)))
