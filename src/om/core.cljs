@@ -2,7 +2,7 @@
   (:require-macros
     [om.core :refer
       [pure component check allow-reads safe-update!
-       safe-transact! cursor-check tag]])
+       safe-transact! tag]])
   (:require [om.dom :as dom :include-macros true]))
 
 (def ^{:tag boolean :dynamic true} *read-enabled* false)
@@ -405,12 +405,13 @@
       (apply str "build options contains invalid keys, only :key, "
                  ":react-key, :fn, :and opts allowed, given "
                  (interpose ", " (keys m))))
+    (assert (cursor? cursor)
+      (str "Cannot build Om component from non-cursor " cursor))
     (cond
       (nil? m)
       (tag
         (pure #js {:__om_cursor cursor}
-          (fn [this]
-            (cursor-check cursor (allow-reads (f cursor this)))))
+          (fn [this] (allow-reads (f cursor this))))
         f)
 
       :else
@@ -425,10 +426,8 @@
                      :__om_index (::index m)
                      :key rkey}
             (if (nil? opts)
-              (fn [this]
-                (cursor-check cursor' (allow-reads (f cursor' this))))
-              (fn [this]
-                (cursor-check cursor' (allow-reads (f cursor' this opts))))))
+              (fn [this] (allow-reads (f cursor' this)))
+              (fn [this] (allow-reads (f cursor' this opts)))))
           f)))))
 
 (defn build-all
