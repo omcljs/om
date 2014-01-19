@@ -75,19 +75,22 @@
 
 (defn get-state
   "Takes a pure owning component and sequential list of keys and
-   returns a property in the component local state if it exists. Will
-   never return pending state values."
-  ([owner] (aget (.-state owner) "__om_state"))
+   returns a property in the component local state if it exists. Always
+   returns pending state."
+  ([owner]
+    (let [state (.-state owner)]
+      (or (aget state "__om_pending_state")
+          (aget state "__om_state"))))
   ([owner korks]
     (cond
       (not (sequential? korks))
-      (get (aget (.-state owner) "__om_state") korks)
+      (get (get-state owner) korks)
 
       (empty? korks)
       (get-state owner)
 
       :else
-      (get-in (aget (.-state owner) "__om_state") korks))))
+      (get-in (get-state owner) korks))))
 
 (defn ^:private merge-pending-state [owner]
   (let [state (.-state owner)]
@@ -580,25 +583,23 @@
         (swap! (-state cursor) clone)
         (swap! (-state cursor) update-in path clone)))))
 
-(defn get-pending-state
-  "EXPERIMENTAL: Takes a pure owning component and sequential list of
-   keys and returns a property in the component local if it
-   exists. Returns values from the pending state. If there is no
-   pending state returns values from the current state."
+(defn get-render-state
+  "Takes a pure owning component and sequential list of
+   keys and returns a property in the component local state if it
+   exists. Returns values from the pending state. Always returns the
+   rendered state, not the pending state."
   ([owner]
-    (let [state (.-state owner)]
-      (or (aget state "__om_pending_state")
-          (aget state "__om_state"))))
+    (aget (.-state owner) "__om_state"))
   ([owner korks]
     (cond
       (not (sequential? korks))
-      (get (get-pending-state owner) korks)
+      (get (get-render-state owner) korks)
 
       (empty? korks)
-      (get-pending-state owner)
+      (get-render-state owner)
 
       :else
-      (get-in (get-pending-state owner) korks))))
+      (get-in (get-render-state owner) korks))))
 
 (defn bind
   "Convenience function for creating event handlers on cursors. Takes

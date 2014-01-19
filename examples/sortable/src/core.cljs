@@ -20,13 +20,13 @@
   [(.-width size) (.-height size)])
 
 (defn to? [owner next-props next-state k]
-  (or (and (not (om/get-state owner k))
+  (or (and (not (om/get-render-state owner k))
            (k next-state))
       (and (not (k (om/get-props owner)))
            (k next-props))))
 
 (defn from? [owner next-props next-state k]
-  (or (and (om/get-state owner k)
+  (or (and (om/get-render-state owner k)
            (not (k next-state)))
       (and (k (om/get-props owner))
            (not (k next-props)))))
@@ -43,7 +43,7 @@
 
 (defn dragging? [item owner]
   (or (:dragging item)
-      (om/get-pending-state owner :dragging)))
+      (om/get-state owner :dragging)))
 
 (defn drag-start [e item owner opts]
   (when-not (dragging? item owner)
@@ -168,7 +168,7 @@
               (recur (inc i) (next v) (conj ret y)))))))))
 
 (defn sorting? [owner]
-  (om/get-pending-state owner :sorting))
+  (om/get-state owner :sorting))
 
 (defn start-sort [owner e]
   (let [state (om/get-state owner)
