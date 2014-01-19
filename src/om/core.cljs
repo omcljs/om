@@ -349,38 +349,37 @@
        ...)
      js/document.body)"
   [value f target]
-  (when-not (contains? roots target)
-    (let [state (if (instance? Atom value)
-                  value
-                  (atom value))
-          rootf (fn rootf []
-                  (swap! refresh-set disj rootf)
-                  (let [value  @state
-                        cursor (to-cursor value state)]
-                    (dom/render
-                      (pure #js {:__om_cursor cursor}
-                        (fn [this] (allow-reads (f cursor this))))
-                      target)))
-          watch-key (gensym)]
-      (add-watch state watch-key
-        (fn [_ _ _ _]
-          (when-not (contains? @refresh-set rootf)
-            (swap! refresh-set conj rootf))
-          (when-not refresh-queued
-            (set! refresh-queued true)
-            (if (exists? js/requestAnimationFrame)
-              (js/requestAnimationFrame render-all)
-              (js/setTimeout render-all 16)))))
-      (swap! roots assoc target
-        (fn []
-          (remove-watch state watch-key)
-          (swap! roots dissoc target)))
-      (rootf))))
-
-(defn remove-root
-  "Remove a om.core/root render loop on the target element."
-  [target]
-  ((get @roots target)))
+  ;; only one root render loop per target
+  (let [roots' @roots]
+    (when (contains? roots' target)
+      ((get roots' target))))
+  (let [state (if (instance? Atom value)
+                value
+                (atom value))
+       rootf (fn rootf []
+               (swap! refresh-set disj rootf)
+               (let [value  @state
+                     cursor (to-cursor value state)]
+                 (dom/render
+                   (pure #js {:__om_cursor cursor}
+                     (fn [this] (allow-reads (f cursor this))))
+                   target)))
+         watch-key (gensym)]
+    (add-watch state watch-key
+      (fn [_ _ _ _]
+        (when-not (contains? @refresh-set rootf)
+          (swap! refresh-set conj rootf))
+        (when-not refresh-queued
+          (set! refresh-queued true)
+          (if (exists? js/requestAnimationFrame)
+            (js/requestAnimationFrame render-all)
+            (js/setTimeout render-all 16)))))
+    ;; store fn to remove previous root render loop
+    (swap! roots assoc target
+      (fn []
+        (remove-watch state watch-key)
+        (swap! roots dissoc target)))
+    (rootf)))
 
 (defn ^:private valid? [m]
   (every? #{:key :react-key :fn :opts ::index} (keys m)))
