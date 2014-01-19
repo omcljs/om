@@ -36,6 +36,9 @@
 (defprotocol IRender
   (render [this]))
 
+(defprotocol IRenderState
+  (render-state [this state]))
+
 ;; =============================================================================
 ;; Om Protocols
 
@@ -69,6 +72,22 @@
    component props."
   [x]
   (aget (.-props x) "__om_cursor"))
+
+(defn get-state
+  "Takes a pure owning component and sequential list of keys and
+   returns a property in the component local state if it exists. Will
+   never return pending state values."
+  ([owner] (aget (.-state owner) "__om_state"))
+  ([owner korks]
+    (cond
+      (not (sequential? korks))
+      (get (aget (.-state owner) "__om_state") korks)
+
+      (empty? korks)
+      (get-state owner)
+
+      :else
+      (get-in (aget (.-state owner) "__om_state") korks))))
 
 (defn ^:private merge-pending-state [owner]
   (let [state (.-state owner)]
@@ -161,6 +180,7 @@
                (allow-reads
                  (cond
                    (satisfies? IRender c) (render c)
+                   (satisfies? IRenderState c) (render-state c (get-state this))
                    (.-render c) (.render c)
                    (array? c ) c
                    :else (throw (js/Error. (str "Cannot render " c))))))))}))
@@ -559,22 +579,6 @@
       (if (empty? path)
         (swap! (-state cursor) clone)
         (swap! (-state cursor) update-in path clone)))))
-
-(defn get-state
-  "Takes a pure owning component and sequential list of keys and
-   returns a property in the component local state if it exists. Will
-   never return pending state values."
-  ([owner] (aget (.-state owner) "__om_state"))
-  ([owner korks]
-    (cond
-      (not (sequential? korks))
-      (get (aget (.-state owner) "__om_state") korks)
-
-      (empty? korks)
-      (get-state owner)
-
-      :else
-      (get-in (aget (.-state owner) "__om_state") korks))))
 
 (defn get-pending-state
   "EXPERIMENTAL: Takes a pure owning component and sequential list of
