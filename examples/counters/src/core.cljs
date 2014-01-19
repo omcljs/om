@@ -60,7 +60,7 @@
               (map (fn [counter]
                      (update-in counter [:shared] #(om/join counter [:shared %])))
                 (:counters app))
-              {:key :id :init chans})))))
+              {:key :id :init-state chans})))))
     (.getElementById js/document "app")))
 
 (counters)

@@ -100,17 +100,29 @@
         (aset "__om_state" pending-state)
         (aset "__om_pending_state" nil)))))
 
+(defn ^:private merge-props-state
+  ([owner] (merge-props-state owner nil))
+  ([owner props]
+    (let [props (or props (.-props owner))]
+      (when-let [props-state (aget props "__om_state")]
+        (let [state (.-state owner)]
+          (aset state "__om_pending_state"
+               (merge (or (aget state "__om_pending_state")
+                          (aget state "__om_state"))
+                      props-state))
+          (aset props "__om_state" nil))))))
+
 (def ^:private Pure
   (js/React.createClass
     #js {:getInitialState
          (fn []
            (this-as this
-             (let [c     (children this)
-                   props (.-props this)
-                   init  (aget props "__om_init")]
-               (aset props "__om_init" nil)
+             (let [c      (children this)
+                   props  (.-props this)
+                   istate (aget props "__om_init_state")]
+               (aset props "__om_init_state" nil)
                #js {:__om_state
-                    (merge init
+                    (merge istate
                       (when (satisfies? IInitState c)
                         (allow-reads (init-state c))))})))
          :shouldComponentUpdate
@@ -118,7 +130,10 @@
            (this-as this
              (allow-reads
                (let [props (.-props this)
+                     state (.-state this)
                      c     (children this)]
+                 ;; need to merge in props state first
+                 (merge-props-state this next-props)
                  (if (satisfies? IShouldUpdate c)
                    (should-update c
                      (get-props #js {:props next-props})
@@ -128,7 +143,9 @@
                                       (-value (aget next-props "__om_cursor"))))
                      true
 
-                     (not (nil? (aget (.-state this) "__om_pending_state")))
+                     (and (not (nil? (aget state "__om_pending_state")))
+                          (not= (aget state "__om_pending_state")
+                                (aget state "__om_state")))
                      true
 
                      (not (== (aget props "__om_index") (aget next-props "__om_index")))
@@ -138,6 +155,7 @@
          :componentWillMount
          (fn []
            (this-as this
+             (merge-props-state this)
              (let [c (children this)]
                (when (satisfies? IWillMount c)
                  (allow-reads (will-mount c))))
@@ -404,11 +422,12 @@
     (swap! roots assoc target
       (fn []
         (remove-watch state watch-key)
-        (swap! roots dissoc target)))
+        (swap! roots dissoc target)
+        (js/React.unmountComponentAtNode target)))
     (rootf)))
 
 (defn ^:private valid? [m]
-  (every? #{:key :react-key :fn :init ::index} (keys m)))
+  (every? #{:key :react-key :fn :init-state :state ::index} (keys m)))
 
 (defn build
   "Builds a Om component. Takes an IRender instance returning function
@@ -425,24 +444,25 @@
 
    m - a map the following keys are allowed:
 
-     :key       - a keyword that should be used to look up the key used by
-                  React itself when rendering sequential things.
-     :react-key - an explicit react key
-     :fn        - a function to apply to the data at the relative path before
-                  invoking f.
-     :init      - a map of initial state to pass to the component.
+     :key        - a keyword that should be used to look up the key used by
+                   React itself when rendering sequential things.
+     :react-key  - an explicit react key
+     :fn         - a function to apply to the data at the relative path before
+                   invoking f.
+     :init-state - a map of initial state to pass to the component.
+     :state      - a map of state to pass to the component, will be merged in.
 
    Example:
 
      (build list-of-gadgets cursor
-        {:init {:event-chan ...
-                :narble ...}})
+        {:init-state {:event-chan ...
+                      :narble ...}})
   "
   ([f cursor] (build f cursor nil))
   ([f cursor m]
     (assert (valid? m)
       (apply str "build options contains invalid keys, only :key, "
-                 ":react-key, :fn, and :init allowed, given "
+                 ":react-key, :fn, :init-state and :state allowed, given "
                  (interpose ", " (keys m))))
     (assert (cursor? cursor)
       (str "Cannot build Om component from non-cursor " cursor))
@@ -454,7 +474,7 @@
         f)
 
       :else
-      (let [{:keys [key init]} m
+      (let [{:keys [key state init-state]} m
             dataf   (get m :fn)
             cursor' (if-not (nil? dataf) (dataf cursor) cursor)
             rkey    (if-not (nil? key)
@@ -463,7 +483,8 @@
         (tag
           (pure #js {:__om_cursor cursor'
                      :__om_index (::index m)
-                     :__om_init init
+                     :__om_init_state init-state
+                     :__om_state state
                      :key rkey}
             (fn [this] (allow-reads (f cursor' this))))
           f)))))

@@ -41,12 +41,11 @@
 ;; =============================================================================
 ;; Generic Draggable
 
-(defn dragging? [item owner]
-  (or (:dragging item)
-      (om/get-state owner :dragging)))
+(defn dragging? [owner]
+  (om/get-state owner :dragging))
 
 (defn drag-start [e item owner]
-  (when-not (dragging? item owner)
+  (when-not (dragging? owner)
     (let [el          (om/get-node owner "draggable")
           state       (om/get-state owner)
           drag-start  (location e)
@@ -67,7 +66,7 @@
            :location (vec (map + drag-start drag-offset))})))))
 
 (defn drag-stop [e item owner]
-  (when (dragging? item owner)
+  (when (dragging? owner)
     (let [state (om/get-state owner)]
       (when (:dragging state)
         (om/set-state! owner :dragging false))
@@ -81,7 +80,7 @@
 
 (defn drag [e item owner]
   (let [state (om/get-state owner)]
-    (when (dragging? item owner)
+    (when (dragging? owner)
       (let [loc ((or (:constrain state) identity)
                   (vec (map + (location e) (:drag-offset state))))]
         (om/set-state! owner :location loc)
@@ -120,7 +119,7 @@
     om/IRenderState
     (render-state [_ state]
       (let [style (cond
-                    (dragging? item owner)
+                    (dragging? owner)
                     (let [[x y] (:location state)
                           [w h] (:dimensions state)]
                       #js {:position "absolute"
@@ -129,7 +128,7 @@
                     :else
                     #js {:position "static" :z-index 0})]
         (dom/li
-          #js {:className (when (dragging? item owner) "dragging")
+          #js {:className (when (dragging? owner) "dragging")
                :style style
                :ref "draggable"
                :onMouseDown (om/pure-bind drag-start item owner)
@@ -261,17 +260,14 @@
           (fn [id]
             (if-not (= id ::spacer)
               (om/build draggable (items id)
-                {:key :id
-                 :init (let [{:keys [constrain chans view]} state]
-                          (assoc {:view view}
-                            :constrain constrain
-                            :chan      (:drag-chan chans)
-                            :dims-chan (:dims-chan chans)
-                            :delegate  true))
-                 :fn (fn [x]
-                       (if (= (:id x) (:sorting state))
-                         (assoc x :dragging true)
-                         x))})
+                (let [{:keys [constrain chans view]} state]
+                  {:key :id
+                   :init-state {:view      view
+                                :chan      (:drag-chan chans)
+                                :dims-chan (:dims-chan chans)
+                                :delegate  true}
+                   :state {:constrain constrain
+                           :dragging  (= id (:sorting state))}}))
               (sortable-spacer (second (:cell-dimensions state)))))
           (:sort state))))))
 
@@ -293,5 +289,5 @@
     (om/component
       (dom/div nil
         (dom/h2 nil "Sortable example")
-        (om/build sortable app {:init {:view item}}))))
+        (om/build sortable app {:init-state {:view item}}))))
   (.getElementById js/document "app"))
