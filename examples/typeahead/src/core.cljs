@@ -64,10 +64,9 @@
   (reify
     om/IInitState
     (init-state [_] {:text ""})
-    om/IRender
-    (render [_]
-      (let [text  (om/get-state owner :text)
-            words (:words data)]
+    om/IRenderState
+    (render-state [_ {:keys [text]}]
+      (let [words (:words data)]
         (dom/div nil
           (dom/h2 nil "Type ahead example")
           (dom/input

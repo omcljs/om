@@ -105,9 +105,12 @@
     #js {:getInitialState
          (fn []
            (this-as this
-             (let [c (children this)]
+             (let [c     (children this)
+                   props (.-props this)
+                   init  (aget props "__om_init")]
+               (aset props "__om_init" nil)
                #js {:__om_state
-                    (merge {}
+                    (merge init
                       (when (satisfies? IInitState c)
                         (allow-reads (init-state c))))})))
          :shouldComponentUpdate
@@ -405,7 +408,7 @@
     (rootf)))
 
 (defn ^:private valid? [m]
-  (every? #{:key :react-key :fn :opts ::index} (keys m)))
+  (every? #{:key :react-key :fn :init ::index} (keys m)))
 
 (defn build
   "Builds a Om component. Takes an IRender instance returning function
@@ -427,19 +430,19 @@
      :react-key - an explicit react key
      :fn        - a function to apply to the data at the relative path before
                   invoking f.
-     :opts      - a map of options to pass to the component.
+     :init      - a map of initial state to pass to the component.
 
    Example:
 
      (build list-of-gadgets cursor
-        {:opts {:event-chan ...
+        {:init {:event-chan ...
                 :narble ...}})
   "
   ([f cursor] (build f cursor nil))
   ([f cursor m]
     (assert (valid? m)
       (apply str "build options contains invalid keys, only :key, "
-                 ":react-key, :fn, :and opts allowed, given "
+                 ":react-key, :fn, and :init allowed, given "
                  (interpose ", " (keys m))))
     (assert (cursor? cursor)
       (str "Cannot build Om component from non-cursor " cursor))
@@ -451,7 +454,7 @@
         f)
 
       :else
-      (let [{:keys [key opts]} m
+      (let [{:keys [key init]} m
             dataf   (get m :fn)
             cursor' (if-not (nil? dataf) (dataf cursor) cursor)
             rkey    (if-not (nil? key)
@@ -460,10 +463,9 @@
         (tag
           (pure #js {:__om_cursor cursor'
                      :__om_index (::index m)
+                     :__om_init init
                      :key rkey}
-            (if (nil? opts)
-              (fn [this] (allow-reads (f cursor' this)))
-              (fn [this] (allow-reads (f cursor' this opts)))))
+            (fn [this] (allow-reads (f cursor' this))))
           f)))))
 
 (defn build-all
