@@ -1,4 +1,4 @@
-(defproject om "0.2.0-SNAPSHOT"
+(defproject om "0.2.0"
   :description "ClojureScript interface to Facebook's React"
   :url "http://github.com/swannodette/om"
   :license {:name "Eclipse"
