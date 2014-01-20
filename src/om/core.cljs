@@ -427,7 +427,7 @@
     (rootf)))
 
 (defn ^:private valid? [m]
-  (every? #{:key :react-key :fn :init-state :state ::index} (keys m)))
+  (every? #{:key :react-key :fn :init-state :state :opts ::index} (keys m)))
 
 (defn build
   "Builds a Om component. Takes an IRender instance returning function
@@ -451,6 +451,8 @@
                    invoking f.
      :init-state - a map of initial state to pass to the component.
      :state      - a map of state to pass to the component, will be merged in.
+     :opts       - a map of values. Can be used to pass side information down
+                   the render tree.
 
    Example:
 
@@ -461,8 +463,8 @@
   ([f cursor] (build f cursor nil))
   ([f cursor m]
     (assert (valid? m)
-      (apply str "build options contains invalid keys, only :key, "
-                 ":react-key, :fn, :init-state and :state allowed, given "
+      (apply str "build options contains invalid keys, only :key, :react-key, "
+                 ":fn, :init-state, :state, and :opts allowed, given "
                  (interpose ", " (keys m))))
     (assert (cursor? cursor)
       (str "Cannot build Om component from non-cursor " cursor))
@@ -474,7 +476,7 @@
         f)
 
       :else
-      (let [{:keys [key state init-state]} m
+      (let [{:keys [key state init-state opts]} m
             dataf   (get m :fn)
             cursor' (if-not (nil? dataf) (dataf cursor) cursor)
             rkey    (if-not (nil? key)
@@ -486,7 +488,9 @@
                      :__om_init_state init-state
                      :__om_state state
                      :key rkey}
-            (fn [this] (allow-reads (f cursor' this))))
+            (if (nil? opts)
+              (fn [this] (allow-reads (f cursor' this)))
+              (fn [this] (allow-reads (f cursor' this opts)))))
           f)))))
 
 (defn build-all
