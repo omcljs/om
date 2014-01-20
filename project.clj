@@ -54,6 +54,13 @@
                 :output-dir "examples/counters/out"
                 :source-map true
                 :optimizations :none}}
+             {:id "animation"
+              :source-paths ["src" "examples/animation/src"]
+              :compiler {
+                :output-to "examples/animation/main.js"
+                :output-dir "examples/animation/out"
+                :source-map true
+                :optimizations :none}}
              {:id "typeahead"
               :source-paths ["src" "examples/typeahead/src"]
               :compiler {
