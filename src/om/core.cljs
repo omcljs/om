@@ -404,8 +404,8 @@
 (def ^:private refresh-set (atom #{}))
 
 (defn ^:private render-all []
-  (doseq [f @refresh-set] (f))
-  (set! refresh-queued false))
+  (set! refresh-queued false)
+  (doseq [f @refresh-set] (f)))
 
 (def ^:private roots (atom {}))
 
