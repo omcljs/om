@@ -75,7 +75,7 @@ Your `project.clj` should include something like the following:
   ...
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/clojurescript "0.0-2138"]
-                 [om "0.2.1"]]
+                 [om "0.2.2"]]
   ...)
 ```
 
