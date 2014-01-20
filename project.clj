@@ -61,6 +61,13 @@
                 :output-dir "examples/animation/out"
                 :source-map true
                 :optimizations :none}}
+             {:id "shared"
+              :source-paths ["src" "examples/shared/src"]
+              :compiler {
+                :output-to "examples/shared/main.js"
+                :output-dir "examples/shared/out"
+                :source-map true
+                :optimizations :none}}
              {:id "typeahead"
               :source-paths ["src" "examples/typeahead/src"]
               :compiler {
