@@ -13,6 +13,11 @@ overhead.
 [See](http://swannodette.github.io/todomvc/labs/architecture-examples/om-undo/index.html)
 for [yourself](http://swannodette.github.io/2013/12/31/time-travel/).
 
+## Tutorial
+
+There is an extended tutorial under development
+[here](http://github.com/swannodette/om/wiki/Tutorial).
+
 ## Examples
 
 ```clj
@@ -43,9 +48,6 @@ For a more fleshed-out example, please see the Om implementation of
 [exists here](http://github.com/swannodette/todomvc/blob/gh-pages/labs/architecture-examples/om/src/todomvc/app.cljs).
 
 ## Documention
-
-There's no commitment yet to an API. Still, the code has fairly
-verbose docstrings for the existing functionality.
 
 There is a
 [conceptual overview](http://github.com/swannodette/om/wiki/Conceptual-overview)
