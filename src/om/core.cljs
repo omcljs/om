@@ -223,8 +223,7 @@
                    (satisfies? IRender c) (render c)
                    (satisfies? IRenderState c) (render-state c (get-state this))
                    (.-render c) (.render c)
-                   (array? c ) c
-                   :else (throw (js/Error. (str "Cannot render " c))))))))}))
+                   :else c)))))}))
 
 ;; =============================================================================
 ;; Cursors
