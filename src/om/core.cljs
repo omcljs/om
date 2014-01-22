@@ -75,9 +75,9 @@
   (aget (.-props x) "__om_cursor"))
 
 (defn get-state
-  "Takes a pure owning component and sequential list of keys and
-   returns a property in the component local state if it exists. Always
-   returns pending state."
+  "Returns the component local state of an owning component. owner is
+   the component. An optional key or sequence of keys may be given to
+   extract a specific value. Always returns pending state."
   ([owner]
     (let [state (.-state owner)]
       (or (aget state "__om_pending_state")
@@ -95,7 +95,8 @@
 
 (defn get-shared
   "Takes an owner and returns a map of global shared values for a
-   render loop."
+   render loop. An optional key or sequence of keys may be given to
+   extract a specific value."
   ([owner]
     (-shared (get-props owner)))
   ([owner korks]
@@ -411,13 +412,14 @@
 (defn root
   "Takes an immutable value or value wrapped in an atom, an initial
    function f, and a DOM target. Installs an Om/React render loop. f
-   must return an instance that at a minimum implements IRender (it
-   may implement other React life cycle protocols). f must take two
-   arguments, the root cursor and the owning pure node. A cursor is
-   just the original data wrapped in an ICursor instance which
-   maintains path information. Only one root render loop allowed per
-   target element. om.core/root is idempotent, if called again on
-   the same target element the previous render loop will be replaced.
+   must return an instance that at a minimum implements IRender or
+   IRenderState (it may implement other React life cycle protocols). f
+   must take two arguments, the root cursor and the owning pure
+   node. A cursor is just the original data wrapped in an ICursor
+   instance which maintains path information. Only one root render
+   loop allowed per target element. om.core/root is idempotent, if
+   called again on the same target element the previous render loop
+   will be replaced.
 
    Example:
 
@@ -464,12 +466,12 @@
   (every? #{:key :react-key :fn :init-state :state :opts ::index} (keys m)))
 
 (defn build
-  "Builds a Om component. Takes an IRender instance returning function
-   f, a cursor, and an optional third argument which may be a map of
-   build specifications.
+  "Builds an Om component. Takes an IRender/IRenderState instance
+   returning function f, a cursor, and an optional third argument
+   which may be a map of build specifications.
 
-   f - is a function of 2 or 3 arguments. The first argument will
-   be the cursor and the second argument will be the owning pure node.
+   f - is a function of 2 or 3 arguments. The first argument will be
+   the cursor and the second argument will be the owning pure node.
    If a map of options m is passed in this will be the third
    argument. f must return at a minimum an IRender instance, this
    instance may implement other React life cycle protocols.
@@ -481,8 +483,7 @@
      :key        - a keyword that should be used to look up the key used by
                    React itself when rendering sequential things.
      :react-key  - an explicit react key
-     :fn         - a function to apply to the data at the relative path before
-                   invoking f.
+     :fn         - a function to apply to the data before invoking f.
      :init-state - a map of initial state to pass to the component.
      :state      - a map of state to pass to the component, will be merged in.
      :opts       - a map of values. Can be used to pass side information down
@@ -648,10 +649,10 @@
         (swap! (-state cursor) update-in path clone)))))
 
 (defn get-render-state
-  "Takes a pure owning component and sequential list of
-   keys and returns a property in the component local state if it
-   exists. Returns values from the pending state. Always returns the
-   rendered state, not the pending state."
+  "Takes a pure owning component and an optional key or sequential
+   list of keys and returns a property in the component local state if
+   it exists. Always returns the rendered state, not the pending
+   state."
   ([owner]
     (aget (.-state owner) "__om_state"))
   ([owner korks]
