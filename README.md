@@ -26,10 +26,12 @@ There is an extended tutorial under development
             [om.dom :as dom :include-macros true]))
 
 (defn widget [data owner]
-  (om/component
-    (dom/div nil "Hello world!")))
+  (reify
+    om/IRender
+    (render [_]
+      (dom/h1 nil (:text data)))))
 
-(om/root {} widget (.getElementById js/document "some-id"))
+(om/root {:text "Hello world!"} widget (.getElementById js/document "some-id"))
 ```
 
 The repo includes several simple examples you can build yourself. If
