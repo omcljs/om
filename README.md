@@ -31,7 +31,7 @@ There is an extended tutorial under development
     (render [this]
       (dom/h1 nil (:text data)))))
 
-(om/root {:text "Hello world!"} widget (.getElementById js/document "some-id"))
+(om/root {:text "Hello world!"} widget (. js/document (getElementById "my-app")))
 ```
 
 The repo includes several simple examples you can build yourself. If
@@ -105,7 +105,7 @@ Your local development markup should look something like the following:
 ```html
 <html>
     <body>
-       <div id="some-id"></div>
+       <div id="my-app"></div>
        <script src="http://fb.me/react-0.8.0.js"></script>
        <script src="out/goog/base.js" type="text/javascript"></script>
        <script src="main.js" type="text/javascript"></script>
