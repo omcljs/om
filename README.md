@@ -28,7 +28,7 @@ There is an extended tutorial under development
 (defn widget [data owner]
   (reify
     om/IRender
-    (render [_]
+    (render [this]
       (dom/h1 nil (:text data)))))
 
 (om/root {:text "Hello world!"} widget (.getElementById js/document "some-id"))
