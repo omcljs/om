@@ -47,11 +47,11 @@ For a more fleshed-out example, please see the Om implementation of
 [TodoMVC](http://todomvc.com)
 [exists here](http://github.com/swannodette/todomvc/blob/gh-pages/labs/architecture-examples/om/src/todomvc/app.cljs).
 
-## Documention
+## Documentation
 
-There is developing documentation [here](http://github.com/swannodette/om/wiki/Documentation).
+There is documentation [here](http://github.com/swannodette/om/wiki/Documentation).
 
-There is a
+There is also a
 [conceptual overview](http://github.com/swannodette/om/wiki/Conceptual-overview)
 that we recommend reading as there are some design choices in Om that
 make it quite different from other client side solutions and even
