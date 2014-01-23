@@ -49,6 +49,8 @@ For a more fleshed-out example, please see the Om implementation of
 
 ## Documention
 
+There is developing documentation [here](http://github.com/swannodette/om/wiki/Documentation).
+
 There is a
 [conceptual overview](http://github.com/swannodette/om/wiki/Conceptual-overview)
 that we recommend reading as there are some design choices in Om that
