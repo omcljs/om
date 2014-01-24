@@ -24,7 +24,7 @@
      (throw
        (js/Error.
          (str "Cannot manipulate cursor outside of render phase, only "
-              "om.core/transact!, om.core/update!, and om.core/read operations allowed")))))
+              "om.core/transact!, om.core/update!, and cljs.core/deref operations allowed")))))
 
 (defmacro safe-transact! [cursor korks f & args]
   `(om.core/allow-reads

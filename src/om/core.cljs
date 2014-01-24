@@ -247,6 +247,8 @@
       (MapCursor. (with-meta value new-meta) state path shared)))
   IMeta
   (-meta [_] (check (meta value)))
+  IDeref
+  (-deref [_] (get-in @state path))
   ICursor
   (-value [_] (check value))
   (-path [_] (check path))
@@ -301,6 +303,8 @@
 
 (deftype IndexedCursor [value state path shared]
   ISequential
+  IDeref
+  (-deref [_] (get-in @state path))
   IWithMeta
   (-with-meta [_ new-meta]
     (check
@@ -369,6 +373,8 @@
 
 (defn ^:private to-cursor* [val state path shared]
   (specify val
+    IDeref
+    (-deref [_] (get-in @state path))
     ICursor
     (-value [_] (check val))
     (-state [_] (check state))
@@ -589,24 +595,6 @@
             (apply f state a b c d args)
             (apply update-in state path f a b c d args)))))))
 
-(defn read
-  "Given a cursor and a function f, read its current value. f will be
-   passed a cursor which can only be read in the scope of f. Can take
-   an optional sequence of keys ks. Used for interacting with cursors
-   outside of render phase."
-  ([cursor f] (read cursor () f))
-  ([cursor korks f]
-    (allow-reads
-      (let [path   (if-not (sequential? korks)
-                     (conj (-path cursor) korks)
-                     (into (-path cursor) korks))
-            state  (-state cursor)
-            shared (-shared cursor)
-            value  @state]
-        (if (empty? path)
-          (f (to-cursor value state [] shared))
-          (f (to-cursor (get-in value path) state path shared)))))))
-
 (defn join
   "EXPERIMENTAL: Given a cursor, get value from the root at the path
    specified by a sequential list of keys ks."
@@ -665,58 +653,6 @@
 
       :else
       (get-in (get-render-state owner) korks))))
-
-(defn bind
-  "Convenience function for creating event handlers on cursors. Takes
-   a function f which should receive the event as the first argument,
-   the cursor as the second argument, and any number of optional
-   arguments beyond that. Inside of f the cursor will be readable."
-  ([f cursor]
-    (fn [e]
-      (read cursor
-        (fn [cursor]
-          (f e cursor)))))
-  ([f cursor a]
-    (fn [e]
-      (read cursor
-        (fn [cursor]
-          (f e cursor a)))))
-  ([f cursor a b]
-    (fn [e]
-      (read cursor
-        (fn [cursor]
-          (f e cursor a b)))))
-  ([f cursor a b c]
-    (fn [e]
-      (read cursor
-        (fn [cursor]
-          (f e cursor a b c)))))
-  ([f cursor a b c d]
-    (fn [e]
-      (read cursor
-        (fn [cursor]
-          (f e cursor a b c d)))))
-  ([f cursor a b c d & args]
-    (fn [e]
-      (read cursor
-        (fn [cursor]
-          (apply f e cursor a b c d args))))))
-
-(defn pure-bind
-  "EXPERIMENTAL: Like om.core/bind but for event handlers that will never
-   mutate the app state."
-  ([f cursor]
-    (fn [e] (allow-reads (f e cursor))))
-  ([f cursor a]
-    (fn [e] (allow-reads (f e cursor a))))
-  ([f cursor a b]
-    (fn [e] (allow-reads (f e cursor a b))))
-  ([f cursor a b c]
-    (fn [e] (allow-reads (f e cursor a b c))))
-  ([f cursor a b c d]
-    (fn [e] (allow-reads (f e cursor a b c d))))
-  ([f cursor a b c d & args]
-    (fn [e] (allow-reads (apply f e cursor a b c d args)))))
 
 (defn graft
   "Create a cursor instance by attaching to an existing cursor. This
