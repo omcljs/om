@@ -550,12 +550,11 @@
    path specified by the cursor + the optional keys by applying f to the
    specified value in the tree. An Om re-render will be triggered."
   ([cursor f]
-    (allow-reads
-      (-transact! cursor
-        (fn [state path]
-          (if (empty? path)
-            (f state)
-            (update-in state path f))))))
+    (-transact! cursor
+      (fn [state path]
+        (if (empty? path)
+          (f state)
+          (update-in state path f)))))
   ([cursor korks f]
     (safe-transact! cursor korks f))
   ([cursor korks f a]
@@ -567,12 +566,11 @@
   ([cursor korks f a b c d]
     (safe-transact! cursor korks f a b c d))
   ([cursor korks f a b c d & args]
-    (allow-reads
-      (-transact! cursor
-        (fn [state path]
-          (if-not (sequential? korks)
-            (apply update-in state (conj path korks) f a b c d args)
-            (apply update-in state (into path korks) f a b c d args)))))))
+    (-transact! cursor
+      (fn [state path]
+        (if-not (sequential? korks)
+          (apply update-in state (conj path korks) f a b c d args)
+          (apply update-in state (into path korks) f a b c d args))))))
 
 (defn update!
   "Like transact! but no list of keys given. An Om re-render
@@ -588,12 +586,11 @@
   ([cursor f a b c d]
     (safe-update! cursor f a b c d))
   ([cursor f a b c d & args]
-    (allow-reads
-      (-transact! cursor
-        (fn [state path]
-          (if (empty? path)
-            (apply f state a b c d args)
-            (apply update-in state path f a b c d args)))))))
+    (-transact! cursor
+      (fn [state path]
+        (if (empty? path)
+          (apply f state a b c d args)
+          (apply update-in state path f a b c d args))))))
 
 (defn join
   "EXPERIMENTAL: Given a cursor, get value from the root at the path
