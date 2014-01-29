@@ -416,16 +416,16 @@
 (def ^:private roots (atom {}))
 
 (defn root
-  "Takes an immutable value or value wrapped in an atom, an initial
-   function f, and a DOM target. Installs an Om/React render loop. f
-   must return an instance that at a minimum implements IRender or
-   IRenderState (it may implement other React life cycle protocols). f
-   must take two arguments, the root cursor and the owning pure
-   node. A cursor is just the original data wrapped in an ICursor
-   instance which maintains path information. Only one root render
-   loop allowed per target element. om.core/root is idempotent, if
-   called again on the same target element the previous render loop
-   will be replaced.
+  "Takes an immutable tree of associative data structures optionally
+   wrapped in an atom, an initial function f, and a DOM
+   target. Installs an Om/React render loop. f must return an instance
+   that at a minimum implements IRender or IRenderState (it may
+   implement other React life cycle protocols). f must take two
+   arguments, the root cursor and the owning pure node. A cursor is
+   just the original data wrapped in an ICursor instance which
+   maintains path information. Only one root render loop allowed per
+   target element. om.core/root is idempotent, if called again on the
+   same target element the previous render loop will be replaced.
 
    Example:
 
