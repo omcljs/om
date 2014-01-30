@@ -248,7 +248,10 @@
   IMeta
   (-meta [_] (check (meta value)))
   IDeref
-  (-deref [_] (get-in @state path))
+  (-deref [this]
+    (if-not *read-enabled*
+      (get-in @state path)
+      (throw (js/Error. (str "Cannot deref cursor during render phase: " this)))))
   ICursor
   (-value [_] (check value))
   (-path [_] (check path))
@@ -304,7 +307,10 @@
 (deftype IndexedCursor [value state path shared]
   ISequential
   IDeref
-  (-deref [_] (get-in @state path))
+  (-deref [this]
+    (if-not *read-enabled*
+      (get-in @state path)
+      (throw (js/Error. (str "Cannot deref cursor during render phase: " this)))))
   IWithMeta
   (-with-meta [_ new-meta]
     (check
@@ -374,7 +380,10 @@
 (defn ^:private to-cursor* [val state path shared]
   (specify val
     IDeref
-    (-deref [_] (get-in @state path))
+    (-deref [this]
+      (if-not *read-enabled*
+        (get-in @state path)
+        (throw (js/Error. (str "Cannot deref cursor during render phase: " this)))))
     ICursor
     (-value [_] (check val))
     (-state [_] (check state))
