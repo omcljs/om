@@ -137,7 +137,7 @@
            (this-as this
              (let [c      (children this)
                    props  (.-props this)
-                   istate (aget props "__om_init_state")]
+                   istate (or (aget props "__om_init_state") {})]
                (aset props "__om_init_state" nil)
                #js {:__om_state
                     (merge istate
