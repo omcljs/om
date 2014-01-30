@@ -284,7 +284,9 @@
     (-lookup this k not-found))
   ISeqable
   (-seq [this]
-    (check (map (fn [[k v]] [k (to-cursor v state (conj path k) shared)]) value)))
+    (check
+      (when (pos? (count value))
+        (map (fn [[k v]] [k (to-cursor v state (conj path k) shared)]) value))))
   IAssociative
   (-contains-key? [_ k]
     (check (-contains-key? value k)))
