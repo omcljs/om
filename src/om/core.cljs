@@ -223,7 +223,6 @@
                  (cond
                    (satisfies? IRender c) (render c)
                    (satisfies? IRenderState c) (render-state c (get-state this))
-                   (.-render c) (.render c)
                    :else c)))))}))
 
 ;; =============================================================================
