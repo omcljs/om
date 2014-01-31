@@ -33,16 +33,15 @@
   (reify
     om/IRender
     (render [_]
-      (let [n (om/get-state owner :number)]
-        (dom/div nil
-          (dom/h2 nil (:title some-data))
-          (dom/button
-            #js {:onClick #(om/transact! (:app some-data) :number inc)}
-            "Click Me!")
-          (dom/p nil (str "My State: " n)))))))
+      (dom/div nil
+        (dom/h2 nil (:title some-data))
+        (dom/button
+          #js {:onClick #(om/transact! (:app some-data) :number inc)}
+          "Click Me!")
+        (dom/p nil (str "My State: " (-> some-data :app :number)))))))
 
 (om/root
   app-state
   (fn [app node]
-    (om/build simple (om/graft {:title "Another Graft!" :app app} app)))
+    (om/build transact-original (om/graft {:title "Another Graft!" :app app} app)))
   (.getElementById js/document "app1"))
