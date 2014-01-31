@@ -602,20 +602,6 @@
           (apply f state a b c d args)
           (apply update-in state path f a b c d args))))))
 
-(defn join
-  "EXPERIMENTAL: Given a cursor, get value from the root at the path
-   specified by a sequential list of keys ks."
-  [cursor korks]
-  (allow-reads
-    (let [state  (-state cursor)
-          shared (-shared cursor)
-          value  @state]
-      (if-not (sequential? korks)
-        (to-cursor (get value korks) state [korks] shared)
-        (to-cursor (get-in value korks) state
-          (if (vector? korks) korks (into [] korks))
-          shared)))))
-
 (defn get-node
   "A helper function to get at React refs. Given a owning pure node
   extract the ref specified by name."

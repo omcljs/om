@@ -7,8 +7,7 @@
 (enable-console-print!)
 
 (def app-state
-  (atom {:counters (into [] (map (fn [n] {:id n :count 0 :shared 0}) (range 10)))
-         :shared ["A shared bit of UI!"]}))
+  (atom {:counters (into [] (map (fn [n] {:id n :count 0}) (range 10)))}))
 
 (defn counter [data owner]
   (reify
@@ -27,8 +26,7 @@
                (fn [e]
                  (om/transact! data :count dec)
                  (put! last-clicked (.-path data)))}
-          "-")
-        (dom/label nil (:shared data))))))
+          "-")))))
 
 (defn counters []
   (om/root
@@ -56,10 +54,7 @@
                      #js {:display "none"})}
               (when message
                 (str "Last clicked item was " (last message))))
-            (om/build-all counter
-              (map (fn [counter]
-                     (update-in counter [:shared] #(om/join counter [:shared %])))
-                (:counters app))
+            (om/build-all counter (:counters app)
               {:key :id :init-state chans})))))
     (.getElementById js/document "app")))
 
