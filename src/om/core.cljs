@@ -42,8 +42,14 @@
 ;; =============================================================================
 ;; Om Protocols
 
+(defprotocol IValue
+  (-value [x]))
+
+(extend-type default
+  IValue
+  (-value [x] x))
+
 (defprotocol ICursor
-  (-value [cursor])
   (-path [cursor])
   (-state [cursor])
   (-shared [cursor]))
@@ -234,7 +240,7 @@
   (-path cursor))
 
 (defn value [cursor]
-  (check (-value cursor)))
+  (-value cursor))
 
 (defn cursor? [x]
   (satisfies? ICursor x))
@@ -251,8 +257,9 @@
     (if-not *read-enabled*
       (get-in @state path)
       (throw (js/Error. (str "Cannot deref cursor during render phase: " this)))))
-  ICursor
+  IValue
   (-value [_] (check value))
+  ICursor
   (-path [_] (check path))
   (-state [_] (check state))
   (-shared [_] shared)
@@ -318,8 +325,9 @@
       (IndexedCursor. (with-meta value new-meta) state path shared)))
   IMeta
   (-meta [_] (check (meta value)))
-  ICursor
+  IValue
   (-value [_] (check value))
+  ICursor
   (-path [_] (check path))
   (-state [_] (check state))
   (-shared [_] shared)
@@ -385,8 +393,9 @@
       (if-not *read-enabled*
         (get-in @state path)
         (throw (js/Error. (str "Cannot deref cursor during render phase: " this)))))
-    ICursor
+    IValue
     (-value [_] (check val))
+    ICursor
     (-state [_] (check state))
     (-path [_] (check path))
     (-shared [_] shared)
@@ -517,8 +526,6 @@
       (apply str "build options contains invalid keys, only :key, :react-key, "
                  ":fn, :init-state, :state, and :opts allowed, given "
                  (interpose ", " (keys m))))
-    (assert (cursor? cursor)
-      (str "Cannot build Om component from non-cursor " cursor))
     (cond
       (nil? m)
       (tag
@@ -652,13 +659,18 @@
    supports building components which don't need to set app state but
    need to be added to the render tree."
   [value cursor]
-  (specify value
-    ICursor
-    (-value [_] value)
-    (-state [_] (-state cursor))
-    (-path [_] (-path cursor))
-    IEquiv
-    (-equiv [_ other]
-      (if (cursor? other)
-        (= value (-value other))
-        (= value other)))))
+  (let [state  (-state cursor)
+        path   (-path cursor)
+        shared (-shared cursor)]
+    (if (cursor? value)
+      (throw (js/Error. (str value " is already a cursor.")))
+      (specify value
+        ITransact
+        (-transact! [_ _]
+          (throw (js/Error. "Cannot transact on graft")))
+        IValue
+        (-value [_] value)
+        ICursor
+        (-state [_] state)
+        (-path [_] path)
+        (-shared [_] shared)))))
