@@ -393,8 +393,6 @@
       (if-not *read-enabled*
         (get-in @state path)
         (throw (js/Error. (str "Cannot deref cursor during render phase: " this)))))
-    IValue
-    (-value [_] (check val))
     ICursor
     (-state [_] (check state))
     (-path [_] (check path))
