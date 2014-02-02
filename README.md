@@ -70,7 +70,7 @@ be listed here:
 
 ## Using it
 
-Om is pre-alpha software.
+Om is alpha software.
 
 Make sure you have [Leiningen](http://leiningen.org/) installed.
 
