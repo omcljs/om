@@ -131,7 +131,7 @@
 
 (defn ^:private gen-react-dom-fn [tag]
   `(defn ~tag [opts# & children#]
-     (~(symbol "js" (str "React.DOM." (name tag))) opts# (cljs.core/into-array children#))))
+     (.apply ~(symbol "js" (str "React.DOM." (name tag))) nil (cljs.core/into-array (cons opts# children#)))))
 
 (defmacro ^:private gen-react-dom-fns []
   `(do

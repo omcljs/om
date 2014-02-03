@@ -555,10 +555,9 @@
    same as provided to om.core/build."
   ([f xs] (build-all f xs nil))
   ([f xs m]
-    (into-array
-      (map (fn [x i]
-             (build f x (assoc m ::index i)))
-        xs (range)))))
+    (map (fn [x i]
+           (build f x (assoc m ::index i)))
+      xs (range))))
 
 (defn transact!
   "Given a cursor, an optional list of keys ks, mutate the tree at the
