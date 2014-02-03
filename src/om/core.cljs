@@ -143,12 +143,13 @@
            (this-as this
              (let [c      (children this)
                    props  (.-props this)
-                   istate (or (aget props "__om_init_state") {})]
+                   istate (or (aget props "__om_init_state") {})
+                   ret    #js {:__om_state
+                               (merge istate
+                                 (when (satisfies? IInitState c)
+                                   (allow-reads (init-state c))))}]
                (aset props "__om_init_state" nil)
-               #js {:__om_state
-                    (merge istate
-                      (when (satisfies? IInitState c)
-                        (allow-reads (init-state c))))})))
+               ret)))
          :shouldComponentUpdate
          (fn [next-props next-state]
            (this-as this
