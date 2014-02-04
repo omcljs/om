@@ -74,7 +74,7 @@
                  :ref "text-field"
                  :value text
                  :onChange #(change % owner)})
-          (dom/ul nil
+          (apply dom/ul nil
             (om/build-all item words
               {:fn (fn [x]
                      (if-not (string/blank? text)
