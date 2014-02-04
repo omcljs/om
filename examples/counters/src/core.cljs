@@ -44,7 +44,7 @@
                     (om/set-state! owner :message lc))))))
         om/IRenderState
         (render-state [_ {:keys [message chans]}]
-          (dom/div nil
+          (apply dom/div nil
             (dom/h1 #js {:key "head"} "A Counting Widget!")
             (dom/div
               #js {:key "message"
