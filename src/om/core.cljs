@@ -168,9 +168,7 @@
                                       (-value (aget next-props "__om_cursor"))))
                      true
 
-                     (and (not (nil? (aget state "__om_pending_state")))
-                          (not= (aget state "__om_pending_state")
-                                (aget state "__om_state")))
+                     (not (nil? (aget state "__om_pending_state")))
                      true
 
                      (not (== (aget props "__om_index") (aget next-props "__om_index")))
