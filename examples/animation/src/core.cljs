@@ -13,7 +13,7 @@
       om/IWillMount
       (will-mount [_]
         (js/setInterval
-          (fn [] (swap! app-state update-in [:count] inc))
+          (fn [] (om/transact! app :count inc))
           16))
       om/IRender
       (render [_]
