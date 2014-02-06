@@ -664,8 +664,6 @@
         ITransact
         (-transact! [_ _]
           (throw (js/Error. "Cannot transact on graft")))
-        IValue
-        (-value [_] value)
         ICursor
         (-state [_] state)
         (-path [_] path)
