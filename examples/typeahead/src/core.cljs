@@ -26,7 +26,19 @@
   ICloneable
   (-clone [s] (js/String. s)))
 
+(extend-type js/String
+  om/IValue
+  (-value [s] (str s))
+  ICloneable
+  (-clone [s] (js/String. s)))
+
 (extend-type number
+  ICloneable
+  (-clone [n] (js/Number. n)))
+
+(extend-type js/Number
+  om/IValue
+  (-value [n] (.valueOf n))
   ICloneable
   (-clone [n] (js/Number. n)))
 
