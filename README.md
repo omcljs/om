@@ -15,8 +15,9 @@ for [yourself](http://swannodette.github.io/2013/12/31/time-travel/).
 
 ## Tutorial
 
-There is an extended tutorial under development
-[here](http://github.com/swannodette/om/wiki/Tutorial).
+There is an basic tutorial under development
+[here](http://github.com/swannodette/om/wiki/Basic-Tutorial) and there
+is an intermediate tutorial under development [here](http://github.com/swannodette/om/wiki/Intermediate-Tutorial).
 
 ## Examples
 
