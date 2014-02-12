@@ -1,8 +1,7 @@
 (ns om.core
   (:require-macros
     [om.core :refer
-      [pure component check allow-reads safe-update!
-       safe-transact! tag]])
+      [pure component check allow-reads safe-transact! tag]])
   (:require [om.dom :as dom :include-macros true]))
 
 (def ^{:tag boolean :dynamic true} *read-enabled* false)

@@ -33,13 +33,6 @@
          (update-in state# (conj path# ~korks) ~f ~@args)
          (update-in state# (into path# ~korks) ~f ~@args)))))
 
-(defmacro safe-update! [cursor f & args]
-  `(om.core/-transact! ~cursor
-     (fn [state# path#]
-       (if (empty? path#)
-         (~f state# ~@args)
-         (update-in state# path# ~f ~@args)))))
-
 (defmacro tag [pure t]
   `(let [pure# ~pure]
      (set! (.-constructor pure#) (goog/getUid ~t))
