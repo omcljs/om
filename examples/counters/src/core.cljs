@@ -28,34 +28,32 @@
                  (put! last-clicked (.-path data)))}
           "-")))))
 
-(defn counters []
-  (om/root
-    app-state
-    (fn [app owner]
-      (reify
-        om/IInitState
-        (init-state [_]
-          {:chans {:last-clicked (chan (sliding-buffer 1))}})
-        om/IWillMount
-        (will-mount [_]
-          (let [last-clicked (om/get-state owner [:chans :last-clicked])]
-            (go (while true
-                  (let [lc (<! last-clicked)]
-                    (om/set-state! owner :message lc))))))
-        om/IRenderState
-        (render-state [_ {:keys [message chans]}]
-          (apply dom/div nil
-            (dom/h1 #js {:key "head"} "A Counting Widget!")
-            (dom/div
-              #js {:key "message"
-                   :style 
-                   (if message
-                     #js {:display "block"}
-                     #js {:display "none"})}
-              (when message
-                (str "Last clicked item was " (last message))))
-            (om/build-all counter (:counters app)
-              {:key :id :init-state chans})))))
-    (.getElementById js/document "app")))
+(defn counter-view [app owner]
+  (reify
+    om/IInitState
+    (init-state [_]
+      {:chans {:last-clicked (chan (sliding-buffer 1))}})
+    om/IWillMount
+    (will-mount [_]
+      (let [last-clicked (om/get-state owner [:chans :last-clicked])]
+        (go (while true
+              (let [lc (<! last-clicked)]
+                (om/set-state! owner :message lc))))))
+    om/IRenderState
+    (render-state [_ {:keys [message chans]}]
+      (apply dom/div nil
+        (dom/h1 #js {:key "head"} "A Counting Widget!")
+        (dom/div
+          #js {:key "message"
+               :style 
+               (if message
+                 #js {:display "block"}
+                 #js {:display "none"})}
+          (when message
+            (str "Last clicked item was " (last message))))
+        (om/build-all counter (:counters app)
+          {:key :id :init-state chans})))))
 
-(counters)
+(om/root counter-view app-state
+  {:target (.getElementById js/document "app")})
+

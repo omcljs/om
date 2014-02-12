@@ -6,15 +6,15 @@
 
 (def app-state (atom {:title "Shared example"}))
 
-(om/root
-  app-state
-  {:some-text "I'm shared!"}
-  (fn [app owner]
-    (reify
-      om/IRender
-      (render [_]
-        (dom/div nil
-          (dom/h1 nil (:title app))
-          (dom/p nil
-            (om/get-shared owner :some-text))))))
-  (.getElementById js/document "app"))
+(defn shared-view [app owner]
+  (reify
+    om/IRender
+    (render [_]
+      (dom/div nil
+        (dom/h1 nil (:title app))
+        (dom/p nil
+          (om/get-shared owner :some-text))))))
+
+(om/root shared-view app-state
+  {:target (.getElementById js/document "app")
+   :shared {:some-text "I'm shared!"}})

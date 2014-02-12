@@ -13,21 +13,20 @@
     (events/listen el type #(put! out %))
     out))
 
-(om/root
-  {:mouse nil}
-  (fn [app node]
-    (reify
-      om/IWillMount
-      (will-mount [_]
-        (let [mouse-chan
-              (async/map
-                (fn [e] [(.-clientX e) (.-clientY e)])
-                [(listen js/window EventType/MOUSEMOVE)])]
-          (go (while true
-                (om/update! app :mouse (<! mouse-chan))))))
-      om/IRender 
-      (render [_]
-        (dom/p nil
-          (when-let [pos (:mouse app)]
-            (pr-str (:mouse app)))))))
-  (.getElementById js/document "app"))
+(defn mouse-view [app owner]
+  (reify
+    om/IWillMount
+    (will-mount [_]
+      (let [mouse-chan
+            (async/map
+              (fn [e] [(.-clientX e) (.-clientY e)])
+              [(listen js/window EventType/MOUSEMOVE)])]
+        (go (while true
+              (om/update! app :mouse (<! mouse-chan))))))
+    om/IRender 
+    (render [_]
+      (dom/p nil
+        (when-let [pos (:mouse app)]
+          (pr-str (:mouse app)))))))
+
+(om/root mouse-view {:mouse nil} {:target (.getElementById js/document "app")})

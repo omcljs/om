@@ -284,10 +284,11 @@
 (defn item [the-item owner]
   (om/component (dom/span nil (str "Item " (:title the-item)))))
 
-(om/root app-state
-  (fn [app owner]
-    (om/component
-      (dom/div nil
-        (dom/h2 nil "Sortable example")
-        (om/build sortable app {:init-state {:view item}}))))
-  (.getElementById js/document "app"))
+(defn sortable-view [app owner]
+  (om/component
+    (dom/div nil
+      (dom/h2 nil "Sortable example")
+      (om/build sortable app {:init-state {:view item}}))))
+
+(om/root sortable-view app-state
+  {:target (.getElementById js/document "app")})

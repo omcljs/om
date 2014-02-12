@@ -10,7 +10,7 @@
   (om/component
     (dom/div nil (:text data))))
 
-(om/root app-state display (.getElementById js/document "app1"))
-(om/root app-state display (.getElementById js/document "app2"))
+(om/root display app-state {:target (.getElementById js/document "app1")})
+(om/root display app-state {:target (.getElementById js/document "app2")})
 
 (swap! app-state assoc :text "Goodbye!")

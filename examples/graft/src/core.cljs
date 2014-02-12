@@ -19,10 +19,10 @@
           (dom/p nil (str "My State: " n)))))))
 
 (om/root
-  {:some :state}
   (fn [app node]
     (om/build simple (om/graft {:title "A Graft!"} app)))
-  (.getElementById js/document "app0"))
+  {:some :state}
+  {:target (.getElementById js/document "app0")})
 
 ;; In the following we see how we can put a real cursor in the
 ;; the graft value and everything still works
@@ -41,7 +41,7 @@
         (dom/p nil (str "My State: " (-> some-data :app :number)))))))
 
 (om/root
-  app-state
   (fn [app node]
     (om/build transact-original (om/graft {:title "Another Graft!" :app app} app)))
-  (.getElementById js/document "app1"))
+  app-state
+  {:target (.getElementById js/document "app1")})

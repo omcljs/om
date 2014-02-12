@@ -6,4 +6,5 @@
   (om/component
     (dom/div nil "Hello world!")))
 
-(om/root {} widget (.getElementById js/document "app"))
+(om/root widget {}
+  {:target (.getElementById js/document "app")})
