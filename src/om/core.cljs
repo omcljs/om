@@ -587,24 +587,12 @@
           (apply update-in state (into path korks) f a b c d args))))))
 
 (defn update!
-  "Like transact! but no list of keys given. An Om re-render
-   will be triggered."
-  ([cursor f]
-    (safe-update! cursor f))
-  ([cursor f a]
-    (safe-update! cursor f a))
-  ([cursor f a b]
-    (safe-update! cursor f a b))
-  ([cursor f a b c]
-    (safe-update! cursor f a b c))
-  ([cursor f a b c d]
-    (safe-update! cursor f a b c d))
-  ([cursor f a b c d & args]
-    (-transact! cursor
-      (fn [state path]
-        (if (empty? path)
-          (apply f state a b c d args)
-          (apply update-in state path f a b c d args))))))
+  "Like transact! but no function provided, instead a replacement
+  value is given."
+  ([cursor v]
+    (transact! cursor (fn [_] v)))
+  ([cursor korks v]
+    (transact! cursor korks (fn [_] v))))
 
 (defn get-node
   "A helper function to get at React refs. Given a owning pure node
