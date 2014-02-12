@@ -6,6 +6,13 @@
 
 (def app-state (atom {:title "Shared example"}))
 
+(defn child-view [data owner]
+  (reify
+    om/IRender
+    (render [_]
+      (dom/div nil
+        (om/get-shared owner :some-text)))))
+
 (defn shared-view [app owner]
   (reify
     om/IRender
@@ -13,7 +20,8 @@
       (dom/div nil
         (dom/h1 nil (:title app))
         (dom/p nil
-          (om/get-shared owner :some-text))))))
+          (om/get-shared owner :some-text))
+        (om/build child-view {})))))
 
 (om/root shared-view app-state
   {:target (.getElementById js/document "app")
