@@ -56,6 +56,7 @@
 
 (om/root counter-view app-state
   {:target (.getElementById js/document "app")
-   :tx-listen (fn [tag root tuple]
-                (println tag tuple))})
+   :tx-listen
+   (fn [tag root tx-data]
+     (println tag tx-data))})
 

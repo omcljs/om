@@ -68,6 +68,9 @@
 (defprotocol ITransact
   (-transact! [cursor korks f]))
 
+(defprotocol INotify
+  (-notify [x tag root-cursor tx-data]))
+
 ;; =============================================================================
 ;; A Truly Pure Component
 ;; 
@@ -429,10 +432,9 @@
       (satisfies? ICloneable val) (to-cursor* val state path)
       :else val)))
 
-(defn notify* [cursor tag data]
-  (when-let [tx-listen (:tx-listen (-shared cursor))]
-    (let [state (-state cursor)]
-      (tx-listen tag (to-cursor @state state) data))))
+(defn notify* [cursor tag tx-data]
+  (let [state (-state cursor)]
+    (-notify state tag (to-cursor @state state) tx-data)))
 
 ;; =============================================================================
 ;; API
@@ -564,14 +566,17 @@
     (let [state (if (instance? Atom value)
                   value
                   (atom value))
+          state (specify! state
+                  INotify
+                  (-notify [_ tag root-cursor tx-data]
+                    (tx-listen tag root-cursor tx-data)))
           rootf (fn rootf []
                   (swap! refresh-set disj rootf)
                   (let [value  @state
                         cursor (to-cursor value state [])]
                     (dom/render
                       (build f cursor
-                        (assoc-in (dissoc options :target :tx-listen)
-                          [:shared] :tx-listen tx-listen)) target)))
+                        (dissoc options :target :tx-listen)) target)))
           watch-key (gensym)]
       (add-watch state watch-key
         (fn [_ _ _ _]
