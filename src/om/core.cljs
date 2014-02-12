@@ -575,21 +575,7 @@
           (f state)
           (update-in state path f)))))
   ([cursor korks f]
-    (safe-transact! cursor korks f))
-  ([cursor korks f a]
-    (safe-transact! cursor korks f a))
-  ([cursor korks f a b]
-    (safe-transact! cursor korks f a b))
-  ([cursor korks f a b c]
-    (safe-transact! cursor korks f a b c))
-  ([cursor korks f a b c d]
-    (safe-transact! cursor korks f a b c d))
-  ([cursor korks f a b c d & args]
-    (-transact! cursor
-      (fn [state path]
-        (if-not (sequential? korks)
-          (apply update-in state (conj path korks) f a b c d args)
-          (apply update-in state (into path korks) f a b c d args))))))
+    (safe-transact! cursor korks f)))
 
 (defn update!
   "Like transact! but no function provided, instead a replacement
