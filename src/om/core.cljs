@@ -5,6 +5,7 @@
   (:require [om.dom :as dom :include-macros true]))
 
 (def ^{:tag boolean :dynamic true} *read-enabled* false)
+(def ^{:dynamic true} *parent* nil)
 
 ;; =============================================================================
 ;; React Life Cycle Protocols
@@ -50,11 +51,10 @@
 
 (defprotocol ICursor
   (-path [cursor])
-  (-state [cursor])
-  (-shared [cursor]))
+  (-state [cursor]))
 
 (defprotocol IToCursor
-  (-to-cursor [value state] [value state path] [value state path shared]))
+  (-to-cursor [value state] [value state path]))
 
 (defprotocol ITransact
   (-transact! [cursor f]))
@@ -103,7 +103,8 @@
    render loop. An optional key or sequence of keys may be given to
    extract a specific value."
   ([owner]
-    (-shared (get-props owner)))
+    (when-not (nil? owner)
+      (aget (.-props owner) "__om_shared")))
   ([owner korks]
     (cond
       (not (sequential? korks))
@@ -226,8 +227,12 @@
              (let [c (children this)]
                (allow-reads
                  (cond
-                   (satisfies? IRender c) (render c)
-                   (satisfies? IRenderState c) (render-state c (get-state this))
+                   (satisfies? IRender c)
+                   (binding [*parent* this] (render c))
+                   
+                   (satisfies? IRenderState c)
+                   (binding [*parent* this] (render-state c (get-state this)))
+                   
                    :else c)))))}))
 
 ;; =============================================================================
@@ -244,11 +249,11 @@
 (defn cursor? [x]
   (satisfies? ICursor x))
 
-(deftype MapCursor [value state path shared]
+(deftype MapCursor [value state path]
   IWithMeta
   (-with-meta [_ new-meta]
     (check
-      (MapCursor. (with-meta value new-meta) state path shared)))
+      (MapCursor. (with-meta value new-meta) state path)))
   IMeta
   (-meta [_] (check (meta value)))
   IDeref
@@ -261,19 +266,18 @@
   ICursor
   (-path [_] (check path))
   (-state [_] (check state))
-  (-shared [_] shared)
   ITransact
   (-transact! [_ f]
     (swap! state f path))
   ICloneable
   (-clone [_]
-    (MapCursor. value state path shared))
+    (MapCursor. value state path))
   ICounted
   (-count [_]
     (check (-count value)))
   ICollection
   (-conj [_ o]
-    (check (MapCursor. (-conj value o) state path shared)))
+    (check (MapCursor. (-conj value o) state path)))
   ILookup
   (-lookup [this k]
     (-lookup this k nil))
@@ -281,7 +285,7 @@
     (check
       (let [v (-lookup value k not-found)]
         (if-not (= v not-found)
-          (to-cursor v state (conj path k) shared)
+          (to-cursor v state (conj path k))
           not-found))))
   IFn
   (-invoke [this k]
@@ -292,15 +296,15 @@
   (-seq [this]
     (check
       (when (pos? (count value))
-        (map (fn [[k v]] [k (to-cursor v state (conj path k) shared)]) value))))
+        (map (fn [[k v]] [k (to-cursor v state (conj path k))]) value))))
   IAssociative
   (-contains-key? [_ k]
     (check (-contains-key? value k)))
   (-assoc [_ k v]
-    (check (MapCursor. (-assoc value k v) state path shared)))
+    (check (MapCursor. (-assoc value k v) state path)))
   IMap
   (-dissoc [_ k]
-    (check (MapCursor. (-dissoc value k) state path shared)))
+    (check (MapCursor. (-dissoc value k) state path)))
   IEquiv
   (-equiv [_ other]
     (check
@@ -311,7 +315,7 @@
   (-pr-writer [_ writer opts]
     (check (-pr-writer value writer opts))))
 
-(deftype IndexedCursor [value state path shared]
+(deftype IndexedCursor [value state path]
   ISequential
   IDeref
   (-deref [this]
@@ -321,7 +325,7 @@
   IWithMeta
   (-with-meta [_ new-meta]
     (check
-      (IndexedCursor. (with-meta value new-meta) state path shared)))
+      (IndexedCursor. (with-meta value new-meta) state path)))
   IMeta
   (-meta [_] (check (meta value)))
   IValue
@@ -329,19 +333,18 @@
   ICursor
   (-path [_] (check path))
   (-state [_] (check state))
-  (-shared [_] shared)
   ITransact
   (-transact! [_ f]
     (swap! state f path))
   ICloneable
   (-clone [_]
-    (IndexedCursor. value state path shared))
+    (IndexedCursor. value state path))
   ICounted
   (-count [_]
     (check (-count value)))
   ICollection
   (-conj [_ o]
-    (check (IndexedCursor. (-conj value o) state path shared)))
+    (check (IndexedCursor. (-conj value o) state path)))
   ILookup
   (-lookup [this n]
     (check (-nth this n nil)))
@@ -354,27 +357,27 @@
     (-lookup this k not-found))
   IIndexed
   (-nth [_ n]
-    (check (to-cursor (-nth value n) state (conj path n) shared)))
+    (check (to-cursor (-nth value n) state (conj path n))))
   (-nth [_ n not-found]
     (check
       (if (< n (-count value))
-        (to-cursor (-nth value n) state (conj path n) shared)
+        (to-cursor (-nth value n) state (conj path n))
         not-found)))
   ISeqable
   (-seq [this]
     (check
       (when (pos? (count value))
-        (map (fn [v i] (to-cursor v state (conj path i) shared)) value (range)))))
+        (map (fn [v i] (to-cursor v state (conj path i))) value (range)))))
   IAssociative
   (-contains-key? [_ k]
     (check (-contains-key? value k)))
   (-assoc [_ n v]
-    (check (to-cursor (-assoc-n value n v) state path shared)))
+    (check (to-cursor (-assoc-n value n v) state path)))
   IStack
   (-peek [_]
-    (check (to-cursor (-peek value) state path shared)))
+    (check (to-cursor (-peek value) state path)))
   (-pop [_]
-    (check (to-cursor (-pop value) state path shared)))
+    (check (to-cursor (-pop value) state path)))
   IEquiv
   (-equiv [_ other]
     (check
@@ -385,7 +388,7 @@
   (-pr-writer [_ writer opts]
     (check (-pr-writer value writer opts))))
 
-(defn ^:private to-cursor* [val state path shared]
+(defn ^:private to-cursor* [val state path]
   (specify val
     IDeref
     (-deref [this]
@@ -395,7 +398,6 @@
     ICursor
     (-state [_] (check state))
     (-path [_] (check path))
-    (-shared [_] shared)
     ITransact
     (-transact! [_ f]
       (swap! state f path))
@@ -407,16 +409,15 @@
           (= val other))))))
 
 (defn ^:private to-cursor
-  ([val] (to-cursor val nil [] nil))
-  ([val state] (to-cursor val state [] nil))
-  ([val state path] (to-cursor val state path nil))
-  ([val state path shared]
+  ([val] (to-cursor val nil []))
+  ([val state] (to-cursor val state []))
+  ([val state path]
     (cond
       (cursor? val) val
-      (satisfies? IToCursor val) (-to-cursor val state path shared)
-      (indexed? val) (IndexedCursor. val state path shared)
-      (map? val) (MapCursor. val state path shared)
-      (satisfies? ICloneable val) (to-cursor* val state path shared)
+      (satisfies? IToCursor val) (-to-cursor val state path)
+      (indexed? val) (IndexedCursor. val state path)
+      (map? val) (MapCursor. val state path)
+      (satisfies? ICloneable val) (to-cursor* val state path)
       :else val)))
 
 ;; =============================================================================
@@ -432,7 +433,7 @@
 (def ^:private roots (atom {}))
 
 (defn ^:private valid? [m]
-  (every? #{:key :react-key :fn :init-state :state :opts ::index} (keys m)))
+  (every? #{:key :react-key :fn :init-state :state :opts :shared ::index} (keys m)))
 
 (defn build
   "Builds an Om component. Takes an IRender/IRenderState instance
@@ -472,10 +473,12 @@
                  (interpose ", " (keys m))))
     (cond
       (nil? m)
-      (tag
-        (pure #js {:__om_cursor cursor}
-          (fn [this] (allow-reads (f cursor this))))
-        f)
+      (let [shared (or (:shared m) (get-shared *parent*))]
+        (tag
+          (pure #js {:__om_cursor cursor
+                     :__om_shared shared}
+            (fn [this] (allow-reads (f cursor this))))
+          f))
 
       :else
       (let [{:keys [key state init-state opts]} m
@@ -483,12 +486,14 @@
             cursor' (if-not (nil? dataf) (dataf cursor) cursor)
             rkey    (if-not (nil? key)
                       (get cursor' key)
-                      (get m :react-key))]
+                      (get m :react-key))
+            shared  (or (:shared m) (get-shared *parent*))]
         (tag
           (pure #js {:__om_cursor cursor'
                      :__om_index (::index m)
                      :__om_init_state init-state
                      :__om_state state
+                     :__om_shared shared
                      :key rkey}
             (if (nil? opts)
               (fn [this] (allow-reads (f cursor' this)))
@@ -541,10 +546,10 @@
           rootf (fn rootf []
                   (swap! refresh-set disj rootf)
                   (let [value  @state
-                        cursor (to-cursor value state [] shared)]
+                        cursor (to-cursor value state [])]
                     (dom/render
                       (build f cursor
-                        (dissoc options :target :shared)) target)))
+                        (dissoc options :target)) target)))
           watch-key (gensym)]
       (add-watch state watch-key
         (fn [_ _ _ _]
@@ -635,8 +640,7 @@
    need to be added to the render tree."
   [value cursor]
   (let [state  (-state cursor)
-        path   (-path cursor)
-        shared (-shared cursor)]
+        path   (-path cursor)]
     (if (cursor? value)
       (throw (js/Error. (str value " is already a cursor.")))
       (specify value
@@ -645,5 +649,4 @@
           (throw (js/Error. "Cannot transact on graft")))
         ICursor
         (-state [_] state)
-        (-path [_] path)
-        (-shared [_] shared)))))
+        (-path [_] path)))))
