@@ -432,59 +432,6 @@
 
 (def ^:private roots (atom {}))
 
-(defn root
-  "Takes an immutable tree of associative data structures optionally
-   wrapped in an atom, an initial function f, and a DOM
-   target. Installs an Om/React render loop. f must return an instance
-   that at a minimum implements IRender or IRenderState (it may
-   implement other React life cycle protocols). f must take two
-   arguments, the root cursor and the owning pure node. A cursor is
-   just the original data wrapped in an ICursor instance which
-   maintains path information. Only one root render loop allowed per
-   target element. om.core/root is idempotent, if called again on the
-   same target element the previous render loop will be replaced.
-
-   Example:
-
-   (root {:message :hello}
-     (fn [data owner]
-       ...)
-     js/document.body)"
-  ([value f target] (root value nil f target))
-  ([value shared f target]
-    ;; only one root render loop per target
-    (let [roots' @roots]
-      (when (contains? roots' target)
-        ((get roots' target))))
-    (let [state (if (instance? Atom value)
-                  value
-                  (atom value))
-          rootf (fn rootf []
-                  (swap! refresh-set disj rootf)
-                  (let [value  @state
-                        cursor (to-cursor value state [] shared)]
-                    (dom/render
-                      (pure #js {:__om_cursor cursor}
-                        (fn [this] (allow-reads (f cursor this))))
-                      target)))
-          watch-key (gensym)]
-      (add-watch state watch-key
-        (fn [_ _ _ _]
-          (when-not (contains? @refresh-set rootf)
-            (swap! refresh-set conj rootf))
-          (when-not refresh-queued
-            (set! refresh-queued true)
-            (if (exists? js/requestAnimationFrame)
-              (js/requestAnimationFrame render-all)
-              (js/setTimeout render-all 16)))))
-      ;; store fn to remove previous root render loop
-      (swap! roots assoc target
-        (fn []
-          (remove-watch state watch-key)
-          (swap! roots dissoc target)
-          (js/React.unmountComponentAtNode target)))
-      (rootf))))
-
 (defn ^:private valid? [m]
   (every? #{:key :react-key :fn :init-state :state :opts ::index} (keys m)))
 
@@ -558,6 +505,64 @@
     (map (fn [x i]
            (build f x (assoc m ::index i)))
       xs (range))))
+
+(defn root
+  "Take a component constructor function f, value an immutable tree of
+   associative data structures optionally an wrapped in an atom, and a
+   map of options. Options must include at least a :target which is a
+   DOM element. Can optionally provide :shared which is data to be
+   shared by all components via their cursors. Options may also include
+   any key allowed by om.core/build to customize f.
+
+   Installs an Om/React render loop. f must return an
+   instance that at a minimum implements IRender or IRenderState (it
+   may implement other React life cycle protocols). f must take at two
+   arguments, the root cursor and the owning pure node. A cursor is
+   just the original data wrapped in an ICursor instance which
+   maintains path information. Only one root render loop allowed per
+   target element. om.core/root is idempotent, if called again on the
+   same target element the previous render loop will be replaced.
+
+   Example:
+
+   (root 
+     (fn [data owner]
+       ...)
+     {:message :hello}
+     {:target js/document.body})"
+  ([f value {:keys [target shared] :as options}]
+    (assert (not (nil? target)) "No target specified to om.core/root")
+    ;; only one root render loop per target
+    (let [roots' @roots]
+      (when (contains? roots' target)
+        ((get roots' target))))
+    (let [state (if (instance? Atom value)
+                  value
+                  (atom value))
+          rootf (fn rootf []
+                  (swap! refresh-set disj rootf)
+                  (let [value  @state
+                        cursor (to-cursor value state [] shared)]
+                    (dom/render
+                      (build f cursor
+                        (dissoc options :target :shared)) target)))
+          watch-key (gensym)]
+      (add-watch state watch-key
+        (fn [_ _ _ _]
+          (when-not (contains? @refresh-set rootf)
+            (swap! refresh-set conj rootf))
+          (when-not refresh-queued
+            (set! refresh-queued true)
+            (if (exists? js/requestAnimationFrame)
+              (js/requestAnimationFrame render-all)
+              (js/setTimeout render-all 16)))))
+      ;; store fn to remove previous root render loop
+      (swap! roots assoc target
+        (fn []
+          (remove-watch state watch-key)
+          (swap! roots dissoc target)
+          (js/React.unmountComponentAtNode target)))
+      (rootf))))
 
 (defn transact!
   "Given a cursor, an optional list of keys ks, mutate the tree at the
