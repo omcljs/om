@@ -18,13 +18,13 @@
         (dom/button
           #js {:onClick
                (fn [e]
-                 (om/transact! data :count inc)
+                 (om/transact! ::inc data :count inc)
                  (put! last-clicked (.-path data)))}
           "+")
         (dom/button
           #js {:onClick
                (fn [e]
-                 (om/transact! data :count dec)
+                 (om/transact! ::dec data :count dec)
                  (put! last-clicked (.-path data)))}
           "-")))))
 
@@ -55,5 +55,7 @@
           {:key :id :init-state chans})))))
 
 (om/root counter-view app-state
-  {:target (.getElementById js/document "app")})
+  {:target (.getElementById js/document "app")
+   :tx-listen (fn [tag root tuple]
+                (println tag tuple))})
 

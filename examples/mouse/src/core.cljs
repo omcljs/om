@@ -22,7 +22,7 @@
               (fn [e] [(.-clientX e) (.-clientY e)])
               [(listen js/window EventType/MOUSEMOVE)])]
         (go (while true
-              (om/update! app :mouse (<! mouse-chan))))))
+              (om/update! ::mouse-move app :mouse (<! mouse-chan))))))
     om/IRender 
     (render [_]
       (dom/p nil

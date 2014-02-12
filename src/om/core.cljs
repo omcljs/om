@@ -1,7 +1,7 @@
 (ns om.core
   (:require-macros
     [om.core :refer
-      [pure component check allow-reads safe-transact! tag]])
+      [pure component check allow-reads tag]])
   (:require [om.dom :as dom :include-macros true]))
 
 (def ^{:tag boolean :dynamic true} *read-enabled* false)
@@ -56,8 +56,17 @@
 (defprotocol IToCursor
   (-to-cursor [value state] [value state path] [value state path shared]))
 
+(defn transact* [state path f]
+  (let [old-state @state]
+    (swap! state update-in path f)
+    {:path path
+     :old-data (get-in old-state path)
+     :new-data (get-in @state path)
+     :old-state old-state
+     :new-state @state}))
+
 (defprotocol ITransact
-  (-transact! [cursor f]))
+  (-transact! [cursor korks f]))
 
 ;; =============================================================================
 ;; A Truly Pure Component
@@ -263,8 +272,8 @@
   (-state [_] state)
   (-shared [_] shared)
   ITransact
-  (-transact! [_ f]
-    (swap! state f path))
+  (-transact! [_ korks f]
+    (transact* state (into path korks) f))
   ICloneable
   (-clone [_]
     (MapCursor. value state path shared))
@@ -331,8 +340,8 @@
   (-state [_] state)
   (-shared [_] shared)
   ITransact
-  (-transact! [_ f]
-    (swap! state f path))
+  (-transact! [_ korks f]
+    (transact* state (into path korks) f))
   ICloneable
   (-clone [_]
     (IndexedCursor. value state path shared))
@@ -397,8 +406,8 @@
     (-state [_] state)
     (-shared [_] shared)
     ITransact
-    (-transact! [_ f]
-      (swap! state f path))
+    (-transact! [_ korks f]
+      (transact* state (into path korks) f))
     IEquiv
     (-equiv [_ other]
       (check
@@ -418,6 +427,11 @@
       (map? val) (MapCursor. val state path shared)
       (satisfies? ICloneable val) (to-cursor* val state path shared)
       :else val)))
+
+(defn notify* [cursor tag data]
+  (when-let [tx-listen (:tx-listen (-shared cursor))]
+    (let [state (-state cursor)]
+      (tx-listen tag (to-cursor @state state) data))))
 
 ;; =============================================================================
 ;; API
@@ -508,10 +522,17 @@
 (defn root
   "Take a component constructor function f, value an immutable tree of
    associative data structures optionally an wrapped in an atom, and a
-   map of options. Options must include at least a :target which is a
-   DOM element. Can optionally provide :shared which is data to be
-   shared by all components via their cursors. Options may also include
-   any key allowed by om.core/build to customize f.
+   map of options. 
+
+   Options *must* include at least a :target which is a DOM
+   element. Can optionally provide :shared which is data to be shared
+   by all components via their cursors. Can optionally provide
+   :tx-listen, a function that will listen in in transactions, :tx-listen
+   should take 3 arguments - the tag of transaction, a root cursor, and
+   a tuple containing path, old, and new value.
+
+   Options may also include any key allowed by om.core/build to
+   customize f.
 
    Installs an Om/React render loop. f must return an
    instance that at a minimum implements IRender or IRenderState (it
@@ -529,7 +550,7 @@
        ...)
      {:message :hello}
      {:target js/document.body})"
-  ([f value {:keys [target shared] :as options}]
+  ([f value {:keys [target shared tx-listen] :as options}]
     (assert (not (nil? target)) "No target specified to om.core/root")
     ;; only one root render loop per target
     (let [roots' @roots]
@@ -541,10 +562,11 @@
           rootf (fn rootf []
                   (swap! refresh-set disj rootf)
                   (let [value  @state
-                        cursor (to-cursor value state [] shared)]
+                        cursor (to-cursor value state []
+                                 (assoc shared :tx-listen tx-listen))]
                     (dom/render
                       (build f cursor
-                        (dissoc options :target :shared)) target)))
+                        (dissoc options :target :shared :tx-listen)) target)))
           watch-key (gensym)]
       (add-watch state watch-key
         (fn [_ _ _ _]
@@ -564,25 +586,29 @@
       (rootf))))
 
 (defn transact!
-  "Given a cursor, an optional list of keys ks, mutate the tree at the
-   path specified by the cursor + the optional keys by applying f to the
-   specified value in the tree. An Om re-render will be triggered."
-  ([cursor f]
-    (-transact! cursor
-      (fn [state path]
-        (if (empty? path)
-          (f state)
-          (update-in state path f)))))
-  ([cursor korks f]
-    (safe-transact! cursor korks f)))
+  "Given a tag, a cursor, an optional list of keys ks, mutate the tree
+   at the path specified by the cursor + the optional keys by applying
+   f to the specified value in the tree. An Om re-render will be
+   triggered."
+  ([tag cursor f]
+    (assert (keyword? tag)
+      "First argument to transaction fn must be a keyword")
+    (transact! cursor tag [] f))
+  ([tag cursor korks f]
+    (assert (keyword? tag)
+      "First argument to transaction fn must be a keyword")
+    (let [korks (if-not (sequential? korks)
+                  [korks]
+                  korks)]
+      (notify* cursor tag (-transact! cursor korks f)))))
 
 (defn update!
   "Like transact! but no function provided, instead a replacement
   value is given."
-  ([cursor v]
-    (transact! cursor (fn [_] v)))
-  ([cursor korks v]
-    (transact! cursor korks (fn [_] v))))
+  ([tag cursor v]
+    (transact! tag cursor (fn [_] v)))
+  ([tag cursor korks v]
+    (transact! tag cursor korks (fn [_] v))))
 
 (defn get-node
   "A helper function to get at React refs. Given a owning pure node
@@ -641,7 +667,7 @@
       (throw (js/Error. (str value " is already a cursor.")))
       (specify value
         ITransact
-        (-transact! [_ _]
+        (-transact! [_ _ _]
           (throw (js/Error. "Cannot transact on graft")))
         ICursor
         (-state [_] state)

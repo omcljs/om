@@ -26,13 +26,6 @@
          (str "Cannot manipulate cursor outside of render phase, only "
               "om.core/transact!, om.core/update!, and cljs.core/deref operations allowed")))))
 
-(defmacro safe-transact! [cursor korks f & args]
-  `(om.core/-transact! ~cursor
-     (fn [state# path#]
-       (if-not (sequential? ~korks)
-         (update-in state# (conj path# ~korks) ~f ~@args)
-         (update-in state# (into path# ~korks) ~f ~@args)))))
-
 (defmacro tag [pure t]
   `(let [pure# ~pure]
      (set! (.-constructor pure#) (goog/getUid ~t))
