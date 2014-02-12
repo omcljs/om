@@ -259,8 +259,8 @@
   IValue
   (-value [_] (check value))
   ICursor
-  (-path [_] (check path))
-  (-state [_] (check state))
+  (-path [_] path)
+  (-state [_] state)
   (-shared [_] shared)
   ITransact
   (-transact! [_ f]
@@ -327,8 +327,8 @@
   IValue
   (-value [_] (check value))
   ICursor
-  (-path [_] (check path))
-  (-state [_] (check state))
+  (-path [_] path)
+  (-state [_] state)
   (-shared [_] shared)
   ITransact
   (-transact! [_ f]
@@ -393,8 +393,8 @@
         (get-in @state path)
         (throw (js/Error. (str "Cannot deref cursor during render phase: " this)))))
     ICursor
-    (-state [_] (check state))
-    (-path [_] (check path))
+    (-path [_] path)
+    (-state [_] state)
     (-shared [_] shared)
     ITransact
     (-transact! [_ f]
