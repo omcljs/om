@@ -57,6 +57,6 @@
 (om/root counter-view app-state
   {:target (.getElementById js/document "app")
    :tx-listen
-   (fn [tag root tx-data]
+   (fn [tag root-cursor tx-data]
      (println tag tx-data))})
 

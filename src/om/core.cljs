@@ -601,12 +601,8 @@
    f to the specified value in the tree. An Om re-render will be
    triggered."
   ([tag cursor f]
-    (assert (keyword? tag)
-      "First argument to transaction fn must be a keyword")
     (transact! cursor tag [] f))
   ([tag cursor korks f]
-    (assert (keyword? tag)
-      "First argument to transaction fn must be a keyword")
     (let [korks (if-not (sequential? korks)
                   [korks]
                   korks)]
