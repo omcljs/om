@@ -569,7 +569,8 @@
           state (specify! state
                   INotify
                   (-notify [_ tag root-cursor tx-data]
-                    (tx-listen tag root-cursor tx-data)))
+                    (when-not (nil? tx-listen)
+                      (tx-listen tag root-cursor tx-data))))
           rootf (fn rootf []
                   (swap! refresh-set disj rootf)
                   (let [value  @state
