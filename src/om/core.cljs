@@ -60,8 +60,8 @@
   (let [old-state @state]
     (swap! state update-in path f)
     {:path path
-     :old-data (get-in old-state path)
-     :new-data (get-in @state path)
+     :old-value (get-in old-state path)
+     :new-value (get-in @state path)
      :old-state old-state
      :new-state @state}))
 
