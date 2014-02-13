@@ -69,7 +69,7 @@
   (-transact! [cursor korks f]))
 
 (defprotocol INotify
-  (-notify [x tag root-cursor tx-data]))
+  (-notify [x tx-data root-cursor]))
 
 ;; =============================================================================
 ;; A Truly Pure Component
@@ -432,9 +432,9 @@
       (satisfies? ICloneable val) (to-cursor* val state path)
       :else val)))
 
-(defn notify* [cursor tag tx-data]
+(defn notify* [cursor tx-data]
   (let [state (-state cursor)]
-    (-notify state tag (to-cursor @state state) tx-data)))
+    (-notify state tx-data (to-cursor @state state))))
 
 ;; =============================================================================
 ;; API
@@ -535,8 +535,9 @@
    element. Can optionally provide :shared which is data to be shared
    by all components via their cursors. Can optionally provide
    :tx-listen, a function that will listen in in transactions, :tx-listen
-   should take 3 arguments - the tag of transaction, a root cursor, and
-   a tuple containing path, old, and new value.
+   should take 2 arguments - the first a map containing
+   the path, old and new state at path, old and new global state, and
+   transaction tag if provided. The second is a root-cursor.
 
    Options may also include any key allowed by om.core/build to
    customize f.
@@ -568,9 +569,9 @@
                   (atom value))
           state (specify! state
                   INotify
-                  (-notify [_ tag root-cursor tx-data]
+                  (-notify [_ tx-data root-cursor]
                     (when-not (nil? tx-listen)
-                      (tx-listen tag root-cursor tx-data))))
+                      (tx-listen tx-data root-cursor))))
           rootf (fn rootf []
                   (swap! refresh-set disj rootf)
                   (let [value  @state
@@ -601,21 +602,28 @@
    at the path specified by the cursor + the optional keys by applying
    f to the specified value in the tree. An Om re-render will be
    triggered."
-  ([tag cursor f]
-    (transact! cursor tag [] f))
-  ([tag cursor korks f]
+  ([cursor f]
+    (transact! cursor [] f nil))
+  ([cursor korks f]
+    (transact! cursor korks f nil))
+  ([cursor korks f tag]
     (let [korks (if-not (sequential? korks)
                   [korks]
-                  korks)]
-      (notify* cursor tag (-transact! cursor korks f)))))
+                  korks)
+         tx-data (-transact! cursor korks f)]
+      (if-not (nil? tag)
+        (notify* cursor (assoc tx-data :tag tag))
+        (notify* cursor tx-data)))))
 
 (defn update!
   "Like transact! but no function provided, instead a replacement
   value is given."
-  ([tag cursor v]
-    (transact! tag cursor (fn [_] v)))
-  ([tag cursor korks v]
-    (transact! tag cursor korks (fn [_] v))))
+  ([cursor v]
+    (transact! cursor nil (fn [_] v) nil))
+  ([cursor korks v]
+    (transact! cursor korks (fn [_] v) nil))
+  ([cursor korks v tag]
+    (transact! cursor korks (fn [_] v)) tag))
 
 (defn get-node
   "A helper function to get at React refs. Given a owning pure node

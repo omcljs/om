@@ -36,7 +36,7 @@
       (dom/div nil
         (dom/h2 nil (:title some-data))
         (dom/button
-          #js {:onClick #(om/transact! ::inc (:app some-data) :number inc)}
+          #js {:onClick #(om/transact! (:app some-data) :number inc)}
           "Click Me!")
         (dom/p nil (str "My State: " (-> some-data :app :number)))))))
 

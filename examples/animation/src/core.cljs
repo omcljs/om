@@ -11,7 +11,7 @@
     om/IWillMount
     (will-mount [_]
       (js/setInterval
-        (fn [] (om/transact! ::inc app :count inc))
+        (fn [] (om/transact! app :count inc))
         16))
     om/IRender
     (render [_]

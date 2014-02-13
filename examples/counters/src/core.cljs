@@ -18,13 +18,13 @@
         (dom/button
           #js {:onClick
                (fn [e]
-                 (om/transact! ::inc data :count inc)
+                 (om/transact! data :count inc)
                  (put! last-clicked (.-path data)))}
           "+")
         (dom/button
           #js {:onClick
                (fn [e]
-                 (om/transact! ::dec data :count dec)
+                 (om/transact! data :count dec)
                  (put! last-clicked (.-path data)))}
           "-")))))
 
@@ -57,6 +57,6 @@
 (om/root counter-view app-state
   {:target (.getElementById js/document "app")
    :tx-listen
-   (fn [tag root-cursor tx-data]
-     (println tag tx-data))})
+   (fn [tx-data root-cursor]
+     (println tx-data))})
 
