@@ -70,6 +70,14 @@ be listed here:
 * [sablono](http://github.com/r0man/sablono), Hiccup-style
 * [kioo](http://github.com/ckirkendall/kioo), Enlive-style
 
+## Reusable Components
+
+Om emphasizes building modular and adaptable components. Some
+examples:
+
+* [om-sync](http://github.com/swannodette/om-sync), keep client and
+  server in sync
+
 ## Using it
 
 Om is alpha software.
