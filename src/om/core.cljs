@@ -58,7 +58,9 @@
 
 (defn transact* [state path f]
   (let [old-state @state]
-    (swap! state update-in path f)
+    (if (empty? path)
+      (swap! state f)
+      (swap! state update-in path f))
     {:path path
      :old-value (get-in old-state path)
      :new-value (get-in @state path)
