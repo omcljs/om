@@ -8,7 +8,7 @@
 ### Enhancements
 * `om.core/transact!` now takes optional 4th argument, a tag
 * `om.core/update!` now takes optional 4th argument, a tag
-* `om.core/root` no support `:tx-listen` option to observe all transactions
+* `om.core/root` now supports `:tx-listen` option to observe all transactions
 
 ### Bug fixes
-* `om.core/shared` was brittle, no works w/o cursors
+* `om.core/shared` was brittle, now works without cursors
