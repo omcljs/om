@@ -32,7 +32,8 @@ is an intermediate tutorial under development [here](http://github.com/swannodet
     (render [this]
       (dom/h1 nil (:text data)))))
 
-(om/root {:text "Hello world!"} widget (. js/document (getElementById "my-app")))
+(om/root widget {:text "Hello world!"}
+  {:target (. js/document (getElementById "my-app"))})
 ```
 
 The repo includes several simple examples you can build yourself. If
@@ -81,8 +82,8 @@ Your `project.clj` should include something like the following:
 (defproject foo "0.1.0"
   ...
   :dependencies [[org.clojure/clojure "1.5.1"]
-                 [org.clojure/clojurescript "0.0-2138"]
-                 [om "0.3.6"]]
+                 [org.clojure/clojurescript "0.0-2156"]
+                 [om "0.4.0"]]
   ...)
 ```
 
