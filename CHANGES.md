@@ -1,3 +1,8 @@
+## 0.4.1
+
+### Bug fixes
+* OM-110: transact! broken for empty path
+
 ## 0.4.0
 
 ### Breaking Changes
