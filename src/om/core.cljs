@@ -627,7 +627,7 @@
   ([cursor korks v]
     (transact! cursor korks (fn [_] v) nil))
   ([cursor korks v tag]
-    (transact! cursor korks (fn [_] v)) tag))
+    (transact! cursor korks (fn [_] v) tag)))
 
 (defn get-node
   "A helper function to get at React refs. Given a owning pure node
