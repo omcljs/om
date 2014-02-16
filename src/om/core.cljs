@@ -461,8 +461,9 @@
    f - is a function of 2 or 3 arguments. The first argument will be
    the cursor and the second argument will be the owning pure node.
    If a map of options m is passed in this will be the third
-   argument. f must return at a minimum an IRender instance, this
-   instance may implement other React life cycle protocols.
+   argument. f must return at a minimum an IRender or IRenderState
+   instance, this instance may implement other React life cycle
+   protocols.
 
    cursor - an ICursor instance
 
