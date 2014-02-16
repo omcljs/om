@@ -1,3 +1,11 @@
+## 0.4.2
+
+### Enhancements
+* OM-112: transact! special cases when korks is nil
+
+### Bug fixes
+* OM-114: om.core/update! doesn't pass tag
+
 ## 0.4.1
 
 ### Bug fixes
