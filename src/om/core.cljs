@@ -609,9 +609,10 @@
   ([cursor korks f]
     (transact! cursor korks f nil))
   ([cursor korks f tag]
-    (let [korks (if-not (sequential? korks)
-                  [korks]
-                  korks)
+    (let [korks (cond
+                  (nil? korks) []
+                  (sequential? korks) korks
+                  :else [korks])
          tx-data (-transact! cursor korks f)]
       (if-not (nil? tag)
         (notify* cursor (assoc tx-data :tag tag))
@@ -621,7 +622,7 @@
   "Like transact! but no function provided, instead a replacement
   value is given."
   ([cursor v]
-    (transact! cursor nil (fn [_] v) nil))
+    (transact! cursor [] (fn [_] v) nil))
   ([cursor korks v]
     (transact! cursor korks (fn [_] v) nil))
   ([cursor korks v tag]
