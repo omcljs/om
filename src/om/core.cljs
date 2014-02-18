@@ -20,7 +20,7 @@
   (will-mount [this]))
 
 (defprotocol IDidMount
-  (did-mount [this node]))
+  (did-mount [this]))
 
 (defprotocol IWillUnmount
   (will-unmount [this]))
@@ -29,7 +29,7 @@
   (will-update [this next-props next-state]))
 
 (defprotocol IDidUpdate
-  (did-update [this prev-props prev-state root-node]))
+  (did-update [this prev-props prev-state]))
 
 (defprotocol IRender
   (render [this]))
@@ -201,7 +201,7 @@
            (this-as this
              (let [c (children this)]
                (when (satisfies? IDidMount c)
-                 (allow-reads (did-mount c node))))))
+                 (allow-reads (did-mount c))))))
          :componentWillUnmount
          (fn []
            (this-as this
@@ -230,8 +230,7 @@
                      (did-update c
                        (get-props #js {:props prev-props})
                        (or (aget state "__om_prev_state")
-                           (aget state "__om_state"))
-                       root-node))))
+                           (aget state "__om_state"))))))
                (aset (.-state this) "__om_prev_state" nil))))
          :render
          (fn []
@@ -633,9 +632,11 @@
 (defn get-node
   "A helper function to get at React refs. Given a owning pure node
   extract the ref specified by name."
-  [owner name]
-  (when-let [refs (.-refs owner)]
-    (.getDOMNode (aget refs name))))
+  ([owner]
+     (.getDOMNode owner))
+  ([owner name]
+     (when-let [refs (.-refs owner)]
+       (.getDOMNode owner (aget refs name)))))
 
 (defn set-state!
   "Takes a pure owning component, a sequential list of keys and value and

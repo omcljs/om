@@ -90,7 +90,7 @@
 (defn draggable [item owner]
   (reify
     om/IDidMount
-    (did-mount [_ _]
+    (did-mount [_]
       ;; capture the cell dimensions when it becomes available
       (let [dims (-> (om/get-node owner "draggable")
                      gstyle/getSize gsize->vec)]
@@ -249,7 +249,7 @@
           (om/set-state! owner :constrain
             (fn [[_ cy]] [(inc x) (bound cy y (- (+ y h) ch))])))))
     om/IDidMount
-    (did-mount [_ _]
+    (did-mount [_]
       (when-not (om/get-state owner :location)
         (om/set-state! owner :location
           (element-offset (om/get-node owner "sortable")))))
