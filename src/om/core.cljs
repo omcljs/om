@@ -636,7 +636,7 @@
      (.getDOMNode owner))
   ([owner name]
      (when-let [refs (.-refs owner)]
-       (.getDOMNode owner (aget refs name)))))
+       (.getDOMNode (aget refs name)))))
 
 (defn set-state!
   "Takes a pure owning component, a sequential list of keys and value and
