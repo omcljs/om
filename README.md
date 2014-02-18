@@ -61,15 +61,6 @@ that we recommend reading as there are some design choices in Om that
 make it quite different from other client side solutions and even
 React itself.
 
-## HTML Syntax
-
-Om is not opinionated about HTML syntax, third parties can provide the
-preferred flavors over the `React.DOM` api. Alternative syntaxes will
-be listed here:
-
-* [sablono](http://github.com/r0man/sablono), Hiccup-style
-* [kioo](http://github.com/ckirkendall/kioo), Enlive-style
-
 ## Reusable Components
 
 Om emphasizes building modular and adaptable components. Some
@@ -151,6 +142,25 @@ functionality.
 
 For a sense of where Om is going the existing issues give a rough
 idea.
+
+## FAQ
+
+### Can I use a different HTML Syntax?
+
+Om is not opinionated about HTML syntax, third parties can provide the
+preferred flavors over the `React.DOM` api. Alternative syntaxes will
+be listed here:
+
+* [sablono](http://github.com/r0man/sablono), Hiccup-style
+* [kioo](http://github.com/ckirkendall/kioo), Enlive-style
+
+### Routing?
+
+Om does not ship with a router and is unlikely to. However
+ClojureScript routing libraries exist that handle this problem quite
+well:
+
+* [secretary](http://github.com/gf3/secretary)
 
 ## References
 
