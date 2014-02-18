@@ -154,7 +154,7 @@ be listed here:
 * [sablono](http://github.com/r0man/sablono), Hiccup-style
 * [kioo](http://github.com/ckirkendall/kioo), Enlive-style
 
-### Routing?
+### Does Om provide routing?
 
 Om does not ship with a router and is unlikely to. However
 ClojureScript routing libraries exist that handle this problem quite
