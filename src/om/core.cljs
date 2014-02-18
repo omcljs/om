@@ -1,7 +1,5 @@
 (ns om.core
-  (:require-macros
-    [om.core :refer
-      [pure component check allow-reads tag]])
+  (:require-macros [om.core :refer [check allow-reads tag]])
   (:require [om.dom :as dom :include-macros true]))
 
 (def ^{:tag boolean :dynamic true} *read-enabled* false)
@@ -249,6 +247,8 @@
                    
                    :else c)))))}))
 
+(defn pure [obj] (Pure. obj))
+
 ;; =============================================================================
 ;; Cursors
 
@@ -495,8 +495,8 @@
       (let [shared (or (:shared m) (get-shared *parent*))]
         (tag
           (pure #js {:__om_cursor cursor
-                     :__om_shared shared}
-            (fn [this] (allow-reads (f cursor this))))
+                     :__om_shared shared
+                     :children (fn [this] (allow-reads (f cursor this)))})
           f))
 
       :else
@@ -513,10 +513,11 @@
                      :__om_init_state init-state
                      :__om_state state
                      :__om_shared shared
-                     :key rkey}
-            (if (nil? opts)
-              (fn [this] (allow-reads (f cursor' this)))
-              (fn [this] (allow-reads (f cursor' this opts)))))
+                     :key rkey
+                     :children
+                     (if (nil? opts)
+                       (fn [this] (allow-reads (f cursor' this)))
+                       (fn [this] (allow-reads (f cursor' this opts))))})
           f)))))
 
 (defn build-all

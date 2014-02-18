@@ -37,5 +37,12 @@
 
 (def option (wrap-form-element js/React.DOM.option))
 
-(defn render [component el]
+(defn render
+  "Equivalent to React.renderComponent"
+  [component el]
   (js/React.renderComponent component el))
+
+(defn render-to-str
+  "Equivalent to React.renderComponentToString"
+  [c]
+  (js/React.renderComponentToString c))

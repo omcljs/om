@@ -136,6 +136,3 @@
 (defmacro ^:private gen-react-dom-fns []
   `(do
      ~@(clojure.core/map gen-react-dom-fn tags)))
-
-(defmacro render [component el]
-  `(js/React.renderComponent ~component ~el))
