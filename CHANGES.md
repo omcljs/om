@@ -1,3 +1,12 @@
+## 0.5.0-rc1
+
+### Breaking Changes
+* IDidMount, IDidUpdate no longer take node to match React 0.9.0-rc1
+
+### Enhancements
+* om.dom/render-to-str added
+* OM-72: :path option for om.core/root
+
 ## 0.4.2
 
 ### Enhancements
