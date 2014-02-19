@@ -577,15 +577,14 @@
                   (-notify [_ tx-data root-cursor]
                     (when-not (nil? tx-listen)
                       (tx-listen tx-data root-cursor))))
+          m     (dissoc options :target :tx-listen :path)
           rootf (fn rootf []
                   (swap! refresh-set disj rootf)
                   (let [value  @state
                         cursor (if (nil? path)
                                  (to-cursor value state [])
                                  (to-cursor (get-in value path) state path))]
-                    (dom/render
-                      (build f cursor
-                        (dissoc options :target :tx-listen :path)) target)))
+                    (dom/render (build f cursor m) target)))
           watch-key (gensym)]
       (add-watch state watch-key
         (fn [_ _ _ _]
