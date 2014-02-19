@@ -540,7 +540,9 @@
    :tx-listen, a function that will listen in in transactions, :tx-listen
    should take 2 arguments - the first a map containing
    the path, old and new state at path, old and new global state, and
-   transaction tag if provided. The second is a root-cursor.
+   transaction tag if provided. The second is a root-cursor. If :path
+   provided f will be invoked with the value specified by :path in the
+   app state.
 
    Options may also include any key allowed by om.core/build to
    customize f.
@@ -561,7 +563,7 @@
        ...)
      {:message :hello}
      {:target js/document.body})"
-  ([f value {:keys [target shared tx-listen] :as options}]
+  ([f value {:keys [target shared tx-listen path] :as options}]
     (assert (not (nil? target)) "No target specified to om.core/root")
     ;; only one root render loop per target
     (let [roots' @roots]
@@ -578,10 +580,12 @@
           rootf (fn rootf []
                   (swap! refresh-set disj rootf)
                   (let [value  @state
-                        cursor (to-cursor value state [])]
+                        cursor (if (nil? path)
+                                 (to-cursor value state [])
+                                 (to-cursor (get-in value path) state path))]
                     (dom/render
                       (build f cursor
-                        (dissoc options :target :tx-listen)) target)))
+                        (dissoc options :target :tx-listen :path)) target)))
           watch-key (gensym)]
       (add-watch state watch-key
         (fn [_ _ _ _]
