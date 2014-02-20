@@ -82,7 +82,7 @@ Your `project.clj` should include something like the following:
   ...
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/clojurescript "0.0-2156"]
-                 [om "0.5.0-rc1"]]
+                 [om "0.5.0"]]
   ...)
 ```
 
@@ -107,7 +107,7 @@ Your local development markup should look something like the following:
 <html>
     <body>
        <div id="my-app"></div>
-       <script src="http://fb.me/react-0.9.0-rc1.js"></script>
+       <script src="http://fb.me/react-0.9.0.js"></script>
        <script src="out/goog/base.js" type="text/javascript"></script>
        <script src="main.js" type="text/javascript"></script>
        <script type="text/javascript">goog.require("main.core");</script>

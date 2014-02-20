@@ -1,3 +1,8 @@
+## 0.5.0
+
+## Changes
+* Upgrade to React 0.9.0
+
 ## 0.5.0-rc1
 
 ### Breaking Changes
