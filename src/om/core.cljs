@@ -569,7 +569,7 @@
     (let [roots' @roots]
       (when (contains? roots' target)
         ((get roots' target))))
-    (let [state (if (instance? Atom value)
+    (let [state (if (satisfies? IAtom value)
                   value
                   (atom value))
           state (specify! state
