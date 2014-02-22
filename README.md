@@ -130,7 +130,17 @@ like this:
               :externs ["react/externs/react.js"]}}]}
 ```
 
-This will generate a single file `main.js`.
+This will generate a single file `main.js`. Your production markup
+should look something like this:
+
+```html
+<html>
+    <body>
+       <div id="my-app"></div>
+       <script src="main.js" type="text/javascript"></script>
+    </body>
+</html>
+```
 
 ## Contributing
 
