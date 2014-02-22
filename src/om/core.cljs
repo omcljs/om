@@ -259,6 +259,9 @@
 (defn value [cursor]
   (-value cursor))
 
+(defn state [cursor]
+  (-state cursor))
+
 (defn cursor? [x]
   (satisfies? ICursor x))
 
