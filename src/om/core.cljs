@@ -197,7 +197,7 @@
                  (allow-reads (will-mount c))))
              (merge-pending-state this)))
          :componentDidMount
-         (fn [node]
+         (fn []
            (this-as this
              (let [c (children this)]
                (when (satisfies? IDidMount c)
@@ -221,7 +221,7 @@
                            (aget state "__om_state")))))))
              (merge-pending-state this)))
          :componentDidUpdate
-         (fn [prev-props prev-state root-node]
+         (fn [prev-props prev-state]
            (this-as this
              (let [c (children this)]
                (when (satisfies? IDidUpdate c)
