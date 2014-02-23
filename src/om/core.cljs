@@ -468,6 +468,9 @@
 (defn ^:private valid? [m]
   (every? #{:key :react-key :fn :init-state :state :opts :shared ::index} (keys m)))
 
+(defn id [owner]
+  (aget (.-state owner) "__om_id"))
+
 (defn build
   "Builds an Om component. Takes an IRender/IRenderState instance
    returning function f, a cursor, and an optional third argument
