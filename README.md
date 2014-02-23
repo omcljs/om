@@ -15,9 +15,11 @@ for [yourself](http://swannodette.github.io/2013/12/31/time-travel/).
 
 ## Tutorial
 
-There is an basic tutorial under development
-[here](http://github.com/swannodette/om/wiki/Basic-Tutorial) and there
-is an intermediate tutorial under development [here](http://github.com/swannodette/om/wiki/Intermediate-Tutorial).
+There is an in-depth tutorial that will introduce you to the core
+concepts of Om
+[here](http://github.com/swannodette/om/wiki/Basic-Tutorial) and a
+real-world integration example
+[here](http://github.com/swannodette/om/wiki/Intermediate-Tutorial).
 
 ## Examples
 
