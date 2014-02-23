@@ -31,6 +31,9 @@
 (defprotocol IDidUpdate
   (did-update [this prev-props prev-state]))
 
+(defprotocol IWillReceiveProps
+  (will-receive-props [this next-props]))
+
 (defprotocol IRender
   (render [this]))
 
@@ -232,6 +235,14 @@
                        (or (aget state "__om_prev_state")
                            (aget state "__om_state"))))))
                (aset (.-state this) "__om_prev_state" nil))))
+         :componentWillReceiveProps
+         (fn [next-props]
+           (this-as this
+             (let [c (children this)]
+               (when (satisfies? IWillReceiveProps c)
+                 (allow-reads
+                   (will-receive-props c
+                     (get-props #js {:props next-props})))))))
          :render
          (fn []
            (this-as this
