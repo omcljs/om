@@ -1,6 +1,7 @@
 (ns om.core
   (:require-macros [om.core :refer [check allow-reads tag]])
-  (:require [om.dom :as dom :include-macros true]))
+  (:require [om.dom :as dom :include-macros true])
+  (:import [goog.ui IdGenerator]))
 
 (def ^{:tag boolean :dynamic true} *read-enabled* false)
 (def ^{:dynamic true} *parent* nil)
@@ -159,7 +160,8 @@
              (let [c      (children this)
                    props  (.-props this)
                    istate (or (aget props "__om_init_state") {})
-                   ret    #js {:__om_state
+                   ret    #js {:__om_id (.getNextUniqueId (.getInstance IdGenerator))
+                               :__om_state
                                (merge istate
                                  (when (satisfies? IInitState c)
                                    (allow-reads (init-state c))))}]
