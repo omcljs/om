@@ -41,6 +41,10 @@
 (defprotocol IRenderState
   (render-state [this state]))
 
+(defprotocol IOmSwap
+  (-om-swap! [this cursor f] [this cursor f a]
+             [this cursor f a b] [this cursor f a b xs]))
+
 ;; =============================================================================
 ;; Om Protocols
 
@@ -58,16 +62,22 @@
 (defprotocol IToCursor
   (-to-cursor [value state] [value state path]))
 
-(defn transact* [state path f]
-  (let [old-state @state]
-    (if (empty? path)
-      (swap! state f)
-      (swap! state update-in path f))
-    {:path path
-     :old-value (get-in old-state path)
-     :new-value (get-in @state path)
-     :old-state old-state
-     :new-state @state}))
+(defn transact*
+  ([state path f] (transact* state path f nil))
+  ([state path f cursor]
+     (let [old-state @state]
+       (if (satisfies? IOmSwap state)
+         (if (empty? path)
+           (-om-swap! state cursor f)
+           (-om-swap! state cursor update-in path f))
+         (if (empty? path)
+           (swap! state f)
+           (swap! state update-in path f)))
+       {:path path
+        :old-value (get-in old-state path)
+        :new-value (get-in @state path)
+        :old-state old-state
+        :new-state @state})))
 
 (defprotocol ITransact
   (-transact! [cursor korks f]))
@@ -296,8 +306,8 @@
   (-path [_] path)
   (-state [_] state)
   ITransact
-  (-transact! [_ korks f]
-    (transact* state (into path korks) f))
+  (-transact! [this korks f]
+    (transact* state (into path korks) f this))
   ICloneable
   (-clone [_]
     (MapCursor. value state path))
@@ -363,8 +373,8 @@
   (-path [_] path)
   (-state [_] state)
   ITransact
-  (-transact! [_ korks f]
-    (transact* state (into path korks) f))
+  (-transact! [this korks f]
+    (transact* state (into path korks) f this))
   ICloneable
   (-clone [_]
     (IndexedCursor. value state path))
@@ -428,8 +438,8 @@
     (-path [_] path)
     (-state [_] state)
     ITransact
-    (-transact! [_ korks f]
-      (transact* state (into path korks) f))
+    (-transact! [this korks f]
+      (transact* state (into path korks) f this))
     IEquiv
     (-equiv [_ other]
       (check
