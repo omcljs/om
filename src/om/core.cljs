@@ -61,19 +61,24 @@
 (defprotocol IToCursor
   (-to-cursor [value state] [value state path]))
 
+(declare notify*)
+
 (defn transact*
   ([state cursor path f tag]
-     (let [old-state @state]
-       (if (satisfies? IOmSwap state)
-         (-om-swap! state cursor path f tag)
-         (if (empty? path)
-           (swap! state f)
-           (swap! state update-in path f)))
-       {:path path
-        :old-value (get-in old-state path)
-        :new-value (get-in @state path)
-        :old-state old-state
-        :new-state @state})))
+     (let [old-state @state
+           ret (cond
+                 (satisfies? IOmSwap state) (-om-swap! state cursor path f tag)
+                 (empty? path) (swap! state f)
+                 :else (swap! state update-in path f))]
+       (when-not (= ret ::defer)
+         (let [tx-data {:path path
+                        :old-value (get-in old-state path)
+                        :new-value (get-in @state path)
+                        :old-state old-state
+                        :new-state @state}]
+           (if-not (nil? tag)
+             (notify* cursor (assoc tx-data :tag tag))
+             (notify* cursor tx-data)))))))
 
 (defprotocol ITransact
   (-transact! [cursor korks f tag]))
@@ -641,11 +646,8 @@
     (let [korks (cond
                   (nil? korks) []
                   (sequential? korks) korks
-                  :else [korks])
-         tx-data (-transact! cursor korks f tag)]
-      (if-not (nil? tag)
-        (notify* cursor (assoc tx-data :tag tag))
-        (notify* cursor tx-data)))))
+                  :else [korks])]
+      (-transact! cursor korks f tag))))
 
 (defn update!
   "Like transact! but no function provided, instead a replacement
