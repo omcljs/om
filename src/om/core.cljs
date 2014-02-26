@@ -303,7 +303,7 @@
       (get-in @state path)
       (throw (js/Error. (str "Cannot deref cursor during render phase: " this)))))
   IValue
-  (-value [_] (check value))
+  (-value [_] value)
   ICursor
   (-path [_] path)
   (-state [_] state)
@@ -370,7 +370,7 @@
   IMeta
   (-meta [_] (check (meta value)))
   IValue
-  (-value [_] (check value))
+  (-value [_] value)
   ICursor
   (-path [_] path)
   (-state [_] state)
