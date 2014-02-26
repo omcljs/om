@@ -42,7 +42,7 @@
   (render-state [this state]))
 
 (defprotocol IOmSwap
-  (-om-swap! [this cursor path f tag]))
+  (-om-swap! [this cursor korks f tag]))
 
 ;; =============================================================================
 ;; Om Protocols
@@ -61,13 +61,29 @@
 (defprotocol IToCursor
   (-to-cursor [value state] [value state path]))
 
-(declare notify*)
+(defn path [cursor]
+  (-path cursor))
+
+(defn value [cursor]
+  (-value cursor))
+
+(defn state [cursor]
+  (-state cursor))
+
+(defprotocol ITransact
+  (-transact! [cursor korks f tag]))
+
+(defprotocol INotify
+  (-notify [x tx-data root-cursor]))
+
+(declare notify* path)
 
 (defn transact*
-  ([state cursor path f tag]
+  ([state cursor korks f tag]
      (let [old-state @state
+           path (into (om.core/path cursor) korks)
            ret (cond
-                 (satisfies? IOmSwap state) (-om-swap! state cursor path f tag)
+                 (satisfies? IOmSwap state) (-om-swap! state cursor korks f tag)
                  (empty? path) (swap! state f)
                  :else (swap! state update-in path f))]
        (when-not (= ret ::defer)
@@ -79,12 +95,6 @@
            (if-not (nil? tag)
              (notify* cursor (assoc tx-data :tag tag))
              (notify* cursor tx-data)))))))
-
-(defprotocol ITransact
-  (-transact! [cursor korks f tag]))
-
-(defprotocol INotify
-  (-notify [x tx-data root-cursor]))
 
 ;; =============================================================================
 ;; A Truly Pure Component
@@ -277,15 +287,6 @@
 
 (declare to-cursor)
 
-(defn path [cursor]
-  (-path cursor))
-
-(defn value [cursor]
-  (-value cursor))
-
-(defn state [cursor]
-  (-state cursor))
-
 (defn cursor? [x]
   (satisfies? ICursor x))
 
@@ -308,7 +309,7 @@
   (-state [_] state)
   ITransact
   (-transact! [this korks f tag]
-    (transact* state this (into path korks) f tag))
+    (transact* state this korks f tag))
   ICloneable
   (-clone [_]
     (MapCursor. value state path))
@@ -375,7 +376,7 @@
   (-state [_] state)
   ITransact
   (-transact! [this korks f tag]
-    (transact* state this (into path korks) f tag))
+    (transact* state this korks f tag))
   ICloneable
   (-clone [_]
     (IndexedCursor. value state path))
@@ -440,7 +441,7 @@
     (-state [_] state)
     ITransact
     (-transact! [this korks f tag]
-      (transact* state this (into path korks) f tag))
+      (transact* state this korks f tag))
     IEquiv
     (-equiv [_ other]
       (check
