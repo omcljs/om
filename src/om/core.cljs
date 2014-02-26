@@ -42,8 +42,7 @@
   (render-state [this state]))
 
 (defprotocol IOmSwap
-  (-om-swap! [this cursor f] [this cursor f a]
-             [this cursor f a b] [this cursor f a b xs]))
+  (-om-swap! [this cursor path f tag]))
 
 ;; =============================================================================
 ;; Om Protocols
@@ -63,13 +62,10 @@
   (-to-cursor [value state] [value state path]))
 
 (defn transact*
-  ([state path f] (transact* state path f nil))
-  ([state path f cursor]
+  ([state cursor path f tag]
      (let [old-state @state]
        (if (satisfies? IOmSwap state)
-         (if (empty? path)
-           (-om-swap! state cursor f)
-           (-om-swap! state cursor update-in path f))
+         (-om-swap! state cursor path f tag)
          (if (empty? path)
            (swap! state f)
            (swap! state update-in path f)))
@@ -80,7 +76,7 @@
         :new-state @state})))
 
 (defprotocol ITransact
-  (-transact! [cursor korks f]))
+  (-transact! [cursor korks f tag]))
 
 (defprotocol INotify
   (-notify [x tx-data root-cursor]))
@@ -306,8 +302,8 @@
   (-path [_] path)
   (-state [_] state)
   ITransact
-  (-transact! [this korks f]
-    (transact* state (into path korks) f this))
+  (-transact! [this korks f tag]
+    (transact* state this (into path korks) f tag))
   ICloneable
   (-clone [_]
     (MapCursor. value state path))
@@ -373,8 +369,8 @@
   (-path [_] path)
   (-state [_] state)
   ITransact
-  (-transact! [this korks f]
-    (transact* state (into path korks) f this))
+  (-transact! [this korks f tag]
+    (transact* state this (into path korks) f tag))
   ICloneable
   (-clone [_]
     (IndexedCursor. value state path))
@@ -438,8 +434,8 @@
     (-path [_] path)
     (-state [_] state)
     ITransact
-    (-transact! [this korks f]
-      (transact* state (into path korks) f this))
+    (-transact! [this korks f tag]
+      (transact* state this (into path korks) f tag))
     IEquiv
     (-equiv [_ other]
       (check
@@ -646,7 +642,7 @@
                   (nil? korks) []
                   (sequential? korks) korks
                   :else [korks])
-         tx-data (-transact! cursor korks f)]
+         tx-data (-transact! cursor korks f tag)]
       (if-not (nil? tag)
         (notify* cursor (assoc tx-data :tag tag))
         (notify* cursor tx-data)))))
