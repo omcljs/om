@@ -30,7 +30,7 @@
 (om/root
   app-view
   (atom {:text "Hello world!"})
-  {:target (.getElementById js/document "app0")
+  {:target (.getElementById js/document "app")
    :instrument
    (fn [f cursor m]
      (om/build* something-else [f cursor m]))})
