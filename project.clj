@@ -89,6 +89,13 @@
                 :output-dir "examples/graft/out"
                 :source-map true
                 :optimizations :none}}
+             {:id "instrument"
+              :source-paths ["src" "examples/instrument/src"]
+              :compiler {
+                :output-to "examples/instrument/main.js"
+                :output-dir "examples/instrument/out"
+                :source-map true
+                :optimizations :none}}
              {:id "tests"
               :source-paths ["src" "examples/tests/src"]
               :compiler {

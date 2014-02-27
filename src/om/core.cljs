@@ -5,6 +5,7 @@
 
 (def ^{:tag boolean :dynamic true} *read-enabled* false)
 (def ^{:dynamic true} *parent* nil)
+(def ^{:dynamic true} *instrument* nil)
 
 ;; =============================================================================
 ;; React Life Cycle Protocols
@@ -98,7 +99,7 @@
 
 ;; =============================================================================
 ;; A Truly Pure Component
-;; 
+;;
 ;; This React class takes an immutable value as its props and an instance that
 ;; must at a minimum implement IRender as its children.
 ;;
@@ -111,7 +112,7 @@
       c)))
 
 (defn get-props
-  "Given an owning Pure node return the Om props. Analogous to React 
+  "Given an owning Pure node return the Om props. Analogous to React
    component props."
   [x]
   (aget (.-props x) "__om_cursor"))
@@ -269,15 +270,20 @@
          :render
          (fn []
            (this-as this
-             (let [c (children this)]
+             (let [c (children this)
+                   props (.-props this)]
                (allow-reads
                  (cond
                    (satisfies? IRender c)
-                   (binding [*parent* this] (render c))
-                   
+                   (binding [*parent* this
+                             *instrument* (aget props "__om_instrument")]
+                     (render c))
+
                    (satisfies? IRenderState c)
-                   (binding [*parent* this] (render-state c (get-state this)))
-                   
+                   (binding [*parent* this
+                             *instrument* (aget props "__om_instrument")]
+                     (render-state c (get-state this)))
+
                    :else c)))))}))
 
 (defn pure [obj] (Pure. obj))
@@ -478,10 +484,51 @@
 (def ^:private roots (atom {}))
 
 (defn ^:private valid? [m]
-  (every? #{:key :react-key :fn :init-state :state :opts :shared ::index} (keys m)))
+  (every? #{:key :react-key :fn :init-state :state
+            :opts :shared ::index :instrument}
+    (keys m)))
 
 (defn id [owner]
   (aget (.-state owner) "__om_id"))
+
+(defn build*
+  ([f cursor] (build* f cursor nil))
+  ([f cursor m]
+    (assert (valid? m)
+      (apply str "build options contains invalid keys, only :key, :react-key, "
+                 ":fn, :init-state, :state, and :opts allowed, given "
+                 (interpose ", " (keys m))))
+    (cond
+      (nil? m)
+      (let [shared (or (:shared m) (get-shared *parent*))]
+        (tag
+          (pure #js {:__om_cursor cursor
+                     :__om_shared shared
+                     :__om_instrument *instrument*
+                     :children (fn [this] (allow-reads (f cursor this)))})
+          f))
+
+      :else
+      (let [{:keys [key state init-state opts]} m
+            dataf   (get m :fn)
+            cursor' (if-not (nil? dataf) (dataf cursor) cursor)
+            rkey    (if-not (nil? key)
+                      (get cursor' key)
+                      (get m :react-key))
+            shared  (or (:shared m) (get-shared *parent*))]
+        (tag
+          (pure #js {:__om_cursor cursor'
+                     :__om_index (::index m)
+                     :__om_init_state init-state
+                     :__om_state state
+                     :__om_shared shared
+                     :__om_instrument *instrument*
+                     :key rkey
+                     :children
+                     (if (nil? opts)
+                       (fn [this] (allow-reads (f cursor' this)))
+                       (fn [this] (allow-reads (f cursor' this opts))))})
+          f)))))
 
 (defn build
   "Builds an Om component. Takes an IRender/IRenderState instance
@@ -516,39 +563,9 @@
   "
   ([f cursor] (build f cursor nil))
   ([f cursor m]
-    (assert (valid? m)
-      (apply str "build options contains invalid keys, only :key, :react-key, "
-                 ":fn, :init-state, :state, and :opts allowed, given "
-                 (interpose ", " (keys m))))
-    (cond
-      (nil? m)
-      (let [shared (or (:shared m) (get-shared *parent*))]
-        (tag
-          (pure #js {:__om_cursor cursor
-                     :__om_shared shared
-                     :children (fn [this] (allow-reads (f cursor this)))})
-          f))
-
-      :else
-      (let [{:keys [key state init-state opts]} m
-            dataf   (get m :fn)
-            cursor' (if-not (nil? dataf) (dataf cursor) cursor)
-            rkey    (if-not (nil? key)
-                      (get cursor' key)
-                      (get m :react-key))
-            shared  (or (:shared m) (get-shared *parent*))]
-        (tag
-          (pure #js {:__om_cursor cursor'
-                     :__om_index (::index m)
-                     :__om_init_state init-state
-                     :__om_state state
-                     :__om_shared shared
-                     :key rkey
-                     :children
-                     (if (nil? opts)
-                       (fn [this] (allow-reads (f cursor' this)))
-                       (fn [this] (allow-reads (f cursor' this opts))))})
-          f)))))
+     (if-not (nil? *instrument*)
+       (*instrument* f cursor m)
+       (build* f cursor m))))
 
 (defn build-all
   "Build a sequence of components. f is the component constructor
@@ -563,7 +580,7 @@
 (defn root
   "Take a component constructor function f, value an immutable tree of
    associative data structures optionally an wrapped in an atom, and a
-   map of options. 
+   map of options.
 
    Options *must* include at least a :target which is a DOM
    element. Can optionally provide :shared which is data to be shared
@@ -589,12 +606,12 @@
 
    Example:
 
-   (root 
+   (root
      (fn [data owner]
        ...)
      {:message :hello}
      {:target js/document.body})"
-  ([f value {:keys [target shared tx-listen path] :as options}]
+  ([f value {:keys [target shared tx-listen path instrument] :as options}]
     (assert (not (nil? target)) "No target specified to om.core/root")
     ;; only one root render loop per target
     (let [roots' @roots]
@@ -615,7 +632,10 @@
                         cursor (if (nil? path)
                                  (to-cursor value state [])
                                  (to-cursor (get-in value path) state path))]
-                    (dom/render (build f cursor m) target)))
+                    (dom/render
+                      (binding [*instrument* instrument]
+                        (build f cursor m))
+                      target)))
           watch-key (gensym)]
       (add-watch state watch-key
         (fn [_ _ _ _]
