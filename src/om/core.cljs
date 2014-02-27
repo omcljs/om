@@ -564,7 +564,10 @@
   ([f cursor] (build f cursor nil))
   ([f cursor m]
      (if-not (nil? *instrument*)
-       (*instrument* f cursor m)
+       (let [ret (*instrument* f cursor m)]
+         (if (= ret ::pass)
+           (build* f cursor m)
+           ret))
        (build* f cursor m))))
 
 (defn build-all
