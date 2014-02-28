@@ -12,6 +12,9 @@
 ;;
 ;; http://facebook.github.io/react/docs/component-specs.html
 
+(defprotocol IDisplayName
+  (display-name [this]))
+
 (defprotocol IInitState
   (init-state [this]))
 
@@ -176,7 +179,13 @@
 
 (def ^:private Pure
   (js/React.createClass
-    #js {:getInitialState
+    #js {:getDisplayName
+         (fn []
+           (this-as this
+             (let [c (children this)]
+               (when (satisfies? IDidUpdate c)
+                 (allow-reads (display-name c))))))
+         :getInitialState
          (fn []
            (this-as this
              (let [c      (children this)
