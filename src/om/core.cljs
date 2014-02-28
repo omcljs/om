@@ -183,7 +183,7 @@
          (fn []
            (this-as this
              (let [c (children this)]
-               (when (satisfies? IDidUpdate c)
+               (when (satisfies? IDisplayName c)
                  (allow-reads (display-name c))))))
          :getInitialState
          (fn []
