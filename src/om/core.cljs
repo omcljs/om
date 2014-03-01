@@ -494,7 +494,7 @@
 
 (defn ^:private valid? [m]
   (every? #{:key :react-key :fn :init-state :state
-            :opts :shared ::index :instrument}
+            :opts :shared ::index :instrument :ctor}
     (keys m)))
 
 (defn id [owner]
@@ -509,9 +509,10 @@
                  (interpose ", " (keys m))))
     (cond
       (nil? m)
-      (let [shared (or (:shared m) (get-shared *parent*))]
+      (let [shared (or (:shared m) (get-shared *parent*))
+            ctor   (or (:ctor m) pure)]
         (tag
-          (pure #js {:__om_cursor cursor
+          (ctor #js {:__om_cursor cursor
                      :__om_shared shared
                      :__om_instrument *instrument*
                      :children (fn [this] (allow-reads (f cursor this)))})
@@ -524,9 +525,10 @@
             rkey    (if-not (nil? key)
                       (get cursor' key)
                       (get m :react-key))
-            shared  (or (:shared m) (get-shared *parent*))]
+            shared  (or (:shared m) (get-shared *parent*))
+            ctor    (or (:ctor m) pure)]
         (tag
-          (pure #js {:__om_cursor cursor'
+          (ctor #js {:__om_cursor cursor'
                      :__om_index (::index m)
                      :__om_init_state init-state
                      :__om_state state
