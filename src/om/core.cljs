@@ -709,21 +709,39 @@
   "Takes a pure owning component, a sequential list of keys and value and
    sets the state of the component. Conceptually analagous to React
    setState. Will schedule an Om re-render."
-  [owner korks v]
-  (allow-reads
-    (let [props  (.-props owner)
-          state  (.-state owner)
-          cursor (aget props "__om_cursor")
-          path   (-path cursor)
-          pstate (or (aget state "__om_pending_state")
-                     (aget state "__om_state"))]
-      (if-not (sequential? korks)
-        (aset state "__om_pending_state" (assoc pstate korks v))
-        (aset state "__om_pending_state" (assoc-in pstate korks v)))
-      ;; invalidate path to component
-      (if (empty? path)
-        (swap! (-state cursor) clone)
-        (swap! (-state cursor) update-in path clone)))))
+  ([owner v]
+     (allow-reads
+       (let [cursor (aget (.-props owner) "__om_cursor")
+             path   (-path cursor)]
+         (aset (.-state owner) "__om_pending_state" v)
+         ;; invalidate path to component
+         (if (empty? path)
+           (swap! (-state cursor) clone)
+           (swap! (-state cursor) update-in path clone)))))
+  ([owner korks v]
+     (allow-reads
+       (let [props  (.-props owner)
+             state  (.-state owner)
+             cursor (aget props "__om_cursor")
+             path   (-path cursor)
+             pstate (or (aget state "__om_pending_state")
+                        (aget state "__om_state"))]
+         (if-not (sequential? korks)
+           (aset state "__om_pending_state" (assoc pstate korks v))
+           (aset state "__om_pending_state" (assoc-in pstate korks v)))
+         ;; invalidate path to component
+         (if (empty? path)
+           (swap! (-state cursor) clone)
+           (swap! (-state cursor) update-in path clone))))))
+
+(defn update-state!
+  "Takes a pure owning component, a sequential list of keys and a
+   function to transition the state of the component. Conceptually
+   analagous to React setState. Will schedule an Om re-render."
+  ([owner f]
+     (set-state! owner (f (get-state owner))))
+  ([owner korks f]
+     (set-state! owner korks (f (get-state owner korks)))))
 
 (defn get-render-state
   "Takes a pure owning component and an optional key or sequential
