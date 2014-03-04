@@ -593,30 +593,35 @@
 
 (defn root
   "Take a component constructor function f, value an immutable tree of
-   associative data structures optionally an wrapped in an atom, and a
-   map of options.
+   associative data structures optionally an wrapped in an IAtom
+   instance, and a map of options and installs an Om/React render
+   loop.
 
-   Options *must* include at least a :target which is a DOM
-   element. Can optionally provide :shared which is data to be shared
-   by all components via their cursors. Can optionally provide
-   :tx-listen, a function that will listen in in transactions, :tx-listen
-   should take 2 arguments - the first a map containing
-   the path, old and new state at path, old and new global state, and
-   transaction tag if provided. The second is a root-cursor. If :path
-   provided f will be invoked with the value specified by :path in the
-   app state.
+   f must return an instance that at a minimum implements IRender or
+   IRenderState (it may implement other React life cycle protocols). f
+   must take at least two arguments, the root cursor and the owning pure
+   node. A cursor is just the original data wrapped in an ICursor
+   instance which maintains path information. Only one root render
+   loop allowed per target element. om.core/root is idempotent, if
+   called again on the same target element the previous render loop
+   will be replaced.
 
    Options may also include any key allowed by om.core/build to
-   customize f.
+   customize f. In addition om.core/root supports the following
+   special options:
 
-   Installs an Om/React render loop. f must return an
-   instance that at a minimum implements IRender or IRenderState (it
-   may implement other React life cycle protocols). f must take at two
-   arguments, the root cursor and the owning pure node. A cursor is
-   just the original data wrapped in an ICursor instance which
-   maintains path information. Only one root render loop allowed per
-   target element. om.core/root is idempotent, if called again on the
-   same target element the previous render loop will be replaced.
+   :target (required) - a DOM element. 
+
+   :shared - data to be shared by all components, see om.core/get-shared
+
+   :tx-listen - a function that will listen in in transactions,
+      should take 2 arguments - the first a map containing
+      the path, old and new state at path, old and new global state, and
+      transaction tag if provided.
+
+   :instrument - a function of three arguments that if provided will
+      intercept all calls to om.core/build. This function should
+      correspond to the three arity version of om.core/build.
 
    Example:
 
