@@ -610,18 +610,15 @@
    customize f. In addition om.core/root supports the following
    special options:
 
-   :target (required) - a DOM element. 
-
-   :shared - data to be shared by all components, see om.core/get-shared
-
-   :tx-listen - a function that will listen in in transactions,
-      should take 2 arguments - the first a map containing
-      the path, old and new state at path, old and new global state, and
-      transaction tag if provided.
-
+   :target     - (required) a DOM element. 
+   :shared     - data to be shared by all components, see om.core/get-shared
+   :tx-listen  - a function that will listen in in transactions, should
+                 take 2 arguments - the first a map containing the
+                 path, old and new state at path, old and new global
+                 state, and transaction tag if provided.
    :instrument - a function of three arguments that if provided will
-      intercept all calls to om.core/build. This function should
-      correspond to the three arity version of om.core/build.
+                 intercept all calls to om.core/build. This function should
+                 correspond to the three arity version of om.core/build.
 
    Example:
 
