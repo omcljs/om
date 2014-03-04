@@ -83,8 +83,8 @@ Your `project.clj` should include something like the following:
 (defproject foo "0.1.0"
   ...
   :dependencies [[org.clojure/clojure "1.5.1"]
-                 [org.clojure/clojurescript "0.0-2156"]
-                 [om "0.5.0"]]
+                 [org.clojure/clojurescript "0.0-2173"]
+                 [om "0.5.1"]]
   ...)
 ```
 

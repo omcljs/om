@@ -1,3 +1,16 @@
+## 0.5.1
+
+## Changes
+* Requires ClojureScript 0.0-2173
+* IOmSwap protocol for app state representations besides standard atom
+* :instrument option for om.core/root
+* Add IDisplayName to support React Chrome Dev Tools
+* om.core/build takes :ctor option to provide React backing component
+  class besides om.core/Pure
+
+## Fixes
+* OM-122: IWillReceiveProps protocol
+
 ## 0.5.0
 
 ## Changes
