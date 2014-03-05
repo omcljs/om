@@ -743,6 +743,11 @@
   ([owner korks f]
      (set-state! owner korks (f (get-state owner korks)))))
 
+(defn refresh!
+  "Utility to re-render an owner."
+  [owner]
+  (update-state! owner identity))
+
 (defn get-render-state
   "Takes a pure owning component and an optional key or sequential
    list of keys and returns a property in the component local state if
