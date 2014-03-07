@@ -777,7 +777,7 @@
       (throw (js/Error. (str value " is already a cursor.")))
       (specify value
         ITransact
-        (-transact! [_ _ _]
+        (-transact! [_ _ _ _]
           (throw (js/Error. "Cannot transact on graft")))
         ICursor
         (-state [_] state)
