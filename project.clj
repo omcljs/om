@@ -96,6 +96,13 @@
                 :output-dir "examples/instrument/out"
                 :source-map true
                 :optimizations :none}}
+             {:id "stateful"
+              :source-paths ["src" "examples/stateful/src"]
+              :compiler {
+                :output-to "examples/stateful/main.js"
+                :output-dir "examples/stateful/out"
+                :source-map true
+                :optimizations :none}}
              {:id "tests"
               :source-paths ["src" "examples/tests/src"]
               :compiler {
