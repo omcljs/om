@@ -103,6 +103,13 @@
                 :output-dir "examples/stateful/out"
                 :source-map true
                 :optimizations :none}}
+             {:id "harmful"
+              :source-paths ["src" "examples/harmful/src"]
+              :compiler {
+                :output-to "examples/harmful/main.js"
+                :output-dir "examples/harmful/out"
+                :source-map true
+                :optimizations :none}}
              {:id "tests"
               :source-paths ["src" "examples/tests/src"]
               :compiler {
