@@ -209,8 +209,7 @@
            (if (satisfies? IShouldUpdate c)
              (should-update c
                (get-props #js {:props next-props})
-               (or (aget state "__om_pending_state")
-                   (aget state "__om_state")))
+               (-get-state this))
              (cond
                (not (identical? (-value (aget props "__om_cursor"))
                                 (-value (aget next-props "__om_cursor"))))
@@ -252,8 +251,7 @@
              (allow-reads
                (will-update c
                  (get-props #js {:props next-props})
-                 (or (aget state "__om_pending_state")
-                     (aget state "__om_state")))))))
+                 (-get-state this))))))
        (merge-pending-state this)))
    "componentDidUpdate"
    (fn [prev-props prev-state]
@@ -314,8 +312,7 @@
                    state  (.-state this)
                    cursor (aget props "__om_cursor")
                    path   (-path cursor)
-                   pstate (or (aget state "__om_pending_state")
-                              (aget state "__om_state"))]
+                   pstate (-get-state this)]
                (aset state "__om_pending_state" (assoc-in pstate ks val))
                ;; invalidate path to component
                (if (empty? path)
