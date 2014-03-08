@@ -28,6 +28,8 @@
          (let [counter (aget (.-state this) "value")]
            (om/build counter-view 
              (specify! counter
+               IDeref
+               (-deref [this] this)
                om/ITransact
                (-transact! [m korks f _]
                  (.setState this #js {:value (applyf m korks f)})))))))}))
