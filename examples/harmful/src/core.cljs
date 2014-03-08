@@ -6,13 +6,20 @@
 ;; =============================================================================
 ;; Different backing React class
 
+(defn get-gstate [owner]
+  (om/state (aget (.-props owner) "__om_cursor")))
+
 (defn merge-pending-state [owner]
-  (swap! (om/state (.-props owner)) [:state-map (om/id owner)]
-    (fn [states]
-      (-> states
-        (assoc :render-state
-          (merge (:render-state states) (:pending-state states)))
-        (dissoc :pending-state)))))
+  (let [gstate (get-gstate owner)
+        spath  [:state-map (om/id owner)]
+        states (get-in @gstate spath)]
+    (when (:pending-state states)
+      (swap! gstate update-in spath
+        (fn [states]
+          (-> states
+            (assoc :render-state
+              (merge (:render-state states) (:pending-state states)))
+            (dissoc :pending-state)))))))
 
 (def no-local-state-meths
   (assoc om/pure-meths
@@ -25,9 +32,10 @@
               id     (.getNextUniqueId (.getInstance IdGenerator))
               state  (merge istate
                        (when (satisfies? om/IInitState c)
-                         (om/allow-reads (om/init-state c))))]
+                         (om/allow-reads (om/init-state c))))
+              spath  [:state-map id :render-state]]
           (aset props "__om_init_state" nil)
-          (swap! (om/state props) assoc-in [:state-map id :render-state] state)
+          (swap! (get-gstate this) assoc-in spath state)
           #js {:__om_id id})))
     :componentWillMount
     (fn []
@@ -40,11 +48,11 @@
     :componentWillUnmount
     (fn []
       (this-as this
-        (let [c (om/children this)]
+        (let [c     (om/children this)
+              spath [:state-map (om/id this)]]
           (when (satisfies? om/IWillUnmount c)
             (om/allow-reads (om/will-unmount c)))
-          (swap! (om/state (.-props this))
-            update-in [:state-map (om/id this)] dissoc))))
+          (swap! (get-gstate this) update-in spath dissoc))))
     :shouldComponentUpdate
     (fn [next-props next-state]
       (this-as this
@@ -63,8 +71,7 @@
                                  (om/-value (aget next-props "__om_cursor"))))
                 true
 
-                (not (nil? (get-in @(om/state props)
-                             [:state-map (om/id this) :pending-state])))
+                (not (nil? (get-in @(get-gstate this) [:state-map (om/id this) :pending-state])))
                 true
 
                 (not (== (aget props "__om_index") (aget next-props "__om_index")))
@@ -75,7 +82,6 @@
     (fn [next-props next-state]
       (this-as this
         (let [props  (.-props this)
-              gstate (om/state props)
               c      (om/children this)]
           (when (satisfies? om/IWillUpdate c)
             (let [state (.-state this)]
@@ -88,16 +94,18 @@
     (fn [prev-props prev-state]
       (this-as this
         (let [c      (om/children this)
-              gstate (om/state (.-props this))]
+              gstate (get-gstate this)
+              states (get-in @gstate [:state-map (om/id this)])
+              spath  [:state-map (om/id this)]]
           (when (satisfies? om/IDidUpdate c)
-            (let [state  (.-state this)
-                  states (get-in @gstate [:state-map (om/id this)])]
+            (let [state (.-state this)]
               (om/allow-reads
                 (om/did-update c
                   (om/get-props #js {:props prev-props})
                   (or (:previous-state states)
                       (:render-state states))))))
-          (swap! gstate update-in [:state-map (om/id this)] dissoc :previous-state))))))
+          (when (:previous-state states)
+            (swap! gstate update-in spath dissoc :previous-state)))))))
 
 (def NoLocal
   (js/React.createClass
@@ -107,9 +115,9 @@
         ([this val]
            (om/allow-reads
              (let [cursor (aget (.-props this) "__om_cursor")
-                   path   (om/-path cursor)]
-               (swap! (om/state (.-props this))
-                 assoc-in [:state-map (om/id this) :pending-state] val)
+                   path   (om/-path cursor)
+                   spath  [:state-map (om/id this) :pending-state]]
+               (swap! (get-gstate this) assoc-in spath val)
                ;; invalidate path to component
                (if (empty? path)
                  (swap! (om/-state cursor) clone)
@@ -119,9 +127,9 @@
              (let [props  (.-props this)
                    state  (.-state this)
                    cursor (aget props "__om_cursor")
-                   path   (om/-path cursor)]
-               (swap! (om/state props)
-                 update-in [:state-map (om/id this) :pending-state] assoc-in ks val)
+                   path   (om/-path cursor)
+                   spath  [:state-map (om/id this) :pending-state]]
+               (swap! (get-gstate this) update-in spath assoc-in ks val)
                ;; invalidate path to component
                (if (empty? path)
                  (swap! (om/-state cursor) clone)
@@ -129,15 +137,15 @@
       om/IGetRenderState
       (-get-render-state
         ([this]
-           (get-in @(om/state (.-props this))
-             [:state-map (om/id this) :render-state]))
+           (let [spath [:state-map (om/id this) :render-state]]
+             (get-in @(get-gstate this) spath)))
         ([this ks]
            (get-in (om/-get-render-state this) ks)))
       om/IGetState
       (-get-state
         ([this]
-           (let [states (get-in @(om/state (.-props this))
-                          [:state-map (om/id this)])]
+           (let [spath  [:state-map (om/id this)]
+                 states (get-in @(get-gstate this) spath)]
              (or (:pending-state states)
                  (:render-state states))))
         ([this ks]
@@ -153,7 +161,7 @@
 (defn counter-view [data owner]
   (reify
     om/IRenderState 
-    (render [_ {:keys [count]}]
+    (render-state [_ {:keys [count]}]
       (dom/div nil
         (dom/h2 nil "A Counter!")
         (dom/div
@@ -163,7 +171,7 @@
 (om/root
   (fn [app owner]
     (om/component
-      (om/build app {:ctor no-local})))
+      (om/build counter-view app {:ctor no-local})))
   app-state
   {:target (.getElementById js/document "app")})
 
