@@ -156,17 +156,20 @@
 ;; =============================================================================
 ;; Application
 
-(def app-state (atom {:count 0}))
+(def app-state (atom {:title "A Counter!"}))
 
 (defn counter-view [data owner]
   (reify
+    om/IInitState
+    (init-state [_]
+      {:count 0})
     om/IRenderState 
     (render-state [_ {:keys [count]}]
       (dom/div nil
-        (dom/h2 nil "A Counter!")
+        (dom/h2 nil (:title data))
         (dom/div
           #js {:onClick (fn [e] (om/set-state! owner (inc count)))}
-          (:count data))))))
+          count)))))
 
 (om/root
   (fn [app owner]
