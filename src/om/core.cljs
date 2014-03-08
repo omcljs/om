@@ -45,6 +45,9 @@
 (defprotocol IRenderState
   (render-state [this state]))
 
+;; =============================================================================
+;; Om Protocols
+
 (defprotocol IOmSwap
   (-om-swap! [this cursor korks f tag]))
 
@@ -56,9 +59,6 @@
 
 (defprotocol ISetState
   (-set-state! [this val] [this ks val]))
-
-;; =============================================================================
-;; Om Protocols
 
 (defprotocol IValue
   (-value [x]))
@@ -113,7 +113,7 @@
 ;; A Truly Pure Component
 ;;
 ;; This React class takes an immutable value as its props and an instance that
-;; must at a minimum implement IRender as its children.
+;; must at a minimum implement IRender(State) as its children.
 ;;
 ;; (Pure. {:foo "bar"} irender-instance)
 
