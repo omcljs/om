@@ -178,13 +178,13 @@
           (aset props "__om_state" nil))))))
 
 (def pure-meths
-  {"getDisplayName"
+  {:getDisplayName
    (fn []
      (this-as this
        (let [c (children this)]
          (when (satisfies? IDisplayName c)
            (allow-reads (display-name c))))))
-   "getInitialState"
+   :getInitialState
    (fn []
      (this-as this
        (let [c      (children this)
@@ -197,7 +197,7 @@
                              (allow-reads (init-state c))))}]
          (aset props "__om_init_state" nil)
          ret)))
-   "shouldComponentUpdate"
+   :shouldComponentUpdate
    (fn [next-props next-state]
      (this-as this
        (allow-reads
@@ -222,7 +222,7 @@
                true
 
                :else false))))))
-   "componentWillMount"
+   :componentWillMount
    (fn []
      (this-as this
        (merge-props-state this)
@@ -230,19 +230,19 @@
          (when (satisfies? IWillMount c)
            (allow-reads (will-mount c))))
        (merge-pending-state this)))
-   "componentDidMount"
+   :componentDidMount
    (fn []
      (this-as this
        (let [c (children this)]
          (when (satisfies? IDidMount c)
            (allow-reads (did-mount c))))))
-   "componentWillUnmount"
+   :componentWillUnmount
    (fn []
      (this-as this
        (let [c (children this)]
          (when (satisfies? IWillUnmount c)
            (allow-reads (will-unmount c))))))
-   "componentWillUpdate"
+   :componentWillUpdate
    (fn [next-props next-state]
      (this-as this
        (let [c (children this)]
@@ -253,7 +253,7 @@
                  (get-props #js {:props next-props})
                  (-get-state this))))))
        (merge-pending-state this)))
-   "componentDidUpdate"
+   :componentDidUpdate
    (fn [prev-props prev-state]
      (this-as this
        (let [c (children this)]
@@ -265,7 +265,7 @@
                  (or (aget state "__om_prev_state")
                      (aget state "__om_state"))))))
          (aset (.-state this) "__om_prev_state" nil))))
-   "componentWillReceiveProps"
+   :componentWillReceiveProps
    (fn [next-props]
      (this-as this
        (let [c (children this)]
@@ -273,7 +273,7 @@
            (allow-reads
              (will-receive-props c
                (get-props #js {:props next-props})))))))
-   "render"
+   :render
    (fn []
      (this-as this
        (let [c (children this)
