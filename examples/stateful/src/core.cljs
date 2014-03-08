@@ -2,7 +2,7 @@
   (:require [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]))
 
-(defn counter-view [data]
+(defn counter-view [data owner]
   (reify
     om/IRender 
     (render [_]
