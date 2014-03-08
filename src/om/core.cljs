@@ -48,6 +48,15 @@
 (defprotocol IOmSwap
   (-om-swap! [this cursor korks f tag]))
 
+(defprotocol IGetState
+  (-get-state [this] [this ks]))
+
+(defprotocol IGetRenderState
+  (-get-render-state [this] [this ks]))
+
+(defprotocol ISetState
+  (-set-state! [this val] [this ks val]))
+
 ;; =============================================================================
 ;; Om Protocols
 
@@ -125,19 +134,10 @@
    the component. An optional key or sequence of keys may be given to
    extract a specific value. Always returns pending state."
   ([owner]
-    (let [state (.-state owner)]
-      (or (aget state "__om_pending_state")
-          (aget state "__om_state"))))
+     (-get-state owner))
   ([owner korks]
-    (cond
-      (not (sequential? korks))
-      (get (get-state owner) korks)
-
-      (empty? korks)
-      (get-state owner)
-
-      :else
-      (get-in (get-state owner) korks))))
+     (let [ks (if (sequential? korks) korks [korks])] 
+       (-get-state owner ks))))
 
 (defn get-shared
   "Takes an owner and returns a map of global shared values for a
@@ -177,123 +177,164 @@
                       props-state))
           (aset props "__om_state" nil))))))
 
+(def pure-meths
+  {"getDisplayName"
+   (fn []
+     (this-as this
+       (let [c (children this)]
+         (when (satisfies? IDisplayName c)
+           (allow-reads (display-name c))))))
+   "getInitialState"
+   (fn []
+     (this-as this
+       (let [c      (children this)
+             props  (.-props this)
+             istate (or (aget props "__om_init_state") {})
+             ret    #js {:__om_id (.getNextUniqueId (.getInstance IdGenerator))
+                         :__om_state
+                         (merge istate
+                           (when (satisfies? IInitState c)
+                             (allow-reads (init-state c))))}]
+         (aset props "__om_init_state" nil)
+         ret)))
+   "shouldComponentUpdate"
+   (fn [next-props next-state]
+     (this-as this
+       (allow-reads
+         (let [props (.-props this)
+               state (.-state this)
+               c     (children this)]
+           ;; need to merge in props state first
+           (merge-props-state this next-props)
+           (if (satisfies? IShouldUpdate c)
+             (should-update c
+               (get-props #js {:props next-props})
+               (or (aget state "__om_pending_state")
+                   (aget state "__om_state")))
+             (cond
+               (not (identical? (-value (aget props "__om_cursor"))
+                                (-value (aget next-props "__om_cursor"))))
+               true
+
+               (not (nil? (aget state "__om_pending_state")))
+               true
+
+               (not (== (aget props "__om_index") (aget next-props "__om_index")))
+               true
+
+               :else false))))))
+   "componentWillMount"
+   (fn []
+     (this-as this
+       (merge-props-state this)
+       (let [c (children this)]
+         (when (satisfies? IWillMount c)
+           (allow-reads (will-mount c))))
+       (merge-pending-state this)))
+   "componentDidMount"
+   (fn []
+     (this-as this
+       (let [c (children this)]
+         (when (satisfies? IDidMount c)
+           (allow-reads (did-mount c))))))
+   "componentWillUnmount"
+   (fn []
+     (this-as this
+       (let [c (children this)]
+         (when (satisfies? IWillUnmount c)
+           (allow-reads (will-unmount c))))))
+   "componentWillUpdate"
+   (fn [next-props next-state]
+     (this-as this
+       (let [c (children this)]
+         (when (satisfies? IWillUpdate c)
+           (let [state (.-state this)]
+             (allow-reads
+               (will-update c
+                 (get-props #js {:props next-props})
+                 (or (aget state "__om_pending_state")
+                     (aget state "__om_state")))))))
+       (merge-pending-state this)))
+   "componentDidUpdate"
+   (fn [prev-props prev-state]
+     (this-as this
+       (let [c (children this)]
+         (when (satisfies? IDidUpdate c)
+           (let [state (.-state this)]
+             (allow-reads
+               (did-update c
+                 (get-props #js {:props prev-props})
+                 (or (aget state "__om_prev_state")
+                     (aget state "__om_state"))))))
+         (aset (.-state this) "__om_prev_state" nil))))
+   "componentWillReceiveProps"
+   (fn [next-props]
+     (this-as this
+       (let [c (children this)]
+         (when (satisfies? IWillReceiveProps c)
+           (allow-reads
+             (will-receive-props c
+               (get-props #js {:props next-props})))))))
+   "render"
+   (fn []
+     (this-as this
+       (let [c (children this)
+             props (.-props this)]
+         (allow-reads
+           (cond
+             (satisfies? IRender c)
+             (binding [*parent* this
+                       *instrument* (aget props "__om_instrument")]
+               (render c))
+
+             (satisfies? IRenderState c)
+             (binding [*parent* this
+                       *instrument* (aget props "__om_instrument")]
+               (render-state c (get-state this)))
+
+             :else c)))))})
+
 (def ^:private Pure
   (js/React.createClass
-    #js {:getDisplayName
-         (fn []
-           (this-as this
-             (let [c (children this)]
-               (when (satisfies? IDisplayName c)
-                 (allow-reads (display-name c))))))
-         :getInitialState
-         (fn []
-           (this-as this
-             (let [c      (children this)
-                   props  (.-props this)
-                   istate (or (aget props "__om_init_state") {})
-                   ret    #js {:__om_id (.getNextUniqueId (.getInstance IdGenerator))
-                               :__om_state
-                               (merge istate
-                                 (when (satisfies? IInitState c)
-                                   (allow-reads (init-state c))))}]
-               (aset props "__om_init_state" nil)
-               ret)))
-         :shouldComponentUpdate
-         (fn [next-props next-state]
-           (this-as this
-             (allow-reads
-               (let [props (.-props this)
-                     state (.-state this)
-                     c     (children this)]
-                 ;; need to merge in props state first
-                 (merge-props-state this next-props)
-                 (if (satisfies? IShouldUpdate c)
-                   (should-update c
-                     (get-props #js {:props next-props})
-                     (or (aget state "__om_pending_state")
-                         (aget state "__om_state")))
-                   (cond
-                     (not (identical? (-value (aget props "__om_cursor"))
-                                      (-value (aget next-props "__om_cursor"))))
-                     true
-
-                     (not (nil? (aget state "__om_pending_state")))
-                     true
-
-                     (not (== (aget props "__om_index") (aget next-props "__om_index")))
-                     true
-
-                     :else false))))))
-         :componentWillMount
-         (fn []
-           (this-as this
-             (merge-props-state this)
-             (let [c (children this)]
-               (when (satisfies? IWillMount c)
-                 (allow-reads (will-mount c))))
-             (merge-pending-state this)))
-         :componentDidMount
-         (fn []
-           (this-as this
-             (let [c (children this)]
-               (when (satisfies? IDidMount c)
-                 (allow-reads (did-mount c))))))
-         :componentWillUnmount
-         (fn []
-           (this-as this
-             (let [c (children this)]
-               (when (satisfies? IWillUnmount c)
-                 (allow-reads (will-unmount c))))))
-         :componentWillUpdate
-         (fn [next-props next-state]
-           (this-as this
-             (let [c (children this)]
-               (when (satisfies? IWillUpdate c)
-                 (let [state (.-state this)]
-                   (allow-reads
-                     (will-update c
-                       (get-props #js {:props next-props})
-                       (or (aget state "__om_pending_state")
-                           (aget state "__om_state")))))))
-             (merge-pending-state this)))
-         :componentDidUpdate
-         (fn [prev-props prev-state]
-           (this-as this
-             (let [c (children this)]
-               (when (satisfies? IDidUpdate c)
-                 (let [state (.-state this)]
-                   (allow-reads
-                     (did-update c
-                       (get-props #js {:props prev-props})
-                       (or (aget state "__om_prev_state")
-                           (aget state "__om_state"))))))
-               (aset (.-state this) "__om_prev_state" nil))))
-         :componentWillReceiveProps
-         (fn [next-props]
-           (this-as this
-             (let [c (children this)]
-               (when (satisfies? IWillReceiveProps c)
-                 (allow-reads
-                   (will-receive-props c
-                     (get-props #js {:props next-props})))))))
-         :render
-         (fn []
-           (this-as this
-             (let [c (children this)
-                   props (.-props this)]
-               (allow-reads
-                 (cond
-                   (satisfies? IRender c)
-                   (binding [*parent* this
-                             *instrument* (aget props "__om_instrument")]
-                     (render c))
-
-                   (satisfies? IRenderState c)
-                   (binding [*parent* this
-                             *instrument* (aget props "__om_instrument")]
-                     (render-state c (get-state this)))
-
-                   :else c)))))}))
+    (specify! (clj->js pure-meths)
+      ISetState
+      (-set-state!
+        ([this val]
+           (allow-reads
+             (let [cursor (aget (.-props this) "__om_cursor")
+                   path   (-path cursor)]
+               (aset (.-state this) "__om_pending_state" val)
+               ;; invalidate path to component
+               (if (empty? path)
+                 (swap! (-state cursor) clone)
+                 (swap! (-state cursor) update-in path clone)))))
+        ([this ks val]
+           (allow-reads
+             (let [props  (.-props this)
+                   state  (.-state this)
+                   cursor (aget props "__om_cursor")
+                   path   (-path cursor)
+                   pstate (or (aget state "__om_pending_state")
+                              (aget state "__om_state"))]
+               (aset state "__om_pending_state" (assoc-in pstate ks val))
+               ;; invalidate path to component
+               (if (empty? path)
+                 (swap! (-state cursor) clone)
+                 (swap! (-state cursor) update-in path clone))))))
+      IGetRenderState
+      (-get-render-state
+        ([this]
+           (aget (.-state this) "__om_state"))
+        ([this ks]
+           (get-in (-get-render-state this) ks)))
+      IGetState
+      (-get-state
+        ([this]
+           (let [state (.-state this)]
+             (or (aget state "__om_pending_state")
+                 (aget state "__om_state"))))
+        ([this ks]
+           (get-in (-get-state this) ks))))))
 
 (defn pure [obj] (Pure. obj))
 
@@ -710,29 +751,10 @@
    sets the state of the component. Conceptually analagous to React
    setState. Will schedule an Om re-render."
   ([owner v]
-     (allow-reads
-       (let [cursor (aget (.-props owner) "__om_cursor")
-             path   (-path cursor)]
-         (aset (.-state owner) "__om_pending_state" v)
-         ;; invalidate path to component
-         (if (empty? path)
-           (swap! (-state cursor) clone)
-           (swap! (-state cursor) update-in path clone)))))
+     (-set-state! owner v))
   ([owner korks v]
-     (allow-reads
-       (let [props  (.-props owner)
-             state  (.-state owner)
-             cursor (aget props "__om_cursor")
-             path   (-path cursor)
-             pstate (or (aget state "__om_pending_state")
-                        (aget state "__om_state"))]
-         (if-not (sequential? korks)
-           (aset state "__om_pending_state" (assoc pstate korks v))
-           (aset state "__om_pending_state" (assoc-in pstate korks v)))
-         ;; invalidate path to component
-         (if (empty? path)
-           (swap! (-state cursor) clone)
-           (swap! (-state cursor) update-in path clone))))))
+     (let [ks (if (sequential? korks) korks [korks])]
+       (-set-state! owner ks v))))
 
 (defn update-state!
   "Takes a pure owning component, a sequential list of keys and a
@@ -754,17 +776,10 @@
    it exists. Always returns the rendered state, not the pending
    state."
   ([owner]
-    (aget (.-state owner) "__om_state"))
+     (-get-render-state owner))
   ([owner korks]
-    (cond
-      (not (sequential? korks))
-      (get (get-render-state owner) korks)
-
-      (empty? korks)
-      (get-render-state owner)
-
-      :else
-      (get-in (get-render-state owner) korks))))
+     (let [ks (if (sequential? korks) korks [korks])]
+       (-get-render-state owner ks))))
 
 (defn graft
   "Create a cursor instance by attaching to an existing cursor. This
