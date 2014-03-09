@@ -3,6 +3,8 @@
             [om.dom :as dom :include-macros true])
   (:import [goog.ui IdGenerator]))
 
+(enable-console-print!)
+
 ;; =============================================================================
 ;; Different backing React class
 
@@ -168,7 +170,7 @@
       (dom/div nil
         (dom/h2 nil (:title data))
         (dom/div
-          #js {:onClick (fn [e] (om/set-state! owner (inc count)))}
+          #js {:onClick (fn [e] (om/set-state! owner :count (inc count)))}
           count)))))
 
 (om/root
