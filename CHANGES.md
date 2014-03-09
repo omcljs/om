@@ -1,3 +1,11 @@
+## 0.5.2
+
+## Enhancements
+* OM-127: om.core/refresh!
+* OM-28: om.core/update-state!
+* protocols for local state
+* Pure implementation methods now provided in immutable map
+
 ## 0.5.1
 
 ## Changes
