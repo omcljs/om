@@ -31,8 +31,9 @@
         (let [c      (om/children this)
               props  (.-props this)
               istate (or (aget props "__om_init_state") {})
-              id     (.getNextUniqueId (.getInstance IdGenerator))
-              state  (merge istate
+              id     (or (::om/id istate)
+                         (.getNextUniqueId (.getInstance IdGenerator)))
+              state  (merge (dissoc istate ::om/id)
                        (when (satisfies? om/IInitState c)
                          (om/allow-reads (om/init-state c))))
               spath  [:state-map id :render-state]]
@@ -173,10 +174,37 @@
           #js {:onClick (fn [e] (om/set-state! owner :count (inc count)))}
           count)))))
 
+(defn debug-view [[f cursor opts] owner]
+  (reify
+    om/IInitState
+    (init-state [_]
+      {:id (.getNextUniqueId (.getInstance IdGenerator))})
+    om/IDidMount
+    (did-mount [_]
+      (om/update-state! owner :id identity))
+    om/IRenderState
+    (render-state [_ {:keys [id]}]
+      (dom/div nil
+        (dom/div nil
+          (dom/label nil "Props:")
+          (dom/pre nil
+            (pr-str (om/value cursor))))
+        (dom/div nil
+          (dom/label nil "State:")
+          (dom/pre nil
+            (pr-str (get-in @(om/state cursor) [:state-map id :render-state]))))
+        (om/build* f cursor
+          (assoc opts :init-state {::om/id id}))))))
+
 (om/root
   (fn [app owner]
     (om/component
       (om/build counter-view app {:ctor no-local})))
   app-state
-  {:target (.getElementById js/document "app")})
+  {:target (.getElementById js/document "app")
+   :instrument
+   (fn [f cursor opts]
+     (if (= f counter-view)
+       (om/build* debug-view (om/graft [f cursor opts] cursor))
+       ::om/pass))})
 
