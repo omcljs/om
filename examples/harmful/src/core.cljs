@@ -174,6 +174,9 @@
           #js {:onClick (fn [e] (om/set-state! owner :count (inc count)))}
           count)))))
 
+(defn label-style []
+  #js {:style #js {:width "60px" :display "inline-block"}})
+
 (defn debug-view [[f cursor opts] owner]
   (reify
     om/IInitState
@@ -186,12 +189,11 @@
     (render-state [_ {:keys [id]}]
       (dom/div nil
         (dom/div nil
-          (dom/label nil "Props:")
-          (dom/pre nil
-            (pr-str (om/value cursor))))
+          (dom/label (label-style) "Props:")
+          (dom/code nil (pr-str (om/value cursor))))
         (dom/div nil
-          (dom/label nil "State:")
-          (dom/pre nil
+          (dom/label (label-style) "State:")
+          (dom/code nil
             (pr-str (get-in @(om/state cursor) [:state-map id :render-state]))))
         (om/build* f cursor
           (assoc opts :init-state {::om/id id}))))))
