@@ -190,9 +190,10 @@
        (let [c      (children this)
              props  (.-props this)
              istate (or (aget props "__om_init_state") {})
-             ret    #js {:__om_id (.getNextUniqueId (.getInstance IdGenerator))
+             id     (::id istate)
+             ret    #js {:__om_id (or id (.getNextUniqueId (.getInstance IdGenerator)))
                          :__om_state
-                         (merge istate
+                         (merge (dissoc istate ::id)
                            (when (satisfies? IInitState c)
                              (allow-reads (init-state c))))}]
          (aset props "__om_init_state" nil)
