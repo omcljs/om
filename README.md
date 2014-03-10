@@ -13,6 +13,19 @@ overhead.
 [See](http://swannodette.github.io/todomvc/labs/architecture-examples/om-undo/index.html)
 for [yourself](http://swannodette.github.io/2013/12/31/time-travel/).
 
+## Unique Features
+
+Om supports features not currently present in React:
+
+* Component construction can be intercepted via
+  `:instrument`. Simplifies debugging components and generic editors.
+* Provides stream of all application state change deltas via
+  `:tx-listen`. Simplifies synchronization online and offline.
+* Customizable semantics. Fine grained control how components store
+  state, even for components outside of your control. Simplifies using
+  Om components outside the Om framework, debugging, and adding event
+  hooks not anticipated by original component designer.
+
 ## Tutorial
 
 There is an in-depth tutorial that will introduce you to the core
