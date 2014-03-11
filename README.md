@@ -187,6 +187,10 @@ well:
 
 * [secretary](http://github.com/gf3/secretary)
 
+## How do I test Om programs?
+
+* There are some notes [here](http://github.com/swannodette/om/wiki/Testing)
+
 ## References
 
 * [Worlds: Controlling the Scope of Side Effects](http://www.vpri.org/pdf/tr2011001_final_worlds.pdf)
