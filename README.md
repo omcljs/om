@@ -83,6 +83,7 @@ examples:
 
 * [om-sync](http://github.com/swannodette/om-sync), keep client and
   server in sync
+* [ankha](http://github.com/noprompt/ankha), an EDN inspector view
 
 ## Using it
 
