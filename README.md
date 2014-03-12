@@ -189,6 +189,8 @@ well:
 
 ### How do I test Om programs?
 
+* Sean Grove's [omchaya](http://github.com/sgrove/omchaya) is a good
+  starting point for understanding common testing pattern
 * There are some notes [here](http://github.com/swannodette/om/wiki/Testing)
 
 ## References
