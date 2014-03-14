@@ -169,7 +169,7 @@ functionality.
 For a sense of where Om is going the existing issues give a rough
 idea.
 
-## Applications built on Om
+## Applications built with Om
 
 * [omchaya](http://github.com/sgrove/omchaya)
 * [BVCA Private Equity Map](http://bvca.clustermap.trampolinesystems.com/)
