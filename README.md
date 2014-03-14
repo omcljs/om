@@ -169,6 +169,11 @@ functionality.
 For a sense of where Om is going the existing issues give a rough
 idea.
 
+## Applications built on Om
+
+* [omchaya](http://github.com/sgrove/omchaya)
+* [BVCA Private Equity Map](http://bvca.clustermap.trampolinesystems.com/)
+
 ## FAQ
 
 ### Can I use a different HTML Syntax?
