@@ -85,6 +85,11 @@ examples:
   server in sync
 * [ankha](http://github.com/noprompt/ankha), an EDN inspector view
 
+## Applications built with Om
+
+* [omchaya](http://github.com/sgrove/omchaya)
+* [BVCA Private Equity Map](http://bvca.clustermap.trampolinesystems.com/)
+
 ## Using it
 
 Om is alpha software.
@@ -168,11 +173,6 @@ functionality.
 
 For a sense of where Om is going the existing issues give a rough
 idea.
-
-## Applications built with Om
-
-* [omchaya](http://github.com/sgrove/omchaya)
-* [BVCA Private Equity Map](http://bvca.clustermap.trampolinesystems.com/)
 
 ## FAQ
 
