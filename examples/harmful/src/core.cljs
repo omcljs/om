@@ -24,7 +24,7 @@
             (dissoc :pending-state)))))))
 
 (def no-local-state-meths
-  (assoc om/pure-meths
+  (assoc om/pure-methods
     :getInitialState
     (fn []
       (this-as this

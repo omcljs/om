@@ -177,7 +177,7 @@
                       props-state))
           (aset props "__om_state" nil))))))
 
-(def pure-meths
+(def pure-methods
   {:getDisplayName
    (fn []
      (this-as this
@@ -334,7 +334,7 @@
          (get-in (-get-state this) ks)))))
 
 (def ^:private Pure
-  (js/React.createClass (specify-state-methods! (clj->js pure-meths))))
+  (js/React.createClass (specify-state-methods! (clj->js pure-methods))))
 
 (defn pure [obj] (Pure. obj))
 
