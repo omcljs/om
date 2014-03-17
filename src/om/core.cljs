@@ -293,46 +293,48 @@
 
              :else c)))))})
 
+(defn specify-state-methods! [obj]
+  (specify! obj
+    ISetState
+    (-set-state!
+      ([this val]
+         (allow-reads
+           (let [cursor (aget (.-props this) "__om_cursor")
+                 path   (-path cursor)]
+             (aset (.-state this) "__om_pending_state" val)
+             ;; invalidate path to component
+             (if (empty? path)
+               (swap! (-state cursor) clone)
+               (swap! (-state cursor) update-in path clone)))))
+      ([this ks val]
+         (allow-reads
+           (let [props  (.-props this)
+                 state  (.-state this)
+                 cursor (aget props "__om_cursor")
+                 path   (-path cursor)
+                 pstate (-get-state this)]
+             (aset state "__om_pending_state" (assoc-in pstate ks val))
+             ;; invalidate path to component
+             (if (empty? path)
+               (swap! (-state cursor) clone)
+               (swap! (-state cursor) update-in path clone))))))
+    IGetRenderState
+    (-get-render-state
+      ([this]
+         (aget (.-state this) "__om_state"))
+      ([this ks]
+         (get-in (-get-render-state this) ks)))
+    IGetState
+    (-get-state
+      ([this]
+         (let [state (.-state this)]
+           (or (aget state "__om_pending_state")
+             (aget state "__om_state"))))
+      ([this ks]
+         (get-in (-get-state this) ks)))))
+
 (def ^:private Pure
-  (js/React.createClass
-    (specify! (clj->js pure-meths)
-      ISetState
-      (-set-state!
-        ([this val]
-           (allow-reads
-             (let [cursor (aget (.-props this) "__om_cursor")
-                   path   (-path cursor)]
-               (aset (.-state this) "__om_pending_state" val)
-               ;; invalidate path to component
-               (if (empty? path)
-                 (swap! (-state cursor) clone)
-                 (swap! (-state cursor) update-in path clone)))))
-        ([this ks val]
-           (allow-reads
-             (let [props  (.-props this)
-                   state  (.-state this)
-                   cursor (aget props "__om_cursor")
-                   path   (-path cursor)
-                   pstate (-get-state this)]
-               (aset state "__om_pending_state" (assoc-in pstate ks val))
-               ;; invalidate path to component
-               (if (empty? path)
-                 (swap! (-state cursor) clone)
-                 (swap! (-state cursor) update-in path clone))))))
-      IGetRenderState
-      (-get-render-state
-        ([this]
-           (aget (.-state this) "__om_state"))
-        ([this ks]
-           (get-in (-get-render-state this) ks)))
-      IGetState
-      (-get-state
-        ([this]
-           (let [state (.-state this)]
-             (or (aget state "__om_pending_state")
-                 (aget state "__om_state"))))
-        ([this ks]
-           (get-in (-get-state this) ks))))))
+  (js/React.createClass (specify-state-methods! (clj->js pure-meths))))
 
 (defn pure [obj] (Pure. obj))
 
