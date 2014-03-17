@@ -110,6 +110,13 @@
                 :output-dir "examples/harmful/out"
                 :source-map true
                 :optimizations :none}}
+             {:id "mixins"
+              :source-paths ["src" "examples/mixins/src"]
+              :compiler {
+                :output-to "examples/mixins/main.js"
+                :output-dir "examples/mixins/out"
+                :source-map true
+                :optimizations :none}}
              {:id "tests"
               :source-paths ["src" "examples/tests/src"]
               :compiler {
