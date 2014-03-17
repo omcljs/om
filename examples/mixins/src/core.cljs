@@ -12,7 +12,7 @@
 
 (def MyComponent
   (let [obj (om/specify-state-methods! (clj->js om/pure-methods))]
-    (aset obj "mixins" #js [TestMixin])
+    (set! (.-mixins obj) #js [TestMixin])
     (js/React.createClass obj)))
 
 (om/root
