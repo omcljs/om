@@ -1,3 +1,10 @@
+## 0.5.3
+
+## Changes
+* added pure-methods for reuse
+* added specify-state-methods! for reuse
+* can explicitly give a component an id via :om.core/id with :init-state
+
 ## 0.5.2
 
 ## Enhancements
