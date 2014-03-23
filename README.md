@@ -84,7 +84,9 @@ examples:
 * [om-sync](http://github.com/swannodette/om-sync), keep client and
   server in sync
 * [ankha](http://github.com/noprompt/ankha), an EDN inspector view
-* [om-draggable](https://github.com/sgrove/om-draggable), generic draggable
+* [om-draggable](https://github.com/sgrove/om-draggable), generic
+  draggable
+* [om-autocomplete](https://github.com/arosequist/om-autocomplete)  
 
 ## Applications built with Om
 
