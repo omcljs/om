@@ -86,7 +86,8 @@ examples:
 * [ankha](http://github.com/noprompt/ankha), an EDN inspector view
 * [om-draggable](https://github.com/sgrove/om-draggable), generic
   draggable
-* [om-autocomplete](https://github.com/arosequist/om-autocomplete)  
+* [om-autocomplete](https://github.com/arosequist/om-autocomplete),
+  customizable autocompleter
 
 ## Applications built with Om
 
