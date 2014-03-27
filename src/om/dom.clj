@@ -117,7 +117,12 @@
     polyline
     rect
     svg
-    text])
+    text
+    defs
+    linearGradient
+    polygon
+    radialGradient
+    stop])
 
 (defn ^:private gen-react-dom-inline-fn [tag]
   `(defmacro ~tag [opts# & children#]
