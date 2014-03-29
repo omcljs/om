@@ -562,7 +562,11 @@
       :else
       (let [{:keys [key state init-state opts]} m
             dataf   (get m :fn)
-            cursor' (if-not (nil? dataf) (dataf cursor) cursor)
+            cursor' (if-not (nil? dataf)
+                      (if-let [i (::index m)]
+                        (dataf cursor i)
+                        (dataf cursor))
+                      cursor)
             rkey    (if-not (nil? key)
                       (get cursor' key)
                       (get m :react-key))
