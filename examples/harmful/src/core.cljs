@@ -207,6 +207,6 @@
    :instrument
    (fn [f cursor opts]
      (if (= f counter-view)
-       (om/build* debug-view (om/graft [f cursor opts] cursor))
+       (om/build* debug-view [f cursor opts])
        ::om/pass))})
 

@@ -21,7 +21,7 @@
 (om/root
   (fn [app node]
     (om/component
-      (om/build simple (om/graft {:title "A Graft!"} app))))
+      (om/build simple {:title "A Graft!"})))
   {:some :state}
   {:target (.getElementById js/document "app0")})
 
@@ -44,6 +44,6 @@
 (om/root
   (fn [app node]
     (om/component
-      (om/build transact-original (om/graft {:title "Another Graft!" :app app} app))))
+      (om/build transact-original {:title "Another Graft!" :app app})))
   app-state
   {:target (.getElementById js/document "app1")})

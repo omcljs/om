@@ -5,6 +5,7 @@
 
 (def ^{:tag boolean :dynamic true} *read-enabled* false)
 (def ^{:dynamic true} *parent* nil)
+(def ^{:dynamic true} *cursor* nil)
 (def ^{:dynamic true} *instrument* nil)
 
 ;; =============================================================================
@@ -67,6 +68,8 @@
   IValue
   (-value [x] x))
 
+(defprotocol IGraft)
+
 (defprotocol ICursor
   (-path [cursor])
   (-state [cursor]))
@@ -116,6 +119,15 @@
 ;; must at a minimum implement IRender(State) as its children.
 ;;
 ;; (Pure. {:foo "bar"} irender-instance)
+
+(defn cursor? [x]
+  (satisfies? ICursor x))
+
+(defn bound-cursor [val]
+  (if (and (cursor? val)
+           (not (satisfies? IGraft val)))
+    val
+    *cursor*))
 
 (defn ^:private children [node]
   (let [c (.. node -props -children)]
@@ -282,15 +294,16 @@
          (allow-reads
            (cond
              (satisfies? IRender c)
-             (binding [*parent* this
-                       *instrument* (aget props "__om_instrument")]
+             (binding [*parent*     this
+                       *instrument* (aget props "__om_instrument")
+                       *cursor*     (bound-cursor (aget props "__om_cursor"))]
                (render c))
 
              (satisfies? IRenderState c)
-             (binding [*parent* this
-                       *instrument* (aget props "__om_instrument")]
+             (binding [*parent*     this
+                       *instrument* (aget props "__om_instrument")
+                       *cursor*     (bound-cursor (aget props "__om_cursor"))]
                (render-state c (get-state this)))
-
              :else c)))))})
 
 (defn specify-state-methods! [obj]
@@ -342,9 +355,6 @@
 ;; Cursors
 
 (declare to-cursor)
-
-(defn cursor? [x]
-  (satisfies? ICursor x))
 
 (deftype MapCursor [value state path]
   IWithMeta
@@ -541,50 +551,69 @@
 (defn id [owner]
   (aget (.-state owner) "__om_id"))
 
+(defn ^:private graft
+  [value cursor]
+  (let [state  (-state cursor)
+        path   (-path cursor)]
+    (if (cursor? value)
+      (throw (js/Error. (str value " is already a cursor.")))
+      (specify value
+        IGraft
+        ITransact
+        (-transact! [_ _ _ _]
+          (throw (js/Error. "Cannot transact on graft")))
+        ICursor
+        (-state [_] state)
+        (-path [_] path)))))
+
 (defn build*
   ([f cursor] (build* f cursor nil))
   ([f cursor m]
-    (assert (valid? m)
-      (apply str "build options contains invalid keys, only :key, :react-key, "
-                 ":fn, :init-state, :state, and :opts allowed, given "
-                 (interpose ", " (keys m))))
-    (cond
-      (nil? m)
-      (let [shared (or (:shared m) (get-shared *parent*))
-            ctor   (or (:ctor m) pure)]
-        (tag
-          (ctor #js {:__om_cursor cursor
-                     :__om_shared shared
-                     :__om_instrument *instrument*
-                     :children (fn [this] (allow-reads (f cursor this)))})
-          f))
+     (assert (valid? m)
+       (apply str "build options contains invalid keys, only :key, :react-key, "
+         ":fn, :init-state, :state, and :opts allowed, given "
+         (interpose ", " (keys m))))
+     (let [cursor (if (and (not (cursor? cursor))
+                           (cloneable? cursor))
+                    (graft cursor *cursor*)
+                    cursor)]
+       (cond
+         (nil? m)
+         (let [shared (or (:shared m) (get-shared *parent*))
+               ctor   (or (:ctor m) pure)]
+           (tag
+             (ctor #js {:__om_cursor cursor
+                        :__om_shared shared
+                        :__om_instrument *instrument*
+                        :children (fn [this] (allow-reads (f cursor this)))})
+             f))
 
-      :else
-      (let [{:keys [key state init-state opts]} m
-            dataf   (get m :fn)
-            cursor' (if-not (nil? dataf)
-                      (if-let [i (::index m)]
-                        (dataf cursor i)
-                        (dataf cursor))
-                      cursor)
-            rkey    (if-not (nil? key)
-                      (get cursor' key)
-                      (get m :react-key))
-            shared  (or (:shared m) (get-shared *parent*))
-            ctor    (or (:ctor m) pure)]
-        (tag
-          (ctor #js {:__om_cursor cursor'
-                     :__om_index (::index m)
-                     :__om_init_state init-state
-                     :__om_state state
-                     :__om_shared shared
-                     :__om_instrument *instrument*
-                     :key rkey
-                     :children
-                     (if (nil? opts)
-                       (fn [this] (allow-reads (f cursor' this)))
-                       (fn [this] (allow-reads (f cursor' this opts))))})
-          f)))))
+         :else
+         (let [{:keys [key state init-state opts]} m
+               dataf   (get m :fn)
+               cursor' (if-not (nil? dataf)
+                         (if-let [i (::index m)]
+                           (dataf cursor i)
+                           (dataf cursor))
+                         cursor)
+               rkey    (if-not (nil? key)
+                         (get cursor' key)
+                         (get m :react-key))
+               shared  (or (:shared m) (get-shared *parent*))
+               ctor    (or (:ctor m) pure)]
+           (tag
+             (ctor #js {:__om_cursor cursor'
+                        :__om_index (::index m)
+                        :__om_init_state init-state
+                        :__om_state state
+                        :__om_shared shared
+                        :__om_instrument *instrument*
+                        :key rkey
+                        :children
+                        (if (nil? opts)
+                          (fn [this] (allow-reads (f cursor' this)))
+                          (fn [this] (allow-reads (f cursor' this opts))))})
+             f))))))
 
 (defn build
   "Builds an Om component. Takes an IRender/IRenderState instance
@@ -784,20 +813,3 @@
   ([owner korks]
      (let [ks (if (sequential? korks) korks [korks])]
        (-get-render-state owner ks))))
-
-(defn graft
-  "Create a cursor instance by attaching to an existing cursor. This
-   supports building components which don't need to set app state but
-   need to be added to the render tree."
-  [value cursor]
-  (let [state  (-state cursor)
-        path   (-path cursor)]
-    (if (cursor? value)
-      (throw (js/Error. (str value " is already a cursor.")))
-      (specify value
-        ITransact
-        (-transact! [_ _ _ _]
-          (throw (js/Error. "Cannot transact on graft")))
-        ICursor
-        (-state [_] state)
-        (-path [_] path)))))
