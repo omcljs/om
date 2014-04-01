@@ -707,7 +707,8 @@
     (let [roots' @roots]
       (when (contains? roots' target)
         ((get roots' target))))
-    (let [state (if (satisfies? IAtom value)
+    (let [watch-key (gensym)
+          state (if (satisfies? IAtom value)
                   value
                   (atom value))
           state (specify! state
@@ -725,8 +726,7 @@
                     (dom/render
                       (binding [*instrument* instrument]
                         (build f cursor m))
-                      target)))
-          watch-key (gensym)]
+                      target)))]
       (add-watch state watch-key
         (fn [_ _ _ _]
           (when-not (contains? @refresh-set rootf)
