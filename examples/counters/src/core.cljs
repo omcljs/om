@@ -55,8 +55,14 @@
           {:key :id :init-state chans})))))
 
 (om/root counter-view app-state
-  {:target (.getElementById js/document "app")
+  {:target (.getElementById js/document "app0")
    :tx-listen
    (fn [tx-data root-cursor]
-     (println tx-data))})
+     (println "listener 1: " tx-data))})
+
+(om/root counter-view app-state
+  {:target (.getElementById js/document "app1")
+   :tx-listen
+   (fn [tx-data root-cursor]
+     (println "listener 2: " tx-data))})
 

@@ -90,7 +90,9 @@
   (-transact! [cursor korks f tag]))
 
 (defprotocol INotify
-  (-notify [x tx-data root-cursor]))
+  (-listen! [x key tx-listen])
+  (-unlisten! [x key])
+  (-notify! [x tx-data root-cursor]))
 
 (declare notify* path)
 
@@ -529,7 +531,7 @@
 
 (defn notify* [cursor tx-data]
   (let [state (-state cursor)]
-    (-notify state tx-data (to-cursor @state state))))
+    (-notify! state tx-data (to-cursor @state state))))
 
 ;; =============================================================================
 ;; API
@@ -665,6 +667,28 @@
            (build f x (assoc m ::index i)))
       xs (range))))
 
+(defn ^:private setup [state key tx-listen]
+  (when-not (satisfies? INotify state)
+    (let [listeners (atom {})]
+      (specify! state
+        INotify
+        (-listen! [this key tx-listen]
+          (when-not (nil? tx-listen)
+            (swap! listeners assoc key tx-listen))
+          this)
+        (-unlisten! [this key]
+          (swap! listeners dissoc key)
+          this)
+        (-notify! [this tx-data root-cursor]
+          (when-not (nil? tx-listen)
+            (doseq [[_ f] @listeners]
+              (f tx-data root-cursor)))
+          this))))
+  (-listen! state key tx-listen))
+
+(defn ^:private tear-down [state key]
+  (-unlisten! state key))
+
 (defn root
   "Take a component constructor function f, value an immutable tree of
    associative data structures optionally an wrapped in an IAtom
@@ -711,11 +735,7 @@
           state (if (satisfies? IAtom value)
                   value
                   (atom value))
-          state (specify! state
-                  INotify
-                  (-notify [_ tx-data root-cursor]
-                    (when-not (nil? tx-listen)
-                      (tx-listen tx-data root-cursor))))
+          state (setup state watch-key tx-listen)
           m     (dissoc options :target :tx-listen :path)
           rootf (fn rootf []
                   (swap! refresh-set disj rootf)
@@ -740,6 +760,7 @@
       (swap! roots assoc target
         (fn []
           (remove-watch state watch-key)
+          (tear-down state watch-key)
           (swap! roots dissoc target)
           (js/React.unmountComponentAtNode target)))
       (rootf))))
