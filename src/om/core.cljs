@@ -701,7 +701,7 @@
        ...)
      {:message :hello}
      {:target js/document.body})"
-  ([f value {:keys [target shared tx-listen path instrument] :as options}]
+  ([f value {:keys [target tx-listen path instrument] :as options}]
     (assert (not (nil? target)) "No target specified to om.core/root")
     ;; only one root render loop per target
     (let [roots' @roots]
