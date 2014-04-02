@@ -33,6 +33,13 @@
                 :output-dir "examples/hello/out"
                 :source-map true
                 :optimizations :none}}
+             {:id "unmount"
+              :source-paths ["src" "examples/unmount/src"]
+              :compiler {
+                :output-to "examples/unmount/main.js"
+                :output-dir "examples/unmount/out"
+                :source-map true
+                :optimizations :none}}
              {:id "mouse"
               :source-paths ["src" "examples/mouse/src"]
               :compiler {
