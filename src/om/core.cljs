@@ -77,6 +77,16 @@
 (defprotocol IToCursor
   (-to-cursor [value state] [value state path]))
 
+(defprotocol ICursorDerive
+  (-derive [cursor derived state path]))
+
+(declare to-cursor)
+
+(extend-type default
+  ICursorDerive
+  (-derive [this derived state path]
+    (to-cursor derived state path)))
+
 (defn path [cursor]
   (-path cursor))
 
@@ -356,8 +366,6 @@
 ;; =============================================================================
 ;; Cursors
 
-(declare to-cursor)
-
 (deftype MapCursor [value state path]
   IWithMeta
   (-with-meta [_ new-meta]
@@ -390,11 +398,11 @@
   ILookup
   (-lookup [this k]
     (-lookup this k nil))
-  (-lookup [_ k not-found]
+  (-lookup [this k not-found]
     (check
       (let [v (-lookup value k not-found)]
         (if-not (= v not-found)
-          (to-cursor v state (conj path k))
+          (-derive this v state (conj path k))
           not-found))))
   IFn
   (-invoke [this k]
@@ -405,7 +413,7 @@
   (-seq [this]
     (check
       (when (pos? (count value))
-        (map (fn [[k v]] [k (to-cursor v state (conj path k))]) value))))
+        (map (fn [[k v]] [k (-derive this v state (conj path k))]) value))))
   IAssociative
   (-contains-key? [_ k]
     (check (-contains-key? value k)))
@@ -465,28 +473,28 @@
   (-invoke [this k not-found]
     (-lookup this k not-found))
   IIndexed
-  (-nth [_ n]
-    (check (to-cursor (-nth value n) state (conj path n))))
-  (-nth [_ n not-found]
+  (-nth [this n]
+    (check (-derive this (-nth value n) state (conj path n))))
+  (-nth [this n not-found]
     (check
       (if (< n (-count value))
-        (to-cursor (-nth value n) state (conj path n))
+        (-derive this (-nth value n) state (conj path n))
         not-found)))
   ISeqable
   (-seq [this]
     (check
       (when (pos? (count value))
-        (map (fn [v i] (to-cursor v state (conj path i))) value (range)))))
+        (map (fn [v i] (-derive this v state (conj path i))) value (range)))))
   IAssociative
   (-contains-key? [_ k]
     (check (-contains-key? value k)))
-  (-assoc [_ n v]
-    (check (to-cursor (-assoc-n value n v) state path)))
+  (-assoc [this n v]
+    (check (-derive this (-assoc-n value n v) state path)))
   IStack
-  (-peek [_]
-    (check (to-cursor (-peek value) state path)))
-  (-pop [_]
-    (check (to-cursor (-pop value) state path)))
+  (-peek [this]
+    (check (-derive this (-peek value) state path)))
+  (-pop [this]
+    (check (-derive this (-pop value) state path)))
   IEquiv
   (-equiv [_ other]
     (check
