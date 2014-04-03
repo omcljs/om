@@ -6,6 +6,17 @@
 
 (println "Cursor tests")
 
+(defprotocol IFoo
+  (-foo [this]))
+
+(defn derive* [cursor]
+  (specify cursor
+    om/ICursorDerive
+    (-derive [this derived state path]
+      (derive* (om/to-cursor derived state path)))
+    IFoo
+    (-foo [_] :foo)))
+
 (defn run-tests []
   (binding [om.core/*read-enabled* true]
     (assert (om/cursor? (om/to-cursor [1 2 3])))
@@ -28,7 +39,9 @@
     (assert (= (map identity (om/to-cursor [{:id 1} {:id 2} {:id 3}]))
                [{:id 1} {:id 2} {:id 3}]))
     (assert (= [{:id 1} {:id 2} {:id 3}]
-               (map identity (om/to-cursor [{:id 1} {:id 2} {:id 3}]))))))
+               (map identity (om/to-cursor [{:id 1} {:id 2} {:id 3}]))))
+    (let [c (derive* (om/to-cursor {:foo {:bar {:baz 'woz}}} [] nil))]
+      (assert (= (-foo (get-in c [:foo :bar])) :foo)))))
 
 (run-tests)
 
