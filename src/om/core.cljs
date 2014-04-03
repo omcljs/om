@@ -649,6 +649,8 @@
      :state      - a map of state to pass to the component, will be merged in.
      :opts       - a map of values. Can be used to pass side information down
                    the render tree.
+     :ctor       - a function that invokes a React component constructor
+                   that will back the Om component, defaults to pure.
 
    Example:
 
