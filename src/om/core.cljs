@@ -844,3 +844,8 @@
   ([owner korks]
      (let [ks (if (sequential? korks) korks [korks])]
        (-get-render-state owner ks))))
+
+(defn rendering?
+  "Returns true if in the React render phase."
+  []
+  (true? *read-enabled*))
