@@ -91,6 +91,8 @@ examples:
 
 ## Applications built with Om
 
+* [Goya](http://jackschaedler.github.io/goya/), pixel editor with
+  undo/redo and visual history
 * [omchaya](http://github.com/sgrove/omchaya)
 * [BVCA Private Equity Map](http://bvca.clustermap.trampolinesystems.com/)
 * [session](http://github.com/kovasb/session)
