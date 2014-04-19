@@ -1,13 +1,28 @@
+## 0.6.0
+
+### Breaking Changes
+* OM-152: eliminate om.core/graft
+
+### Changes
+* added ICursorDerive protocol
+* document :ctor option to om.core/build
+* add om.core/rendering? predicate
+* pass ::index to :fn if available in om.core/build
+
+### Fixes
+* OM-150: missing SVG tags
+* OM-155: multiroot & :tx-listen incompatible
+
 ## 0.5.3
 
-## Changes
+### Changes
 * added pure-methods for reuse
 * added specify-state-methods! for reuse
 * can explicitly give a component an id via :om.core/id with :init-state
 
 ## 0.5.2
 
-## Enhancements
+### Enhancements
 * OM-127: om.core/refresh!
 * OM-28: om.core/update-state!
 * protocols for local state
@@ -15,7 +30,7 @@
 
 ## 0.5.1
 
-## Changes
+### Changes
 * Requires ClojureScript 0.0-2173
 * IOmSwap protocol for app state representations besides standard atom
 * :instrument option for om.core/root
@@ -23,12 +38,12 @@
 * om.core/build takes :ctor option to provide React backing component
   class besides om.core/Pure
 
-## Fixes
+### Fixes
 * OM-122: IWillReceiveProps protocol
 
 ## 0.5.0
 
-## Changes
+### Changes
 * Upgrade to React 0.9.0
 
 ## 0.5.0-rc1
