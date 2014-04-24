@@ -1,3 +1,17 @@
+## 0.6.1
+
+### Enhancements
+* Pure shouldComponentUpdate logic now uses equiv instead of identical?
+* add om.core/rendering? predicate to detect React render phase
+* more sensible handling of component local state w/o internal graft,
+  we now rely on React's forceUpdate
+* add ICursorDerive protocol
+
+### Bug Fixes
+* OM-155: multiroot and & :tx-listen incompatible
+* OM-152: pass ::index to :fn if available
+* OM-150: add missing SVG tags
+
 ## 0.6.0
 
 ### Breaking Changes
