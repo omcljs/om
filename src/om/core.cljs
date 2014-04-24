@@ -683,7 +683,8 @@
         (-get-queue [this] @render-queue)
         (-queue-render! [this c]
           (when-not (contains? @render-queue c)
-            (swap! render-queue conj c)))
+            (swap! render-queue conj c)
+            (swap! this identity)))
         (-empty-queue! [this]
           (swap! render-queue empty)))))
   (-listen! state key tx-listen))
@@ -727,7 +728,7 @@
        ...)
      {:message :hello}
      {:target js/document.body})"
-  ([f value {:keys [target tx-listen path instrument shared] :as options}]
+  ([f value {:keys [target tx-listen path instrument] :as options}]
     (assert (not (nil? target)) "No target specified to om.core/root")
     ;; only one root render loop per target
     (let [roots' @roots]
@@ -749,7 +750,12 @@
                       (binding [*instrument* instrument
                                 *state*      state]
                         (build f cursor m))
-                      target)))]
+                      target)
+                    (let [queue (-get-queue state)]
+                      (when-not (empty? queue)
+                        (doseq [c queue]
+                          (.forceUpdate c))
+                        (-empty-queue! state)))))]
       (add-watch state watch-key
         (fn [_ _ _ _]
           (when-not (contains? @refresh-set rootf)

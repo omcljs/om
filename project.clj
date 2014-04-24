@@ -89,13 +89,6 @@
                 :output-dir "examples/sortable/out"
                 :source-map true
                 :optimizations :none}}
-             {:id "graft"
-              :source-paths ["src" "examples/graft/src"]
-              :compiler {
-                :output-to "examples/graft/main.js"
-                :output-dir "examples/graft/out"
-                :source-map true
-                :optimizations :none}}
              {:id "instrument"
               :source-paths ["src" "examples/instrument/src"]
               :compiler {
@@ -122,13 +115,6 @@
               :compiler {
                 :output-to "examples/mixins/main.js"
                 :output-dir "examples/mixins/out"
-                :source-map true
-                :optimizations :none}}
-             {:id "graft-test"
-              :source-paths ["src" "examples/graft_test/src"]
-              :compiler {
-                :output-to "examples/graft_test/main.js"
-                :output-dir "examples/graft_test/out"
                 :source-map true
                 :optimizations :none}}
              {:id "tests"
