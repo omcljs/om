@@ -124,6 +124,13 @@
                 :output-dir "examples/mixins/out"
                 :source-map true
                 :optimizations :none}}
+             {:id "graft-test"
+              :source-paths ["src" "examples/graft_test/src"]
+              :compiler {
+                :output-to "examples/graft_test/main.js"
+                :output-dir "examples/graft_test/out"
+                :source-map true
+                :optimizations :none}}
              {:id "tests"
               :source-paths ["src" "examples/tests/src"]
               :compiler {
