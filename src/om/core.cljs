@@ -324,21 +324,15 @@
     (-set-state!
       ([this val]
          (allow-reads
-           (let [props  (.-props this)
-                 cursor (aget props "__om_cursor")
-                 path   (-path cursor)]
+           (let [props  (.-props this)]
              (aset (.-state this) "__om_pending_state" val)
-             ;; invalidate path to component
              (-queue-render! (aget props "__om_app_state") this))))
       ([this ks val]
          (allow-reads
            (let [props  (.-props this)
                  state  (.-state this)
-                 cursor (aget props "__om_cursor")
-                 path   (-path cursor)
                  pstate (-get-state this)]
              (aset state "__om_pending_state" (assoc-in pstate ks val))
-             ;; invalidate path to component
              (-queue-render! (aget props "__om_app_state") this)))))
     IGetRenderState
     (-get-render-state
