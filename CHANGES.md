@@ -1,3 +1,8 @@
+## 0.6.2
+
+# Bug Fixes
+* Stale code around component local state
+
 ## 0.6.1
 
 ### Enhancements
