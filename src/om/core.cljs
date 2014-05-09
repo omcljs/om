@@ -324,16 +324,20 @@
     (-set-state!
       ([this val]
          (allow-reads
-           (let [props  (.-props this)]
+           (let [props     (.-props this)
+                 app-state (aget props "__om_app_state")]
              (aset (.-state this) "__om_pending_state" val)
-             (-queue-render! (aget props "__om_app_state") this))))
+             (when-not (nil? app-state)
+               (-queue-render! app-state this)))))
       ([this ks val]
          (allow-reads
-           (let [props  (.-props this)
-                 state  (.-state this)
-                 pstate (-get-state this)]
+           (let [props     (.-props this)
+                 state     (.-state this)
+                 pstate    (-get-state this)
+                 app-state (aget props "__om_app_state")]
              (aset state "__om_pending_state" (assoc-in pstate ks val))
-             (-queue-render! (aget props "__om_app_state") this)))))
+             (when-not (nil? app-state)
+               (-queue-render! app-state this))))))
     IGetRenderState
     (-get-render-state
       ([this]
