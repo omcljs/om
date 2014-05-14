@@ -111,6 +111,7 @@
     
     ;; svg
     circle
+    ellipse
     g
     line
     path
