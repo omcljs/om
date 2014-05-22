@@ -88,6 +88,7 @@ examples:
   draggable
 * [om-autocomplete](https://github.com/arosequist/om-autocomplete),
   customizable autocompleter
+* [om-widgets](https://bitbucket.org/athieme/om-widgets)
 
 ## Applications built with Om
 
