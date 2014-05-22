@@ -752,7 +752,8 @@
                     (let [queue (-get-queue state)]
                       (when-not (empty? queue)
                         (doseq [c queue]
-                          (.forceUpdate c))
+                          (when (.isMounted c)
+                            (.forceUpdate c)))
                         (-empty-queue! state)))))]
       (add-watch state watch-key
         (fn [_ _ _ _]
