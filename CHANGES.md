@@ -1,6 +1,15 @@
+## 0.6.3
+
+### Enhancements
+* added ellipse tag
+
+### Bug Fixes
+* OM-179: prevent forceUpdate() if component not mounted
+* OM-175: error on render-to-str with set-state!
+
 ## 0.6.2
 
-# Bug Fixes
+### Bug Fixes
 * Stale code around component local state
 
 ## 0.6.1
