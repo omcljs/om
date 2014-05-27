@@ -1,3 +1,8 @@
+## 0.6.4
+
+### Changes
+* depend on 0.9.0.2 React CLJS
+
 ## 0.6.3
 
 ### Enhancements
