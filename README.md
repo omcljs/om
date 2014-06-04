@@ -93,6 +93,7 @@ examples:
 ## Applications built with Om
 
 * [Prismatic](http://www.getprismatic.com/)
+* [Fitsme](http://fitsmeapp.com)
 * [Goya](http://jackschaedler.github.io/goya/), pixel editor with
   undo/redo and visual history
 * [wordsmith](http://wordsmith.variadic.me), a markdown editor
