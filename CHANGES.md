@@ -1,3 +1,8 @@
+## 0.6.5
+
+### Changes
+* depend on Clojure 1.6.0 and ClojureScript 0.0-2268
+
 ## 0.6.4
 
 ### Changes
