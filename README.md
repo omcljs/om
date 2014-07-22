@@ -92,6 +92,7 @@ examples:
 
 ## Applications built with Om
 
+* [CircleCI](http://www.circleci.com/)
 * [Prismatic](http://www.getprismatic.com/)
 * [Fitsme](http://fitsmeapp.com)
 * [Goya](http://jackschaedler.github.io/goya/), pixel editor with
