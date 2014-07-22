@@ -217,9 +217,10 @@
              id     (::id istate)
              ret    #js {:__om_id (or id (.getNextUniqueId (.getInstance IdGenerator)))
                          :__om_state
-                         (merge (dissoc istate ::id)
+                         (merge
                            (when (satisfies? IInitState c)
-                             (allow-reads (init-state c))))}]
+                             (allow-reads (init-state c)))
+                           (dissoc istate ::id))}]
          (aset props "__om_init_state" nil)
          ret)))
    :shouldComponentUpdate
