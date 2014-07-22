@@ -673,9 +673,8 @@
           (swap! listeners dissoc key)
           this)
         (-notify! [this tx-data root-cursor]
-          (when-not (nil? tx-listen)
-            (doseq [[_ f] @listeners]
-              (f tx-data root-cursor)))
+          (doseq [[_ f] @listeners]
+            (f tx-data root-cursor))
           this)
         IRenderQueue
         (-get-queue [this] @render-queue)
