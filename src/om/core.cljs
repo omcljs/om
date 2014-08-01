@@ -1,5 +1,5 @@
 (ns om.core
-  (:require-macros [om.core :refer [check allow-reads tag]])
+  (:require-macros [om.core :refer [check allow-reads]])
   (:require [om.dom :as dom :include-macros true])
   (:import [goog.ui IdGenerator]))
 
@@ -129,14 +129,6 @@
            (if-not (nil? tag)
              (notify* cursor (assoc tx-data :tag tag))
              (notify* cursor tx-data)))))))
-
-;; =============================================================================
-;; A Truly Pure Component
-;;
-;; This React class takes an immutable value as its props and an instance that
-;; must at a minimum implement IRender(State) as its children.
-;;
-;; (Pure. {:foo "bar"} irender-instance)
 
 (defn cursor? [x]
   (satisfies? ICursor x))
@@ -353,10 +345,8 @@
       ([this ks]
          (get-in (-get-state this) ks)))))
 
-(def ^:private Pure
-  (js/React.createClass (specify-state-methods! (clj->js pure-methods))))
-
-(defn pure [obj] (Pure. obj))
+(def pure-descriptor
+  (specify-state-methods! (clj->js pure-methods)))
 
 ;; =============================================================================
 ;; Cursors
@@ -550,11 +540,19 @@
 
 (defn ^:private valid? [m]
   (every? #{:key :react-key :fn :init-state :state
-            :opts :shared ::index :instrument :ctor}
+            :opts :shared ::index :instrument :descriptor}
     (keys m)))
 
 (defn id [owner]
   (aget (.-state owner) "__om_id"))
+
+(defn get-descriptor
+  ([f] (get-descriptor f nil))
+  ([f descriptor]
+     (when (nil? (aget f "om$descriptor"))
+       (aset f "om$descriptor"
+         (js/React.createClass (or descriptor pure-descriptor))))
+     (aget f "om$descriptor")))
 
 (defn build*
   ([f cursor] (build* f cursor nil))
@@ -566,16 +564,14 @@
      (cond
        (nil? m)
        (let [shared (or (:shared m) (get-shared *parent*))
-             ctor   (or (:ctor m) pure)]
-         (tag
-           (ctor #js {:__om_cursor cursor
-                      :__om_shared shared
-                      :__om_app_state *state*
-                      :__om_instrument *instrument*
-                      :children
-                      (fn [this]
-                        (allow-reads (f cursor this)))})
-           f))
+             ctor   (get-descriptor f (:descriptor m))]
+         (ctor #js {:__om_cursor cursor
+                    :__om_shared shared
+                    :__om_app_state *state*
+                    :__om_instrument *instrument*
+                    :children
+            (fn [this]
+              (allow-reads (f cursor this)))}))
 
        :else
        (let [{:keys [key state init-state opts]} m
@@ -589,23 +585,21 @@
                        (get cursor' key)
                        (get m :react-key))
              shared  (or (:shared m) (get-shared *parent*))
-             ctor    (or (:ctor m) pure)]
-         (tag
-           (ctor #js {:__om_cursor cursor'
-                      :__om_index (::index m)
-                      :__om_init_state init-state
-                      :__om_state state
-                      :__om_shared shared
-                      :__om_app_state *state*
-                      :__om_instrument *instrument*
-                      :key rkey
-                      :children
-                      (if (nil? opts)
-                        (fn [this]
-                          (allow-reads (f cursor' this)))
-                        (fn [this]
-                          (allow-reads (f cursor' this opts))))})
-           f)))))
+             ctor    (get-descriptor f (:descriptor m))]
+         (ctor #js {:__om_cursor cursor'
+                    :__om_index (::index m)
+                    :__om_init_state init-state
+                    :__om_state state
+                    :__om_shared shared
+                    :__om_app_state *state*
+                    :__om_instrument *instrument*
+                    :key rkey
+                    :children
+            (if (nil? opts)
+              (fn [this]
+                (allow-reads (f cursor' this)))
+              (fn [this]
+                (allow-reads (f cursor' this opts))))})))))
 
 (defn build
   "Builds an Om component. Takes an IRender/IRenderState instance
@@ -631,8 +625,9 @@
      :state      - a map of state to pass to the component, will be merged in.
      :opts       - a map of values. Can be used to pass side information down
                    the render tree.
-     :ctor       - a function that invokes a React component constructor
-                   that will back the Om component, defaults to pure.
+     :descriptor - a JS object of React methods, will be used to
+                   construct a React class per Om component function
+                   encountered. defaults to pure-descriptor.
 
    Example:
 
@@ -847,3 +842,4 @@
   "Returns true if in the React render phase."
   []
   (true? *read-enabled*))
+

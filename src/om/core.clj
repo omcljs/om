@@ -23,7 +23,3 @@
          (str "Cannot manipulate cursor outside of render phase, only "
               "om.core/transact!, om.core/update!, and cljs.core/deref operations allowed")))))
 
-(defmacro tag [pure t]
-  `(let [pure# ~pure]
-     (set! (.-constructor pure#) (goog/getUid ~t))
-     pure#))
