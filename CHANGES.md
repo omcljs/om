@@ -1,3 +1,14 @@
+## 0.7.0
+
+### Changes
+* BREAKING: :ctor options deprecated for :descriptor see docs
+* depend on ClojureScript 0.0-2277
+* depend on React 0.11.1
+
+Fixes
+###
+* OM-170: :tx-listen registration issues
+
 ## 0.6.5
 
 ### Changes
