@@ -5,29 +5,29 @@
 (def app-state
   (atom
     {:widgets
-     [{:type :foo
-       :text "Hello!"}
-      {:type :bar
-       :text "Goodbye!"}]}))
+     [{:my-number 16
+       :text "I'm divisible by 2!"}
+      {:my-number 23
+       :text "I'm not divisible by 2!"}]}))
 
-(defmulti widget :type)
+(defmulti even-odd-widget (comp even? :my-number))
 
-(defmethod widget :foo
+(defmethod even-odd-widget true
   [props owner]
   (reify
     om/IRender
     (render [_]
       (dom/div nil
-        (dom/h2 nil "Foo Widget")
+        (dom/h2 nil "Even Widget")
         (dom/p nil (:text props))))))
 
-(defmethod widget :bar
+(defmethod even-odd-widget false
   [props owner]
   (reify
     om/IRender
     (render [_]
       (dom/div nil
-        (dom/h2 nil "Bar Widget")
+        (dom/h2 nil "Odd Widget")
         (dom/p nil (:text props))))))
 
 (defn app [props owner]
@@ -35,7 +35,7 @@
     om/IRender
     (render [_]
       (apply dom/div nil
-        (om/build-all widget (:widgets props))))))
+        (om/build-all even-odd-widget (:widgets props))))))
 
 (om/root app app-state
   {:target (.getElementById js/document "app")})
