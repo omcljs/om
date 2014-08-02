@@ -554,6 +554,13 @@
 
 (def ^:private roots (atom {}))
 
+(defn ^:private valid-component? [x f]
+  (assert
+    (or (satisfies? IRender x)
+        (satisfies? IRenderState x))
+    (str "Invalid Om component fn, " (.-name f)
+         " does not return valid instance")))
+
 (defn ^:private valid? [m]
   (every? #{:key :react-key :fn :init-state :state
             :opts :shared ::index :instrument :descriptor}
@@ -587,7 +594,10 @@
                     :__om_instrument *instrument*
                     :children
             (fn [this]
-              (allow-reads (f cursor this)))}))
+              (allow-reads
+                (let [ret (f cursor this)]
+                  (valid-component? ret f)
+                  ret)))}))
 
        :else
        (let [{:keys [key state init-state opts]} m
@@ -613,9 +623,15 @@
                     :children
             (if (nil? opts)
               (fn [this]
-                (allow-reads (f cursor' this)))
+                (allow-reads
+                  (let [ret (f cursor' this)]
+                    (valid-component? ret f)
+                    ret)))
               (fn [this]
-                (allow-reads (f cursor' this opts))))})))))
+                (allow-reads
+                  (let [ret (f cursor' this opts)]
+                    (valid-component? ret f)
+                    ret))))})))))
 
 (defn build
   "Builds an Om component. Takes an IRender/IRenderState instance
