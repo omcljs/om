@@ -81,8 +81,6 @@ React itself.
 Om emphasizes building modular and adaptable components. Some
 examples:
 
-* [om-sync](http://github.com/swannodette/om-sync), keep client and
-  server in sync
 * [ankha](http://github.com/noprompt/ankha), an EDN inspector view
 * [om-draggable](https://github.com/sgrove/om-draggable), generic
   draggable
@@ -90,6 +88,8 @@ examples:
   customizable autocompleter
 * [om-widgets](https://bitbucket.org/athieme/om-widgets)
 * [om-dev-component](https://github.com/ioRekz/om-dev-component), add dev features (e.g. state history navigation) to your component
+* [om-sync](http://github.com/swannodette/om-sync), keep client and
+  server in sync (experimental)
 
 ## Applications built with Om
 
