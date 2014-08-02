@@ -6,9 +6,9 @@
   (atom
     {:widgets
      [{:type :foo
-       :text "Foo Widget!"}
+       :text "Hello!"}
       {:type :bar
-       :text "Bar Widget!"}]}))
+       :text "Goodbye!"}]}))
 
 (defmulti widget :type)
 
@@ -17,14 +17,18 @@
   (reify
     om/IRender
     (render [_]
-      (dom/div nil (:text props)))))
+      (dom/div nil
+        (dom/h2 nil "Foo Widget")
+        (dom/p nil (:text props))))))
 
 (defmethod widget :bar
   [props owner]
   (reify
     om/IRender
     (render [_]
-      (dom/div nil (:text props)))))
+      (dom/div nil
+        (dom/h2 nil "Bar Widget")
+        (dom/p nil (:text props))))))
 
 (defn app [props owner]
   (reify
