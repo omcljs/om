@@ -381,6 +381,11 @@
   ICollection
   (-conj [_ o]
     (check (MapCursor. (-conj value o) state path)))
+  ;; EXPERIMENTAL
+  IEmptyableCollection
+  (-empty [_]
+    (check
+      (MapCursor. (empty value) state path)))
   ILookup
   (-lookup [this k]
     (-lookup this k nil))
@@ -451,6 +456,10 @@
   ICollection
   (-conj [_ o]
     (check (IndexedCursor. (-conj value o) state path)))
+  ;; EXPERIMENTAL
+  IEmptyableCollection
+  (-empty [_]
+    (check (IndexedCursor. (empty value) state path)))
   ILookup
   (-lookup [this n]
     (check (-nth this n nil)))
