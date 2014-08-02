@@ -33,6 +33,14 @@
                 :output-dir "examples/hello/out"
                 :source-map true
                 :optimizations :none}}
+             ;; examples
+             {:id "multi"
+              :source-paths ["src" "examples/multi/src"]
+              :compiler {
+                :output-to "examples/multi/main.js"
+                :output-dir "examples/multi/out"
+                :source-map true
+                :optimizations :none}}
              {:id "unmount"
               :source-paths ["src" "examples/unmount/src"]
               :compiler {
