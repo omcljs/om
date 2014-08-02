@@ -774,6 +774,12 @@
           (js/React.unmountComponentAtNode target)))
       (rootf))))
 
+(defn detach-root
+  "Given a DOM target remove its render loop if one exists."
+  [target]
+  (when-let [f (get @roots target)]
+    (f)))
+
 (defn transact!
   "Given a tag, a cursor, an optional list of keys ks, mutate the tree
    at the path specified by the cursor + the optional keys by applying
