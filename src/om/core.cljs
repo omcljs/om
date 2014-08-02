@@ -59,7 +59,7 @@
   (-get-render-state [this] [this ks]))
 
 (defprotocol ISetState
-  (-set-state! [this val] [this ks val]))
+  (-set-state! [this val render] [this ks val render]))
 
 ;; private render queue, for components that use local state
 ;; and independently addressable components
@@ -315,21 +315,21 @@
   (specify! obj
     ISetState
     (-set-state!
-      ([this val]
+      ([this val render]
          (allow-reads
            (let [props     (.-props this)
                  app-state (aget props "__om_app_state")]
              (aset (.-state this) "__om_pending_state" val)
-             (when-not (nil? app-state)
+             (when (and (not (nil? app-state)) render)
                (-queue-render! app-state this)))))
-      ([this ks val]
+      ([this ks val render]
          (allow-reads
            (let [props     (.-props this)
                  state     (.-state this)
                  pstate    (-get-state this)
                  app-state (aget props "__om_app_state")]
              (aset state "__om_pending_state" (assoc-in pstate ks val))
-             (when-not (nil? app-state)
+             (when (and (not (nil? app-state)) render)
                (-queue-render! app-state this))))))
     IGetRenderState
     (-get-render-state
@@ -829,10 +829,18 @@
    sets the state of the component. Conceptually analagous to React
    setState. Will schedule an Om re-render."
   ([owner v]
-     (-set-state! owner v))
+     (-set-state! owner v true))
   ([owner korks v]
      (let [ks (if (sequential? korks) korks [korks])]
-       (-set-state! owner ks v))))
+       (-set-state! owner ks v true))))
+
+(defn set-state-nr!
+  "EXPERIMENTAL: Same as set-state! but does not trigger re-render."
+  ([owner v]
+     (-set-state! owner v false))
+  ([owner korks v]
+     (let [ks (if (sequential? korks) korks [korks])]
+       (-set-state! owner ks v false))))
 
 (defn update-state!
   "Takes a pure owning component, a sequential list of keys and a
@@ -842,6 +850,13 @@
      (set-state! owner (f (get-state owner))))
   ([owner korks f]
      (set-state! owner korks (f (get-state owner korks)))))
+
+(defn update-state-nr!
+  "EXPERIMENTAL: Same as update-state! but does not trigger re-render."
+  ([owner f]
+     (set-state-nr! owner (f (get-state owner))))
+  ([owner korks f]
+     (set-state-nr! owner korks (f (get-state owner korks)))))
 
 (defn refresh!
   "Utility to re-render an owner."
