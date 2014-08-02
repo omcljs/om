@@ -33,12 +33,18 @@
                 :output-dir "examples/hello/out"
                 :source-map true
                 :optimizations :none}}
-             ;; examples
              {:id "multi"
               :source-paths ["src" "examples/multi/src"]
               :compiler {
                 :output-to "examples/multi/main.js"
                 :output-dir "examples/multi/out"
+                :source-map true
+                :optimizations :none}}
+             {:id "cursor-as-key"
+              :source-paths ["src" "examples/cursor_as_key/src"]
+              :compiler {
+                :output-to "examples/cursor_as_key/main.js"
+                :output-dir "examples/cursor_as_key/out"
                 :source-map true
                 :optimizations :none}}
              {:id "unmount"

@@ -414,6 +414,9 @@
       (if (cursor? other)
         (= value (-value other))
         (= value other))))
+  IHash
+  (-hash [_]
+    (check (hash value)))
   IPrintWithWriter
   (-pr-writer [_ writer opts]
     (check (-pr-writer value writer opts))))
@@ -487,6 +490,9 @@
       (if (cursor? other)
         (= value (-value other))
         (= value other))))
+  IHash
+  (-hash [_]
+    (check (hash value)))
   IPrintWithWriter
   (-pr-writer [_ writer opts]
     (check (-pr-writer value writer opts))))
