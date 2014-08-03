@@ -104,7 +104,9 @@ examples:
 * [BVCA Private Equity Map](http://bvca.clustermap.trampolinesystems.com/)
 * [session](http://github.com/kovasb/session)
 * [pOModoro](http://pomodoro.trevorlandau.net)
-* [Dakait](http://github.com/verma/dakait), A web-based tool to manage downloads
+* [Dakait](http://github.com/verma/dakait), a web-based tool to manage
+  downloads
+* [Mega Super Mario World](http://github.com/city41/mario-review), a detailed review of the classic video game and a SNES video editor
 
 ## Using it
 
