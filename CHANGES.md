@@ -2,7 +2,7 @@
 
 ### Changes
 * OM-133: validate Om component fn return values
-* OM-134: add om.core/set-state-nr! and om.core/update-state-nr!, they not refresh (experimental)
+* OM-134: add om.core/set-state-nr! and om.core/update-state-nr!, they do not refresh (experimental)
 * OM-162: extend default cursor to IEmptyableCollection (experimental)
 * OM-180: add om.core/detach-root to remove Om render loop
 * OM-214: Cursors should implement IHash
