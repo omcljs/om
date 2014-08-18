@@ -123,7 +123,8 @@
     linearGradient
     polygon
     radialGradient
-    stop])
+    stop
+    tspan])
 
 (defn ^:private gen-react-dom-inline-fn [tag]
   `(defmacro ~tag [opts# & children#]
