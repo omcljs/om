@@ -81,6 +81,7 @@ React itself.
 Om emphasizes building modular and adaptable components. Some
 examples:
 
+* [om-bootstrap](https://github.com/racehub/om-bootstrap), Bootstrap 3 Om Components
 * [ankha](http://github.com/noprompt/ankha), an EDN inspector view
 * [om-draggable](https://github.com/sgrove/om-draggable), generic
   draggable
