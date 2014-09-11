@@ -1,3 +1,8 @@
+## 0.7.2
+
+### Changes
+* OM-239: update components if cursor path changes
+
 ## 0.7.1
 
 ### Changes
