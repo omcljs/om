@@ -233,6 +233,10 @@
                      (-value (aget next-props "__om_cursor")))
                true
 
+               (not= (-path (aget props "__om_cursor"))
+                     (-path (aget next-props "__om_cursor")))
+               true
+               
                (not (nil? (aget state "__om_pending_state")))
                true
 
