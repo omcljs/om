@@ -228,22 +228,23 @@
              (should-update c
                (get-props #js {:props next-props})
                (-get-state this))
-             (cond
-               (not= (-value (aget props "__om_cursor"))
-                     (-value (aget next-props "__om_cursor")))
-               true
+             (let [cursor      (aget props "__om_cursor")
+                   next-cursor (aget next-props "__om_cursor")]
+              (cond
+                (not= (-value cursor) (-value next-cursor))
+                true
 
-               (not= (-path (aget props "__om_cursor"))
-                     (-path (aget next-props "__om_cursor")))
-               true
+                (and (cursor? cursor) (cursor? next-cursor)
+                     (not= (-path cursor) (-path next-cursor )))
+                true
                
-               (not (nil? (aget state "__om_pending_state")))
-               true
+                (not (nil? (aget state "__om_pending_state")))
+                true
 
-               (not (== (aget props "__om_index") (aget next-props "__om_index")))
-               true
+                (not (== (aget props "__om_index") (aget next-props "__om_index")))
+                true
 
-               :else false))))))
+                :else false)))))))
    :componentWillMount
    (fn []
      (this-as this
