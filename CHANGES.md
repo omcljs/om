@@ -1,3 +1,8 @@
+## 0.7.3
+
+### Changes
+* OM-243: fix regression in supporting components built from non-cursors
+
 ## 0.7.2
 
 ### Changes
