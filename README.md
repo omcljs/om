@@ -94,6 +94,7 @@ examples:
 
 ## Applications built with Om
 
+* [Netrunner](https://github.com/mtgred/netrunner)
 * [CircleCI](http://www.circleci.com/)
 * [Prismatic](http://www.getprismatic.com/)
 * [Fitsme](http://fitsmeapp.com)
