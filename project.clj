@@ -131,6 +131,13 @@
                 :output-dir "examples/mixins/out"
                 :source-map true
                 :optimizations :none}}
+             {:id "two-lists"
+              :source-paths ["src" "examples/two_lists/src"]
+              :compiler {
+                :output-to "examples/two_lists/main.js"
+                :output-dir "examples/two_lists/out"
+                :source-map true
+                :optimizations :none}}
              {:id "tests"
               :source-paths ["src" "examples/tests/src"]
               :compiler {
