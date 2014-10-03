@@ -43,6 +43,9 @@
 (defprotocol IRender
   (render [this]))
 
+(defprotocol IRenderProps
+  (render-props [this props]))
+
 (defprotocol IRenderState
   (render-state [this state]))
 
@@ -310,6 +313,12 @@
                        *instrument* (aget props "__om_instrument")]
                (render c))
 
+             (satisfies? IRenderProps c)
+             (binding [*parent*     this
+                       *state*      (aget props "__om_app_state")
+                       *instrument* (aget props "__om_instrument")]
+               (render-props c (aget props "__om_cursor")))
+
              (satisfies? IRenderState c)
              (binding [*parent*     this
                        *state*      (aget props "__om_app_state")
@@ -563,6 +572,7 @@
 (defn ^:private valid-component? [x f]
   (assert
     (or (satisfies? IRender x)
+        (satisfies? IRenderProps x)
         (satisfies? IRenderState x))
     (str "Invalid Om component fn, " (.-name f)
          " does not return valid instance")))
@@ -776,19 +786,28 @@
                         cursor (if (nil? path)
                                  (to-cursor value state [])
                                  (to-cursor (get-in value path) state path))]
-                    (dom/render
-                      (binding [*instrument* instrument
-                                *state*      state]
-                        (build f cursor m))
-                      target)
+                    (when-not (.-skip-root-render state)
+                      (dom/render
+                        (binding [*instrument* instrument
+                                  *state*      state]
+                          (build f cursor m))
+                        target))
                     (let [queue (-get-queue state)]
                       (when-not (empty? queue)
                         (doseq [c queue]
                           (when (.isMounted c)
+                            (when-let [next-props (aget (.-state c) "__om_next_cursor")]
+                              (aset (.-props c) "__om_cursor" next-props)
+                              (aset (.-state c) "__om_next_cursor" nil))
                             (.forceUpdate c)))
-                        (-empty-queue! state)))))]
+                        (-empty-queue! state)))
+                    (set! (.-skip-root-render state) true)))]
       (add-watch state watch-key
-        (fn [_ _ _ _]
+        (fn [_ _ o n]
+          (when (and (not (.-ignore state))
+                     (not (identical? o n)))
+            (set! (.-skip-root-render state) false))
+          (set! (.-ignore state) false)
           (when-not (contains? @refresh-set rootf)
             (swap! refresh-set conj rootf))
           (when-not refresh-queued
@@ -836,6 +855,36 @@
     (transact! cursor korks (fn [_] v) nil))
   ([cursor korks v tag]
     (transact! cursor korks (fn [_] v) tag)))
+
+(defn update-props!
+  "EXPERIMENTAL: Given an owner, set the props to a value after
+  applying a function.  it. May supply key or keys as with transact!
+  and update. Only re-renders the owner, no re-render from the root
+  will be trigged. Unless optimizing, in all cases transact! and
+  update! should be preferred."
+  ([owner props f]
+     (update-props! props [] f))
+  ([owner props korks f]
+     (let [korks (cond
+                   (nil? korks) []
+                   (sequential? korks) korks
+                   :else [korks])
+           app-state (aget (.-props owner) "__om_app_state")]
+       (if (cursor? props)
+         (let [cpath (path props)
+               rpath (into cpath korks)]
+           (set! (.-ignore app-state) true)
+           (if (empty? rpath)
+             (swap! app-state f)
+             (swap! app-state update-in rpath f))
+           (let [new-props (if-not (empty? rpath)
+                             (get-in @app-state cpath)
+                             @app-state)]
+             (aset (.-state owner) "__om_next_cursor" (-derive props new-props app-state cpath))))
+         (let [new-props (if (empty? korks) (f props) (update-in props korks f))]
+           (println new-props)
+           (aset (.-state owner) "__om_next_cursor" new-props)))
+       (-queue-render! app-state owner))))
 
 (defn get-node
   "A helper function to get at React refs. Given a owning pure node

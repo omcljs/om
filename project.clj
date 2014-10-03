@@ -138,6 +138,13 @@
                 :output-dir "examples/two_lists/out"
                 :source-map true
                 :optimizations :none}}
+             {:id "update-props"
+              :source-paths ["src" "examples/update_props/src"]
+              :compiler {
+                :output-to "examples/update_props/main.js"
+                :output-dir "examples/update_props/out"
+                :source-map true
+                :optimizations :none}}
              {:id "tests"
               :source-paths ["src" "examples/tests/src"]
               :compiler {
