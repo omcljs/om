@@ -7,6 +7,7 @@
 (def ^{:dynamic true :private true} *parent* nil)
 (def ^{:dynamic true :private true} *instrument* nil)
 (def ^{:dynamic true :private true} *state* nil)
+(def ^{:dynamic true :private true} *root-key* nil)
 
 ;; =============================================================================
 ;; React Life Cycle Protocols
@@ -113,6 +114,13 @@
   (-listen! [x key tx-listen])
   (-unlisten! [x key])
   (-notify! [x tx-data root-cursor]))
+
+;; PRIVATE
+(defprotocol IRootProperties
+  (-set-property! [this id p val])
+  (-remove-property! [this id p])
+  (-remove-properties! [this id])
+  (-get-property [this id p]))
 
 (declare notify* path)
 
@@ -305,26 +313,21 @@
      (this-as this
        (let [c (children this)
              props (.-props this)]
-         (allow-reads
-           (cond
-             (satisfies? IRender c)
-             (binding [*parent*     this
-                       *state*      (aget props "__om_app_state")
-                       *instrument* (aget props "__om_instrument")]
-               (render c))
+         (binding [*parent*     this
+                   *state*      (aget props "__om_app_state")
+                   *instrument* (aget props "__om_instrument")
+                   *root-key*   (aget props "__om_root_key")]
+          (allow-reads
+            (cond
+              (satisfies? IRender c)
+              (render c)
 
-             (satisfies? IRenderProps c)
-             (binding [*parent*     this
-                       *state*      (aget props "__om_app_state")
-                       *instrument* (aget props "__om_instrument")]
-               (render-props c (aget props "__om_cursor") (get-state this)))
+              (satisfies? IRenderProps c)
+              (render-props c (aget props "__om_cursor") (get-state this))
 
-             (satisfies? IRenderState c)
-             (binding [*parent*     this
-                       *state*      (aget props "__om_app_state")
-                       *instrument* (aget props "__om_instrument")]
-               (render-state c (get-state this)))
-             :else c)))))})
+              (satisfies? IRenderState c)
+              (render-state c (get-state this))
+              :else c))))))})
 
 (defn specify-state-methods! [obj]
   (specify! obj
@@ -606,6 +609,7 @@
              ctor   (get-descriptor f)]
          (ctor #js {:__om_cursor cursor
                     :__om_shared shared
+                    :__om_root_key *root-key*
                     :__om_app_state *state*
                     :__om_instrument *instrument*
                     :children
@@ -633,6 +637,7 @@
                     :__om_init_state init-state
                     :__om_state state
                     :__om_shared shared
+                    :__om_root_key *root-key*
                     :__om_app_state *state*
                     :__om_instrument *instrument*
                     :key rkey
@@ -704,9 +709,19 @@
 
 (defn ^:private setup [state key tx-listen]
   (when-not (satisfies? INotify state)
-    (let [listeners    (atom {})
+    (let [properties   (atom {})
+          listeners    (atom {})
           render-queue (atom #{})]
       (specify! state
+        IRootProperties
+        (-set-property! [_ id k v]
+          (swap! properties assoc-in [id k] v))
+        (-remove-property! [_ id k]
+          (swap! properties dissoc id k))
+        (-remove-properties! [_ id]
+          (swap! properties dissoc id))
+        (-get-property [_ id k]
+          (get-in @properties [id k]))
         INotify
         (-listen! [this key tx-listen]
           (when-not (nil? tx-listen)
@@ -786,10 +801,11 @@
                         cursor (if (nil? path)
                                  (to-cursor value state [])
                                  (to-cursor (get-in value path) state path))]
-                    (when-not (.-skip-root-render state)
+                    (when-not (-get-property state watch-key :skip-render-root)
                       (dom/render
                         (binding [*instrument* instrument
-                                  *state*      state]
+                                  *state*      state
+                                  *root-key*   watch-key]
                           (build f cursor m))
                         target))
                     (let [queue (-get-queue state)]
@@ -801,13 +817,13 @@
                               (aset (.-state c) "__om_next_cursor" nil))
                             (.forceUpdate c)))
                         (-empty-queue! state)))
-                    (set! (.-skip-root-render state) true)))]
+                    (-set-property! state watch-key :skip-render-root true)))]
       (add-watch state watch-key
         (fn [_ _ o n]
-          (when (and (not (.-ignore state))
+          (when (and (not (-get-property state watch-key :ignore))
                      (not (identical? o n)))
-            (set! (.-skip-root-render state) false))
-          (set! (.-ignore state) false)
+            (-set-property! state watch-key :skip-render-root false))
+          (-set-property! state watch-key :ignore false)
           (when-not (contains? @refresh-set rootf)
             (swap! refresh-set conj rootf))
           (when-not refresh-queued
@@ -818,6 +834,7 @@
       ;; store fn to remove previous root render loop
       (swap! roots assoc target
         (fn []
+          (-remove-properties! state watch-key)
           (remove-watch state watch-key)
           (tear-down state watch-key)
           (swap! roots dissoc target)
@@ -869,21 +886,20 @@
                    (nil? korks) []
                    (sequential? korks) korks
                    :else [korks])
-           app-state (aget (.-props owner) "__om_app_state")]
-       (if (cursor? props)
-         (let [cpath (path props)
-               rpath (into cpath korks)]
-           (set! (.-ignore app-state) true)
-           (if (empty? rpath)
-             (swap! app-state f)
-             (swap! app-state update-in rpath f))
-           (let [new-props (if-not (empty? rpath)
-                             (get-in @app-state cpath)
-                             @app-state)]
-             (aset (.-state owner) "__om_next_cursor" (-derive props new-props app-state cpath))))
-         (let [new-props (if (empty? korks) (f props) (update-in props korks f))]
-           (println new-props)
-           (aset (.-state owner) "__om_next_cursor" new-props)))
+           app-state (aget (.-props owner) "__om_app_state")
+           root-key  (aget (.-props owner) "__om_root_key")]
+       (when-not (cursor? props)
+         (throw (js/Error. "Second argument to update-props! must be a cursor")))
+       (let [cpath (path props)
+             rpath (into cpath korks)]
+         (-set-property! app-state root-key :ignore true)
+         (if (empty? rpath)
+           (swap! app-state f)
+           (swap! app-state update-in rpath f))
+         (let [new-props (if-not (empty? rpath)
+                           (get-in @app-state cpath)
+                           @app-state)]
+           (aset (.-state owner) "__om_next_cursor" (-derive props new-props app-state cpath))))
        (-queue-render! app-state owner))))
 
 (defn get-node
