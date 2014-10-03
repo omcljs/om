@@ -12,7 +12,7 @@
 (defn widget-a [_ owner]
   (reify
     om/IRenderProps
-    (render-props [_ props]
+    (render-props [_ props _]
       (println "Widget A render!")
       (dom/div nil
         (dom/h2 nil "Widget A")
@@ -24,7 +24,7 @@
 (defn widget-b [_ owner]
   (reify
     om/IRenderProps
-    (render-props [_ props]
+    (render-props [_ props _]
       (println "Widget B render!")
       (dom/div nil
         (dom/h2 nil "Widget B")

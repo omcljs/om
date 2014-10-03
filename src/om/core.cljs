@@ -44,7 +44,7 @@
   (render [this]))
 
 (defprotocol IRenderProps
-  (render-props [this props]))
+  (render-props [this props state]))
 
 (defprotocol IRenderState
   (render-state [this state]))
@@ -317,7 +317,7 @@
              (binding [*parent*     this
                        *state*      (aget props "__om_app_state")
                        *instrument* (aget props "__om_instrument")]
-               (render-props c (aget props "__om_cursor")))
+               (render-props c (aget props "__om_cursor") (get-state this)))
 
              (satisfies? IRenderState c)
              (binding [*parent*     this
