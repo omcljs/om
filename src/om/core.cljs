@@ -61,7 +61,7 @@
 (defprotocol ISetState
   (-set-state! [this val render] [this ks val render]))
 
-;; private render queue, for components that use local state
+;; PRIVATE render queue, for components that use local state
 ;; and independently addressable components
 
 (defprotocol IRenderQueue
@@ -105,6 +105,7 @@
 (defprotocol ITransact
   (-transact! [cursor korks f tag]))
 
+;; PRIVATE
 (defprotocol INotify
   (-listen! [x key tx-listen])
   (-unlisten! [x key])
