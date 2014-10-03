@@ -4,17 +4,24 @@
 
 (enable-console-print!)
 
+(defprotocol IResolve
+  (-resolve [this id]))
+
 (def app-state
   (atom
     {:list0 [:a :b :c]
      :list1 [:d :e :f]
+     :sublist0 [:g :h :i]
      :items
      {:a {:text "cat"}
       :b {:text "dog"}
       :c {:text "bird"}
       :d {:text "lion"}
       :e {:text "antelope"}
-      :f {:text "zebra"}}}))
+      :f {:text "zebra"}
+      :g {:text "anteater"}
+      :h {:text "hyena"}
+      :i {:text "tiger"}}}))
 
 (defn removable [item id order]
   (specify item
@@ -56,12 +63,30 @@
     (render [_]
       (apply dom/ul nil (om/build-all item-view alist)))))
 
+(defn resolveable [x resolve-fn]
+  (if (om/cursor? x)
+    (specify x
+      ICloneable
+      (-clone [_]
+        (resolveable (-clone x) resolve-fn))
+      IResolve
+      (-resolve [this id]
+        (resolve-fn id this))
+      om/ICursorDerive
+      (-derive [this derived state path]
+        (resolveable (om/to-cursor derived state path) resolve-fn)))
+    x))
+
+(defn resolve-id [id cursor]
+  (let [state (om/state cursor)]
+    (om/to-cursor (get @state id) [] state)))
+
 (defn my-app [global owner]
   (reify
     om/IRender
     (render [_]
-      (let [items (:items global)
-            ]
+      (let [global (resolveable global resolve-id)
+            items  (:items global)]
         (dom/div nil
           (dom/h2 nil "Two Lists")
           (om/build list-view (collection (:list0 global) items))
