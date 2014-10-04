@@ -775,6 +775,7 @@
    :instrument - a function of three arguments that if provided will
                  intercept all calls to om.core/build. This function should
                  correspond to the three arity version of om.core/build.
+   :adapt      - a function to adapt the root cursor
 
    Example:
 
@@ -783,7 +784,7 @@
        ...)
      {:message :hello}
      {:target js/document.body})"
-  ([f value {:keys [target tx-listen path instrument] :as options}]
+  ([f value {:keys [target tx-listen path instrument adapt] :as options}]
     (assert (not (nil? target)) "No target specified to om.core/root")
     ;; only one root render loop per target
     (let [roots' @roots]
@@ -794,13 +795,15 @@
                   value
                   (atom value))
           state (setup state watch-key tx-listen)
-          m     (dissoc options :target :tx-listen :path)
+          adapt (or adapt identity)
+          m     (dissoc options :target :tx-listen :path :adapt)
           rootf (fn rootf []
                   (swap! refresh-set disj rootf)
                   (let [value  @state
-                        cursor (if (nil? path)
-                                 (to-cursor value state [])
-                                 (to-cursor (get-in value path) state path))]
+                        cursor (adapt
+                                 (if (nil? path)
+                                   (to-cursor value state [])
+                                   (to-cursor (get-in value path) state path)))]
                     (when-not (-get-property state watch-key :skip-render-root)
                       (dom/render
                         (binding [*instrument* instrument
