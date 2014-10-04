@@ -51,9 +51,6 @@
 
 (def allocate-storage (memoize allocate-storage*))
 
-;; the following code need some thought wrt to how to
-;; best preserve previously specified behavior
-
 (defn ref-cursor [cursor id state]
   (let [storage (allocate-storage id)]
     (specify cursor
@@ -61,13 +58,11 @@
       (-derive [this derived state path]
         (let [cursor' (om/to-cursor derived state path)]
           (if (om/cursor? cursor')
-            (ref-cursor
-              (resolvable
-                (om/tag-root-key
-                  cursor'
-                  (om/-root-key cursor)))
-              id state)
+            (-adapt this cursor')
             cursor')))
+      om/IAdapt
+      (-adapt [_ other]
+        (ref-cursor (-adapt cursor other) id state))
       om/IOmRef
       (-add-dep! [_ c]
         (swap! storage assoc (om/id c) c))
@@ -82,33 +77,32 @@
         (doseq [c (vals @storage)]
           (om/refresh-props! c))))))
 
-(defn resolve-id [id cursor resolve-fn]
-  (let [state  (om/state cursor)
-        cursor (resolvable
-                 (om/tag-root-key
-                   (om/to-cursor (get @state id) state [])
-                   (om/-root-key cursor))
-                 resolve-fn)]
+(defn resolve-id [id cursor]
+  (let [state   (om/state cursor)
+        cursor' (-adapt cursor
+                  (om/to-cursor (get @state id) state []))]
     (if (= id :my-ref)
-      (ref-cursor cursor id state)
+      (ref-cursor cursor' id state)
       cursor)))
 
 (defn resolvable [x resolve-fn]
   (if (om/cursor? x)
     (specify x
+      om/IAdapt
+      (-adapt [_ other]
+        (resolveable (-adapt x other) resolve-fn))
       ICloneable
       (-clone [this]
-        (resolvable (-clone x) resolve-fn))
+        (-adapt this (-clone x)))
       IResolve
       (-resolve [_ id]
-        (resolve-fn id x resolve-fn))
+        (resolve-fn id x))
       om/ICursorDerive
       (-derive [_ derived state path]
-        (resolvable
-          (om/tag-root-key
-            (om/to-cursor derived state path)
-            (om/-root-key x))
-          resolve-fn)))
+        (let [cursor' (om/to-cursor derived state path) ]
+          (if (cursor? cursor')
+            (-adapt this cursor')
+            cursor'))))
     x))
 
 (om/root my-app app-state

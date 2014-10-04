@@ -126,6 +126,14 @@
 (defprotocol IRootKey
   (-root-key [cursor]))
 
+(defprotocol IAdapt
+  (-adapt [this other]))
+
+(extend-type default
+  IAdapt
+  (-adapt [_ other]
+    other))
+
 (defprotocol IOmRef
   (-add-dep! [this c])
   (-remove-dep! [this c])
@@ -768,6 +776,9 @@
       ICloneable
       (-clone [this]
         (tag-root-key (-clone cursor) root-key))
+      IAdapt
+      (-adapt [cursor other]
+        (tag-root-key (-adapt cursor other) root-key))
       IRootKey
       (-root-key [this] root-key))
     cursor))
