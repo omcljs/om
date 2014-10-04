@@ -122,6 +122,15 @@
   (-remove-properties! [this id])
   (-get-property [this id p]))
 
+;; PRIVATE
+(defprotocol IRootKey
+  (-root-key [cursor]))
+
+(defprotocol IOmRef
+  (-add-dep! [this c])
+  (-remove-dep! [this c])
+  (-get-deps [this]))
+
 (declare notify* path)
 
 (defn transact*
@@ -268,15 +277,21 @@
    :componentDidMount
    (fn []
      (this-as this
-       (let [c (children this)]
+       (let [c (children this)
+             cursor (aget (.-props this) "__om_cursor")]
          (when (satisfies? IDidMount c)
-           (allow-reads (did-mount c))))))
+           (allow-reads (did-mount c)))
+         (when (satisfies? IOmRef cursor)
+           (-add-dep! cursor this)))))
    :componentWillUnmount
    (fn []
      (this-as this
-       (let [c (children this)]
+       (let [c (children this)
+             cursor (aget (.-props this) "__om_cursor")]
          (when (satisfies? IWillUnmount c)
-           (allow-reads (will-unmount c))))))
+           (allow-reads (will-unmount c)))
+         (when (satisfies? IOmRef cursor)
+           (-remove-dep! cursor this)))))
    :componentWillUpdate
    (fn [next-props next-state]
      (this-as this
@@ -747,6 +762,16 @@
 (defn ^:private tear-down [state key]
   (-unlisten! state key))
 
+(defn tag-root-key [cursor root-key]
+  (if (cursor? cursor)
+    (specify cursor
+      ICloneable
+      (-clone [this]
+        (tag-root-key (-clone cursor) root-key))
+      IRootKey
+      (-root-key [this] root-key))
+    cursor))
+
 (defn root
   "Take a component constructor function f, value an immutable tree of
    associative data structures optionally an wrapped in an IAtom
@@ -801,9 +826,11 @@
                   (swap! refresh-set disj rootf)
                   (let [value  @state
                         cursor (adapt
-                                 (if (nil? path)
-                                   (to-cursor value state [])
-                                   (to-cursor (get-in value path) state path)))]
+                                 (tag-root-key
+                                   (if (nil? path)
+                                     (to-cursor value state [])
+                                     (to-cursor (get-in value path) state path))
+                                   watch-key))]
                     (when-not (-get-property state watch-key :skip-render-root)
                       (dom/render
                         (binding [*instrument* instrument
@@ -875,6 +902,35 @@
     (transact! cursor korks (fn [_] v) nil))
   ([cursor korks v tag]
     (transact! cursor korks (fn [_] v) tag)))
+
+(defn commit! [cursor korks f]
+  (when-not (cursor? cursor)
+    (throw
+      (js/Error. "First argument to commit! must be a cursor")))
+  (let [key       (-root-key cursor)
+        app-state (state cursor)
+        korks     (cond
+                    (nil? korks) []
+                    (sequential? korks) korks
+                    :else [korks])
+        cpath     (path cursor)
+        rpath     (into cpath korks)]
+    (-set-property! app-state key :ignore true)
+    (if (empty? rpath)
+      (swap! app-state f)
+      (swap! app-state update-in rpath f))))
+
+(defn refresh-props! [owner]
+  (let [props     (.-props owner)
+        app-state (aget props "__om_app_state")
+        cursor    (aget props "__om_cursor")
+        cpath     (path cursor)
+        cursor'   (if-not (empty? cpath)
+                    (get-in @app-state cpath)
+                    @app-state)]
+    (aset (.-state owner) "__om_next_cursor"
+      (-derive cursor cursor' app-state cpath))
+    (-queue-render! app-state owner)))
 
 (defn update-props!
   "EXPERIMENTAL: Given an owner, set the props to a value after

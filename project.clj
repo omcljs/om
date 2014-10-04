@@ -145,6 +145,13 @@
                 :output-dir "examples/update_props/out"
                 :source-map true
                 :optimizations :none}}
+             {:id "refs"
+              :source-paths ["src" "examples/refs/src"]
+              :compiler {
+                :output-to "examples/refs/main.js"
+                :output-dir "examples/refs/out"
+                :source-map true
+                :optimizations :none}}
              {:id "tests"
               :source-paths ["src" "examples/tests/src"]
               :compiler {
