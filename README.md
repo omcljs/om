@@ -98,6 +98,7 @@ examples:
 * [Netrunner](https://github.com/mtgred/netrunner)
 * [CircleCI](http://www.circleci.com/)
 * [Prismatic](http://www.getprismatic.com/)
+* [Assistant](https://github.com/29decibel/assistant)
 * [Fitsme](http://fitsmeapp.com)
 * [Goya](http://jackschaedler.github.io/goya/), pixel editor with
   undo/redo and visual history
