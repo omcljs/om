@@ -917,7 +917,10 @@
   ([cursor korks v tag]
     (transact! cursor korks (fn [_] v) tag)))
 
-(defn commit! [cursor korks f]
+(defn commit!
+  "EXPERIMENTAL: Like transact! but does not schedule a re-render or
+  create a transact event."
+  [cursor korks f]
   (when-not (cursor? cursor)
     (throw
       (js/Error. "First argument to commit! must be a cursor")))
@@ -934,7 +937,11 @@
       (swap! app-state f)
       (swap! app-state update-in rpath f))))
 
-(defn refresh-props! [owner]
+(defn refresh-props!
+  "EXPERIMENTAL: Sets a components props to the latest from the
+  application state and queues it to be re-rendered. The component
+  must implement IRenderProps, not IRender or IRenderState."
+  [owner]
   (let [props     (.-props owner)
         app-state (aget props "__om_app_state")
         cursor    (aget props "__om_cursor")
