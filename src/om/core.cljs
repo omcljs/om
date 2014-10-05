@@ -134,6 +134,9 @@
   (-adapt [_ other]
     other))
 
+(defn adapt [x other]
+  (-adapt x other))
+
 (defprotocol IOmRef
   (-add-dep! [this c])
   (-remove-dep! [this c])
@@ -775,10 +778,10 @@
     (specify cursor
       ICloneable
       (-clone [this]
-        (tag-root-key (-clone cursor) root-key))
+        (tag-root-key (clone cursor) root-key))
       IAdapt
-      (-adapt [cursor other]
-        (tag-root-key (-adapt cursor other) root-key))
+      (-adapt [this other]
+        (tag-root-key (adapt cursor other) root-key))
       IRootKey
       (-root-key [this] root-key))
     cursor))

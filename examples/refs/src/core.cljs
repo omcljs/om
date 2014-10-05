@@ -58,11 +58,11 @@
       (-derive [this derived state path]
         (let [cursor' (om/to-cursor derived state path)]
           (if (om/cursor? cursor')
-            (-adapt this cursor')
+            (om/adapt this cursor')
             cursor')))
       om/IAdapt
       (-adapt [_ other]
-        (ref-cursor (-adapt cursor other) id state))
+        (ref-cursor (om/adapt cursor other) id state))
       om/IOmRef
       (-add-dep! [_ c]
         (swap! storage assoc (om/id c) c))
@@ -72,15 +72,14 @@
         @storage)
       om/ITransact
       (-transact! [cursor korks f tag]
-        (println "transact!" (om/value cursor))
         (om/commit! cursor korks f)
         (doseq [c (vals @storage)]
           (om/refresh-props! c))))))
 
 (defn resolve-id [id cursor]
   (let [state   (om/state cursor)
-        cursor' (-adapt cursor
-                  (om/to-cursor (get @state id) state []))]
+        cursor' (om/adapt cursor
+                  (om/to-cursor (get @state id) state))]
     (if (= id :my-ref)
       (ref-cursor cursor' id state)
       cursor)))
@@ -90,18 +89,18 @@
     (specify x
       om/IAdapt
       (-adapt [_ other]
-        (resolveable (-adapt x other) resolve-fn))
+        (resolvable (om/adapt x other) resolve-fn))
       ICloneable
       (-clone [this]
-        (-adapt this (-clone x)))
+        (resolvable (clone x) resolve-fn))
       IResolve
       (-resolve [_ id]
         (resolve-fn id x))
       om/ICursorDerive
-      (-derive [_ derived state path]
+      (-derive [this derived state path]
         (let [cursor' (om/to-cursor derived state path) ]
-          (if (cursor? cursor')
-            (-adapt this cursor')
+          (if (om/cursor? cursor')
+            (om/adapt this cursor')
             cursor'))))
     x))
 
