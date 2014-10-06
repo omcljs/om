@@ -991,6 +991,11 @@
      (when-let [refs (.-refs owner)]
        (.getDOMNode (aget refs name)))))
 
+(defn mounted?
+  "Return true if the backing React component is mounted into the DOM."
+  [owner]
+  (.isMounted owner))
+
 (defn set-state!
   "Takes a pure owning component, a sequential list of keys and value and
    sets the state of the component. Conceptually analagous to React
