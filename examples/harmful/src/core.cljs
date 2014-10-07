@@ -110,51 +110,48 @@
           (when (:previous-state states)
             (swap! gstate update-in spath dissoc :previous-state)))))))
 
-(def NoLocal
-  (js/React.createClass
-    (specify! (clj->js no-local-state-meths)
-      om/ISetState
-      (-set-state!
-        ([this val]
-           (om/allow-reads
-             (let [cursor (aget (.-props this) "__om_cursor")
-                   path   (om/-path cursor)
-                   spath  [:state-map (om/id this) :pending-state]]
-               (swap! (get-gstate this) assoc-in spath val)
-               ;; invalidate path to component
-               (if (empty? path)
-                 (swap! (om/-state cursor) clone)
-                 (swap! (om/-state cursor) update-in path clone)))))
-        ([this ks val]
-           (om/allow-reads
-             (let [props  (.-props this)
-                   state  (.-state this)
-                   cursor (aget props "__om_cursor")
-                   path   (om/-path cursor)
-                   spath  [:state-map (om/id this) :pending-state]]
-               (swap! (get-gstate this) update-in spath assoc-in ks val)
-               ;; invalidate path to component
-               (if (empty? path)
-                 (swap! (om/-state cursor) clone)
-                 (swap! (om/-state cursor) update-in path clone))))))
-      om/IGetRenderState
-      (-get-render-state
-        ([this]
-           (let [spath [:state-map (om/id this) :render-state]]
-             (get-in @(get-gstate this) spath)))
-        ([this ks]
-           (get-in (om/-get-render-state this) ks)))
-      om/IGetState
-      (-get-state
-        ([this]
-           (let [spath  [:state-map (om/id this)]
-                 states (get-in @(get-gstate this) spath)]
-             (or (:pending-state states)
-                 (:render-state states))))
-        ([this ks]
-           (get-in (om/-get-state this) ks))))))
-
-(defn no-local [obj] (NoLocal. obj))
+(def no-local-descriptor
+  (specify! (clj->js no-local-state-meths)
+    om/ISetState
+    (-set-state!
+      ([this val render]
+         (om/allow-reads
+           (let [props     (.-props this)
+                 cursor    (aget props "__om_cursor")
+                 app-state (aget props "__om_app_state")
+                 path      (om/-path cursor)
+                 spath     [:state-map (om/id this) :pending-state]]
+             (swap! (get-gstate this) assoc-in spath val)
+             (when (and (not (nil? app-state)) render)
+               (om/-queue-render! app-state this)))))
+      ([this ks val render]
+         (om/allow-reads
+           (let [props     (.-props this)
+                 state     (.-state this)
+                 app-state (aget props "__om_app_state")
+                 cursor    (aget props "__om_cursor")
+                 path      (om/-path cursor)
+                 spath     [:state-map (om/id this) :pending-state]]
+             (swap! (get-gstate this) update-in spath assoc-in ks val)
+             ;; invalidate path to component
+             (when (and (not (nil? app-state)) render)
+               (om/-queue-render! app-state this))))))
+    om/IGetRenderState
+    (-get-render-state
+      ([this]
+         (let [spath [:state-map (om/id this) :render-state]]
+           (get-in @(get-gstate this) spath)))
+      ([this ks]
+         (get-in (om/-get-render-state this) ks)))
+    om/IGetState
+    (-get-state
+      ([this]
+         (let [spath  [:state-map (om/id this)]
+               states (get-in @(get-gstate this) spath)]
+           (or (:pending-state states)
+             (:render-state states))))
+      ([this ks]
+         (get-in (om/-get-state this) ks)))))
 
 ;; =============================================================================
 ;; Application
@@ -201,7 +198,7 @@
 (om/root
   (fn [app owner]
     (om/component
-      (om/build counter-view app {:descriptor no-local})))
+      (om/build counter-view app {:descriptor no-local-descriptor})))
   app-state
   {:target (.getElementById js/document "app")
    :instrument
