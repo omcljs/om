@@ -69,18 +69,23 @@
               (om/should-update c
                 (om/get-props #js {:props next-props})
                 (om/-get-state this))
-              (cond
-                (not (identical? (om/-value (aget props "__om_cursor"))
-                                 (om/-value (aget next-props "__om_cursor"))))
-                true
+              (let [cursor      (aget props "__om_cursor")
+                    next-cursor (aget next-props "__om_cursor")]
+                (cond
+                  (not= (om/-value cursor) (om/-value next-cursor))
+                  true
 
-                (not (nil? (get-in @(get-gstate this) [:state-map (om/id this) :pending-state])))
-                true
+                  (and (om/cursor? cursor) (om/cursor? next-cursor)
+                       (not= (om/-path cursor) (om/-path next-cursor )))
+                  true
+                  
+                  (not (nil? (aget state "__om_pending_state")))
+                  true
 
-                (not (== (aget props "__om_index") (aget next-props "__om_index")))
-                true
+                  (not (== (aget props "__om_index") (aget next-props "__om_index")))
+                  true
 
-                :else false))))))
+                  :else false)))))))
     :componentWillUpdate
     (fn [next-props next-state]
       (this-as this
@@ -133,7 +138,6 @@
                  path      (om/-path cursor)
                  spath     [:state-map (om/id this) :pending-state]]
              (swap! (get-gstate this) update-in spath assoc-in ks val)
-             ;; invalidate path to component
              (when (and (not (nil? app-state)) render)
                (om/-queue-render! app-state this))))))
     om/IGetRenderState
