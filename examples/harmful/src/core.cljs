@@ -201,7 +201,7 @@
 (om/root
   (fn [app owner]
     (om/component
-      (om/build counter-view app {:ctor no-local})))
+      (om/build counter-view app {:descriptor no-local})))
   app-state
   {:target (.getElementById js/document "app")
    :instrument
