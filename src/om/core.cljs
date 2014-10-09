@@ -847,13 +847,14 @@
                                      (to-cursor (get-in value path) state path))
                                    watch-key))]
                     (when-not (-get-property state watch-key :skip-render-root)
-                      (reset! ret
-                        (dom/render
-                          (binding [*instrument* instrument
-                                    *state*      state
-                                    *root-key*   watch-key]
-                            (build f cursor m))
-                          target)))
+                      (let [c (dom/render
+                                  (binding [*instrument* instrument
+                                            *state*      state
+                                            *root-key*   watch-key]
+                                    (build f cursor m))
+                                  target)]
+                        (when (nil? @ret)
+                          (reset! ret c))))
                     (let [queue (-get-queue state)]
                       (when-not (empty? queue)
                         (doseq [c queue]
