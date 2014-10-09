@@ -836,6 +836,7 @@
           state (setup state watch-key tx-listen)
           adapt (or adapt identity)
           m     (dissoc options :target :tx-listen :path :adapt)
+          ret   (atom nil)
           rootf (fn rootf []
                   (swap! refresh-set disj rootf)
                   (let [value  @state
@@ -846,12 +847,13 @@
                                      (to-cursor (get-in value path) state path))
                                    watch-key))]
                     (when-not (-get-property state watch-key :skip-render-root)
-                      (dom/render
-                        (binding [*instrument* instrument
-                                  *state*      state
-                                  *root-key*   watch-key]
-                          (build f cursor m))
-                        target))
+                      (reset! ret
+                        (dom/render
+                          (binding [*instrument* instrument
+                                    *state*      state
+                                    *root-key*   watch-key]
+                            (build f cursor m))
+                          target)))
                     (let [queue (-get-queue state)]
                       (when-not (empty? queue)
                         (doseq [c queue]
@@ -861,7 +863,8 @@
                               (aset (.-state c) "__om_next_cursor" nil))
                             (.forceUpdate c)))
                         (-empty-queue! state)))
-                    (-set-property! state watch-key :skip-render-root true)))]
+                    (-set-property! state watch-key :skip-render-root true)
+                    @ret))]
       (add-watch state watch-key
         (fn [_ _ o n]
           (when (and (not (-get-property state watch-key :ignore))
