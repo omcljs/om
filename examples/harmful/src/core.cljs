@@ -122,7 +122,6 @@
       ([this val render]
          (om/allow-reads
            (let [props     (.-props this)
-                 cursor    (aget props "__om_cursor")
                  app-state (aget props "__om_app_state")
                  spath     [:state-map (om/id this) :pending-state]]
              (swap! (get-gstate this) assoc-in spath val)
@@ -133,7 +132,6 @@
            (let [props     (.-props this)
                  state     (.-state this)
                  app-state (aget props "__om_app_state")
-                 cursor    (aget props "__om_cursor")
                  spath     [:state-map (om/id this) :pending-state]]
              (swap! (get-gstate this) update-in spath assoc-in ks val)
              (when (and (not (nil? app-state)) render)
