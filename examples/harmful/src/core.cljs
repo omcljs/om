@@ -56,18 +56,6 @@
           (when (satisfies? om/IWillUnmount c)
             (om/allow-reads (om/will-unmount c)))
           (swap! (get-gstate this) update-in spath dissoc))))
-    :componentWillUpdate
-    (fn [next-props next-state]
-      (this-as this
-        (let [props  (.-props this)
-              c      (om/children this)]
-          (when (satisfies? om/IWillUpdate c)
-            (let [state (.-state this)]
-              (om/allow-reads
-                (om/will-update c
-                  (om/get-props #js {:props next-props})
-                  (om/-get-state this))))))
-        (merge-pending-state this)))
     :componentDidUpdate
     (fn [prev-props prev-state]
       (this-as this
