@@ -56,36 +56,6 @@
           (when (satisfies? om/IWillUnmount c)
             (om/allow-reads (om/will-unmount c)))
           (swap! (get-gstate this) update-in spath dissoc))))
-    :shouldComponentUpdate
-    (fn [next-props next-state]
-      (this-as this
-        (om/allow-reads
-          (let [props (.-props this)
-                state (.-state this)
-                c     (om/children this)]
-            ;; need to merge in props state first
-            (om/merge-props-state this next-props)
-            (if (satisfies? om/IShouldUpdate c)
-              (om/should-update c
-                (om/get-props #js {:props next-props})
-                (om/-get-state this))
-              (let [cursor      (aget props "__om_cursor")
-                    next-cursor (aget next-props "__om_cursor")]
-                (cond
-                  (not= (om/-value cursor) (om/-value next-cursor))
-                  true
-
-                  (and (om/cursor? cursor) (om/cursor? next-cursor)
-                       (not= (om/-path cursor) (om/-path next-cursor )))
-                  true
-                  
-                  (not (nil? (aget state "__om_pending_state")))
-                  true
-
-                  (not (== (aget props "__om_index") (aget next-props "__om_index")))
-                  true
-
-                  :else false)))))))
     :componentWillUpdate
     (fn [next-props next-state]
       (this-as this
