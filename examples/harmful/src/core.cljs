@@ -130,7 +130,6 @@
       ([this ks val render]
          (om/allow-reads
            (let [props     (.-props this)
-                 state     (.-state this)
                  app-state (aget props "__om_app_state")
                  spath     [:state-map (om/id this) :pending-state]]
              (swap! (get-gstate this) update-in spath assoc-in ks val)
