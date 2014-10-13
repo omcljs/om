@@ -682,17 +682,17 @@
 
 (defn build
   "Builds an Om component. Takes an IRender/IRenderState instance
-   returning function f, a cursor, and an optional third argument
+   returning function f, a value, and an optional third argument
    which may be a map of build specifications.
 
-   f - is a function of 2 or 3 arguments. The first argument will be
-   the cursor and the second argument will be the owning pure node.
+   f - is a function of 2 or 3 arguments. The first argument can be
+   any value and the second argument will be the owning pure node.
    If a map of options m is passed in this will be the third
    argument. f must return at a minimum an IRender or IRenderState
    instance, this instance may implement other React life cycle
    protocols.
 
-   cursor - an ICursor instance
+   x - any value
 
    m - a map the following keys are allowed:
 
@@ -710,22 +710,22 @@
 
    Example:
 
-     (build list-of-gadgets cursor
+     (build list-of-gadgets x
         {:init-state {:event-chan ...
                       :narble ...}})
   "
-  ([f cursor] (build f cursor nil))
-  ([f cursor m]
+  ([f x] (build f x nil))
+  ([f x m]
      (if-not (nil? *instrument*)
-       (let [ret (allow-reads (*instrument* f cursor m))]
+       (let [ret (allow-reads (*instrument* f x m))]
          (if (= ret ::pass)
-           (build* f cursor m)
+           (build* f x m)
            ret))
-       (build* f cursor m))))
+       (build* f x m))))
 
 (defn build-all
   "Build a sequence of components. f is the component constructor
-   function, xs a sequence of cursors, and m a map of options the
+   function, xs a sequence of values, and m a map of options the
    same as provided to om.core/build."
   ([f xs] (build-all f xs nil))
   ([f xs m]
