@@ -9,7 +9,7 @@
 ;; Different backing React class
 
 (defn get-gstate [owner]
-  (om/state (aget (.-props owner) "__om_cursor")))
+  (aget (.-props owner) "__om_app_state"))
 
 (defn merge-pending-state [owner]
   (let [gstate (get-gstate owner)
