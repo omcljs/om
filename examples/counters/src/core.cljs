@@ -56,12 +56,14 @@
 
 (om/root counter-view app-state
   {:target (.getElementById js/document "app0")
+   :descriptor (om/no-local-descriptor om/no-local-state-methods)
    :tx-listen
    (fn [tx-data root-cursor]
      (println "listener 1: " tx-data))})
 
 (om/root counter-view app-state
   {:target (.getElementById js/document "app1")
+   :descriptor (om/no-local-descriptor om/no-local-state-methods)
    :tx-listen
    (fn [tx-data root-cursor]
      (println "listener 2: " tx-data))})
