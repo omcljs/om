@@ -4,106 +4,46 @@
 
 (enable-console-print!)
 
-(defprotocol IResolve
-  (-resolve [this id]))
-
 (def app-state
-  (atom {:my-ref {:count 0}
-         :view0  {:text "View 0"}
-         :view1  {:text "View 1"}}))
+  (atom {:items [{:text "cat"}
+                 {:text "dog"}
+                 {:text "bird"}]}))
 
-(defn ref-widget [widget owner]
-  (reify
-    om/IRenderProps
-    (render-props [_ widget _]
-      (println "Render ref widget!")
-      (dom/div nil
-        (dom/button
-          #js {:onClick #(om/transact! widget :count inc)}
-          "+")
-        (dom/p nil (str "Count: " (:count widget)))))))
+(defn items []
+  (om/ref-cursor (:items (om/root-cursor app-state))))
 
-(defn aview [view owner]
+(defn aview [{:keys [text]} owner]
   (reify
     om/IRender
     (render [_]
-      (println "Render" (:text view) "!")
-      (let [my-ref (-resolve view :my-ref)]
-       (dom/div nil
-         (dom/h2 nil (:text view))
-         (om/build ref-widget my-ref))))))
+      (println "Render" text)
+      (let [xs (om/observe owner (items))]
+        (dom/div nil
+          (dom/h2 nil text)
+          (apply dom/ul nil
+            (map #(dom/li nil (:text %)) xs)))))))
 
-(defn my-app [global owner]
+(defn main-view [_ owner]
   (reify
     om/IRender
     (render [_]
-      (println "Render root!")
+      (println "Render Main View")
       (dom/div nil
-        (om/build aview (:view0 global))
-        (om/build aview (:view1 global))))))
+        (om/build aview {:text "View A"})
+        (om/build aview {:text "View B"})
+        (let [xs (items)]
+          (dom/button
+            #js {:onClick
+                 (fn [e] (om/transact! xs #(assoc % 1 {:text "zebra"})))}
+            "Switch!"))))))
 
-;; resolution support
+(defn root [empty owner]
+  (reify
+    om/IRender
+    (render [_]
+      (println "Render Root")
+      (dom/div nil
+        (om/build main-view {})))))
 
-(declare resolvable)
-
-(defn allocate-storage* [id]
-  (atom {}))
-
-(def allocate-storage (memoize allocate-storage*))
-
-(defn ref-cursor [cursor id state]
-  (let [storage (allocate-storage id)]
-    (specify cursor
-      om/ICursorDerive
-      (-derive [this derived state path]
-        (let [cursor' (om/to-cursor derived state path)]
-          (if (om/cursor? cursor')
-            (om/adapt this cursor')
-            cursor')))
-      om/IAdapt
-      (-adapt [_ other]
-        (ref-cursor (om/adapt cursor other) id state))
-      om/IOmRef
-      (-add-dep! [_ c]
-        (swap! storage assoc (om/id c) c))
-      (-remove-dep! [_ c]
-        (swap! storage dissoc (om/id c)))
-      (-get-deps [_]
-        @storage)
-      om/ITransact
-      (-transact! [cursor korks f tag]
-        (om/commit! cursor korks f)
-        (doseq [c (vals @storage)]
-          (om/refresh-props! c))))))
-
-(defn resolve-id [id cursor]
-  (let [state   (om/state cursor)
-        cursor' (om/adapt cursor
-                  (om/to-cursor (get @state id) state))]
-    (if (= id :my-ref)
-      (ref-cursor cursor' id state)
-      cursor)))
-
-(defn resolvable [x resolve-fn]
-  (if (om/cursor? x)
-    (specify x
-      om/IAdapt
-      (-adapt [_ other]
-        (resolvable (om/adapt x other) resolve-fn))
-      ICloneable
-      (-clone [this]
-        (resolvable (clone x) resolve-fn))
-      IResolve
-      (-resolve [_ id]
-        (resolve-fn id x))
-      om/ICursorDerive
-      (-derive [this derived state path]
-        (let [cursor' (om/to-cursor derived state path) ]
-          (if (om/cursor? cursor')
-            (om/adapt this cursor')
-            cursor'))))
-    x))
-
-(om/root my-app app-state
-  {:target (.getElementById js/document "app")
-   :adapt  (fn [cursor] (resolvable cursor resolve-id))})
+(om/root root app-state
+  {:target (.getElementById js/document "app")})

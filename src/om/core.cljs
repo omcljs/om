@@ -141,6 +141,7 @@
 (defprotocol IOmRef
   (-add-dep! [this c])
   (-remove-dep! [this c])
+  (-refresh-deps! [this])
   (-get-deps [this]))
 
 (declare notify* path)
@@ -226,6 +227,13 @@
                       props-state))
           (aset props "__om_state" nil))))))
 
+(defn ref-changed? [ref]
+  (let [val  (value ref)
+        val' (get-in @(state ref) (path ref) ::not-found)]
+    (not= val val')))
+
+(declare remove-ref-from-component!)
+
 (def pure-methods
   {:getDisplayName
    (fn []
@@ -276,6 +284,10 @@
                            (aget state "__om_state")))
                 true
 
+                (and (not (zero? (count (aget state "__om_refs"))))
+                     (some #(ref-changed? %) (aget state "__om_refs")))
+                true
+
                 (not (== (aget props "__om_index") (aget next-props "__om_index")))
                 true
 
@@ -294,9 +306,7 @@
        (let [c (children this)
              cursor (aget (.-props this) "__om_cursor")]
          (when (satisfies? IDidMount c)
-           (allow-reads (did-mount c)))
-         (when (satisfies? IOmRef cursor)
-           (-add-dep! cursor this)))))
+           (allow-reads (did-mount c))))))
    :componentWillUnmount
    (fn []
      (this-as this
@@ -304,8 +314,9 @@
              cursor (aget (.-props this) "__om_cursor")]
          (when (satisfies? IWillUnmount c)
            (allow-reads (will-unmount c)))
-         (when (satisfies? IOmRef cursor)
-           (-remove-dep! cursor this)))))
+         (when-let [refs (seq (aget (.-state this) "__om_refs"))]
+           (doseq [ref refs]
+             (remove-ref-from-component! this ref))))))
    :componentWillUpdate
    (fn [next-props next-state]
      (this-as this
@@ -714,6 +725,84 @@
     (-notify! state tx-data (to-cursor @state state))))
 
 ;; =============================================================================
+;; Ref Cursors
+
+(declare commit! id refresh-props!)
+
+(defn root-cursor [atom]
+  (to-cursor @atom atom []))
+
+(defn allocate-storage* [path]
+  (atom {}))
+
+(def allocate-storage (memoize allocate-storage*))
+
+(defn ref-sub-cursor [x parent]
+  (specify x
+    ICloneable
+    (-clone [this]
+      (ref-sub-cursor (clone x) parent))
+    IAdapt
+    (-adapt [this other]
+      (ref-sub-cursor (adapt x other) ))
+    ICursorDerive
+    (-derive [this derived state path]
+      (let [cursor' (to-cursor derived state path)]
+        (if (cursor? cursor')
+          (adapt this cursor')
+          cursor')))
+    ITransact
+    (-transact! [cursor korks f tag]
+      (commit! cursor korks f)
+      (-refresh-deps! parent))))
+
+(defn ref-cursor [cursor]
+  (let [storage (allocate-storage (path cursor))]
+    (specify cursor
+      ICursorDerive
+      (-derive [this derived state path]
+        (let [cursor' (to-cursor derived state path)]
+          (if (cursor? cursor')
+            (ref-sub-cursor cursor' this)
+            cursor')))
+      IOmRef
+      (-add-dep! [_ c]
+        (swap! storage assoc (id c) c))
+      (-remove-dep! [_ c]
+        (swap! storage dissoc (id c)))
+      (-refresh-deps! [_]
+        (doseq [c (vals @storage)]
+          (-queue-render! (state cursor) c)))
+      (-get-deps [_]
+        @storage)
+      ITransact
+      (-transact! [cursor korks f tag]
+        (commit! cursor korks f)
+        (-refresh-deps! cursor)))))
+
+(defn add-ref-to-component! [c ref]
+  (let [state (.-state c)
+        refs  (or (aget state "__om_refs") #{})]
+    (when-not (contains? refs ref)
+      (aset state "__om_refs" (conj refs ref)))))
+
+(defn remove-ref-from-component! [c ref]
+  (let [state (.-state c)
+        refs  (aget state "__om_refs")]
+    (when (contains? refs ref)
+      (aset state "__om_refs" (disj refs ref)))))
+
+(defn observe [c ref]
+  (add-ref-to-component! c ref)
+  (-add-dep! ref c)
+  ref)
+
+(defn unobserve [c ref]
+  (remove-ref-from-component! c ref)
+  (-remove-dep! ref c)
+  ref)
+
+;; =============================================================================
 ;; API
 
 (def ^:private refresh-queued false)
@@ -1059,7 +1148,8 @@
   (when-not (cursor? cursor)
     (throw
       (js/Error. "First argument to commit! must be a cursor")))
-  (let [key       (-root-key cursor)
+  (let [key       (when (satisfies? IRootKey cursor)
+                    (-root-key cursor))
         app-state (state cursor)
         korks     (cond
                     (nil? korks) []
@@ -1067,7 +1157,8 @@
                     :else [korks])
         cpath     (path cursor)
         rpath     (into cpath korks)]
-    (-set-property! app-state key :ignore true)
+    (when key
+      (-set-property! app-state key :ignore true))
     (if (empty? rpath)
       (swap! app-state f)
       (swap! app-state update-in rpath f))))
