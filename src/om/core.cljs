@@ -232,7 +232,26 @@
         val' (get-in @(state ref) (path ref) ::not-found)]
     (not= val val')))
 
-(declare remove-ref-from-component!)
+(defn update-refs [c]
+  (let [cstate (.-state c)
+        refs   (aget cstate "__om_refs")]
+    (when-not (zero? (count refs))
+      (aset cstate "__om_refs"
+        (into #{}
+          (filter nil?
+            (map
+              (fn [ref]
+                (let [ref-val   (value ref)
+                      ref-state (state ref)
+                      ref-path  (path ref)
+                      ref-val'  (get-in @ref-state ref-path ::not-found)]
+                  (when (not= ref-val ::not-found)
+                    (if (not= ref-val ref-val')
+                      (adapt ref (to-cursor ref-val' ref-state ref-path))
+                      ref))))
+              refs)))))))
+
+(declare unobserve)
 
 (def pure-methods
   {:getDisplayName
@@ -316,7 +335,7 @@
            (allow-reads (will-unmount c)))
          (when-let [refs (seq (aget (.-state this) "__om_refs"))]
            (doseq [ref refs]
-             (remove-ref-from-component! this ref))))))
+             (unobserve this ref))))))
    :componentWillUpdate
    (fn [next-props next-state]
      (this-as this
@@ -327,7 +346,8 @@
                (will-update c
                  (get-props #js {:props next-props})
                  (-get-state this))))))
-       (merge-pending-state this)))
+       (merge-pending-state this)
+       (update-refs this)))
    :componentDidUpdate
    (fn [prev-props prev-state]
      (this-as this

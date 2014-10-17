@@ -28,14 +28,18 @@
     om/IRender
     (render [_]
       (println "Render Main View")
-      (dom/div nil
-        (om/build aview {:text "View A"})
-        (om/build aview {:text "View B"})
-        (let [xs (items)]
+      (let [xs (items)]
+        (dom/div nil
+          (om/build aview {:text "View A"})
+          (om/build aview {:text "View B"})
           (dom/button
             #js {:onClick
                  (fn [e] (om/transact! xs #(assoc % 1 {:text "zebra"})))}
-            "Switch!"))))))
+            "Switch To Zebra!")
+          (dom/button
+            #js {:onClick
+                 (fn [e] (om/transact! xs #(assoc % 1 {:text "dog"})))}
+            "Switch to Dog!"))))))
 
 (defn root [empty owner]
   (reify
