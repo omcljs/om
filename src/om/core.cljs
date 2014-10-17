@@ -271,7 +271,9 @@
                      (not= (-path cursor) (-path next-cursor )))
                 true
                
-                (not (nil? (aget state "__om_pending_state")))
+                (and (not (nil? (aget state "__om_pending_state")))
+                     (not= (aget state "__om_pending_state")
+                           (aget state "__om_state")))
                 true
 
                 (not (== (aget props "__om_index") (aget next-props "__om_index")))
@@ -388,7 +390,7 @@
       ([this]
          (let [state (.-state this)]
            (or (aget state "__om_pending_state")
-             (aget state "__om_state"))))
+               (aget state "__om_state"))))
       ([this ks]
          (get-in (-get-state this) ks)))))
 
@@ -990,7 +992,8 @@
                             (when-let [next-props (aget (.-state c) "__om_next_cursor")]
                               (aset (.-props c) "__om_cursor" next-props)
                               (aset (.-state c) "__om_next_cursor" nil))
-                            (.forceUpdate c)))
+                            (when (.shouldComponentUpdate c (.-props c) (.-state c))
+                              (.forceUpdate c))))
                         (-empty-queue! state)))
                     (-set-property! state watch-key :skip-render-root true)
                     @ret))]
