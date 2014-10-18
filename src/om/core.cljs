@@ -752,10 +752,7 @@
 (defn root-cursor [atom]
   (to-cursor @atom atom []))
 
-(defn allocate-storage* [path]
-  (atom {}))
-
-(def allocate-storage (memoize allocate-storage*))
+(def _refs (atom {}))
 
 (defn ref-sub-cursor [x parent]
   (specify x
@@ -777,7 +774,11 @@
       (-refresh-deps! parent))))
 
 (defn ref-cursor [cursor]
-  (let [storage (allocate-storage (path cursor))]
+  (let [path    (path cursor)
+        storage (get
+                  (swap! _refs update-in
+                    [path] (fnil identity (atom {})))
+                  path)]
     (specify cursor
       ICursorDerive
       (-derive [this derived state path]
@@ -1104,6 +1105,13 @@
                             (when (.shouldComponentUpdate c (.-props c) (.-state c))
                               (.forceUpdate c))))
                         (-empty-queue! state)))
+                    (let [_refs @_refs]
+                      (when-not (empty? _refs)
+                        (doseq [[path cs] _refs]
+                          (let [cs @cs]
+                            (doseq [[id c] cs]
+                              (when (.shouldComponentUpdate c (.-props c) (.-state c))
+                                (.forceUpdate c)))))))
                     (-set-property! state watch-key :skip-render-root true)
                     @ret))]
       (add-watch state watch-key

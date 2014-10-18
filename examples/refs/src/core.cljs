@@ -9,6 +9,8 @@
                  {:text "dog"}
                  {:text "bird"}]}))
 
+(def app-history (atom [@app-state]))
+
 (defn items []
   (om/ref-cursor (:items (om/root-cursor app-state))))
 
@@ -47,7 +49,28 @@
     (render [_]
       (println "Render Root")
       (dom/div nil
-        (om/build main-view {})))))
+        (om/build main-view {})
+        (dom/div #js {:id "message"} nil)
+        (dom/button
+          #js {:onClick
+               (fn [e]
+                 (when (> (count @app-history) 1)
+                   (swap! app-history pop)
+                   (reset! app-state (last @app-history))))}
+          "Undo")))))
 
 (om/root root app-state
   {:target (.getElementById js/document "app")})
+
+(defn pluralize [n s]
+  (if (== n 1)
+    s
+    (str s "s")))
+
+(add-watch app-state :history
+  (fn [_ _ _ n]
+    (when-not (= (last @app-history) n)
+      (swap! app-history conj n))
+    (set! (.-innerHTML (.getElementById js/document "message"))
+      (let [c (count @app-history)]
+        (str c " Saved " (pluralize c "State"))))))
