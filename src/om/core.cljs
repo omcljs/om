@@ -796,7 +796,9 @@
       (-add-dep! [_ c]
         (swap! storage assoc (id c) c))
       (-remove-dep! [_ c]
-        (swap! storage dissoc (id c)))
+        (let [m (swap! storage dissoc (id c))]
+          (when (zero? (count m))
+            (swap! _refs dissoc path))))
       (-refresh-deps! [_]
         (doseq [c (vals @storage)]
           (-queue-render! (state cursor) c)))
