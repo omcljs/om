@@ -484,7 +484,10 @@
               spath [:state-map (react-id this)]]
           (when (satisfies? IWillUnmount c)
             (allow-reads (will-unmount c)))
-          (swap! (get-gstate this) update-in spath dissoc))))
+          (swap! (get-gstate this) update-in spath dissoc)
+          (when-let [refs (seq (aget (.-state this) "__om_refs"))]
+            (doseq [ref refs]
+              (unobserve this ref))))))
    :componentWillUpdate
    (fn [next-props next-state]
      (this-as this
@@ -496,7 +499,8 @@
                (will-update c
                  (get-props #js {:props next-props})
                  (-get-state this))))))
-       (no-local-merge-pending-state this)))
+       (no-local-merge-pending-state this)
+       (update-refs this)))
     :componentDidUpdate
     (fn [prev-props prev-state]
       (this-as this
