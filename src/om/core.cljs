@@ -1183,51 +1183,6 @@
       (swap! app-state f)
       (swap! app-state update-in rpath f))))
 
-(defn refresh-props!
-  "EXPERIMENTAL: Sets a components props to the latest from the
-  application state and queues it to be re-rendered. The component
-  must implement IRenderProps, not IRender or IRenderState."
-  [owner]
-  (let [props     (.-props owner)
-        app-state (aget props "__om_app_state")
-        cursor    (aget props "__om_cursor")
-        cpath     (path cursor)
-        cursor'   (if-not (empty? cpath)
-                    (get-in @app-state cpath)
-                    @app-state)]
-    (aset (.-state owner) "__om_next_cursor"
-      (-derive cursor cursor' app-state cpath))
-    (-queue-render! app-state owner)))
-
-(defn update-props!
-  "EXPERIMENTAL: Given an owner, set the props to a value after
-  applying a function.  it. May supply key or keys as with transact!
-  and update. Only re-renders the owner, no re-render from the root
-  will be trigged. Unless optimizing, in all cases transact! and
-  update! should be preferred."
-  ([owner props f]
-     (update-props! props [] f))
-  ([owner props korks f]
-     (let [korks (cond
-                   (nil? korks) []
-                   (sequential? korks) korks
-                   :else [korks])
-           app-state (aget (.-props owner) "__om_app_state")
-           root-key  (aget (.-props owner) "__om_root_key")]
-       (when-not (cursor? props)
-         (throw (js/Error. "Second argument to update-props! must be a cursor")))
-       (let [cpath (path props)
-             rpath (into cpath korks)]
-         (-set-property! app-state root-key :ignore true)
-         (if (empty? rpath)
-           (swap! app-state f)
-           (swap! app-state update-in rpath f))
-         (let [new-props (if-not (empty? rpath)
-                           (get-in @app-state cpath)
-                           @app-state)]
-           (aset (.-state owner) "__om_next_cursor" (-derive props new-props app-state cpath))))
-       (-queue-render! app-state owner))))
-
 (defn get-node
   "A helper function to get at React refs. Given a owning pure node
   extract the ref specified by name."
