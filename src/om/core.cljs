@@ -778,36 +778,38 @@
 (defn ref-cursor
   "Given a cursor return a reference cursor that inherits all of the
   properties and methods of the cursor. Reference cursors may be
-  observed via om.core/observe"
+  observed via om.core/observe."
   [cursor]
-  (let [path    (path cursor)
-        storage (get
-                  (swap! _refs update-in
-                    [path] (fnil identity (atom {})))
-                  path)]
-    (specify cursor
-      ICursorDerive
-      (-derive [this derived state path]
-        (let [cursor' (to-cursor derived state path)]
-          (if (cursor? cursor')
-            (ref-sub-cursor cursor' this)
-            cursor')))
-      IOmRef
-      (-add-dep! [_ c]
-        (swap! storage assoc (id c) c))
-      (-remove-dep! [_ c]
-        (let [m (swap! storage dissoc (id c))]
-          (when (zero? (count m))
-            (swap! _refs dissoc path))))
-      (-refresh-deps! [_]
-        (doseq [c (vals @storage)]
-          (-queue-render! (state cursor) c)))
-      (-get-deps [_]
-        @storage)
-      ITransact
-      (-transact! [cursor korks f tag]
-        (commit! cursor korks f)
-        (-refresh-deps! cursor)))))
+  (if (satisfies? IOmRef cursor)
+    cursor
+    (let [path    (path cursor)
+          storage (get
+                    (swap! _refs update-in
+                      [path] (fnil identity (atom {})))
+                    path)]
+      (specify cursor
+        ICursorDerive
+        (-derive [this derived state path]
+          (let [cursor' (to-cursor derived state path)]
+            (if (cursor? cursor')
+              (ref-sub-cursor cursor' this)
+              cursor')))
+        IOmRef
+        (-add-dep! [_ c]
+          (swap! storage assoc (id c) c))
+        (-remove-dep! [_ c]
+          (let [m (swap! storage dissoc (id c))]
+            (when (zero? (count m))
+              (swap! _refs dissoc path))))
+        (-refresh-deps! [_]
+          (doseq [c (vals @storage)]
+            (-queue-render! (state cursor) c)))
+        (-get-deps [_]
+          @storage)
+        ITransact
+        (-transact! [cursor korks f tag]
+          (commit! cursor korks f)
+          (-refresh-deps! cursor))))))
 
 (defn add-ref-to-component! [c ref]
   (let [state (.-state c)
