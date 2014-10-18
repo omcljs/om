@@ -749,7 +749,9 @@
 
 (declare commit! id refresh-props!)
 
-(defn root-cursor [atom]
+(defn root-cursor
+  "Given an application state atom return a root cursor for it."
+  [atom]
   (to-cursor @atom atom []))
 
 (def _refs (atom {}))
@@ -773,7 +775,11 @@
       (commit! cursor korks f)
       (-refresh-deps! parent))))
 
-(defn ref-cursor [cursor]
+(defn ref-cursor
+  "Given a cursor return a reference cursor that inherits all of the
+  properties and methods of the cursor. Reference cursors may be
+  observed via om.core/observe"
+  [cursor]
   (let [path    (path cursor)
         storage (get
                   (swap! _refs update-in
@@ -813,7 +819,10 @@
     (when (contains? refs ref)
       (aset state "__om_refs" (disj refs ref)))))
 
-(defn observe [c ref]
+(defn observe
+  "Given a component and a reference cursor have the component observe
+  the reference cursor for any data changes."
+  [c ref]
   (add-ref-to-component! c ref)
   (-add-dep! ref c)
   ref)
