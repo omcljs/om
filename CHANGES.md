@@ -1,3 +1,19 @@
+## 0.8.0-alpha1
+
+### Enhancements
+* reference cursors
+* om.core/commit!, like om.core/transact! but will not trigger a re-render
+* add marquee tag
+* add om.core/mounted?
+* experimental support to write component local state into global state
+
+### Changes
+* React 0.11.2
+
+### Fixes
+* om.core/root now properly returns mounted component
+* default shouldComponentUpdate now compares state
+
 ## 0.7.3
 
 ### Changes
