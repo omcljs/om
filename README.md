@@ -17,6 +17,8 @@ for [yourself](http://swannodette.github.io/2013/12/31/time-travel/).
 
 Om supports features not currently present in React:
 
+* Global state management facilities built in
+* Components may have arbitrary data dependencies, not limited props & state
 * Component construction can be intercepted via
   `:instrument`. Simplifies debugging components and generic editors.
 * Provides stream of all application state change deltas via
