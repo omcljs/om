@@ -89,6 +89,7 @@ examples:
   draggable
 * [om-autocomplete](https://github.com/arosequist/om-autocomplete),
   customizable autocompleter
+* [ff-om-draggable](https://github.com/neo/ff-om-draggable)
 * [om-widgets](https://bitbucket.org/athieme/om-widgets)
 * [om-dev-component](https://github.com/ioRekz/om-dev-component), add dev features (e.g. state history navigation) to your component
 * [om-sync](http://github.com/swannodette/om-sync), keep client and
