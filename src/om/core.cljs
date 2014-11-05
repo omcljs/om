@@ -767,7 +767,7 @@
       (ref-sub-cursor (clone x) parent))
     IAdapt
     (-adapt [this other]
-      (ref-sub-cursor (adapt x other) ))
+      (ref-sub-cursor (adapt x other) parent))
     ICursorDerive
     (-derive [this derived state path]
       (let [cursor' (to-cursor derived state path)]
