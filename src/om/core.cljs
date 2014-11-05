@@ -597,8 +597,8 @@
     (-lookup this k nil))
   (-lookup [this k not-found]
     (check
-      (let [v (-lookup value k not-found)]
-        (if-not (= v not-found)
+      (let [v (-lookup value k ::not-found)]
+        (if-not (= v ::not-found)
           (-derive this v state (conj path k))
           not-found))))
   IFn
