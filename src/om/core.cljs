@@ -1110,6 +1110,7 @@
                                   target)]
                         (when (nil? @ret)
                           (reset! ret c))))
+                    ;; update state pass
                     (let [queue (-get-queue state)]
                       (when-not (empty? queue)
                         (doseq [c queue]
@@ -1120,6 +1121,7 @@
                             (when (.shouldComponentUpdate c (.-props c) (.-state c))
                               (.forceUpdate c))))
                         (-empty-queue! state)))
+                    ;; ref cursor pass
                     (let [_refs @_refs]
                       (when-not (empty? _refs)
                         (doseq [[path cs] _refs]
