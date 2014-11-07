@@ -51,6 +51,10 @@
 (defprotocol IRenderState
   (render-state [this state]))
 
+;; marker protocol, if set component will check equality of current
+;; and render state
+(defprotocol ICheckState) 
+
 ;; =============================================================================
 ;; Om Protocols
 
@@ -1118,7 +1122,8 @@
                             (when-let [next-props (aget (.-state c) "__om_next_cursor")]
                               (aset (.-props c) "__om_cursor" next-props)
                               (aset (.-state c) "__om_next_cursor" nil))
-                            (when (.shouldComponentUpdate c (.-props c) (.-state c))
+                            (when (or (not (satisfies? ICheckState (children c)))
+                                      (.shouldComponentUpdate c (.-props c) (.-state c)))
                               (.forceUpdate c))))
                         (-empty-queue! state)))
                     ;; ref cursor pass
