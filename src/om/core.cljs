@@ -682,7 +682,7 @@
   (-nth [this n not-found]
     (check
       (if (< n (-count value))
-        (-derive this (-nth value n) state (conj path n))
+        (-derive this (-nth value n not-found) state (conj path n))
         not-found)))
   ISeqable
   (-seq [this]
