@@ -298,9 +298,7 @@
                      (not= (-path cursor) (-path next-cursor )))
                 true
                
-                (and (not (nil? (aget state "__om_pending_state")))
-                     (not= (aget state "__om_pending_state")
-                           (aget state "__om_state")))
+                (not= (-get-state this) (-get-render-state this))
                 true
 
                 (and (not (zero? (count (aget state "__om_refs"))))
