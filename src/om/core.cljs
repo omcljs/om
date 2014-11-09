@@ -866,7 +866,7 @@
     (str "Invalid Om component fn, " (.-name f)
          " does not return valid instance")))
 
-(defn ^:private valid? [m]
+(defn ^:private valid-opts? [m]
   (every? #{:key :react-key :fn :init-state :state
             :opts :shared ::index :instrument :descriptor}
     (keys m)))
@@ -885,7 +885,7 @@
 (defn build*
   ([f cursor] (build* f cursor nil))
   ([f cursor m]
-     (assert (valid? m)
+     (assert (valid-opts? m)
        (apply str "build options contains invalid keys, only :key, :react-key, "
          ":fn, :init-state, :state, and :opts allowed, given "
          (interpose ", " (keys m))))
