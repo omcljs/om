@@ -848,9 +848,13 @@
 (def ^:private refresh-queued false)
 (def ^:private refresh-set (atom #{}))
 
-(defn ^:private render-all []
+(defn ^:private get-renderT [state]
+  (or (.-om$render$T state) 0))
+
+(defn ^:private render-all [state]
   (set! refresh-queued false)
-  (doseq [f @refresh-set] (f)))
+  (doseq [f @refresh-set] (f))
+  (set! (.-om$render$T state) (inc (get-renderT state))))
 
 (def ^:private roots (atom {}))
 
@@ -1147,8 +1151,8 @@
           (when-not refresh-queued
             (set! refresh-queued true)
             (if (exists? js/requestAnimationFrame)
-              (js/requestAnimationFrame render-all)
-              (js/setTimeout render-all 16)))))
+              (js/requestAnimationFrame #(render-all state))
+              (js/setTimeout #(render-all state) 16)))))
       ;; store fn to remove previous root render loop
       (swap! roots assoc target
         (fn []
