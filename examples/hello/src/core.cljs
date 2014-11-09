@@ -4,6 +4,8 @@
 
 (enable-console-print!)
 
+(def app-state (atom {}))
+
 (defn widget [data owner]
   (reify
     om/IInitState
@@ -20,5 +22,5 @@
         (dom/button #js {:onClick #(om/update-state! owner :count identity)}
           "Do Nothing")))))
 
-(om/root widget {}
+(om/root widget app-state
   {:target (.getElementById js/document "app")})
