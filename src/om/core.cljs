@@ -514,19 +514,13 @@
     ISetState
     (-set-state!
       ([this val render]
-         (let [props     (.-props this)
-               app-state (aget props "__om_app_state")
+         (let [gstate (get-gstate this)
                spath  [:state-map (react-id this) :pending-state]]
            (swap! (get-gstate this) assoc-in spath val)
-           (when (and (not (nil? app-state)) render)
-             (-queue-render! app-state this))))
+           (when (and (not (nil? gstate)) render)
+             (-queue-render! gstate this))))
       ([this ks val render]
-         (let [props     (.-props this)
-               app-state (aget props "__om_app_state")
-               spath  [:state-map (react-id this) :pending-state]]
-           (swap! (get-gstate this) update-in spath assoc-in ks val)
-           (when (and (not (nil? app-state)) render)
-             (-queue-render! app-state this)))))
+         (-set-state! this (assoc-in (-get-state this) ks val) render)))
     IGetRenderState
     (-get-render-state
       ([this]
