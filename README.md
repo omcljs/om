@@ -38,7 +38,7 @@ real-world integration example
 
 ## Examples
 
-```clj
+```clojure
 (ns example
   (:require [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]))
@@ -124,7 +124,7 @@ Make sure you have [Leiningen](http://leiningen.org/) installed.
 
 Your `project.clj` should include something like the following:
 
-```clj
+```clojure
 (defproject foo "0.1.0"
   ...
   :dependencies [[org.clojure/clojure "1.6.0"]
@@ -137,7 +137,7 @@ For local development your
 [lein-cljsbuild](http://github.com/emezeske/lein-cljsbuild) settings
 should look something like this:
 
-```clj
+```clojure
 :cljsbuild {
   :builds [{:id "dev"
             :source-paths ["src"]
@@ -165,7 +165,7 @@ Your local development markup should look something like the following:
 For production your [lein-cljsbuild](http://github.com/emezeske/lein-cljsbuild) settings should look something
 like this:
 
-```clj
+```clojure
 :cljsbuild {
   :builds [{:id "release"
             :source-paths ["src"]
