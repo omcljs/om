@@ -10,16 +10,3 @@
      (~'render [this#]
        ~@body)))
 
-(defmacro allow-reads [& body]
-  `(binding [om.core/*read-enabled* true]
-    ~@body))
-
-(defmacro check [& body]
-  `(if om.core/*read-enabled*
-     (do
-       ~@body)
-     (throw
-       (js/Error.
-         (str "Cannot manipulate cursor outside of render phase, only "
-              "om.core/transact!, om.core/update!, and cljs.core/deref operations allowed")))))
-

@@ -4,10 +4,11 @@
 
 (enable-console-print!)
 
-(def app-state (atom {}))
+(def app-state (atom {:foo "bar"}))
 
 (defn widget [data owner]
   (reify
+    om/ICheckState
     om/IInitState
     (init-state [_]
       {:count 0})
@@ -17,9 +18,17 @@
       (dom/div nil
         (dom/h2 nil "Hello world!")
         (dom/p nil (str "Count: " count))
-        (dom/button #js {:onClick #(om/update-state! owner :count inc)}
+        (dom/button
+          #js {:onClick
+               #(do
+                  (println "I can read!" (:foo data))
+                  (om/update-state! owner :count inc))}
           "Bump!")
-        (dom/button #js {:onClick #(om/update-state! owner :count identity)}
+        (dom/button
+          #js {:onClick
+               #(do
+                  (println "I can also read!" (:foo data))
+                  (om/update-state! owner :count identity))}
           "Do Nothing")))))
 
 (om/root widget app-state
