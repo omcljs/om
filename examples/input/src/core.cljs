@@ -11,8 +11,7 @@
       (init-state [_]
         {:value "" :count 0})
       om/IRenderState
-      (render-state 
-        [_ {:keys [value]}]
+      (render-state [_ {:keys [value]}]
         (dom/div nil
           (dom/label nil "Only numeric : ")
           (dom/input #js
