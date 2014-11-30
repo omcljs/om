@@ -1,3 +1,22 @@
+## 0.8.0-beta1
+
+### Enhancements
+* Improved multimethod support, mount/unmount life-cycle methods invoked
+as expected
+
+## 0.8.0-alpha2
+
+### Enhancements
+* OM-260: remove cursor consistency checks
+
+### Fixes
+* OM-276: bad pending state for no local state
+* OM-262: input behavior regression
+* OM-270: incorrect no-local state behavior
+* OM-274: incorrect -lookup behavior for IndexedCursor
+* OM-267: bad logic for not found case in MapCusor -lookup implementation
+* OM-271: typo, parent not passed to ref sub-cursor
+
 ## 0.8.0-alpha1
 
 ### Enhancements
