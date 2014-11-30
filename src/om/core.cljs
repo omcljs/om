@@ -852,6 +852,18 @@
          (js/React.createClass (or descriptor *descriptor* pure-descriptor))))
      (aget f "om$descriptor")))
 
+(defn getf
+  ([f cursor]
+   (if (instance? MultiFn f)
+     (let [dv ((.-dispatch-fn f) cursor nil)]
+      (get-method f dv))
+     f))
+  ([f cursor opts]
+   (if (instance? MultiFn f)
+     (let [dv ((.-dispatch-fn f) cursor nil opts)]
+       (get-method f dv))
+     f)))
+
 (defn build*
   ([f cursor] (build* f cursor nil))
   ([f cursor m]
@@ -862,7 +874,7 @@
      (cond
        (nil? m)
        (let [shared (get-shared *parent*)
-             ctor   (get-descriptor f)]
+             ctor   (get-descriptor (getf f cursor))]
          (ctor #js {:__om_cursor cursor
                     :__om_shared shared
                     :__om_root_key *root-key*
@@ -870,10 +882,10 @@
                     :__om_descriptor *descriptor*
                     :__om_instrument *instrument*
                     :children
-            (fn [this]
-              (let [ret (f cursor this)]
-                (valid-component? ret f)
-                ret))}))
+                    (fn [this]
+                      (let [ret (f cursor this)]
+                        (valid-component? ret f)
+                        ret))}))
 
        :else
        (let [{:keys [key state init-state opts]} m
@@ -887,7 +899,7 @@
                        (get cursor' key)
                        (get m :react-key))
              shared  (or (:shared m) (get-shared *parent*))
-             ctor    (get-descriptor f (:descriptor m))]
+             ctor    (get-descriptor (getf f cursor' opts) (:descriptor m))]
          (ctor #js {:__om_cursor cursor'
                     :__om_index (::index m)
                     :__om_init_state init-state
@@ -899,15 +911,15 @@
                     :__om_instrument *instrument*
                     :key rkey
                     :children
-            (if (nil? opts)
-              (fn [this]
-                (let [ret (f cursor' this)]
-                  (valid-component? ret f)
-                  ret))
-              (fn [this]
-                (let [ret (f cursor' this opts)]
-                  (valid-component? ret f)
-                  ret)))})))))
+                    (if (nil? opts)
+                      (fn [this]
+                        (let [ret (f cursor' this)]
+                          (valid-component? ret f)
+                          ret))
+                      (fn [this]
+                        (let [ret (f cursor' this opts)]
+                          (valid-component? ret f)
+                          ret)))})))))
 
 (defn build
   "Builds an Om component. Takes an IRender/IRenderState instance

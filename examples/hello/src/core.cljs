@@ -12,6 +12,12 @@
     om/IInitState
     (init-state [_]
       {:count 0})
+    om/IWillMount
+    (will-mount [_]
+      (println "Hello widget mounting"))
+    om/IWillUnmount
+    (will-unmount [_]
+      (println "Hello widget unmounting"))
     om/IRenderState
     (render-state [_ {:keys [count]}]
       (println "Render!")
