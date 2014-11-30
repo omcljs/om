@@ -119,7 +119,7 @@ examples:
 
 ## Using it
 
-Om is alpha software. The current version depends on React 0.11.1.
+The current version depends on React 0.11.1.
 
 Make sure you have [Leiningen](http://leiningen.org/) installed.
 
