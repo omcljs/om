@@ -821,10 +821,15 @@
 (defn ^:private get-renderT [state]
   (or (.-om$render$T state) 0))
 
-(defn ^:private render-all [state]
-  (set! refresh-queued false)
-  (doseq [f @refresh-set] (f))
-  (set! (.-om$render$T state) (inc (get-renderT state))))
+(defn render-all
+  "Force a render of *all* roots. Usage of this function is almost
+  never recommended."
+  ([] (render-all nil))
+  ([state]
+   (set! refresh-queued false)
+   (doseq [f @refresh-set] (f))
+   (when-not (nil? state)
+     (set! (.-om$render$T state) (inc (get-renderT state))))))
 
 (def ^:private roots (atom {}))
 
