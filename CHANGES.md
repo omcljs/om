@@ -1,3 +1,9 @@
+## 0.8.0-beta2
+
+### Enhancements
+* Preconditions on most of the public api to support earlier failures
+* Make `render-all` public
+
 ## 0.8.0-beta1
 
 ### Enhancements
