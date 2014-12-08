@@ -295,7 +295,7 @@
          (merge-props-state this next-props)
          (if (satisfies? IShouldUpdate c)
            (should-update c
-             (get-props #js {:props next-props})
+             (get-props #js {:props next-props :isOmComponent true})
              (-get-state this))
            (let [cursor      (aget props "__om_cursor")
                  next-cursor (aget next-props "__om_cursor")]
@@ -350,7 +350,7 @@
          (when (satisfies? IWillUpdate c)
            (let [state (.-state this)]
              (will-update c
-               (get-props #js {:props next-props})
+               (get-props #js {:props next-props :isOmComponent true})
                (-get-state this)))))
        (merge-pending-state this)
        (update-refs this)))
@@ -361,7 +361,7 @@
          (when (satisfies? IDidUpdate c)
            (let [state (.-state this)]
              (did-update c
-               (get-props #js {:props prev-props})
+               (get-props #js {:props prev-props :isOmComponent true})
                (or (aget state "__om_prev_state")
                  (aget state "__om_state")))))
          (aset (.-state this) "__om_prev_state" nil))))
@@ -371,7 +371,7 @@
        (let [c (children this)]
          (when (satisfies? IWillReceiveProps c)
            (will-receive-props c
-             (get-props #js {:props next-props}))))))
+             (get-props #js {:props next-props :isOmComponent true}))))))
    :render
    (fn []
      (this-as this
@@ -497,7 +497,7 @@
          (when (satisfies? IWillUpdate c)
            (let [state (.-state this)]
              (will-update c
-               (get-props #js {:props next-props})
+               (get-props #js {:props next-props :isOmComponent true})
                (-get-state this)))))
        (no-local-merge-pending-state this)
        (update-refs this)))
@@ -511,7 +511,7 @@
           (when (satisfies? IDidUpdate c)
             (let [state (.-state this)]
               (did-update c
-                (get-props #js {:props prev-props})
+                (get-props #js {:props prev-props :isOmComponent true})
                 (or (:previous-state states)
                   (:render-state states)))))
           (when (:previous-state states)
