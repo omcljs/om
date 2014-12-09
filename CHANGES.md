@@ -1,3 +1,8 @@
+## 0.8.0-beta3
+
+### Fixes
+* OM-290: component? precondition unexpectedly failing
+
 ## 0.8.0-beta2
 
 ### Enhancements
