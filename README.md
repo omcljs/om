@@ -220,6 +220,7 @@ well:
 
 * [secretary](http://github.com/gf3/secretary)
 * [silk](http://github.com/DomKM/silk)
+* [bidi](http://github.com/juxt/bidi)
 
 ### How do I test Om programs?
 
