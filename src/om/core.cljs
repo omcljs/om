@@ -872,7 +872,9 @@
   ([f descriptor]
    (when (nil? (aget f "om$descriptor"))
      (aset f "om$descriptor"
-       (js/React.createClass (or descriptor *descriptor* pure-descriptor))))
+       (js/React.createFactory
+         (js/React.createClass
+           (or descriptor *descriptor* pure-descriptor)))))
    (aget f "om$descriptor")))
 
 (defn getf
@@ -934,7 +936,7 @@
                   :__om_app_state *state*
                   :__om_descriptor *descriptor*
                   :__om_instrument *instrument*
-                  :key rkey
+                  :key (or rkey js/undefined) ;; annoying
                   :children
                   (if (nil? opts)
                     (fn [this]
