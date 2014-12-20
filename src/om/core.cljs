@@ -618,6 +618,9 @@
   IHash
   (-hash [_]
     (hash value))
+  IKVReduce
+  (-kv-reduce [_ f init]
+    (-kv-reduce value f init))
   IPrintWithWriter
   (-pr-writer [_ writer opts]
     (-pr-writer value writer opts)))
@@ -692,6 +695,9 @@
   IHash
   (-hash [_]
     (hash value))
+  IKVReduce
+  (-kv-reduce [_ f init]
+    (-kv-reduce value f init))
   IPrintWithWriter
   (-pr-writer [_ writer opts]
     (-pr-writer value writer opts)))
