@@ -449,6 +449,7 @@
       (swap! gstate update-in spath
         (fn [states]
           (-> states
+            (assoc :previous-state (:render-state states))
             (assoc :render-state
               (merge (:render-state states) (:pending-state states)))
             (dissoc :pending-state)))))))
@@ -513,7 +514,7 @@
               (did-update c
                 (get-props #js {:props prev-props :isOmComponent true})
                 (or (:previous-state states)
-                  (:render-state states)))))
+                    (:render-state states)))))
           (when (:previous-state states)
             (swap! gstate update-in spath dissoc :previous-state)))))))
 
