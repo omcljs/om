@@ -860,7 +860,7 @@
          " does not return valid instance")))
 
 (defn ^:private valid-opts? [m]
-  (every? #{:key :react-key :fn :init-state :state
+  (every? #{:key :react-key :key-fn :fn :init-state :state
             :opts :shared ::index :instrument :descriptor}
     (keys m)))
 
@@ -892,7 +892,7 @@
   ([f cursor m]
    {:pre [(ifn? f) (or (nil? m) (map? m))]}
    (assert (valid-opts? m)
-     (apply str "build options contains invalid keys, only :key, :react-key, "
+     (apply str "build options contains invalid keys, only :key, :key-fn :react-key, "
        ":fn, :init-state, :state, and :opts allowed, given "
        (interpose ", " (keys m))))
    (cond
@@ -912,16 +912,17 @@
                       ret))}))
 
      :else
-     (let [{:keys [key state init-state opts]} m
+     (let [{:keys [key key-fn state init-state opts]} m
            dataf   (get m :fn)
            cursor' (if-not (nil? dataf)
                      (if-let [i (::index m)]
                        (dataf cursor i)
                        (dataf cursor))
                      cursor)
-           rkey    (if-not (nil? key)
-                     (get cursor' key)
-                     (get m :react-key))
+           rkey    (cond
+                     (not (nil? key)) (get cursor' key)
+                     (not (nil? key-fn)) (key-fn cursor')
+                     :else (get m :react-key))
            shared  (or (:shared m) (get-shared *parent*))
            ctor    (get-descriptor (getf f cursor' opts) (:descriptor m))]
        (ctor #js {:__om_cursor cursor'
