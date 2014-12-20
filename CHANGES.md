@@ -1,3 +1,15 @@
+## 0.8.0-beta4
+
+### Changes
+* Add low-level namespace om.impl
+* update to React 0.12.2
+
+### Fixes
+* OM-190: add :key-fn option to `om.core/build`
+* OM-253: overrideable rAF
+* OM-294: IKVReduce for MapCursor & IndexedCursor
+* OM-296: `no-local-merge-pending-state` was not setting `:previous-state`
+
 ## 0.8.0-beta3
 
 ### Fixes
