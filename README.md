@@ -119,7 +119,7 @@ examples:
 
 ## Using it
 
-The current version depends on React 0.11.2.
+The current version depends on React 0.12.2.
 
 Make sure you have [Leiningen](http://leiningen.org/) installed.
 
@@ -155,7 +155,7 @@ Your local development markup should look something like the following:
 <html>
     <body>
        <div id="my-app"></div>
-       <script src="http://fb.me/react-0.11.2.js"></script>
+       <script src="http://fb.me/react-0.12.2.js"></script>
        <script src="out/goog/base.js" type="text/javascript"></script>
        <script src="main.js" type="text/javascript"></script>
        <script type="text/javascript">goog.require("main.core");</script>
