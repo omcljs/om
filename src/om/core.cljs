@@ -1082,6 +1082,9 @@
                  intercept all calls to om.core/build. This function should
                  correspond to the three arity version of om.core/build.
    :adapt      - a function to adapt the root cursor
+   :raf        - override requestAnimationFrame based rendering. If
+                 false setTimeout will be use. If given a function
+                 will be invoked instead.
 
    Example:
 
@@ -1090,7 +1093,7 @@
        ...)
      {:message :hello}
      {:target js/document.body})"
-  ([f value {:keys [target tx-listen path instrument descriptor adapt] :as options}]
+  ([f value {:keys [target tx-listen path instrument descriptor adapt raf] :as options}]
     (assert (ifn? f) "First argument must be a function")
     (assert (not (nil? target)) "No target specified to om.core/root")
     ;; only one root render loop per target
@@ -1156,9 +1159,16 @@
             (swap! refresh-set conj rootf))
           (when-not refresh-queued
             (set! refresh-queued true)
-            (if (exists? js/requestAnimationFrame)
-              (js/requestAnimationFrame #(render-all state))
-              (js/setTimeout #(render-all state) 16)))))
+            (cond
+              (or (false? raf)
+                  (not (exists? js/requestAnimationFrame)))
+              (js/setTimeout #(render-all state) 16)
+
+              (fn? raf)
+              (raf)
+
+              :else
+              (js/requestAnimationFrame #(render-all state))))))
       ;; store fn to remove previous root render loop
       (swap! roots assoc target
         (fn []
