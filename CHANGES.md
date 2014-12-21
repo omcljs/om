@@ -1,3 +1,8 @@
+## 0.8.0-beta5
+
+### Changes
+* Depend on 0.12.2.1 React JAR with new externs
+
 ## 0.8.0-beta4
 
 ### Changes
