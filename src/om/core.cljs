@@ -1189,6 +1189,9 @@
   (when-let [f (get @roots target)]
     (f)))
 
+(defn transactable? [x]
+  (satisfies? ITransact x))
+
 (defn transact!
   "Given a tag, a cursor, an optional list of keys ks, mutate the tree
   at the path specified by the cursor + the optional keys by applying
@@ -1199,7 +1202,7 @@
   ([cursor korks f]
    (transact! cursor korks f nil))
   ([cursor korks f tag]
-   {:pre [(cursor? cursor) (ifn? f)]}
+   {:pre [(transactable? cursor) (ifn? f)]}
    (let [korks (cond
                  (nil? korks) []
                  (sequential? korks) korks

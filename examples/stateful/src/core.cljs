@@ -17,7 +17,7 @@
     (f x)
     (update-in x korks f)))
 
-(def MyClass
+(def MyClass*
   (js/React.createClass
     #js
     {:getInitialState
@@ -33,5 +33,7 @@
                om/ITransact
                (-transact! [m korks f _]
                  (.setState this #js {:value (applyf m korks f)})))))))}))
+
+(def MyClass (js/React.createFactory MyClass*))
 
 (js/React.renderComponent (MyClass.) (.getElementById js/document "app"))
