@@ -1,4 +1,4 @@
-## 0.8.0-beta6
+## 0.8.0-rc1
 
 ### Changes
 * relax transact! precondition, only require ITransact instance
