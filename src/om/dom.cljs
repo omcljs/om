@@ -1,6 +1,7 @@
 (ns om.dom
   (:refer-clojure :exclude [map meta time])
-  (:require-macros [om.dom :as dom]))
+  (:require-macros [om.dom :as dom])
+  (:require [goog.object :as gobject]))
 
 (dom/gen-react-dom-fns)
 
@@ -28,11 +29,13 @@
        :render
        (fn []
          (this-as this
-           (.transferPropsTo this
-             ;; NOTE: if switch to macro we remove a closure allocation
-             (ctor #js {:value (aget (.-state this) "value")
-                        :onChange (aget this "onChange")
-                        :children (aget (.-props this) "children")}))))})))
+           ;; NOTE: if switch to macro we remove a closure allocation
+           (let [props #js {}]
+             (gobject/extend props (.-props this)
+               #js {:value (aget (.-state this) "value")
+                    :onChange (aget this "onChange")
+                    :children (aget (.-props this) "children")})
+             (ctor props))))})))
 
 (def input (wrap-form-element js/React.DOM.input "input"))
 
