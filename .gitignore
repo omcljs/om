@@ -11,3 +11,4 @@ pom.xml.asc
 /.lein-*
 /.nrepl-port
 examples/history
+*init.clj
