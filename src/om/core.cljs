@@ -1108,7 +1108,7 @@
                   (atom value))
           state (setup state watch-key tx-listen)
           adapt (or adapt identity)
-          m     (dissoc options :target :tx-listen :path :adapt)
+          m     (dissoc options :target :tx-listen :path :adapt :raf)
           ret   (atom nil)
           rootf (fn rootf []
                   (swap! refresh-set disj rootf)
