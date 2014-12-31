@@ -1,3 +1,12 @@
+## 0.8.0-beta6
+
+### Changes
+* relax transact! precondition, only require ITransact instance
+
+### Fixes
+* OM-301: Deprecation warning for om.dom/input
+* OM-300: do not preserve component local state entry after unmount
+
 ## 0.8.0-beta5
 
 ### Changes
