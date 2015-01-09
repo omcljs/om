@@ -182,9 +182,14 @@
 (defn get-props
   "Given an owning Pure node return the Om props. Analogous to React
    component props."
-  [x]
-  {:pre [(component? x)]}
-  (aget (.-props x) "__om_cursor"))
+  ([x]
+   {:pre [(component? x)]}
+   (aget (.-props x) "__om_cursor"))
+  ([x korks]
+   {:pre [(component? x)]}
+   (let [korks (if (sequential? korks) korks [korks])]
+     (cond-> (aget (.-props x) "__om_cursor")
+       (seq korks) (get-in korks)))))
 
 (defn get-state
   "Returns the component local state of an owning component. owner is
