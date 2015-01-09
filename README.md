@@ -174,8 +174,7 @@ like this:
               :output-to "main.js"
               :optimizations :advanced
               :pretty-print false
-              :preamble ["react/react.min.js"]
-              :externs ["react/externs/react.js"]}}]}
+              :preamble ["react/react.min.js"]}}]}
 ```
 
 This will generate a single file `main.js`. Your production markup
