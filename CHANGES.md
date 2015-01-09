@@ -1,3 +1,9 @@
+## 0.8.0
+
+### Changes
+* OM-307: get-props extended to have a two arity form (korks)
+* OM-306: dissoc :raf
+
 ## 0.8.0-rc1
 
 ### Changes
