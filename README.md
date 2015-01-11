@@ -34,10 +34,9 @@ There is an in-depth tutorial that will introduce you to the core
 concepts of Om
 [here](http://github.com/swannodette/om/wiki/Basic-Tutorial) and a
 real-world integration example
-[here](http://github.com/swannodette/om/wiki/Intermediate-Tutorial).
-
-The [om-cookbook](https://github.com/om-cookbook) covers many common
-idioms and patterns.
+[here](http://github.com/swannodette/om/wiki/Intermediate-Tutorial). The
+community maintained [om-cookbook](https://github.com/om-cookbook)
+covers many common idioms and patterns.
 
 ## Examples
 
