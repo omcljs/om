@@ -28,13 +28,16 @@ Om supports features not currently present in React:
   Om components outside the Om framework, debugging, and adding event
   hooks not anticipated by original component designer.
 
-## Tutorial
+## Tutorials
 
 There is an in-depth tutorial that will introduce you to the core
 concepts of Om
 [here](http://github.com/swannodette/om/wiki/Basic-Tutorial) and a
 real-world integration example
 [here](http://github.com/swannodette/om/wiki/Intermediate-Tutorial).
+
+The [om-cookbook](https://github.com/om-cookbook) covers many common
+idioms and patterns.
 
 ## Examples
 
