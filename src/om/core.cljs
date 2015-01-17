@@ -490,7 +490,7 @@
         (let [c (children this)]
           (when (satisfies? IWillUnmount c)
             (will-unmount c))
-          (swap! (get-gstate this) dissoc :state-map (react-id this))
+          (swap! (get-gstate this) update-in [:state-map] dissoc (react-id this))
           (when-let [refs (seq (aget (.-state this) "__om_refs"))]
             (doseq [ref refs]
               (unobserve this ref))))))
