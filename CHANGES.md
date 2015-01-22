@@ -1,3 +1,9 @@
+## 0.8.1
+
+### Changes
+* Proper fix to OM-300
+* Bump React JAR dep to 0.12.2.2
+
 ## 0.8.0
 
 ### Changes
