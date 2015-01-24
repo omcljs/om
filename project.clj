@@ -1,4 +1,4 @@
-(defproject org.omcljs/om "0.8.2"
+(defproject org.omcljs/om "0.8.3"
   :description "ClojureScript interface to Facebook's React"
   :url "http://github.com/swannodette/om"
   :license {:name "Eclipse"
@@ -9,7 +9,7 @@
   :source-paths  ["src"]
 
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [org.clojure/clojurescript "0.0-2719" :scope "provided"]
+                 [org.clojure/clojurescript "0.0-2723" :scope "provided"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha" :scope "provided"]
                  [com.facebook/react "0.12.2.4"]]
 

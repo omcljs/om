@@ -145,21 +145,20 @@ should look something like this:
   :builds [{:id "dev"
             :source-paths ["src"]
             :compiler {
+              :main main.core
               :output-to "main.js"
               :output-dir "out"
               :optimizations :none
               :source-map true}}]}
 ```
 
-Your local development markup should look something like the following:
+Your markup should look something like the following:
 
 ```html
 <html>
     <body>
        <div id="my-app"></div>
-       <script src="out/goog/base.js" type="text/javascript"></script>
        <script src="main.js" type="text/javascript"></script>
-       <script type="text/javascript">goog.require("main.core");</script>
     </body>
 </html>
 ```
@@ -172,21 +171,10 @@ like this:
   :builds [{:id "release"
             :source-paths ["src"]
             :compiler {
+              :main main.core
               :output-to "main.js"
               :optimizations :advanced
               :pretty-print false}}]}
-```
-
-This will generate a single file `main.js`. Your production markup
-should look something like this:
-
-```html
-<html>
-    <body>
-       <div id="my-app"></div>
-       <script src="main.js" type="text/javascript"></script>
-    </body>
-</html>
 ```
 
 ## Contributing
