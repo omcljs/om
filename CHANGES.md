@@ -1,3 +1,8 @@
+## 0.8.2
+
+### Changes
+* Bump dependencies
+
 ## 0.8.1
 
 ### Changes

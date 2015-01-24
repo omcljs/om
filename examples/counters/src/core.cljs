@@ -1,6 +1,7 @@
 (ns examples.counters.core
   (:require-macros [cljs.core.async.macros :refer [go]])
-  (:require [om.core :as om :include-macros true]
+  (:require com.facebook.React
+            [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]
             [cljs.core.async :refer [<! chan put! sliding-buffer]]))
 

@@ -131,8 +131,8 @@ Your `project.clj` should include something like the following:
 (defproject foo "0.1.0"
   ...
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [org.clojure/clojurescript "0.0-2511"]
-                 [org.om/om "0.8.1"]]
+                 [org.clojure/clojurescript "0.0-2719"]
+                 [org.omcljs/om "0.8.2"]]
   ...)
 ```
 
@@ -157,7 +157,6 @@ Your local development markup should look something like the following:
 <html>
     <body>
        <div id="my-app"></div>
-       <script src="http://fb.me/react-0.12.2.js"></script>
        <script src="out/goog/base.js" type="text/javascript"></script>
        <script src="main.js" type="text/javascript"></script>
        <script type="text/javascript">goog.require("main.core");</script>
@@ -175,8 +174,7 @@ like this:
             :compiler {
               :output-to "main.js"
               :optimizations :advanced
-              :pretty-print false
-              :preamble ["react/react.min.js"]}}]}
+              :pretty-print false}}]}
 ```
 
 This will generate a single file `main.js`. Your production markup
