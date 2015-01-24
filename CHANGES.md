@@ -1,3 +1,13 @@
+## 0.8.4
+
+### Changes
+* Bump dependencies
+
+## 0.8.3
+
+### Changes
+* Bump dependencies
+
 ## 0.8.2
 
 ### Changes
