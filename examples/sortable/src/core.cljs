@@ -1,7 +1,6 @@
 (ns examples.sortable.core
   (:require-macros [cljs.core.async.macros :refer [go alt!]])
-  (:require com.facebook.React
-            [cljs.core.async :as async :refer [put! chan dropping-buffer]]
+  (:require [cljs.core.async :as async :refer [put! chan dropping-buffer]]
             [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]
             [goog.events :as events]

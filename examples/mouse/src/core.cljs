@@ -1,7 +1,6 @@
 (ns examples.mouse.core
   (:require-macros [cljs.core.async.macros :refer [go]])
-  (:require com.facebook.React
-            [goog.events :as events]
+  (:require [goog.events :as events]
             [cljs.core.async :as async :refer [>! <! put! chan]]
             [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true])

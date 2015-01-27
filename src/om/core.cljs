@@ -1,5 +1,5 @@
 (ns om.core
-  (:require com.facebook.React
+  (:require [cljsjs.react]
             [om.dom :as dom :include-macros true]
             [goog.dom :as gdom])
   (:import [goog.ui IdGenerator]))

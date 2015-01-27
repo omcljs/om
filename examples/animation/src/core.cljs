@@ -1,6 +1,5 @@
 (ns examples.animation.core
-  (:require com.facebook.React
-            [om.core :as om :include-macros true]
+  (:require [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]))
 
 (enable-console-print!)

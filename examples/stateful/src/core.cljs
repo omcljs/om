@@ -1,6 +1,5 @@
 (ns examples.stateful.core
-  (:require com.facebook.React
-            [om.core :as om :include-macros true]
+  (:require [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]))
 
 (defn counter-view [data owner]

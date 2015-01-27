@@ -1,7 +1,7 @@
 (ns om.dom
   (:refer-clojure :exclude [map meta time])
   (:require-macros [om.dom :as dom])
-  (:require com.facebook.React
+  (:require [cljsjs.react]
             [goog.object :as gobject]))
 
 (dom/gen-react-dom-fns)

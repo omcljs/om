@@ -1,3 +1,8 @@
+## 0.8.6
+
+### Changes
+* Rely on cljsjs.react artifact
+
 ## 0.8.5
 
 ### Fixes

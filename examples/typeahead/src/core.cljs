@@ -1,7 +1,6 @@
 (ns examples.typeahead.core
   (:refer-clojure :exclude [chars])
-  (:require com.facebook.React
-            [om.core :as om :include-macros true]
+  (:require [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]
             [clojure.string :as string]))
 
