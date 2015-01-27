@@ -1137,6 +1137,7 @@
                           (reset! ret c))))
                     ;; update state pass
                     (let [queue (-get-queue state)]
+                      (-empty-queue! state)
                       (when-not (empty? queue)
                         (doseq [c queue]
                           (when (.isMounted c)
@@ -1145,8 +1146,7 @@
                               (aset (.-state c) "__om_next_cursor" nil))
                             (when (or (not (satisfies? ICheckState (children c)))
                                       (.shouldComponentUpdate c (.-props c) (.-state c)))
-                              (.forceUpdate c))))
-                        (-empty-queue! state)))
+                              (.forceUpdate c))))))
                     ;; ref cursor pass
                     (let [_refs @_refs]
                       (when-not (empty? _refs)

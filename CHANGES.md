@@ -1,3 +1,8 @@
+## 0.8.5
+
+### Fixes
+* Fix subtle rendering bug in code set-state! queue logic
+
 ## 0.8.4
 
 ### Changes
