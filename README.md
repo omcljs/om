@@ -196,14 +196,9 @@ like this:
 
 ## Contributing
 
-No pull requests at this time please.
-
-Om is still in the design phase so enhancements are low
-priority. However, bug reports are welcome for the existing
-functionality.
-
-For a sense of where Om is going the existing issues give a rough
-idea.
+Please contact me via email to request an electronic Contributor
+Agreement. Once your electronic CA has been signed and returned to me
+I will accept pull requests.
 
 ## FAQ
 
