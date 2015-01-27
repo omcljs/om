@@ -136,6 +136,23 @@ Your `project.clj` should include something like the following:
   ...)
 ```
 
+### React with Add-Ons
+
+If you would rather use React with Add-Ons you can configure this
+with Maven's exclusions feature:
+
+```clojure
+(defproject foo "0.1.0"
+  ...
+  :dependencies [[org.clojure/clojure "1.6.0"]
+                 [org.clojure/clojurescript "0.0-2727"]
+                 [org.omcljs/om "0.8.6" :exclusions [cljsjs/react]]
+                 [cljsjs/react-with-addons "0.12.2-2"]]
+  ...)
+```
+
+### Build configuration
+
 For local development your
 [lein-cljsbuild](http://github.com/emezeske/lein-cljsbuild) settings
 should look something like this:
