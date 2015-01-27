@@ -11,7 +11,7 @@
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/clojurescript "0.0-2727" :scope "provided"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha" :scope "provided"]
-                 [cljsjs/react "0.12.2-4"]]
+                 [cljsjs/react "0.12.2-5"]]
 
   :plugins [[lein-cljsbuild "1.0.4"]]
 
