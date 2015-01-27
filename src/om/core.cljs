@@ -1183,6 +1183,7 @@
           (-remove-properties! state watch-key)
           (remove-watch state watch-key)
           (tear-down state watch-key)
+          (swap! refresh-set disj rootf)
           (swap! roots dissoc target)
           (js/React.unmountComponentAtNode target)))
       (rootf))))
