@@ -42,8 +42,8 @@ covers many common idioms and patterns.
 
 ```clojure
 (ns example
-  (:require [om.core :as om :include-macros true]
-            [om.dom :as dom :include-macros true]))
+  (:require [om.core :as om]
+            [om.dom :as dom]))
 
 (defn widget [data owner]
   (reify
@@ -131,7 +131,7 @@ Your `project.clj` should include something like the following:
 (defproject foo "0.1.0"
   ...
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [org.clojure/clojurescript "0.0-2727"]
+                 [org.clojure/clojurescript "0.0-2755"]
                  [org.omcljs/om "0.8.7"]]
   ...)
 ```
@@ -145,7 +145,7 @@ with Maven's exclusions feature:
 (defproject foo "0.1.0"
   ...
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [org.clojure/clojurescript "0.0-2727"]
+                 [org.clojure/clojurescript "0.0-2755"]
                  [org.omcljs/om "0.8.7" :exclusions [cljsjs/react]]
                  [cljsjs/react-with-addons "0.12.2-3"]]
   ...)
