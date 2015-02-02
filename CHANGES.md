@@ -1,3 +1,8 @@
+## 0.8.8
+
+### Changes
+* Leverage 0.0-2755 macro usage enhancements
+
 ## 0.8.7
 
 ### Changes

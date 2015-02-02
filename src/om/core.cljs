@@ -1,4 +1,5 @@
 (ns om.core
+  (:require-macros om.core)
   (:require [cljsjs.react]
             [om.dom :as dom :include-macros true]
             [goog.dom :as gdom])

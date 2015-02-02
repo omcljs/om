@@ -132,7 +132,7 @@ Your `project.clj` should include something like the following:
   ...
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/clojurescript "0.0-2755"]
-                 [org.omcljs/om "0.8.7"]]
+                 [org.omcljs/om "0.8.8"]]
   ...)
 ```
 
@@ -146,7 +146,7 @@ with Maven's exclusions feature:
   ...
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/clojurescript "0.0-2755"]
-                 [org.omcljs/om "0.8.7" :exclusions [cljsjs/react]]
+                 [org.omcljs/om "0.8.8" :exclusions [cljsjs/react]]
                  [cljsjs/react-with-addons "0.12.2-3"]]
   ...)
 ```
