@@ -149,7 +149,7 @@
   (-refresh-deps! [this])
   (-get-deps [this]))
 
-(declare notify* path)
+(declare notify*)
 
 (defn transact*
   ([state cursor korks f tag]
