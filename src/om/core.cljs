@@ -1127,6 +1127,7 @@
                                      (to-cursor (get-in value path) state path))
                                    watch-key))]
                     (when-not (-get-property state watch-key :skip-render-root)
+                      (-set-property! state watch-key :skip-render-root true)
                       (let [c (dom/render
                                 (binding [*descriptor* descriptor
                                           *instrument* instrument
@@ -1156,7 +1157,6 @@
                             (doseq [[id c] cs]
                               (when (.shouldComponentUpdate c (.-props c) (.-state c))
                                 (.forceUpdate c)))))))
-                    (-set-property! state watch-key :skip-render-root true)
                     @ret))]
       (add-watch state watch-key
         (fn [_ _ o n]
