@@ -1256,8 +1256,7 @@
    (.getDOMNode owner))
   ([owner name]
    {:pre [(string? name)]}
-   (when-let [refs (.-refs owner)]
-     (.getDOMNode (aget refs name)))))
+   (some-> (.-refs owner) (aget name) (.getDOMNode))))
 
 (defn mounted?
   "Return true if the backing React component is mounted into the DOM."
