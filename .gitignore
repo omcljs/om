@@ -12,3 +12,6 @@ pom.xml.asc
 /.nrepl-port
 examples/history
 *init.clj
+.repl*
+.idea
+om.iml
