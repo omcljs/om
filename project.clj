@@ -8,12 +8,12 @@
 
   :source-paths  ["src"]
 
-  :dependencies [[org.clojure/clojure "1.6.0"]
-                 [org.clojure/clojurescript "0.0-2727" :scope "provided"]
+  :dependencies [[org.clojure/clojure "1.7.0-beta1"]
+                 [org.clojure/clojurescript "0.0-3196" :scope "provided"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha" :scope "provided"]
-                 [cljsjs/react "0.12.2-5"]]
+                 [cljsjs/react "0.12.2-8"]]
 
-  :plugins [[lein-cljsbuild "1.0.4"]]
+  :plugins [[lein-cljsbuild "1.0.5"]]
 
   :cljsbuild {
     :builds [{:id "test"
