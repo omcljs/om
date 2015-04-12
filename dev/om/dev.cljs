@@ -1,5 +1,4 @@
 (ns om.dev
-  (:require-macros [om.dev :refer [woz]])
   (:require [goog.string :as gstring]
             [clojure.browser.repl :as repl]
             [om.core :as om]
