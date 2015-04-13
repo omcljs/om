@@ -32,6 +32,16 @@
               node))]
     (walk/prewalk replace-var query)))
 
+(defn complete-query [cl]
+  (letfn [(bind [k]
+            (bind-query (k (queries cl)) (k (params cl))))]
+    (let [qs (queries cl)
+          qks (keys qs)
+          bound-qs (map bind qks)]
+      (with-meta
+        (reduce into (first bound-qs) (rest bound-qs))
+        {:class cl :key-order (vec qks)}))))
+
 (defn get-query
   ([cl] (get-query cl :self))
   ([cl k]
@@ -63,7 +73,7 @@
   (defui AlbumTracks
     static IQueryParams
     (params [this]
-      {:self {:tracks (get-query Track)}})
+      {:self {:tracks (complete-query Track)}})
     static IQuery
     (queries [this]
       '{:self [:album/name ?tracks]}))
@@ -74,7 +84,9 @@
   (get-query Track :artists)
   (get-query AlbumTracks)
 
-  (-> (get-query AlbumTracks) meta :class)
-  (-> (get-query AlbumTracks) second meta :class)
+  (complete-query AlbumTracks)
+
+  (-> (get-query AlbumTracks) meta)
+  (-> (get-query AlbumTracks) second meta)
 
   )
