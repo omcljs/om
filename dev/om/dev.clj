@@ -33,7 +33,7 @@
       `(do
          (deftype ~name [~'props ~'children ~'opts] ~@dt)
          ~@(map field-set! (:fields statics))
-         (specify! (.-prototype ~name) ~@(:protocols statics))))))
+         (specify! ~name ~@(:protocols statics))))))
 
 (defmacro defui [name & forms]
   (defui* name forms))

@@ -1,4 +1,5 @@
 (ns om.dev
+  (:require-macros [om.dev :refer [defui]])
   (:require [goog.string :as gstring]
             [clojure.browser.repl :as repl]
             [om.core :as om]
@@ -24,4 +25,13 @@
 
 (comment
   (bind-query '[:foo ?bar] {:bar 3})
+
+  (defprotocol IFoo
+    (foo [this]))
+
+  (defui Artist
+    static IFoo
+    (foo [this] :foo))
+
+  (foo Artist)
   )
