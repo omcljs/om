@@ -80,7 +80,7 @@
       {:self {:tracks (complete-query Track)}})
     static IQuery
     (queries [this]
-      '{:self [:album/name ?tracks]}))
+      '{:self [:album/name {:album/tracks ?tracks}]}))
 
   (.render (Track. nil nil nil))
 
@@ -89,8 +89,7 @@
   (get-query AlbumTracks)
 
   (complete-query AlbumTracks)
-
-  (-> (get-query AlbumTracks) meta)
-  (-> (get-query AlbumTracks) second meta)
+  (-> (complete-query AlbumTracks) meta)
+  (-> (complete-query AlbumTracks) second meta)
 
   )
