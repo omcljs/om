@@ -9,6 +9,12 @@
 (defonce conn
   (repl/connect "http://localhost:9000/repl"))
 
+(defprotocol IQueryParams
+  (params [this]))
+
+(defprotocol IQuery
+  (queries [this]))
+
 (defn var? [x]
   (and (symbol? x)
        (gstring/startsWith (name x) "?")))
@@ -21,17 +27,23 @@
             (if (var? node)
               (get params (var->keyword node) node)
               node))]
-    (walk/walk replace-var identity query)))
+    (walk/prewalk replace-var query)))
 
 (comment
-  (bind-query '[:foo ?bar] {:bar 3})
-
-  (defprotocol IFoo
-    (foo [this]))
+  (bind-query '[:foo (?bar)] {:bar 3})
 
   (defui Artist
-    static IFoo
-    (foo [this] :foo))
+    static field sel '[:db/id :artist/name])
 
-  (foo Artist)
+  (defui Track
+    static IQueryParams
+    (params [this]
+      {:artists {:artist Artist.sel}})
+    static IQuery
+    (queries [this]
+      '{:artists [{:track/artists ?artist}]}))
+
+  (bind-query
+    (:artists (queries Track))
+    (:artists (params Track)))
   )
