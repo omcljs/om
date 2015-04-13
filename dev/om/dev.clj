@@ -1,4 +1,6 @@
-(ns om.dev)
+(ns om.dev
+  (:refer-clojure :exclude [deftype])
+  (:require [cljs.core :refer [deftype specify!]]))
 
 (defn collect-statics [dt]
   (letfn [(split-on-static [forms]
@@ -22,14 +24,34 @@
                     into (concat [sym] protocol-info))))
               :else (throw (IllegalArgumentException. "Malformed static")))
             (recur nil dt' statics)))
-        {:dt dt' :static statics}))))
+        {:dt dt' :statics statics}))))
+
+(defn defui* [name forms]
+  (letfn [(field-set! [[field value]]
+            `(set! (. ~name ~(symbol (str "-" field))) ~value))]
+    (let [{:keys [dt statics]} (collect-statics forms)]
+      `(do
+         (deftype ~name [~'props ~'children ~'opts] ~@dt)
+         ~@(map field-set! (:fields statics))
+         (specify! (.-prototype ~name) ~@(:protocols statics))))))
+
+(defmacro defui [name & forms]
+  (defui* name forms))
 
 (comment
   (collect-statics
     '(static IFoo
       (foo [_])
       (bar [_])
-      static field sel [:woz ?noz]
+      static field sel '[:woz ?noz]
+      Object
+      (toString [_])))
+
+  (defui* 'Artist
+    '(static IFoo
+      (foo [_])
+      (bar [_])
+      static field sel '[:woz ?noz]
       Object
       (toString [_])))
   )
