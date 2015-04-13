@@ -33,7 +33,9 @@
   (bind-query '[:foo (?bar)] {:bar 3})
 
   (defui Artist
-    static field sel '[:db/id :artist/name])
+    static field sel '[:db/id :artist/name]
+    Object
+    (render [this]))
 
   (defui Track
     static IQueryParams
@@ -41,7 +43,11 @@
       {:artists {:artist Artist.sel}})
     static IQuery
     (queries [this]
-      '{:artists [{:track/artists ?artist}]}))
+      '{:artists [{:track/artists ?artist}]})
+    Object
+    (render [this]))
+
+  (.render (Track. nil nil nil))
 
   (bind-query
     (:artists (queries Track))
