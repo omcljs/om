@@ -35,6 +35,8 @@
 (defn build-query [x k]
   (bind-query (k (queries x)) (k (params x))))
 
+(defn pull [x selector])
+
 (comment
   (bind-query '[:foo (?bar)] {:bar 3})
 
@@ -54,8 +56,13 @@
     Object
     (render [this]))
 
-  (defui TrackList
-    static field sel '[:track/name])
+  (defui AlbumTracks
+    static IQueryParams
+    (params [this]
+      {:tracks (:self (queries Track))})
+    static IQuery
+    (queries [this]
+      '{:tracks [:album/name ?tracks]}))
 
   (.render (Track. nil nil nil))
 
