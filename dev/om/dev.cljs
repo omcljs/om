@@ -16,7 +16,13 @@
   (queries [this]))
 
 (defprotocol IQueryEngine
-  (run-query [this query]))
+  (-run-query [this db q]))
+
+(defprotocol IStorage
+  (-transact [this db xs]))
+
+(defn run-query [x db q]
+  (-run-query x db q))
 
 (defn var? [x]
   (and (symbol? x)
@@ -55,7 +61,29 @@
         (reduce into (first bound-qs) (rest bound-qs))
         {:class cl :key-order (key-order qks)}))))
 
+(deftype TreeQuery [foreign-keys]
+  IQueryEngine
+  (-run-query [this db q]
+    ))
+
+(deftype TreeStorage []
+  IStorage
+  (-transact [this db xs]
+    ))
+
 (comment
+  ;; db at top-level, entities
+  (def db
+    {:albums  {0 {:album/name "Awesome Album"
+                  :album/tracks [0]}}
+     :tracks  {0 {:track/name "Awesome Track"
+                  :track/artists [0]}}
+     :artists {0 {:db/id 0 :artist/name "Bob Smith"}}})
+
+  (def fks
+    {:album/tracks  :tracks
+     :track/artists :artists})
+
   (bind-query '[:foo (?bar)] {:bar 3})
 
   (defui Artist
