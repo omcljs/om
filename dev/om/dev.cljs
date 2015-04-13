@@ -32,16 +32,6 @@
               node))]
     (walk/prewalk replace-var query)))
 
-(defn complete-query [cl]
-  (letfn [(bind [k]
-            (bind-query (k (queries cl)) (k (params cl))))]
-    (let [qs (queries cl)
-          qks (keys qs)
-          bound-qs (map bind qks)]
-      (with-meta
-        (reduce into (first bound-qs) (rest bound-qs))
-        {:class cl :key-order (vec qks)}))))
-
 (defn get-query
   ([cl] (get-query cl :self))
   ([cl k]
@@ -50,6 +40,20 @@
      {:class cl})))
 
 (defn pull [x selector])
+
+(defn complete-query [cl]
+  (letfn [(bind [k]
+            (bind-query (k (queries cl)) (k (params cl))))
+          (key-repeat [k]
+            (repeat (count (k (queries cl))) k))
+          (key-order [ks]
+            (vec (mapcat key-repeat ks)))]
+    (let [qs (queries cl)
+          qks (keys qs)
+          bound-qs (map bind qks)]
+      (with-meta
+        (reduce into (first bound-qs) (rest bound-qs))
+        {:class cl :key-order (key-order qks)}))))
 
 (comment
   (bind-query '[:foo (?bar)] {:bar 3})
