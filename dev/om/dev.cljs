@@ -32,8 +32,12 @@
               node))]
     (walk/prewalk replace-var query)))
 
-(defn build-query [x k]
-  (bind-query (k (queries x)) (k (params x))))
+(defn get-query
+  ([cl] (get-query cl :self))
+  ([cl k]
+   (with-meta
+     (bind-query (k (queries cl)) (k (params cl)))
+     {:class cl})))
 
 (defn pull [x selector])
 
@@ -59,14 +63,18 @@
   (defui AlbumTracks
     static IQueryParams
     (params [this]
-      {:tracks (:self (queries Track))})
+      {:self {:tracks (get-query Track)}})
     static IQuery
     (queries [this]
-      '{:tracks [:album/name ?tracks]}))
+      '{:self [:album/name ?tracks]}))
 
   (.render (Track. nil nil nil))
 
-  (build-query Track :self)
-  (build-query Track :artists)
+  (get-query Track)
+  (get-query Track :artists)
+  (get-query AlbumTracks)
+
+  (-> (get-query AlbumTracks) meta :class)
+  (-> (get-query AlbumTracks) second meta :class)
 
   )
