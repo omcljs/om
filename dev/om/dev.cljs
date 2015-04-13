@@ -15,6 +15,9 @@
 (defprotocol IQuery
   (queries [this]))
 
+(defprotocol IQueryEngine
+  (run-query [this query]))
+
 (defn var? [x]
   (and (symbol? x)
        (gstring/startsWith (name x) "?")))
@@ -28,6 +31,9 @@
               (get params (var->keyword node) node)
               node))]
     (walk/prewalk replace-var query)))
+
+(defn build-query [x k]
+  (bind-query (k (queries x)) (k (params x))))
 
 (comment
   (bind-query '[:foo (?bar)] {:bar 3})
@@ -43,13 +49,17 @@
       {:artists {:artist Artist.sel}})
     static IQuery
     (queries [this]
-      '{:artists [{:track/artists ?artist}]})
+      '{:self [:db/id :track/name]
+        :artists [{:track/artists ?artist}]})
     Object
     (render [this]))
 
+  (defui TrackList
+    static field sel '[:track/name])
+
   (.render (Track. nil nil nil))
 
-  (bind-query
-    (:artists (queries Track))
-    (:artists (params Track)))
+  (build-query Track :self)
+  (build-query Track :artists)
+
   )
