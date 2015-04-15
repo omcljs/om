@@ -145,7 +145,7 @@
       {:artists {:artist Artist.sel}})
     static IQuery
     (queries [this]
-      `{:self [:track/name]
+      '{:self [:track/name]
         :artists [{:track/artists ?artist}]})
     Object
     (render [{:keys [props]}]
