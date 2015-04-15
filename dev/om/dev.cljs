@@ -172,6 +172,13 @@
     (complete-query AlbumTracks)
     db #{:track/artists :album/tracks})
 
+  (time
+    (dotimes [_ 1000]
+      (tree-pull
+        (get-in db [:albums 1])
+        (complete-query AlbumTracks)
+        db #{:track/artists :album/tracks})))
+
   (-> (complete-query AlbumTracks) meta)
   (-> (complete-query AlbumTracks) second)
   (-> (complete-query AlbumTracks) second :album/tracks meta)
