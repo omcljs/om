@@ -84,16 +84,29 @@
   (tree-pull {:foo 1 :bar 2} [:foo] nil nil)
 
   (def db
-    {:artist
+    {:albums
+     {0 {:album/name "Rock Rock" :album/tracks [0 1 2]}
+      1 {:album/name "Medley Muddle" :album/tracks [3 4 5]}}
+     :tracks
+     {0 {:track/name "Awesome Song No. 1" :track/artists [0 2]}
+      1 {:track/name "Awesome Song No. 2" :track/artists [1 2]}
+      2 {:track/name "Awesome Song No. 3" :track/artists [2 5]}
+      3 {:track/name "Ballad No. 1" :track/artists [1 2]}
+      4 {:track/name "Pop Hit No. 5" :track/artists [3 4]}
+      5 {:track/name "Punk Rock No. 1" :track/artists [1 5]}}
+     :artists
      {0 {:artist/name "Bobby Bob" :artist/age 27}
       1 {:artist/name "Susie Susie" :artist/age 30}
-      2 {:artist/name "Johnny Jon" :artist/age 21}}})
+      2 {:artist/name "Johnny Jon" :artist/age 21}
+      3 {:artist/name "Jimmy Jo" :artist/age 40}
+      4 {:artist/name "Peter Pop" :artist/age 19}
+      5 {:artist/name "Betty Blues" :artist/age 50}}})
 
   (tree-pull
     {:track/name "Cool song"
-     :track/artist [0 2]}
-    [:track/name {:track/artist [:artist/name]}]
-    db #{:track/artist})
+     :track/artists [0 2]}
+    [:track/name {:track/artists [:artist/name]}]
+    db #{:track/artists})
   )
 
 (deftype TreeQuery [foreign-keys]
@@ -107,54 +120,18 @@
     ))
 
 (comment
-  ;; db at top-level, entities
-  (def db
-    {:album  {0 {:album/name "Awesome Album"
-                 :album/tracks [{:track/name "Awesome Track"
-                                 :track/artists [0]}]}}
-     :track  {0 {:track/name "Awesome Track"
-                  :track/artists [0]}}
-     :artist {0 {:db/id 0 :artist/name "Bob Smith"}}})
-
   '[:find (pull ?e ?selector)
     :where [?e :album/name "Awesome Album"]]
-
-  (MessageFormat. "album")
-
-  (def fks
-    {:album/tracks  :tracks
-     :track/artists :artists})
 
   (bind-query '[:foo (?bar)] {:bar 3})
 
   (defui Artist
-    static field sel '[:db/id :artist/name :artist/dob]
+    static field sel '[:artist/name :artist/age]
     Object
     (render [this]
       (dom/div nil "Hello")))
 
-  (js/React.renderToString
-    ((js/React.createFactory Artist) nil))
-
-  (defui Artist
-    static IQueryParams
-    (params [this]
-      {:artists {:artist Artist.sel}})
-    static IQuery
-    (queries [this]
-      '{:self [:db/id :track/name]
-        :artists [{:track/artists ?artist}]})
-    Object
-    (render [{:keys [props]}]
-      (let [{:keys [self artists]} props]
-        (dom/div nil
-          (dom/h2 (:track/name self))
-          (artist-list artists)
-          ))))
-
   (def artist (js/React.createFactory artist))
-
-  (update-query (artist) (fn [q]))
 
   (defui ArtistList
     Object
@@ -168,15 +145,13 @@
       {:artists {:artist Artist.sel}})
     static IQuery
     (queries [this]
-      `{:self [:db/id :track/name]
-        :artists [{:track/artists (foo )}]})
+      `{:self [:track/name]
+        :artists [{:track/artists ?artist}]})
     Object
     (render [{:keys [props]}]
       (let [{:keys [self artists]} props]
         (dom/div nil
-          (dom/h2 (:track/name self))
-          (artist-list artists)
-          ))))
+          (dom/h2 (:track/name self))))))
 
   (defui AlbumTracks
     static IQueryParams
@@ -186,20 +161,17 @@
     (queries [this]
       '{:self [:album/name {:album/tracks ?tracks}]}))
 
-  (.render (Track. nil nil nil))
-
-  (data/diff
-    (:artists (queries Track))
-    (bind-query
-     (conj (:artists (queries Track)) '?something)
-     {:artist "foo" :something 1}))
-
   (get-query Track)
-  (get-query Track :artists
-    )
+  (get-query Track :artists)
   (get-query AlbumTracks)
 
   (complete-query AlbumTracks)
+
+  (tree-pull
+    (get-in db [:albums 1])
+    (complete-query AlbumTracks)
+    db #{:track/artists :album/tracks})
+
   (-> (complete-query AlbumTracks) meta)
   (-> (complete-query AlbumTracks) second)
   (-> (complete-query AlbumTracks) second :album/tracks meta)
