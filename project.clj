@@ -9,7 +9,7 @@
   :source-paths  ["src" "dev"]
 
   :dependencies [[org.clojure/clojure "1.7.0-beta1"]
-                 [org.clojure/clojurescript "0.0-3197" :scope "provided"]
+                 [org.clojure/clojurescript "0.0-3204" :scope "provided"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha" :scope "provided"]
                  [cljsjs/react "0.13.1-0"]]
 
