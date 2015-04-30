@@ -773,13 +773,16 @@
       (commit! cursor korks f)
       (-refresh-deps! parent))))
 
+(defn ref-cursor? [x]
+  (satisfies? IOmRef x))
+
 (defn ref-cursor
   "Given a cursor return a reference cursor that inherits all of the
   properties and methods of the cursor. Reference cursors may be
   observed via om.core/observe."
   [cursor]
   {:pre [(cursor? cursor)]}
-  (if (satisfies? IOmRef cursor)
+  (if (ref-cursor? cursor)
     cursor
     (let [path    (path cursor)
           storage (get
@@ -826,7 +829,7 @@
   "Given a component and a reference cursor have the component observe
   the reference cursor for any data changes."
   [c ref]
-  {:pre [(component? c) (cursor? ref)]}
+  {:pre [(component? c) (cursor? ref) (ref-cursor? ref)]}
   (add-ref-to-component! c ref)
   (-add-dep! ref c)
   ref)
