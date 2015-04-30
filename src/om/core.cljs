@@ -1169,12 +1169,12 @@
           (when-not refresh-queued
             (set! refresh-queued true)
             (cond
+              (fn? raf)
+              (raf)
+
               (or (false? raf)
                   (not (exists? js/requestAnimationFrame)))
               (js/setTimeout #(render-all state) 16)
-
-              (fn? raf)
-              (raf)
 
               :else
               (js/requestAnimationFrame #(render-all state))))))
