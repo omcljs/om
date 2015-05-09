@@ -9,7 +9,10 @@
   :source-paths  ["src" "dev"]
 
   :dependencies [[org.clojure/clojure "1.7.0-beta1"]
-                 [org.clojure/clojurescript "0.0-3197" :scope "provided"]
+                 [org.clojure/clojurescript "0.0-3255" :classifier "aot" :scope "provided"
+                  :exclusions [org.clojure/tools.reader org.clojure/data.json]]
+                 [org.clojure/tools.reader "0.9.2" :classifier "aot"]
+                 [org.clojure/data.json "0.2.6" :classifier "aot"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha" :scope "provided"]
                  [cljsjs/react "0.13.1-0"]]
 
