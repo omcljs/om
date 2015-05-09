@@ -13,4 +13,4 @@
   (browser/repl-env
     :static-dir ["resources" "resources/out"])
   :output-dir "resources/out"
-  :asset-root "out")
+  :asset-path "out")
