@@ -773,13 +773,16 @@
       (commit! cursor korks f)
       (-refresh-deps! parent))))
 
+(defn ref-cursor? [x]
+  (satisfies? IOmRef x))
+
 (defn ref-cursor
   "Given a cursor return a reference cursor that inherits all of the
   properties and methods of the cursor. Reference cursors may be
   observed via om.core/observe."
   [cursor]
   {:pre [(cursor? cursor)]}
-  (if (satisfies? IOmRef cursor)
+  (if (ref-cursor? cursor)
     cursor
     (let [path    (path cursor)
           storage (get
@@ -826,7 +829,7 @@
   "Given a component and a reference cursor have the component observe
   the reference cursor for any data changes."
   [c ref]
-  {:pre [(component? c) (cursor? ref)]}
+  {:pre [(component? c) (cursor? ref) (ref-cursor? ref)]}
   (add-ref-to-component! c ref)
   (-add-dep! ref c)
   ref)
@@ -1127,6 +1130,7 @@
                                      (to-cursor (get-in value path) state path))
                                    watch-key))]
                     (when-not (-get-property state watch-key :skip-render-root)
+                      (-set-property! state watch-key :skip-render-root true)
                       (let [c (dom/render
                                 (binding [*descriptor* descriptor
                                           *instrument* instrument
@@ -1156,7 +1160,6 @@
                             (doseq [[id c] cs]
                               (when (.shouldComponentUpdate c (.-props c) (.-state c))
                                 (.forceUpdate c)))))))
-                    (-set-property! state watch-key :skip-render-root true)
                     @ret))]
       (add-watch state watch-key
         (fn [_ _ o n]
@@ -1169,12 +1172,12 @@
           (when-not refresh-queued
             (set! refresh-queued true)
             (cond
+              (fn? raf)
+              (raf)
+
               (or (false? raf)
                   (not (exists? js/requestAnimationFrame)))
               (js/setTimeout #(render-all state) 16)
-
-              (fn? raf)
-              (raf)
 
               :else
               (js/requestAnimationFrame #(render-all state))))))
