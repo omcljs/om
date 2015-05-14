@@ -2,7 +2,8 @@
   (:require-macros om.core)
   (:require [cljsjs.react]
             [om.dom :as dom :include-macros true]
-            [goog.dom :as gdom])
+            [goog.dom :as gdom]
+            [goog.dom.dataset :as gdomdata])
   (:import [goog.ui IdGenerator]))
 
 (def ^{:dynamic true :private true} *parent* nil)
@@ -440,8 +441,10 @@
 ;; =============================================================================
 ;; EXPERIMENTAL: No Local State
 
+(declare get-node)
+
 (defn react-id [x]
-  (let [id (aget x "_rootNodeID")]
+  (let [id (gdomdata/get (get-node x) "reactid")]
     (assert id)
     id))
 
@@ -461,6 +464,8 @@
               (merge (:render-state states) (:pending-state states)))
             (dissoc :pending-state)))))))
 
+(declare mounted?)
+
 (def no-local-state-methods
   (assoc pure-methods
     :getInitialState
@@ -473,11 +478,18 @@
                          (.getNextUniqueId (.getInstance IdGenerator)))
               state  (merge (dissoc istate ::id)
                        (when (satisfies? IInitState c)
-                         (init-state c)))
-              spath  [:state-map (react-id this) :render-state]]
+                         (init-state c)))]
           (aset props "__om_init_state" nil)
-          (swap! (get-gstate this) assoc-in spath state)
           #js {:__om_id om-id})))
+    :componentDidMount
+    (fn []
+      (this-as this
+        (let [c      (children this)
+              cursor (aget (.-props this) "__om_cursor")
+              spath  [:state-map (react-id this) :render-state]]
+          (swap! (get-gstate this) assoc-in spath state)
+          (when (satisfies? IDidMount c)
+            (did-mount c)))))
     :componentWillMount
     (fn []
       (this-as this
@@ -485,7 +497,9 @@
         (let [c (children this)]
           (when (satisfies? IWillMount c)
             (will-mount c)))
-        (no-local-merge-pending-state this)))
+        ;; TODO: cannot merge state until mounted?
+        (when (mounted? this)
+          (no-local-merge-pending-state this))))
     :componentWillUnmount
     (fn []
       (this-as this
@@ -546,10 +560,13 @@
     IGetState
     (-get-state
       ([this]
-         (let [spath  [:state-map (react-id this)]
+        (if (mounted? this)
+          (let [spath [:state-map (react-id this)]
                states (get-in @(get-gstate this) spath)]
-           (or (:pending-state states)
-               (:render-state states))))
+            (or (:pending-state states)
+                (:render-state states)))
+          ;; TODO: means state cannot be written to until mounted - David
+          (aget (.-props this) "__om_init_state")))
       ([this ks]
          (get-in (-get-state this) ks)))))
 
