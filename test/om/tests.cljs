@@ -1,10 +1,9 @@
 (ns om.tests
-  (:require [om.core :as om :include-macros true]
+  (:require [cljs.test :refer-macros [is are deftest run-tests]]
+            [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]))
 
 (enable-console-print!)
-
-(println "Cursor tests")
 
 (defprotocol IFoo
   (-foo [this]))
@@ -17,31 +16,30 @@
     IFoo
     (-foo [_] :foo)))
 
-(defn run-tests []
-  (assert (om/cursor? (om/to-cursor [1 2 3])))
-  (assert (= (.-value (om/to-cursor [1 2 3])) [1 2 3]))
-  (assert (om/cursor? (om/to-cursor {:foo "bar"})))
-  (assert (= (.-value (om/to-cursor {:foo "bar"})) {:foo "bar"}))
-  (assert (= (first (om/to-cursor [1 2 3])) 1))
-  (assert (= (first (om/to-cursor {:foo "bar"})) [:foo "bar"]))
-  (assert (= (:foo (first (om/to-cursor [{:foo "bar"}]))) "bar"))
-  (assert (= (.-path (first (om/to-cursor [{:foo "bar"}]))) [0]))
-  (assert (= (.-path (first (rest (om/to-cursor [{:foo "bar"} {:baz "woz"}])))) [1]))
-  (assert (= (rest (rest (om/to-cursor [{:foo "bar"} {:baz "woz"}]))) ()))
-  (assert (= (.-path (first (next (om/to-cursor [{:foo "bar"} {:baz "woz"}])))) [1]))
-  (assert (= (.-path (get-in (om/to-cursor {:foo [{:id 1}]}) [:foo 0])) [:foo 0]))
-  (assert (= (get-in (om/to-cursor {:foo [{:id 1}]}) [:foo 0 :id]) 1))
-  (assert (= (assoc (om/to-cursor {:foo 1}) :bar 2) {:foo 1 :bar 2}))
-  (assert (= {:foo 1 :bar 2} (assoc (om/to-cursor {:foo 1}) :bar 2)))
-  (assert (= (dissoc (om/to-cursor {:foo 1}) :foo) {}))
-  (assert (= {} (dissoc (om/to-cursor {:foo 1}) :foo)))
-  (assert (= (map identity (om/to-cursor [{:id 1} {:id 2} {:id 3}]))
-            [{:id 1} {:id 2} {:id 3}]))
-  (assert (= [{:id 1} {:id 2} {:id 3}]
-            (map identity (om/to-cursor [{:id 1} {:id 2} {:id 3}]))))
+(deftest cursor-protocols 
+  (is (om/cursor? (om/to-cursor [1 2 3])))
+  (is (om/cursor? (om/to-cursor {:foo "bar"})))
+  (are [x y] (= x y)
+       (.-value (om/to-cursor [1 2 3])) [1 2 3]
+       (.-value (om/to-cursor {:foo "bar"})) {:foo "bar"}
+       (first (om/to-cursor [1 2 3])) 1
+       (first (om/to-cursor {:foo "bar"})) [:foo "bar"]
+       (:foo (first (om/to-cursor [{:foo "bar"}]))) "bar"
+       (.-path (first (om/to-cursor [{:foo "bar"}]))) [0]
+       (.-path (first (rest (om/to-cursor [{:foo "bar"} {:baz "woz"}])))) [1]
+       (rest (rest (om/to-cursor [{:foo "bar"} {:baz "woz"}]))) ()
+       (.-path (first (next (om/to-cursor [{:foo "bar"} {:baz "woz"}])))) [1]
+       (.-path (get-in (om/to-cursor {:foo [{:id 1}]}) [:foo 0])) [:foo 0]
+       (get-in (om/to-cursor {:foo [{:id 1}]}) [:foo 0 :id]) 1
+       (assoc (om/to-cursor {:foo 1}) :bar 2) {:foo 1 :bar 2}
+       {:foo 1 :bar 2} (assoc (om/to-cursor {:foo 1}) :bar 2)
+       (dissoc (om/to-cursor {:foo 1}) :foo) {}
+       {} (dissoc (om/to-cursor {:foo 1}) :foo)
+       (map identity (om/to-cursor [{:id 1} {:id 2} {:id 3}]))
+       [{:id 1} {:id 2} {:id 3}]
+       [{:id 1} {:id 2} {:id 3}]
+       (map identity (om/to-cursor [{:id 1} {:id 2} {:id 3}])))
   (let [c (derive* (om/to-cursor {:foo {:bar {:baz 'woz}}} [] nil))]
-    (assert (= (-foo (get-in c [:foo :bar])) :foo))))
+    (is (= (-foo (get-in c [:foo :bar])) :foo))))
 
 (run-tests)
-
-(println "Tests completed without error")
