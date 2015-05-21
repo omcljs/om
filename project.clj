@@ -31,7 +31,6 @@
              {:id "test"
               :source-paths ["src" "test"]
               :compiler {
-                :preamble ["react/react.min.js"]
                 :output-to "script/tests.simple.js"
                 :output-dir "script/out"
                 :source-map "script/tests.simple.js.map"
