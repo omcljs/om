@@ -2,6 +2,7 @@
   (:require-macros om.core)
   (:require [cljsjs.react]
             [om.dom :as dom :include-macros true]
+            [goog.object :as gobj]
             [goog.dom :as gdom]
             [goog.dom.dataset :as gdomdata])
   (:import [goog.ui IdGenerator]))
@@ -1270,13 +1271,20 @@
       (swap! app-state update-in rpath f))))
 
 (defn get-node
-  "A helper function to get at React refs. Given a owning pure node
-  extract the ref specified by name."
+  "A helper function to get at React DOM refs. Given a owning pure node
+  extract the DOM ref specified by name."
   ([owner]
    (.getDOMNode owner))
   ([owner name]
    {:pre [(string? name)]}
    (some-> (.-refs owner) (aget name) (.getDOMNode))))
+
+(defn get-ref
+  "A helper function to get at React refs. Given an owning pure node extract
+  the ref specified by name."
+  [owner name]
+  {:pre [(component? owner) (string? name)]}
+  (some-> (.-refs owner) (gobj/get name)))
 
 (defn mounted?
   "Return true if the backing React component is mounted into the DOM."
