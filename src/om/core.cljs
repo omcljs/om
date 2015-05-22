@@ -897,12 +897,13 @@
 (defn get-descriptor
   ([f] (get-descriptor f nil))
   ([f descriptor]
-   (when (nil? (aget f "om$descriptor"))
-     (aset f "om$descriptor"
-       (js/React.createFactory
-         (js/React.createClass
-           (or descriptor *descriptor* pure-descriptor)))))
-   (aget f "om$descriptor")))
+   (let [rdesc (or descriptor *descriptor* pure-descriptor)]
+     (when (or (nil? (gobj/get f "om$descriptor"))
+               (not (identical? rdesc (gobj/get f "om$tag"))))
+       (let [factory (js/React.createFactory (js/React.createClass rdesc))]
+         (gobj/set f "om$descriptor" factory)
+         (gobj/set f "om$tag" rdesc))))
+   (gobj/get f "om$descriptor")))
 
 (defn getf
   ([f cursor]
