@@ -26,6 +26,11 @@
             (recur nil dt' statics)))
         {:dt dt' :statics statics}))))
 
+(defn reshape-render [[_ [this-bind props-bind :as params] & body]]
+  `(render [this# props#]
+     (let [~props-bind (om.next/props-bind this# props#)]
+       ~@body)))
+
 (defn defui* [name forms]
   (letfn [(field-set! [[field value]]
             `(set! (. ~name ~(symbol (str "-" field))) ~value))]

@@ -54,6 +54,27 @@
         (reduce into (first bound-qs) (rest bound-qs))
         {:class cl :key-order (key-order qks)}))))
 
+(defn query-select-keys [q]
+  (letfn [(transform [k]
+            (cond
+              (keyword? k) k
+              (map? k) (ffirst k)
+              :else (throw (js/Error. (str "Invalid key " k)))))]
+    (vec (map transform q))))
+
+(defn bind-props* [cl props]
+  (let [q (complete-query cl)
+        select-keys (query-select-keys q)
+        key-order (:key-order q)]
+    (reduce
+      (fn [ret [query-part key]]
+        (assoc-in ret [query-part key] (get props key)))
+      {}
+      (map vector key-order select-keys))))
+
+(defn bind-props [c props]
+  (bind-props* (type c) props))
+
 (defn tree-pull [x selector db fks]
   (loop [selector (seq selector) ret {}]
     (if selector
@@ -72,3 +93,7 @@
                 k'
                 (vec (map #(tree-pull % selector' db fks) ys)))))))
       ret)))
+
+(comment
+  (query-select-keys [:foo :bar {:baz []}])
+  )
