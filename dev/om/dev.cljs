@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [var?])
   (:require [clojure.browser.repl :as repl]
             [om.next :as next :refer-macros [defui]]
+            [om.core :as om]
             [om.dom :as dom]))
 
 (defonce conn
@@ -56,32 +57,54 @@
   )
 
 (defui Artist
-  static field sel '[:artist/name :artist/age]
+  static next/IQuery
+  (queries [this]
+    '{:self [:artist/name :artist/age]})
   Object
-  (render [this]
-    (dom/div nil "Hello")))
+  (render [this props]
+    (let [{:keys [:artist/name :artist/age]} (:self props)]
+      (dom/div nil
+        (dom/div nil
+          (dom/label nil "Artist Name:")
+          (dom/span nil name))
+        (dom/div nil
+          (dom/label nil "Artist Age:")
+          (dom/span nil age))))))
 
-(def artist (js/React.createFactory artist))
+(def artist (next/create-factory Artist))
+
+(comment
+  (next/complete-query Artist)
+
+  (dom/render-to-str
+    (artist {:artist/name "Bob Smith"
+             :artist/age 27}))
+  )
 
 (defui ArtistList
   Object
-  (render [{:keys [props]}]
+  (render [this {:keys [props]}]
     (apply dom/ul nil
       (map artist props))))
+
+(def artist-list (next/create-factory ArtistList))
 
 (defui Track
   static next/IQueryParams
   (params [this]
-    {:artists {:artist Artist.sel}})
+    {:artists {:artist (next/complete-query Artist)}})
   static next/IQuery
   (queries [this]
     '{:self [:track/name]
       :artists [{:track/artists ?artist}]})
   Object
-  (render [{:keys [props]}]
+  (render [this props]
     (let [{:keys [self artists]} props]
       (dom/div nil
-        (dom/h2 (:track/name self))))))
+        (dom/h2 (:track/name self))
+        (artist-list artists)))))
+
+(def track (next/create-factory Track))
 
 (defui AlbumTracks
   static next/IQueryParams
@@ -89,7 +112,13 @@
     {:self {:tracks (next/complete-query Track)}})
   static next/IQuery
   (queries [this]
-    '{:self [:album/name {:album/tracks ?tracks}]}))
+    '{:self [:album/name {:album/tracks ?tracks}]})
+  Object
+  (render [this props]
+    (let [{:keys [:album/name :album/tracks]} (:self props)]
+      (apply dom/div nil
+       (dom/h1 nil name)
+       (map Track tracks)))))
 
 (comment
   (next/get-query Track)

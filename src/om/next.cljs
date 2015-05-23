@@ -7,6 +7,10 @@
 (defprotocol IQueryParams
   (params [this]))
 
+(extend-type default
+  IQueryParams
+  (params [_]))
+
 (defprotocol IQuery
   (queries [this]))
 
@@ -92,6 +96,9 @@
                 k'
                 (vec (map #(tree-pull % selector' db fks) ys)))))))
       ret)))
+
+(defn create-factory [cl]
+  (js/React.createFactory cl))
 
 (comment
   (query-select-keys [:foo :bar {:baz []}])

@@ -26,9 +26,10 @@
             (recur nil dt' statics)))
         {:dt dt' :statics statics}))))
 
-(defn reshape-render [[_ [this-bind props-bind :as params] & body]]
+(defn reshape-render [[_ [this-expr props-expr :as params] & body]]
   `(~'render [this# props#]
-     (let [~props-bind (om.next/props-bind this# props#)]
+     (let [~props-expr (om.next/bind-props this# props#)
+           ~this-expr this#]
        ~@body)))
 
 (defn reshape [dt reshape-map]
