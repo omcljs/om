@@ -98,6 +98,10 @@
 
   (-> (next/complete-query Track) meta)
 
+  (next/bind-props* Track
+    {:track/name "Foo"
+     :track/artists [{:artist/name "Bob" :artist/age 27}]})
+
   (next/complete-query AlbumTracks)
 
   (next/tree-pull

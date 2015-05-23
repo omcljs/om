@@ -65,7 +65,7 @@
 (defn bind-props* [cl props]
   (let [q (complete-query cl)
         select-keys (query-select-keys q)
-        key-order (:key-order q)]
+        key-order (-> q meta :key-order)]
     (reduce
       (fn [ret [query-part key]]
         (assoc-in ret [query-part key] (get props key)))
