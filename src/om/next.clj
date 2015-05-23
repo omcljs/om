@@ -27,16 +27,25 @@
         {:dt dt' :statics statics}))))
 
 (defn reshape-render [[_ [this-bind props-bind :as params] & body]]
-  `(render [this# props#]
+  `(~'render [this# props#]
      (let [~props-bind (om.next/props-bind this# props#)]
        ~@body)))
+
+(defn reshape [dt reshape-map]
+  (letfn [(reshape* [x]
+            (if (and (sequential? x)
+                     (contains? reshape-map (first x)))
+              ((get reshape-map (first x)) x)
+              x))]
+    (vec (map reshape* dt))))
 
 (defn defui* [name forms]
   (letfn [(field-set! [[field value]]
             `(set! (. ~name ~(symbol (str "-" field))) ~value))]
     (let [{:keys [dt statics]} (collect-statics forms)]
       `(do
-         (deftype ~name [~'props ~'children ~'opts] ~@dt)
+         (deftype ~name [~'props ~'children ~'opts]
+           ~@(reshape dt {'render reshape-render}))
          ~@(map field-set! (:fields statics))
          (specify! ~name ~@(:protocols statics))))))
 
@@ -52,11 +61,25 @@
        Object
        (toString [_])))
 
-  (defui* 'Artist
-    '(static IFoo
-       (foo [_])
-       (bar [_])
-       static field sel '[:woz ?noz]
-       Object
-       (toString [_])))
+  (require '[clojure.pprint :refer [pprint]])
+
+  (pprint
+    (defui* 'Artist
+     '(static IFoo
+        (foo [_])
+        (bar [_])
+        static field sel '[:woz ?noz]
+        Object
+        (toString [_]))))
+
+  (pprint
+    (defui* 'Artist
+      '(static IFoo
+         (foo [_])
+         (bar [_])
+         static field sel '[:woz ?noz]
+         Object
+         (render [_ {:keys [self artists]}]
+           (om.dom/div nil "Hello!"))
+         (toString [_]))))
   )

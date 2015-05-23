@@ -69,8 +69,7 @@
     (reduce
       (fn [ret [query-part key]]
         (assoc-in ret [query-part key] (get props key)))
-      {}
-      (map vector key-order select-keys))))
+      {} (map vector key-order select-keys))))
 
 (defn bind-props [c props]
   (bind-props* (type c) props))
