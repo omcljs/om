@@ -1,0 +1,74 @@
+(ns om.next
+  (:refer-clojure :exclude [var?])
+  (:require-macros [om.next :refer [defui]])
+  (:require [goog.string :as gstring]
+            [clojure.walk :as walk]))
+
+(defprotocol IQueryParams
+  (params [this]))
+
+(defprotocol IQuery
+  (queries [this]))
+
+(defprotocol IQueryEngine
+  (-run-query [this db q]))
+
+(defprotocol IStorage
+  (-transact [this db xs]))
+
+(defn run-query [x db q]
+  (-run-query x db q))
+
+(defn var? [x]
+  (and (symbol? x)
+    (gstring/startsWith (name x) "?")))
+
+(defn var->keyword [x]
+  (keyword (.substring (name x) 1)))
+
+(defn bind-query [query params]
+  (letfn [(replace-var [node]
+            (if (var? node)
+              (get params (var->keyword node) node)
+              node))]
+    (walk/prewalk replace-var query)))
+
+(defn get-query
+  ([cl] (get-query cl :self))
+  ([cl k]
+   (with-meta
+     (bind-query (k (queries cl)) (k (params cl)))
+     {:class cl})))
+
+(defn complete-query [cl]
+  (letfn [(bind [k]
+            (bind-query (k (queries cl)) (k (params cl))))
+          (key-repeat [k]
+            (repeat (count (k (queries cl))) k))
+          (key-order [ks]
+            (vec (mapcat key-repeat ks)))]
+    (let [qs (queries cl)
+          qks (keys qs)
+          bound-qs (map bind qks)]
+      (with-meta
+        (reduce into (first bound-qs) (rest bound-qs))
+        {:class cl :key-order (key-order qks)}))))
+
+(defn tree-pull [x selector db fks]
+  (loop [selector (seq selector) ret {}]
+    (if selector
+      (let [k (first selector)]
+        (cond
+          (keyword? k)
+          (recur (next selector) (assoc ret k (get x k)))
+          (map? k)
+          (recur (next selector)
+            (let [[k' selector'] (first k)
+                  ys (if (contains? fks k')
+                       (let [table (keyword (name k'))]
+                         (map (get db table) (get x k')))
+                       (get x k'))]
+              (assoc ret
+                k'
+                (vec (map #(tree-pull % selector' db fks) ys)))))))
+      ret)))
