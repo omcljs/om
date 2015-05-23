@@ -61,8 +61,9 @@
   (queries [this]
     '{:self [:artist/name :artist/age]})
   Object
-  (render [this props]
-    (let [{:keys [:artist/name :artist/age]} (:self props)]
+  (render [this]
+    (let [{:keys [:artist/name :artist/age]}
+          (:self (next/props this))]
       (dom/div nil
         (dom/div nil
           (dom/label nil "Artist Name:")
@@ -75,6 +76,8 @@
 
 (comment
   (next/complete-query Artist)
+  (-> (next/complete-query Artist) meta :key-order)
+  (next/query-select-keys (next/complete-query Artist))
 
   (dom/render-to-str
     (artist {:artist/name "Bob Smith"
@@ -83,9 +86,9 @@
 
 (defui ArtistList
   Object
-  (render [this {:keys [props]}]
+  (render [this]
     (apply dom/ul nil
-      (map artist props))))
+      (map artist (next/props this)))))
 
 (def artist-list (next/create-factory ArtistList))
 
@@ -98,8 +101,8 @@
     '{:self [:track/name]
       :artists [{:track/artists ?artist}]})
   Object
-  (render [this props]
-    (let [{:keys [self artists]} props]
+  (render [this]
+    (let [{:keys [self artists]} (next/props this)]
       (dom/div nil
         (dom/h2 (:track/name self))
         (artist-list artists)))))
@@ -114,8 +117,9 @@
   (queries [this]
     '{:self [:album/name {:album/tracks ?tracks}]})
   Object
-  (render [this props]
-    (let [{:keys [:album/name :album/tracks]} (:self props)]
+  (render [this]
+    (let [{:keys [:album/name :album/tracks]}
+          (:self (next/props this))]
       (apply dom/div nil
        (dom/h1 nil name)
        (map Track tracks)))))

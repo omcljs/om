@@ -97,6 +97,9 @@
                 (vec (map #(tree-pull % selector' db fks) ys)))))))
       ret)))
 
+(defn props [c]
+  (bind-props c (.-props c)))
+
 (defn create-factory [cl]
   (js/React.createFactory cl))
 

@@ -26,12 +26,6 @@
             (recur nil dt' statics)))
         {:dt dt' :statics statics}))))
 
-(defn reshape-render [[_ [this-expr props-expr :as params] & body]]
-  `(~'render [this# props#]
-     (let [~props-expr (om.next/bind-props this# props#)
-           ~this-expr this#]
-       ~@body)))
-
 (defn reshape [dt reshape-map]
   (letfn [(reshape* [x]
             (if (and (sequential? x)
@@ -46,7 +40,7 @@
     (let [{:keys [dt statics]} (collect-statics forms)]
       `(do
          (deftype ~name [~'props ~'children ~'opts]
-           ~@(reshape dt {'render reshape-render}))
+           ~@(reshape dt {}))
          ~@(map field-set! (:fields statics))
          (specify! ~name ~@(:protocols statics))))))
 
