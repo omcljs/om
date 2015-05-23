@@ -98,10 +98,11 @@
       ret)))
 
 (defn props [c]
-  (bind-props c (.-props c)))
+  (bind-props c (.. c -props -omcljs$value)))
 
 (defn create-factory [cl]
-  (js/React.createFactory cl))
+  (fn [props children]
+    (js/React.createElement cl #js {:omcljs$value props} children)))
 
 (comment
   (query-select-keys [:foo :bar {:baz []}])
