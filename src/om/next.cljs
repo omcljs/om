@@ -5,14 +5,14 @@
             [clojure.walk :as walk]))
 
 (defprotocol IQueryParams
-  (params [this]))
+  (-params [this]))
 
 (extend-type default
   IQueryParams
-  (params [_]))
+  (-params [_]))
 
 (defprotocol IQuery
-  (queries [this]))
+  (-queries [this]))
 
 (defprotocol IQueryEngine
   (-run-query [this db q]))
@@ -41,17 +41,17 @@
   ([cl] (get-query cl :self))
   ([cl k]
    (with-meta
-     (bind-query (k (queries cl)) (k (params cl)))
+     (bind-query (k (-queries cl)) (k (-params cl)))
      {:class cl})))
 
-(defn complete-query [cl]
+(defn queries [cl]
   (letfn [(bind [k]
-            (bind-query (k (queries cl)) (k (params cl))))
+            (bind-query (k (-queries cl)) (k (-params cl))))
           (key-repeat [[k q]]
             (repeat (count q) k))
           (key-order [bqm]
             (vec (mapcat key-repeat bqm)))]
-    (let [qs  (queries cl)
+    (let [qs  (-queries cl)
           qks (keys qs)
           bqs (map bind qks)
           bqm (zipmap qks bqs)]
@@ -68,7 +68,7 @@
     (vec (map transform q))))
 
 (defn bind-props* [cl props]
-  (let [q (complete-query cl)
+  (let [q (queries cl)
         select-keys (query-select-keys q)
         key-order (-> q meta :key-order)]
     (reduce
