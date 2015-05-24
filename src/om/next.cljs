@@ -55,9 +55,7 @@
           qks (keys qs)
           bqs (map bind qks)
           bqm (zipmap qks bqs)]
-      (with-meta
-        (reduce into (first bqs) (rest bqs))
-        {:class cl :key-order (key-order bqm)}))))
+      (with-meta bqm {:class cl}))))
 
 (defn query-select-keys [q]
   (letfn [(transform [k]

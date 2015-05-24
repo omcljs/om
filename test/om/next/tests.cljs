@@ -15,6 +15,7 @@
     {:components {:component (om/queries Component)}})
   static om/IQuery
   (-queries [this]
+    ;; '{:components ?component/self}
     '{:components ?component})
   Object
   (render [this]))
@@ -22,5 +23,6 @@
 (comment
   (om/queries Component)
   (om/get-query Component)
-  (om/get-query ComponentList)
+  (om/get-query ComponentList :components)
+  (om/queries ComponentList)
   )
