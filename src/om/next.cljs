@@ -106,11 +106,11 @@
     (js/React.createElement cl #js {:omcljs$value props} children)))
 
 (deftype TreeQuery [foreign-keys]
-  next/IQueryEngine
+  IQueryEngine
   (-run-query [this db q]
     ))
 
 (deftype TreeStorage []
-  next/IStorage
+  IStorage
   (-transact [this db xs]
     ))
