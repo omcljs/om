@@ -47,17 +47,17 @@
 (defn complete-query [cl]
   (letfn [(bind [k]
             (bind-query (k (queries cl)) (k (params cl))))
-          (key-repeat [k]
-            ;; queries here returns unbound query which is wrong for key repeat
-            (repeat (count (k (queries cl))) k))
-          (key-order [ks]
-            (vec (mapcat key-repeat ks)))]
-    (let [qs (queries cl)
+          (key-repeat [[k q]]
+            (repeat (count q) k))
+          (key-order [bqm]
+            (vec (mapcat key-repeat bqm)))]
+    (let [qs  (queries cl)
           qks (keys qs)
-          bound-qs (map bind qks)]
+          bqs (map bind qks)
+          bqm (zipmap qks bqs)]
       (with-meta
-        (reduce into (first bound-qs) (rest bound-qs))
-        {:class cl :key-order (key-order qks)}))))
+        (reduce into (first bqs) (rest bqs))
+        {:class cl :key-order (key-order bqm)}))))
 
 (defn query-select-keys [q]
   (letfn [(transform [k]

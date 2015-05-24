@@ -29,10 +29,10 @@
 
 (comment
   (next/tree-pull
-   {:track/name "Cool song"
-    :track/artists [0 2]}
-   [:track/name {:track/artists [:artist/name]}]
-   db #{:track/artists})
+    {:track/name "Cool song"
+     :track/artists [0 2]}
+    [:track/name {:track/artists [:artist/name]}]
+    db #{:track/artists})
   )
 
 (defui Artist
