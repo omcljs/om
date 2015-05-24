@@ -48,6 +48,7 @@
   (letfn [(bind [k]
             (bind-query (k (queries cl)) (k (params cl))))
           (key-repeat [k]
+            ;; queries here returns unbound query which is wrong for key repeat
             (repeat (count (k (queries cl))) k))
           (key-order [ks]
             (vec (mapcat key-repeat ks)))]
