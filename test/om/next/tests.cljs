@@ -22,4 +22,4 @@
 (comment
   (om/get-query Component)
   (om/get-query ComponentList)
-  )est
+  )
