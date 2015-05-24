@@ -65,14 +65,9 @@
               :else (throw (js/Error. (str "Invalid key " k)))))]
     (vec (map transform q))))
 
+;; TODO: handle ?foo/self vars - David
 (defn bind-props* [cl props]
-  (let [q (queries cl)
-        select-keys (query-select-keys q)
-        key-order (-> q meta :key-order)]
-    (reduce
-      (fn [ret [query-part key]]
-        (assoc-in ret [query-part key] (get props key)))
-      {} (map vector key-order select-keys))))
+  props)
 
 (defn bind-props [c props]
   (bind-props* (type c) props))
