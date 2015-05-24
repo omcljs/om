@@ -104,6 +104,12 @@
   (fn [props children]
     (js/React.createElement cl #js {:omcljs$value props} children)))
 
-(comment
-  (query-select-keys [:foo :bar {:baz []}])
-  )
+(deftype TreeQuery [foreign-keys]
+  next/IQueryEngine
+  (-run-query [this db q]
+    ))
+
+(deftype TreeStorage []
+  next/IStorage
+  (-transact [this db xs]
+    ))

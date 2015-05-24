@@ -8,10 +8,6 @@
 (defonce conn
   (repl/connect "http://localhost:9000/repl"))
 
-(comment
-  (next/tree-pull {:foo 1 :bar 2} [:foo] nil nil)
-  )
-
 (def db
   {:albums
    {0 {:album/name "Rock Rock" :album/tracks [0 1 2]}
@@ -37,23 +33,6 @@
     :track/artists [0 2]}
    [:track/name {:track/artists [:artist/name]}]
    db #{:track/artists})
-  )
-
-(deftype TreeQuery [foreign-keys]
-  next/IQueryEngine
-  (-run-query [this db q]
-    ))
-
-(deftype TreeStorage []
-  next/IStorage
-  (-transact [this db xs]
-    ))
-
-(comment
-  '[:find (pull ?e ?selector)
-    :where [?e :album/name "Awesome Album"]]
-
-  (next/bind-query '[:foo (?bar)] {:bar 3})
   )
 
 (defui Artist
