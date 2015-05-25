@@ -1,8 +1,7 @@
 (ns om.dev
   (:refer-clojure :exclude [var?])
   (:require [clojure.browser.repl :as repl]
-            [om.next :as next :refer-macros [defui]]
-            [om.core :as om]
+            [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]))
 
 (defonce conn
@@ -28,7 +27,7 @@
     5 {:artist/name "Betty Blues" :artist/age 50}}})
 
 (comment
-  (next/tree-pull
+  (om/tree-pull
     {:track/name "Cool song"
      :track/artists [0 2]}
     [:track/name {:track/artists [:artist/name]}]
@@ -36,13 +35,13 @@
   )
 
 (defui Artist
-  static next/IQuery
-  (queries [this]
+  static om/IQuery
+  (-queries [this]
     '{:self [:artist/name :artist/age]})
   Object
   (render [this]
     (let [{:keys [:artist/name :artist/age]}
-          (:self (next/props this))]
+          (:self (om/props this))]
       (dom/div nil
         (dom/div nil
           (dom/label nil "Artist Name:")
@@ -51,89 +50,42 @@
           (dom/label nil "Artist Age:")
           (dom/span nil age))))))
 
-(def artist (next/create-factory Artist))
-
-(comment
-  (next/complete-query Artist)
-  (-> (next/complete-query Artist) meta :key-order)
-  (next/query-select-keys (next/complete-query Artist))
-
-  (dom/render-to-str
-    (artist {:artist/name "Bob Smith"
-             :artist/age 27}))
-  )
+(def artist (om/create-factory Artist))
 
 (defui ArtistList
   Object
   (render [this]
     (apply dom/ul nil
-      (map artist (next/props this)))))
+      (map artist (om/props this)))))
 
-(def artist-list (next/create-factory ArtistList))
+(def artist-list (om/create-factory ArtistList))
 
 (defui Track
-  static next/IQueryParams
-  (params [this]
-    {:artists {:artist (next/complete-query Artist)}})
-  static next/IQuery
-  (queries [this]
-    '{:self [:track/name]
-      :artists [{:track/artists ?artist}]})
+  static om/IQueryParams
+  (-params [this]
+    {:self {:artist (om/queries Artist)}})
+  static om/IQuery
+  (-queries [this]
+    '{:self [:track/name {:track/artists ?artist}]})
   Object
   (render [this]
-    (let [{:keys [self artists]} (next/props this)]
-      (dom/div nil
-        (dom/h2 (:track/name self))
+    (let [{:keys [:track/name :track/artists]} (om/self this)]
+      (apply dom/div nil
+        (dom/h2 nil name)
         (artist-list artists)))))
 
-(def track (next/create-factory Track))
+(def track (om/create-factory Track))
 
 (defui AlbumTracks
-  static next/IQueryParams
-  (params [this]
-    {:self {:tracks (next/complete-query Track)}})
-  static next/IQuery
-  (queries [this]
+  static om/IQueryParams
+  (-params [this]
+    {:self {:tracks (om/queries Track)}})
+  static om/IQuery
+  (-queries [this]
     '{:self [:album/name {:album/tracks ?tracks}]})
   Object
   (render [this]
-    (let [{:keys [:album/name :album/tracks]}
-          (:self (next/props this))]
+    (let [{:keys [:album/name :album/tracks]} (om/self this)]
       (apply dom/div nil
-       (dom/h1 nil name)
-       (map Track tracks)))))
-
-(comment
-  (next/get-query Track)
-  (next/get-query Track :artists)
-  (next/get-query AlbumTracks)
-
-  (-> (next/complete-query Track) meta)
-
-  (next/bind-props* Track
-    {:track/name "Foo"
-     :track/artists [{:artist/name "Bob" :artist/age 27}]})
-
-  (next/complete-query AlbumTracks)
-
-  (next/tree-pull
-    (get-in db [:albums 1])
-    (next/complete-query AlbumTracks)
-    db #{:track/artists :album/tracks})
-
-  (time
-    (dotimes [_ 1000]
-      (next/tree-pull
-        (get-in db [:albums 1])
-        (next/complete-query AlbumTracks)
-        db #{:track/artists :album/tracks})))
-
-  (-> (next/complete-query AlbumTracks) meta)
-  (-> (next/complete-query AlbumTracks) second)
-  (-> (next/complete-query AlbumTracks) second :album/tracks meta)
-
-  (defn root [root-widget]
-    (go (let [d (<! (pull (complete-query root-widget)))]
-          (js/React.renderComponent (root-widget d)
-            (gdom/getElement "App")))))
-  )
+        (dom/h1 nil name)
+        (map track tracks)))))

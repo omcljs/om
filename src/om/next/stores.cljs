@@ -19,6 +19,10 @@
                 (vec (map #(tree-pull % selector' db fks) ys)))))))
       ret)))
 
-(deftype LocalStore [])
+(deftype LocalStore [data fks]
+  (-query [this qs]
+    (tree-pull data qs fks)))
 
-(deftype RemoteStore [fetch local-keys])
+(deftype RemoteStore [data fetch local-keys]
+  (-remote-query [this qs cb]
+    (fetch qs cb)))
