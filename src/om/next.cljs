@@ -2,7 +2,8 @@
   (:refer-clojure :exclude [var?])
   (:require-macros [om.next :refer [defui]])
   (:require [goog.string :as gstring]
-            [clojure.walk :as walk]))
+            [clojure.walk :as walk]
+            [om.next.protocols :as p]))
 
 (defprotocol IQueryParams
   (-params [this]))
@@ -14,18 +15,9 @@
 (defprotocol IQuery
   (-queries [this]))
 
-(defprotocol IQueryEngine
-  (-run-query [this db q]))
-
-(defprotocol IStorage
-  (-transact [this db xs]))
-
-(defn run-query [x db q]
-  (-run-query x db q))
-
 (defn var? [x]
   (and (symbol? x)
-    (gstring/startsWith (name x) "?")))
+       (gstring/startsWith (name x) "?")))
 
 (defn var->keyword [x]
   (keyword (.substring (name x) 1)))
@@ -72,25 +64,6 @@
 (defn bind-props [c props]
   (bind-props* (type c) props))
 
-(defn tree-pull [x selector db fks]
-  (loop [selector (seq selector) ret {}]
-    (if selector
-      (let [k (first selector)]
-        (cond
-          (keyword? k)
-          (recur (next selector) (assoc ret k (get x k)))
-          (map? k)
-          (recur (next selector)
-            (let [[k' selector'] (first k)
-                  ys (if (contains? fks k')
-                       (let [table (keyword (name k'))]
-                         (map (get db table) (get x k')))
-                       (get x k'))]
-              (assoc ret
-                k'
-                (vec (map #(tree-pull % selector' db fks) ys)))))))
-      ret)))
-
 (defn props [c]
   (bind-props c (.. c -props -omcljs$value)))
 
@@ -101,12 +74,13 @@
   (fn [props children]
     (js/React.createElement cl #js {:omcljs$value props} children)))
 
-(deftype TreeQuery [foreign-keys]
-  IQueryEngine
-  (-run-query [this db q]
-    ))
-
-(deftype TreeStorage []
-  IStorage
-  (-transact [this db xs]
-    ))
+(defn root [component store opts]
+  (letfn [(render [data]
+            (js/React.render component
+              data (:target opts)))]
+    (let [qs (queries component)]
+      (cond
+       (satisfies? p/IRemoteStore store)
+       (p/-remote-query store qs render)
+       :else
+       (render (p/-query store qs))))))
