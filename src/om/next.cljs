@@ -94,6 +94,9 @@
 (defn props [c]
   (bind-props c (.. c -props -omcljs$value)))
 
+(defn self [c]
+  (-> c props :self))
+
 (defn create-factory [cl]
   (fn [props children]
     (js/React.createElement cl #js {:omcljs$value props} children)))
