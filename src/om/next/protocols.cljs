@@ -1,7 +1,16 @@
 (ns om.next.protocols)
 
-(defprotocol IStore
-  (-run-query [this q]))
+(defprotocol IPull
+  (pull [pullable selector context]))
 
-(defprotocol IRemoteStore
-  (-run-remote-query [this q cb]))
+(defprotocol IPush
+  (push [pushable entity context]))
+
+(defprotocol IPullAsync
+  (pull-async [pullable selector context cb]))
+
+(defprotocol IPushAsync
+  (push-async [pushable entity context cb]))
+
+(defprotocol IAddressable
+  (address [addressable]))
