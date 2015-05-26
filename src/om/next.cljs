@@ -13,7 +13,7 @@
   (-params [_]))
 
 (defprotocol IQuery
-  (-queries [this]))
+  (-query [this]))
 
 (defn var? [x]
   (and (symbol? x)
@@ -29,46 +29,8 @@
               node))]
     (walk/prewalk replace-var query)))
 
-(defn get-query
-  ([cl] (get-query cl :self))
-  ([cl k]
-   (with-meta
-     (bind-query (k (-queries cl)) (k (-params cl)))
-     {:class cl})))
-
-(defn queries [cl]
-  (letfn [(bind [k]
-            (bind-query (k (-queries cl)) (k (-params cl))))
-          (key-repeat [[k q]]
-            (repeat (count q) k))
-          (key-order [bqm]
-            (vec (mapcat key-repeat bqm)))]
-    (let [qs  (-queries cl)
-          qks (keys qs)
-          bqs (map bind qks)
-          bqm (zipmap qks bqs)]
-      (with-meta bqm {:class cl}))))
-
-(defn query-select-keys [q]
-  (letfn [(transform [k]
-            (cond
-              (keyword? k) k
-              (map? k) (ffirst k)
-              :else (throw (js/Error. (str "Invalid key " k)))))]
-    (vec (map transform q))))
-
-;; TODO: handle ?foo/self vars - David
-(defn bind-props* [cl props]
-  props)
-
-(defn bind-props [c props]
-  (bind-props* (type c) props))
-
-(defn props [c]
-  (bind-props c (.. c -props -omcljs$value)))
-
-(defn self [c]
-  (-> c props :self))
+(defn query [cl]
+  (bind-query (-query cl) (-params cl)))
 
 (defn create-factory [cl]
   (fn [props children]
@@ -78,9 +40,9 @@
   (letfn [(render [data]
             (js/React.render component
               data (:target opts)))]
-    (let [qs (queries component)]
+    (let [q (query component)]
       (cond
        (satisfies? p/IRemoteStore store)
-       (p/-remote-query store qs render)
+       (p/-remote-query store q render)
        :else
-       (render (p/-query store qs))))))
+       (render (p/-query store q))))))

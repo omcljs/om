@@ -1,7 +1,7 @@
 (ns om.next.protocols)
 
 (defprotocol IStore
-  (-query [this qs]))
+  (-query [this q]))
 
 (defprotocol IRemoteStore
-  (-remote-query [this qs cb]))
+  (-remote-query [this q cb]))

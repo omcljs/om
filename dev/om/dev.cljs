@@ -63,10 +63,10 @@
 (defui Track
   static om/IQueryParams
   (-params [this]
-    {:self {:artist (om/queries Artist)}})
+    {:artist (om/queries Artist)})
   static om/IQuery
   (-queries [this]
-    '{:self [:track/name {:track/artists ?artist}]})
+    '[:track/name {:track/artists ?artist}])
   Object
   (render [this]
     (let [{:keys [:track/name :track/artists]} (om/self this)]
@@ -79,7 +79,7 @@
 (defui AlbumTracks
   static om/IQueryParams
   (-params [this]
-    {:self {:tracks (om/queries Track)}})
+    {:tracks (om/queries Track)})
   static om/IQuery
   (-queries [this]
     '{:self [:album/name {:album/tracks ?tracks}]})
