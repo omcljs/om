@@ -36,12 +36,11 @@
 
 (defui Artist
   static om/IQuery
-  (-queries [this]
-    '{:self [:artist/name :artist/age]})
+  (-query [this]
+    '[:artist/name :artist/age])
   Object
   (render [this]
-    (let [{:keys [:artist/name :artist/age]}
-          (:self (om/props this))]
+    (let [{:keys [:artist/name :artist/age]} (om/props this)]
       (dom/div nil
         (dom/div nil
           (dom/label nil "Artist Name:")
@@ -63,13 +62,13 @@
 (defui Track
   static om/IQueryParams
   (-params [this]
-    {:artist (om/queries Artist)})
+    {:artist (om/query Artist)})
   static om/IQuery
-  (-queries [this]
+  (-query [this]
     '[:track/name {:track/artists ?artist}])
   Object
   (render [this]
-    (let [{:keys [:track/name :track/artists]} (om/self this)]
+    (let [{:keys [:track/name :track/artists]} (om/props this)]
       (apply dom/div nil
         (dom/h2 nil name)
         (artist-list artists)))))
@@ -79,13 +78,19 @@
 (defui AlbumTracks
   static om/IQueryParams
   (-params [this]
-    {:tracks (om/queries Track)})
+    {:tracks (om/query Track)})
   static om/IQuery
-  (-queries [this]
-    '{:self [:album/name {:album/tracks ?tracks}]})
+  (-query [this]
+    '[:album/name {:album/tracks ?tracks}])
   Object
   (render [this]
-    (let [{:keys [:album/name :album/tracks]} (om/self this)]
+    (let [{:keys [:album/name :album/tracks]} (om/props this)]
       (apply dom/div nil
         (dom/h1 nil name)
         (map track tracks)))))
+
+(comment
+  (om/-query Artist)
+  (om/-query Track)
+  (om/-query AlbumTracks)
+  )

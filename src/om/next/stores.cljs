@@ -1,4 +1,5 @@
-(ns om.next.stores)
+(ns om.next.stores
+  (:require [om.next.protocols :as p]))
 
 (defn tree-pull [x selector db fks]
   (loop [selector (seq selector) ret {}]
@@ -20,9 +21,11 @@
       ret)))
 
 (deftype LocalStore [data fks]
-  (-query [this qs]
+  p/IStore
+  (-run-query [this qs]
     (tree-pull data qs fks)))
 
 (deftype RemoteStore [data fetch local-keys]
-  (-remote-query [this qs cb]
+  p/IRemoteStore
+  (-run-remote-query [this qs cb]
     (fetch qs cb)))

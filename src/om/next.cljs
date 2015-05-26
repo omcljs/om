@@ -36,6 +36,9 @@
   (fn [props children]
     (js/React.createElement cl #js {:omcljs$value props} children)))
 
+(defn props [c]
+  (.. c -props -omcljs$value))
+
 (defn root [component store opts]
   (letfn [(render [data]
             (js/React.render component
@@ -43,6 +46,6 @@
     (let [q (query component)]
       (cond
        (satisfies? p/IRemoteStore store)
-       (p/-remote-query store q render)
+       (p/-run-remote-query store q render)
        :else
-       (render (p/-query store q))))))
+       (render (p/-run-query store q))))))
