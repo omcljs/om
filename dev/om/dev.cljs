@@ -37,14 +37,16 @@
   Object
   (render [this]
     (let [{:keys [:app/title :app/state] :as props} (om/props this)]
-      (dom/div nil
+      (apply dom/div nil
         (dom/h2 nil title)
-        (counter state)))))
+        (map #(counter (assoc %1 :react-key %2)) state (range))))))
 
 (def store
   (om/tree-store HelloWorld
     {:app/title "Hello World!"
-     :app/state {:app/count 0}}))
+     :app/state [{:app/count 0}
+                 {:app/count 0}
+                 {:app/count 0}]}))
 
 ;; TODO: clean the API up
 (om/root HelloWorld store {:target (gdom/getElement "app")})

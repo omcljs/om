@@ -48,7 +48,8 @@
 (defn create-factory [cl]
   (fn [props children]
     (js/React.createElement cl
-      #js {:omcljs$value props
+      #js {:key (:react-key props)
+           :omcljs$value props
            :omcljs$appState *app-state*}
       children)))
 
