@@ -26,16 +26,12 @@
           #js {:onClick (fn [_] (increment! this props))}
           "Click Me!")))))
 
-(comment
-
-  ;; TODO: clean the API up
-  (om/root HelloWorld
-    (om/tree-store HelloWorld
-      {:app/title "Hello World!"
-       :app/count 0})
-    {:target (gdom/getElement "app")})
-
-  )
+;; TODO: clean the API up
+(om/root HelloWorld
+  (om/tree-store HelloWorld
+    {:app/title "Hello World!"
+     :app/count 0})
+  {:target (gdom/getElement "app")})
 
 ;(def db
 ;  {:albums
