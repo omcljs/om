@@ -49,7 +49,7 @@
                 (doseq [m ms]
                   (let [[attr sel] (first m)]
                     (swap! index #(merge-with into % {attr #{cl}}))
-                    (let [cl (-> m meta :component)]
+                    (let [cl (-> sel meta :component)]
                       (build-index* cl sel))))))]
       (build-index* cl (query cl))
       @index)))
