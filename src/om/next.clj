@@ -27,11 +27,36 @@
         {:dt dt' :statics statics}))))
 
 (def reshape-map
-  {:defaults
+  {:reshape
+   {'componentWillMount
+    (fn [[name [this :as args] & body]]
+      `(~name ~args
+         (let [store# @(om.next/app-state ~this)]
+           (when (satisfies? om.next.protocols/IComponentIndex store#)
+             (om.next.protocols/index-component store# ~this)))
+         ~@body))
+    'componentWillUnmount
+    (fn [[name [this :as args] & body]]
+      `(~name ~args
+         (let [store# @(om.next/app-state ~this)]
+           (when (satisfies? om.next.protocols/IComponentIndex store#)
+             (om.next.protocols/drop-component store# ~this)))
+         ~@body))}
+   :defaults
    `{~'shouldComponentUpdate
      ([this# next-props# next-state#]
        (or (not= (om.next/props this#) (.-omcljs$value next-props#))
-           (not= (om.next/state this#) next-state#)))}})
+         (not= (om.next/state this#) next-state#)))
+     ~'componentWillMount
+     ([this#]
+       (let [store# @(om.next/app-state this#)]
+         (when (satisfies? om.next.protocols/IComponentIndex store#)
+           (om.next.protocols/index-component store# this#))))
+     ~'componentWillUnmount
+     ([this#]
+       (let [store# @(om.next/app-state this#)]
+         (when (satisfies? om.next.protocols/IComponentIndex store#)
+           (om.next.protocols/drop-component store# this#))))}})
 
 (defn reshape [dt {:keys [reshape defaults]}]
   (letfn [(reshape* [x]
@@ -40,7 +65,7 @@
               ((get reshape (first x)) x)
               x))
           (add-defaults-step [ret [name impl]]
-            (if-not (some #{name} ret)
+            (if-not (some #{name} (map first (filter seq? ret)))
               (let [[before [p & after]] (split-with (complement '#{Object}) ret)]
                 (into (conj (vec before) p (cons name impl)) after))
               ret))
@@ -95,4 +120,16 @@
          (render [_ {:keys [self artists]}]
            (om.dom/div nil "Hello!"))
          (toString [_]))))
+
+  (pprint
+    (defui* 'Artist
+      '(static IFoo
+         (foo [_])
+         (bar [_])
+         static field sel '[:woz ?noz]
+         Object
+         (render [_ {:keys [self artists]}]
+           (om.dom/div nil "Hello!"))
+         (componentWillUnmount [this]
+           (first [1 2 3])))))
   )
