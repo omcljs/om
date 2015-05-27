@@ -1,5 +1,6 @@
 (ns om.next.stores
-  (:require [om.next.protocols :as p]))
+  (:require [goog.object :as gobj]
+            [om.next.protocols :as p]))
 
 (defn tree-pull [m sel]
   (loop [sel (seq sel) ret {}]
@@ -52,6 +53,7 @@
   (commit [this component entity]
     (let [path (conj (get-in index [:component->path component])
                  (.. component -props -key))]
+      (set! (.. component -props -omcljs$value) entity)
       (p/push this entity path))))
 
 (comment
