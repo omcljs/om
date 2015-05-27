@@ -41,6 +41,9 @@
 (defn props [c]
   (.. c -props -omcljs$value))
 
+(defn app-state [c]
+  (.. c -props -omcljs$appState))
+
 (defn key [c]
   (.. c -props -key))
 
@@ -59,6 +62,9 @@
       (build-index* cl (query cl) [])
       {:prop->component @prop->component
        :component->path @component->path})))
+
+(defn commit! [c entity]
+  (swap! (app-state c) p/commit c entity))
 
 (defn root [component store opts]
   (letfn [(render [data]
