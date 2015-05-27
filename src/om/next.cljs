@@ -5,7 +5,17 @@
             [clojure.walk :as walk]
             [om.next.protocols :as p]))
 
+;; =============================================================================
+;; Globals & Dynamics
+
 (def ^{:dynamic true :private true} *app-state* nil)
+
+(def ^:private render-queued false)
+
+(def ^:private render-queue (atom #{}))
+
+;; =============================================================================
+;; User Protocols
 
 (defprotocol IQueryParams
   (-params [this]))
@@ -68,15 +78,21 @@
       {:prop->component @prop->component
        :component->path @component->path})))
 
+(defn needs-display! [xs]
+  (swap! render-queue into xs))
+
 (defn commit! [c entity]
-  (swap! (app-state c) p/commit c entity))
+  (let [store @(app-state c)
+        [store' render-list] (p/commit store c entity)]
+    (reset! (app-state c) store')
+    (needs-display! render-list)))
 
 (defn root [component state opts]
   (letfn [(render [data]
             (binding [*app-state* state]
               (js/React.render (component data) (:target opts))))]
-    (let [q (query component)
+    (let [sel (query component)
           store @state]
       (cond
-       (satisfies? p/IPullAsync store) (p/pull-async store q nil render)
-       :else (render (p/pull store nil q))))))
+        (satisfies? p/IPullAsync store) (p/pull-async store sel nil render)
+        :else (render (p/pull store sel nil))))))
