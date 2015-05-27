@@ -5,6 +5,8 @@
             [clojure.walk :as walk]
             [om.next.protocols :as p]))
 
+(def ^{:dynamic true :private true} *app-state* nil)
+
 (defprotocol IQueryParams
   (-params [this]))
 
@@ -36,7 +38,10 @@
 
 (defn create-factory [cl]
   (fn [props children]
-    (js/React.createElement cl #js {:omcljs$value props} children)))
+    (js/React.createElement cl
+      #js {:omcljs$value props
+           :omcljs$appState *app-state*}
+      children)))
 
 (defn props [c]
   (.. c -props -omcljs$value))
@@ -66,11 +71,12 @@
 (defn commit! [c entity]
   (swap! (app-state c) p/commit c entity))
 
-(defn root [component store opts]
+(defn root [component state opts]
   (letfn [(render [data]
-            (js/React.render component
-              data (:target opts)))]
-    (let [q (query component)]
+            (binding [*app-state* state]
+              (js/React.render (component data) (:target opts))))]
+    (let [q (query component)
+          store @state]
       (cond
        (satisfies? p/IPullAsync store) (p/pull-async store q nil render)
        :else (render (p/pull store nil q))))))
