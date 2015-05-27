@@ -41,7 +41,12 @@
          (let [store# @(om.next/app-state ~this)]
            (when (satisfies? om.next.protocols/IComponentIndex store#)
              (om.next.protocols/drop-component store# ~this)))
-         ~@body))}
+         ~@body))
+    'render
+    (fn [[name [this :as args] & body]]
+      `(~name ~args
+         (binding [om.next/*depth* (inc om.next/*depth*)]
+           ~@body)))}
    :defaults
    `{~'shouldComponentUpdate
      ([this# next-props# next-state#]

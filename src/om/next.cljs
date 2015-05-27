@@ -11,6 +11,8 @@
 
 (def ^{:dynamic true :private true} *app-state* nil)
 
+(def ^{:dynamic true :private true} *depth* 0)
+
 (def ^:private render-queued false)
 
 (def ^:private render-queue (atom #{}))
@@ -50,6 +52,7 @@
     (js/React.createElement cl
       #js {:key (:react-key props)
            :omcljs$value props
+           :omcljs$depth *depth*
            :omcljs$appState *app-state*}
       children)))
 
@@ -61,6 +64,9 @@
 
 (defn app-state [c]
   (.. c -props -omcljs$appState))
+
+(defn- depth [c]
+  (.. c -props -omcljs$depth))
 
 (defn key [c]
   (.. c -props -key))
@@ -91,9 +97,11 @@
     (needs-display! render-list)))
 
 (defn flush-queue []
-  (doseq [c @render-queue]
+  (doseq [c (sort-by depth @render-queue)]
+    (println (depth c))
     (.forceUpdate c))
-  (set! render-queued false))
+  (set! render-queued false)
+  (swap! render-queue empty))
 
 (defn root [class state {:keys [target raf]}]
   (let [ret  (atom nil)]
