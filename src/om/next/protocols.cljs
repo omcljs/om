@@ -4,13 +4,13 @@
   (pull [pullable selector context]))
 
 (defprotocol IPush
-  (push [pushable entity context]))
+  (push [pushable tx-data context]))
 
 (defprotocol IPullAsync
   (pull-async [pullable selector context cb]))
 
 (defprotocol IPushAsync
-  (push-async [pushable entity context cb]))
+  (push-async [pushable tx-data context cb]))
 
 (defprotocol IStore
-  (commit [store component entity]))
+  (commit [store component tx-data]))
