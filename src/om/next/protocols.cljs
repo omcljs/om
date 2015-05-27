@@ -12,5 +12,5 @@
 (defprotocol IPushAsync
   (push-async [pushable entity context cb]))
 
-(defprotocol ICommit
+(defprotocol IStore
   (commit [store component entity]))

@@ -66,7 +66,5 @@
               data (:target opts)))]
     (let [q (query component)]
       (cond
-       (satisfies? p/IPullAsync store)
-       (p/pull-async store q nil render)
-       :else
-       (render (p/pull store nil q))))))
+       (satisfies? p/IPullAsync store) (p/pull-async store q nil render)
+       :else (render (p/pull store nil q))))))

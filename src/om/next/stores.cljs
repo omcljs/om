@@ -47,12 +47,12 @@
     (tree-pull data selector))
   p/IPush
   (push [_ entity ctxt]
-    (TreeStore. (assoc-in data ctxt entity)))
-  p/ICommit
-  (commit [_ component entity]
+    (TreeStore. (assoc-in data ctxt entity) index))
+  p/IStore
+  (commit [this component entity]
     (let [path (conj (get-in index [:component->path component])
                  (.. component -props -key))]
-      (push this entity path))))
+      (p/push this entity path))))
 
 (comment
   (TreeStore. {:foo 1 :bar {:woz 2 :noz 3}})
