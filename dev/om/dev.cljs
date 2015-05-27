@@ -90,7 +90,8 @@
         (map track tracks)))))
 
 (comment
-  (om/-query Artist)
-  (om/-query Track)
-  (om/-query AlbumTracks)
+  (om/query Artist)
+  (om/query Track)
+  (om/query AlbumTracks)
+  (om/build-index AlbumTracks)
   )

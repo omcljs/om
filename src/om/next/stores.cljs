@@ -47,7 +47,7 @@
     (tree-pull data selector))
   p/IPush
   (push [_ entity ctxt]
-    (TreeStore. (assoc-in data (p/address (:component ctxt)) entity))))
+    (TreeStore. (assoc-in data ctxt entity))))
 
 (comment
   (TreeStore. {:foo 1 :bar {:woz 2 :noz 3}})

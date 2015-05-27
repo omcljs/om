@@ -41,13 +41,26 @@
 (defn props [c]
   (.. c -props -omcljs$value))
 
+(defn build-index [cl]
+  (let [index (atom {})]
+    (letfn [(build-index* [cl sel]
+              (let [{ks true ms false} (group-by keyword? sel)]
+                (swap! index #(merge-with into % (zipmap ks (repeat #{cl}))))
+                (doseq [m ms]
+                  (let [[attr sel] (first m)]
+                    (swap! index #(merge-with into % {attr #{cl}}))
+                    (let [cl (-> m meta :component)]
+                      (build-index* cl sel))))))]
+      (build-index* cl (query cl))
+      @index)))
+
 (defn root [component store opts]
   (letfn [(render [data]
             (js/React.render component
               data (:target opts)))]
     (let [q (query component)]
       (cond
-       (satisfies? p/IRemoteStore store)
-       (p/-run-remote-query store q render)
+       (satisfies? p/IPullAsync store)
+       (p/pull-async store q nil render)
        :else
-       (render (p/-run-query store q))))))
+       (render (p/pull store nil q))))))
