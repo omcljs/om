@@ -30,7 +30,9 @@
     (walk/prewalk replace-var query)))
 
 (defn query [cl]
-  (bind-query (-query cl) (-params cl)))
+  (with-meta
+    (bind-query (-query cl) (-params cl))
+    {:component cl}))
 
 (defn create-factory [cl]
   (fn [props children]
