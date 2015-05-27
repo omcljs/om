@@ -55,8 +55,9 @@
       (p/push this entity path))))
 
 (comment
-  (TreeStore. {:foo 1 :bar {:woz 2 :noz 3}})
-  (p/pull (TreeStore. {:foo 1 :bar {:woz 2 :noz 3}}) [:foo {:bar '[*]}] nil)
+  (TreeStore. {:foo 1 :bar {:woz 2 :noz 3}} nil)
+  (p/pull (TreeStore. {:foo 1 :bar {:woz 2 :noz 3}} nil) [:foo {:bar [:noz]}] nil)
+  (p/push (TreeStore. {:foo 1 :bar {:woz 2 :noz 3}} nil) 3 [:bar :woz])
   )
 
 (defn table-pull [m selector ctxt])
