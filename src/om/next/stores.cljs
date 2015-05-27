@@ -54,7 +54,7 @@
     (let [path (conj (get-in index [:component->path component])
                  (.. component -props -key))]
       (set! (.. component -props -omcljs$value) entity)
-      (p/push this entity path))))
+      [(p/push this entity path) [component]])))
 
 (comment
   (TreeStore. {:foo 1 :bar {:woz 2 :noz 3}} nil)
