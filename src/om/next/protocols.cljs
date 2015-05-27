@@ -14,3 +14,7 @@
 
 (defprotocol IStore
   (commit [store tx-data context]))
+
+(defprotocol IComponentIndex
+  (index-component [this component])
+  (drop-component [this component]))
