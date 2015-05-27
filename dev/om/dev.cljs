@@ -12,26 +12,42 @@
 (defn increment! [c props]
   (om/commit! c (update-in props [:app/count] inc)))
 
-(defui HelloWorld
+(defui Counter
   static om/IQuery
   (query [this]
-    '[:app/title :app/count])
+    '[:app/count])
   Object
   (render [this]
-    (let [{:keys [:app/title :app/count] :as props} (om/props this)]
+    (let [{:keys [:app/count] :as props} (om/props this)]
       (dom/div nil
-        (dom/h2 nil title)
         (dom/p nil (str "Count: " count))
         (dom/button
           #js {:onClick (fn [_] (increment! this props))}
           "Click Me!")))))
 
-;; TODO: clean the API up
-(om/root HelloWorld
+(def counter (om/create-factory Counter))
+
+(defui HelloWorld
+  static om/IQueryParams
+  (params [this]
+    {:counter (om/query Counter)})
+  static om/IQuery
+  (query [this]
+    '[:app/title {:app/state ?counter}])
+  Object
+  (render [this]
+    (let [{:keys [:app/title :app/state] :as props} (om/props this)]
+      (dom/div nil
+        (dom/h2 nil title)
+        (counter state)))))
+
+(def store
   (om/tree-store HelloWorld
     {:app/title "Hello World!"
-     :app/count 0})
-  {:target (gdom/getElement "app")})
+     :app/state {:app/count 0}}))
+
+;; TODO: clean the API up
+(om/root HelloWorld store {:target (gdom/getElement "app")})
 
 ;(def db
 ;  {:albums
