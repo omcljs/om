@@ -3,6 +3,7 @@
   (:require [clojure.browser.repl :as repl]
             [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]
+            [goog.object :as gobj]
             [goog.dom :as gdom]))
 
 (defonce conn
@@ -20,10 +21,9 @@
     (let [{:keys [:app/title :app/count] :as props} (om/props this)]
       (dom/div nil
         (dom/h2 nil title)
-        (dom/p nil (str "Count:" count))
-        (dom/button nil
-          #js {:onClick
-               (fn [e] (increment! this props))}
+        (dom/p nil (str "Count: " count))
+        (dom/button
+          #js {:onClick (fn [_] (increment! this props))}
           "Click Me!")))))
 
 (comment

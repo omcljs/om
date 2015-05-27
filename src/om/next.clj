@@ -1,6 +1,6 @@
 (ns om.next
   (:refer-clojure :exclude [deftype])
-  (:require [cljs.core :refer [deftype specify!]]))
+  (:require [cljs.core :refer [deftype specify! this-as js-arguments]]))
 
 (defn collect-statics [dt]
   (letfn [(split-on-static [forms]
@@ -39,8 +39,12 @@
             `(set! (. ~name ~(symbol (str "-" field))) ~value))]
     (let [{:keys [dt statics]} (collect-statics forms)]
       `(do
-         (deftype ~name [~'props ~'children ~'opts]
-           ~@(reshape dt {}))
+         (defn ~name []
+           (this-as this#
+             (.apply js/React.Component this# (js-arguments))))
+         (set! (.-prototype ~name) (goog.object/clone js/React.Component.prototype))
+         (specify! (.-prototype ~name) ~@(reshape dt {}))
+         (set! (.. ~name -prototype -constructor) ~name)
          ~@(map field-set! (:fields statics))
          (specify! ~name ~@(:protocols statics))))))
 
