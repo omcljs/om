@@ -3,7 +3,8 @@
   (:require-macros [om.next :refer [defui]])
   (:require [goog.string :as gstring]
             [clojure.walk :as walk]
-            [om.next.protocols :as p]))
+            [om.next.protocols :as p]
+            [om.next.stores :refer [TreeStore]]))
 
 ;; =============================================================================
 ;; Globals & Dynamics
@@ -115,3 +116,6 @@
                 :else
                 (js/requestAnimationFrame flush-queue)))))
         @ret))))
+
+(defn tree-store [root-class data]
+  (atom (TreeStore. data (build-index root-class))))
