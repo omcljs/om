@@ -2,7 +2,8 @@
   (:refer-clojure :exclude [var?])
   (:require [clojure.browser.repl :as repl]
             [om.next :as om :refer-macros [defui]]
-            [om.dom :as dom]))
+            [om.dom :as dom]
+            [goog.dom :as gdom]))
 
 (defonce conn
   (repl/connect "http://localhost:9000/repl"))
@@ -25,15 +26,14 @@
                (fn [e] (increment! this props))}
           "Click Me!")))))
 
-(def hello-world (om/create-factory HelloWorld))
-
 (comment
 
-  (om/root hello-world
+  ;; TODO: clean the API up
+  (om/root HelloWorld
     (om/tree-store HelloWorld
       {:app/title "Hello World!"
        :app/count 0})
-    {:target "app"})
+    {:target (gdom/getElement "app")})
 
   )
 

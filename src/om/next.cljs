@@ -90,14 +90,16 @@
 
 (defn flush-queue []
   (doseq [c @render-queue]
-    (.forceUpdate c)))
+    (.forceUpdate c))
+  (set! render-queued false))
 
-(defn root [component state {:keys [target raf]}]
-  (let [ret (atom nil)]
+(defn root [class state {:keys [target raf]}]
+  (let [ret  (atom nil)]
     (letfn [(render [data]
               (binding [*app-state* state]
-                (reset! ret (js/React.render (component data) target))))]
-      (let [sel (query component)
+                (reset! ret
+                  (js/React.render ((create-factory class) data) target))))]
+      (let [sel (query class)
             store @state]
         (cond
           (satisfies? p/IPullAsync store) (p/pull-async store sel nil render)
