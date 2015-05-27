@@ -97,7 +97,10 @@
     (needs-display! render-list)))
 
 (defn flush-queue []
-  (doseq [c (sort-by depth @render-queue)]
+  (doseq [c (sort
+              (fn [a b] (compare (depth a) (depth b)))
+              @render-queue)]
+    (println (depth c))
     (let [next-props (.. c -props -omcljs$value$next)]
       (when (.shouldComponentUpdate c
               #js {:omcljs$value next-props}
