@@ -59,6 +59,9 @@
 (defn props [c]
   (.. c -props -omcljs$value))
 
+(defn update-props [c next-props]
+  (set! (.. c -props -omcljs$value$next) next-props))
+
 (defn state [c]
   (.-state c))
 
