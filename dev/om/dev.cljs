@@ -90,8 +90,11 @@
         (map track tracks)))))
 
 (comment
+  (require '[cljs.pprint :as pprint])
+
   (om/query Artist)
   (om/query Track)
   (om/query AlbumTracks)
-  (om/build-index AlbumTracks)
+
+  (pprint/pprint (om/build-index AlbumTracks))
   )

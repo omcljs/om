@@ -1,5 +1,5 @@
 (ns om.next
-  (:refer-clojure :exclude [var?])
+  (:refer-clojure :exclude [var? key])
   (:require-macros [om.next :refer [defui]])
   (:require [goog.string :as gstring]
             [clojure.walk :as walk]
@@ -41,18 +41,24 @@
 (defn props [c]
   (.. c -props -omcljs$value))
 
+(defn key [c]
+  (.. c -props -key))
+
 (defn build-index [cl]
-  (let [index (atom {})]
-    (letfn [(build-index* [cl sel]
+  (let [component->path (atom {})
+        prop->component (atom {})]
+    (letfn [(build-index* [cl sel path]
+              (swap! component->path assoc cl path)
               (let [{ks true ms false} (group-by keyword? sel)]
-                (swap! index #(merge-with into % (zipmap ks (repeat #{cl}))))
+                (swap! prop->component #(merge-with into % (zipmap ks (repeat #{cl}))))
                 (doseq [m ms]
                   (let [[attr sel] (first m)]
-                    (swap! index #(merge-with into % {attr #{cl}}))
+                    (swap! prop->component #(merge-with into % {attr #{cl}}))
                     (let [cl (-> sel meta :component)]
-                      (build-index* cl sel))))))]
-      (build-index* cl (query cl))
-      @index)))
+                      (build-index* cl sel (conj path attr)))))))]
+      (build-index* cl (query cl) [])
+      {:prop->component @prop->component
+       :component->path @component->path})))
 
 (defn root [component store opts]
   (letfn [(render [data]
