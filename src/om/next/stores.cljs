@@ -51,8 +51,10 @@
     (TreeStore. (assoc-in data ctxt entity) index))
   p/IStore
   (commit [this component entity]
-    (let [path (conj (get-in index [:component->path component])
-                 (.. component -props -key))]
+    (let [key  (.. component -props -key)
+          path (cond->
+                 (conj (get-in index [:component->path (type component)]))
+                 key (conj key))]
       (set! (.. component -props -omcljs$value) entity)
       [(p/push this entity path) [component]])))
 
