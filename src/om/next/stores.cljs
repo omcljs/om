@@ -55,7 +55,7 @@
           path (cond->
                  (conj (get-in index [:component->path (type component)]))
                  key (conj key))]
-      (set! (.. component -props -omcljs$value) entity)
+      (set! (.. component -props -omcljs$value$next) entity)
       [(p/push this entity path) [component]])))
 
 (comment

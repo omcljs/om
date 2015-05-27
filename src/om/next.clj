@@ -51,7 +51,7 @@
    `{~'shouldComponentUpdate
      ([this# next-props# next-state#]
        (or (not= (om.next/props this#) (.-omcljs$value next-props#))
-         (not= (om.next/state this#) next-state#)))
+           (not= (om.next/state this#) next-state#)))
      ~'componentWillMount
      ([this#]
        (let [store# @(om.next/app-state this#)]

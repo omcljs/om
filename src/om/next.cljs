@@ -98,8 +98,13 @@
 
 (defn flush-queue []
   (doseq [c (sort-by depth @render-queue)]
-    (println (depth c))
-    (.forceUpdate c))
+    (let [next-props (.. c -props -omcljs$value$next)]
+      (when (.shouldComponentUpdate c
+              #js {:omcljs$value next-props}
+              (state c))
+        (set! (.. c -props -omcljs$value) next-props)
+        (set! (.. c -props -omcljs$value$next) nil)
+        (.forceUpdate c))))
   (set! render-queued false)
   (swap! render-queue empty))
 
