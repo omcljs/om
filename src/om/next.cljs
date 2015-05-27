@@ -87,12 +87,31 @@
     (reset! (app-state c) store')
     (needs-display! render-list)))
 
-(defn root [component state opts]
-  (letfn [(render [data]
-            (binding [*app-state* state]
-              (js/React.render (component data) (:target opts))))]
-    (let [sel (query component)
-          store @state]
-      (cond
-        (satisfies? p/IPullAsync store) (p/pull-async store sel nil render)
-        :else (render (p/pull store sel nil))))))
+(defn flush-queue []
+  (doseq [c @render-queue]
+    (.forceUpdate c)))
+
+(defn root [component state {:keys [target raf]}]
+  (let [ret (atom nil)]
+    (letfn [(render [data]
+              (binding [*app-state* state]
+                (reset! ret (js/React.render (component data) target))))]
+      (let [sel (query component)
+            store @state]
+        (cond
+          (satisfies? p/IPullAsync store) (p/pull-async store sel nil render)
+          :else (render (p/pull store sel nil)))
+        (add-watch state :om/root
+          (fn [_ _ o n]
+            (when-not render-queued
+              (set! render-queued true)
+              (cond
+                (fn? raf) (raf)
+
+                (or (false? raf)
+                    (not (exists? js/requestAnimationFrame)))
+                (js/setTimeout flush-queue 16)
+
+                :else
+                (js/requestAnimationFrame flush-queue)))))
+        @ret))))
