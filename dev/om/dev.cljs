@@ -14,7 +14,7 @@
 
 (defui HelloWorld
   static om/IQuery
-  (-query [this]
+  (query [this]
     '[:app/title :app/count])
   Object
   (render [this]

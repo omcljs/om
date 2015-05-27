@@ -19,14 +19,14 @@
 ;; User Protocols
 
 (defprotocol IQueryParams
-  (-params [this]))
+  (params [this]))
 
 (extend-type default
   IQueryParams
-  (-params [_]))
+  (params [_]))
 
 (defprotocol IQuery
-  (-query [this]))
+  (query [this]))
 
 (defn var? [x]
   (and (symbol? x)
@@ -42,10 +42,8 @@
               node))]
     (walk/prewalk replace-var query)))
 
-(defn query [cl]
-  (with-meta
-    (bind-query (-query cl) (-params cl))
-    {:component cl}))
+(defn bound-query [cl]
+  (with-meta (bind-query (query cl) (params cl)) {:component cl}))
 
 (defn create-factory [cl]
   (fn [props children]
@@ -78,7 +76,7 @@
                     (swap! prop->component #(merge-with into % {attr #{cl}}))
                     (let [cl (-> sel meta :component)]
                       (build-index* cl sel (conj path attr)))))))]
-      (build-index* cl (query cl) [])
+      (build-index* cl (bound-query cl) [])
       {:prop->component @prop->component
        :component->path @component->path})))
 
@@ -102,7 +100,7 @@
               (binding [*app-state* state]
                 (reset! ret
                   (js/React.render ((create-factory class) data) target))))]
-      (let [sel (query class)
+      (let [sel (bound-query class)
             store @state]
         (cond
           (satisfies? p/IPullAsync store) (p/pull-async store sel nil render)
