@@ -13,4 +13,4 @@
   (push-async [pushable tx-data context cb]))
 
 (defprotocol IStore
-  (commit [store component tx-data]))
+  (commit [store tx-data context]))

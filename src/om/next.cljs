@@ -84,9 +84,9 @@
 (defn needs-display! [xs]
   (swap! render-queue into xs))
 
-(defn commit! [c entity]
+(defn commit! [c tx-data]
   (let [store @(app-state c)
-        [store' render-list] (p/commit store c entity)]
+        [store' render-list] (p/commit store tx-data c)]
     (reset! (app-state c) store')
     (needs-display! render-list)))
 
