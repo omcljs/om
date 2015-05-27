@@ -26,13 +26,27 @@
             (recur nil dt' statics)))
         {:dt dt' :statics statics}))))
 
-(defn reshape [dt reshape-map]
+(def reshape-map
+  {:defaults
+   `{~'shouldComponentUpdate
+     ([this# next-props# next-state#]
+       (or (not= (om.next/props this#) (.-omcljs$value next-props#))
+           (not= (om.next/state this#) next-state#)))}})
+
+(defn reshape [dt {:keys [reshape defaults]}]
   (letfn [(reshape* [x]
             (if (and (sequential? x)
-                     (contains? reshape-map (first x)))
-              ((get reshape-map (first x)) x)
-              x))]
-    (vec (map reshape* dt))))
+                     (contains? reshape (first x)))
+              ((get reshape (first x)) x)
+              x))
+          (add-defaults-step [ret [name impl]]
+            (if-not (some #{name} ret)
+              (let [[before [p & after]] (split-with (complement '#{Object}) ret)]
+                (into (conj (vec before) p (cons name impl)) after))
+              ret))
+          (add-defaults [dt]
+            (reduce add-defaults-step dt defaults))]
+    (->> dt (map reshape*) vec add-defaults)))
 
 (defn defui* [name forms]
   (letfn [(field-set! [[field value]]
@@ -43,7 +57,7 @@
            (this-as this#
              (.apply js/React.Component this# (js-arguments))))
          (set! (.-prototype ~name) (goog.object/clone js/React.Component.prototype))
-         (specify! (.-prototype ~name) ~@(reshape dt {}))
+         (specify! (.-prototype ~name) ~@(reshape dt reshape-map))
          (set! (.. ~name -prototype -constructor) ~name)
          ~@(map field-set! (:fields statics))
          (specify! ~name ~@(:protocols statics))))))

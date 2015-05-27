@@ -57,6 +57,9 @@
 (defn props [c]
   (.. c -props -omcljs$value))
 
+(defn state [c]
+  (.-state c))
+
 (defn app-state [c]
   (.. c -props -omcljs$appState))
 
