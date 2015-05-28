@@ -18,3 +18,7 @@
 (defprotocol IComponentIndex
   (index-component [this component])
   (drop-component [this component]))
+
+(defprotocol ICommitQueue
+  (push [queue commit])
+  (flush [queue]))
