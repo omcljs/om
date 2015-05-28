@@ -9,16 +9,16 @@
 ;; =============================================================================
 ;; Globals & Dynamics
 
-(def ^{:dynamic true :private true} *app-state* nil)
+(def ^{:dynamic true} *raf* nil)
+
+(def ^{:dynamic true :private true} *reconciler* nil)
+
+(def ^{:dynamic true :private true} *root-class* nil)
 
 (def ^{:dynamic true :private true} *depth* 0)
 
-(def ^:private render-queued false)
-
-(def ^:private render-queue (atom #{}))
-
 ;; =============================================================================
-;; User Protocols
+;; Query Protocols & Helpers
 
 (defprotocol IQueryParams
   (params [this]))
@@ -47,32 +47,80 @@
 (defn bound-query [cl]
   (with-meta (bind-query (query cl) (params cl)) {:component cl}))
 
+;; =============================================================================
+;; React Bridging
+
 (defn create-factory [cl]
   (fn [props children]
     (js/React.createElement cl
       #js {:key (:react-key props)
            :omcljs$value props
-           :omcljs$depth *depth*
-           :omcljs$appState *app-state*}
+           :omcljs$reconciler *reconciler*
+           :omcljs$rootClass *root-class*
+           :omcljs$depth *depth*}
       children)))
 
 (defn props [c]
   (.. c -props -omcljs$value))
 
-(defn update-props [c next-props]
-  (set! (.. c -props -omcljs$value$next) next-props))
+(defn update-props! [c next-props]
+  (set! (.. c -props -omcljs$value) next-props))
+
+(defn update-component! [c next-props]
+  (update-props! c next-props)
+  (.forceUpdate c))
 
 (defn state [c]
   (.-state c))
 
-(defn app-state [c]
-  (.. c -props -omcljs$appState))
+(defn reconciler [c]
+  (.. c -props -omcljs$reconciler))
 
-(defn- depth [c]
+(defn root-class [c]
+  (.. c -props -omcljs$rootClass))
+
+(defn depth [c]
   (.. c -props -omcljs$depth))
 
-(defn key [c]
+(defn react-key [c]
   (.. c -props -key))
+
+(defn should-update? [c next-props]
+  (.shouldComponentUpdate c #js {:omcljs$value next-props} (state c)))
+
+;; =============================================================================
+;; Reconciliation Fns
+
+(defn schedule! [reconciler]
+  (when (p/schedule! reconciler)
+    (cond
+      (fn? *raf*) (*raf*)
+
+      (not (exists? js/requestAnimationFrame))
+      (js/setTimeout #(p/reconcile! reconciler) 16)
+
+      :else
+      (js/requestAnimationFrame #(p/reconcile! reconciler)))))
+
+(defn commit! [c tx-data]
+  (let [r (reconciler c)]
+    (p/commit! r tx-data c)
+    (schedule! r)))
+
+;; =============================================================================
+;; API
+
+(defn add-root!
+  ([reconciler target root-class]
+   (add-root! reconciler target root-class nil))
+  ([reconciler target root-class options]
+   (p/add-root! reconciler target root-class options)))
+
+(defn remove-root! [reconciler target]
+  (p/remove-root! reconciler target))
+
+;; =============================================================================
+;; Default Reconciler
 
 (defn build-index [cl]
   (let [component->path (atom {})
@@ -90,54 +138,63 @@
       {:prop->component @prop->component
        :component->path @component->path})))
 
-(defn needs-display! [xs]
-  (swap! render-queue into xs))
-
-(defn commit! [c tx-data]
-  (let [store @(app-state c)
-        [store' render-list] (p/commit store tx-data c)]
-    (reset! (app-state c) store')
-    (needs-display! render-list)))
-
-(defn flush-queue []
-  (doseq [c (sort
-              (fn [a b] (compare (depth a) (depth b)))
-              @render-queue)]
-    (let [next-props (.. c -props -omcljs$value$next)]
-      (when (.shouldComponentUpdate c
-              #js {:omcljs$value next-props}
-              (state c))
-        (set! (.. c -props -omcljs$value) next-props)
-        (set! (.. c -props -omcljs$value$next) nil)
-        (.forceUpdate c))))
-  (set! render-queued false)
-  (swap! render-queue empty))
-
-(defn root [class state {:keys [target raf]}]
-  (let [ret  (atom nil)]
-    (letfn [(render [data]
-              (binding [*app-state* state]
-                (reset! ret
-                  (js/React.render ((create-factory class) data) target))))]
-      (let [sel (bound-query class)
-            store @state]
-        (cond
-          (satisfies? p/IPullAsync store) (p/pull-async store sel nil render)
-          :else (render (p/pull store sel nil)))
-        (add-watch state :om/root
-          (fn [_ _ o n]
-            (when-not render-queued
-              (set! render-queued true)
-              (cond
-                (fn? raf) (raf)
-
-                (or (false? raf)
-                    (not (exists? js/requestAnimationFrame)))
-                (js/setTimeout flush-queue 16)
-
-                :else
-                (js/requestAnimationFrame flush-queue)))))
-        @ret))))
-
-(defn tree-store [root-class data]
-  (atom (TreeStore. data (build-index root-class))))
+(defn tree-reconciler [data]
+  (let [state  (cond
+                 (satisfies? IAtom data) data
+                 (satisfies? p/IStore data) (atom data)
+                 (map? data) (atom (TreeStore. data))
+                 :else (throw (ex-info "data must be an atom, store, or map"
+                                {:type ::invalid-argument})))
+        idxs   (atom {})
+        queue  (atom [])
+        queued (atom false)
+        roots  (atom {})
+        r      (reify
+                 p/ICommitQueue
+                 (commit! [_ next-props component]
+                   (let [key (react-key component)
+                         path (cond->
+                                (get-in idxs
+                                  [(root-class component)
+                                   :component->path (type component)])
+                                key (conj key))]
+                     (swap! conj queue [component next-props])
+                     (swap! state p/push next-props path)))
+                 p/IReconciler
+                 (add-root! [this target root-class options]
+                   (let [ret (atom nil)
+                         rctor (create-factory root-class)]
+                     (swap! idxs assoc root-class (build-index root-class))
+                     (let [renderf (fn [data]
+                                     (binding [*reconciler* this
+                                               *root-class* root-class]
+                                       (reset! ret
+                                         (js/React.render (rctor data) target))))
+                           sel     (bound-query root-class)
+                           store   @state]
+                       (swap! roots assoc target renderf)
+                       (cond
+                         (satisfies? p/IPullAsync store) (p/pull-async store sel nil renderf)
+                         :else (renderf (p/pull store sel nil)))
+                       @ret)))
+                 (remove-root! [_ target]
+                   (swap! roots dissoc target))
+                 (schedule! [_]
+                   (if-not @queued
+                     (swap! queue complement)
+                     false))
+                 (reconcile! [_]
+                   (if (empty? queue)
+                     (do
+                       (doseq [[_ renderf] roots]
+                         (renderf)))
+                     (do
+                       (doseq [[component next-props]
+                               (sort-by (comp depth first) queue)]
+                         (when (should-update? component next-props)
+                           (update-component! component next-props)))
+                       (swap! queued complement)
+                       (reset! queue [])))))]
+    (add-watch state :om/simple-reconciler
+      (fn [_ _ _ _] (schedule! r)))
+    r))

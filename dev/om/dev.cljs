@@ -41,15 +41,15 @@
         (dom/h2 nil title)
         (map #(counter (assoc %1 :react-key %2)) state (range))))))
 
-(def store
-  (om/tree-store HelloWorld
+(def reconciler
+  (om/tree-reconciler
     {:app/title "Hello World!"
      :app/state [{:app/count 0}
                  {:app/count 0}
                  {:app/count 0}]}))
 
-;; TODO: clean the API up
-(om/root HelloWorld store {:target (gdom/getElement "app")})
+(om/add-root! reconciler
+  (gdom/getElement "app") HelloWorld)
 
 ;(def db
 ;  {:albums

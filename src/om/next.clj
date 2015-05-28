@@ -31,21 +31,23 @@
    {'componentWillMount
     (fn [[name [this :as args] & body]]
       `(~name ~args
-         (let [store# @(om.next/app-state ~this)]
-           (when (satisfies? om.next.protocols/IComponentIndex store#)
-             (om.next.protocols/index-component store# ~this)))
+         (let [reconciler# (om.next/reconciler ~this)]
+           (when (satisfies? om.next.protocols/IComponentIndex reconciler#)
+             (om.next.protocols/index-component! reconciler# ~this)))
          ~@body))
     'componentWillUnmount
     (fn [[name [this :as args] & body]]
       `(~name ~args
-         (let [store# @(om.next/app-state ~this)]
-           (when (satisfies? om.next.protocols/IComponentIndex store#)
-             (om.next.protocols/drop-component store# ~this)))
+         (let [reconciler# (om.next/reconciler ~this)]
+           (when (satisfies? om.next.protocols/IComponentIndex reconciler#)
+             (om.next.protocols/drop-component! reconciler# ~this)))
          ~@body))
     'render
     (fn [[name [this :as args] & body]]
       `(~name ~args
-         (binding [om.next/*depth* (inc om.next/*depth*)]
+         (binding [om.next/*reconciler* (om.next/reconciler ~this)
+                   om.next/*root-class* (om.next/root-class ~this)
+                   om.next/*depth*      (om.next/depth ~this)]
            ~@body)))}
    :defaults
    `{~'shouldComponentUpdate
@@ -54,14 +56,14 @@
            (not= (om.next/state this#) next-state#)))
      ~'componentWillMount
      ([this#]
-       (let [store# @(om.next/app-state this#)]
-         (when (satisfies? om.next.protocols/IComponentIndex store#)
-           (om.next.protocols/index-component store# this#))))
+       (let [reconciler# (om.next/reconciler this#)]
+         (when (satisfies? om.next.protocols/IComponentIndex reconciler#)
+           (om.next.protocols/index-component! reconciler# this#))))
      ~'componentWillUnmount
      ([this#]
-       (let [store# @(om.next/app-state this#)]
-         (when (satisfies? om.next.protocols/IComponentIndex store#)
-           (om.next.protocols/drop-component store# this#))))}})
+       (let [reconciler# (om.next/reconciler this#)]
+         (when (satisfies? om.next.protocols/IComponentIndex reconciler#)
+           (om.next.protocols/drop-component! reconciler# this#))))}})
 
 (defn reshape [dt {:keys [reshape defaults]}]
   (letfn [(reshape* [x]

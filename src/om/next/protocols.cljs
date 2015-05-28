@@ -1,5 +1,7 @@
 (ns om.next.protocols)
 
+(defprotocol IStore)
+
 (defprotocol IPull
   (pull [pullable selector context]))
 
@@ -13,13 +15,14 @@
   (push-async [pushable tx-data context cb]))
 
 (defprotocol IComponentIndex
-  (index-component [this component])
-  (drop-component [this component]))
+  (index-component! [this component])
+  (drop-component! [this component]))
 
 (defprotocol ICommitQueue
-  (commit [queue tx-data context]))
+  (commit! [queue tx-data context]))
 
 (defprotocol IReconciler
-  (add-root [reconciler target root-class options])
-  (remove-root [reconciler target])
-  (reconcile [reconciler]))
+  (add-root! [reconciler target root-class options])
+  (remove-root! [reconciler target])
+  (schedule! [reconciler])
+  (reconcile! [reconciler]))

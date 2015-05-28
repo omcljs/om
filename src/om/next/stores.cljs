@@ -39,24 +39,17 @@
               {:type :error/invalid-selector-fragment}))))
       ret)))
 
-(deftype TreeStore [data index]
+(deftype TreeStore [data]
   IPrintWithWriter
   (-pr-writer [_ writer opts]
     (print-map data pr-writer writer opts))
+  p/IStore
   p/IPull
   (pull [_ selector _]
     (tree-pull data selector))
   p/IPush
   (push [_ entity ctxt]
-    (TreeStore. (assoc-in data ctxt entity) index))
-  p/IStore
-  (commit [this entity component]
-    (let [key (.. component -props -key)
-          path (cond->
-                 (conj (get-in index [:component->path (type component)]))
-                 key (conj key))]
-      (set! (.. component -props -omcljs$value$next) entity)
-      [(p/push this entity path) [component]])))
+    (TreeStore. (assoc-in data ctxt entity))))
 
 (comment
   (TreeStore. {:foo 1 :bar {:woz 2 :noz 3}} nil)
@@ -66,7 +59,8 @@
 
 (defn table-pull [m selector ctxt])
 
-(deftype TableStore [data ]
+(deftype TableStore [data]
+  p/IStore
   p/IPush
   (push [this selector ctxt]
     (table-pull this selector ctxt)))
