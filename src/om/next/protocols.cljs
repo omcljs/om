@@ -12,13 +12,14 @@
 (defprotocol IPushAsync
   (push-async [pushable tx-data context cb]))
 
-(defprotocol IStore
-  (commit [store tx-data context]))
-
 (defprotocol IComponentIndex
   (index-component [this component])
   (drop-component [this component]))
 
 (defprotocol ICommitQueue
-  (push [queue commit])
-  (flush [queue]))
+  (commit [queue tx-data context]))
+
+(defprotocol IReconciler
+  (add-root [reconciler target root-class options])
+  (remove-root [reconciler target])
+  (reconcile [reconciler]))
