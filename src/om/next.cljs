@@ -158,7 +158,7 @@
                                   [(root-class component)
                                    :component->path (type component)])
                                 key (conj key))]
-                     (swap! conj queue [component next-props])
+                     (swap! queue conj [component next-props])
                      (swap! state p/push next-props path)))
                  p/IReconciler
                  (add-root! [this target root-class options]
@@ -181,20 +181,20 @@
                    (swap! roots dissoc target))
                  (schedule! [_]
                    (if-not @queued
-                     (swap! queue complement)
+                     (swap! queued not)
                      false))
                  (reconcile! [_]
-                   (if (empty? queue)
+                   (if (empty? @queue)
                      (do
-                       (doseq [[_ renderf] roots]
+                       (doseq [[_ renderf] @roots]
                          (renderf)))
                      (do
                        (doseq [[component next-props]
-                               (sort-by (comp depth first) queue)]
+                               (sort-by (comp depth first) @queue)]
                          (when (should-update? component next-props)
                            (update-component! component next-props)))
-                       (swap! queued complement)
-                       (reset! queue [])))))]
+                       (reset! queue [])))
+                   (swap! queued not)))]
     (add-watch state :om/simple-reconciler
       (fn [_ _ _ _] (schedule! r)))
     r))
