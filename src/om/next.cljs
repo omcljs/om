@@ -204,7 +204,7 @@
                  (commit! [_ next-props component]
                    (let [index (index component)
                          path  (cond->
-                                 (get-in idxs
+                                 (get-in @idxs
                                    [(root-class component)
                                     :component->path (type component)])
                                  index (conj index))]
