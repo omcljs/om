@@ -10,15 +10,15 @@
   (repl/connect "http://localhost:9000/repl"))
 
 (defn increment! [c props]
-  (om/assert! c (update-in props [:app/count] inc)))
+  (om/assert! c (update-in props [:counter/count] inc)))
 
 (defui Counter
   static om/IQuery
   (query [this]
-    '[:app/count])
+    '[:id :counter/count])
   Object
   (render [this]
-    (let [{:keys [:app/count] :as props} (om/props this)]
+    (let [{:keys [:counter/count] :as props} (om/props this)]
       (dom/div nil
         (dom/p nil (str "Count: " count))
         (dom/button
@@ -33,20 +33,20 @@
     {:counter (om/query Counter)})
   static om/IQuery
   (query [this]
-    '[:app/title {:app/state ?counter}])
+    '[:app/title {:app/counters ?counter}])
   Object
   (render [this]
-    (let [{:keys [:app/title :app/state] :as props} (om/props this)]
+    (let [{:keys [:app/title :app/counters] :as props} (om/props this)]
       (apply dom/div nil
         (dom/h2 nil title)
-        (map #(counter (assoc %1 :react-key %2)) state (range))))))
+        (om/map-keys counter :id counters)))))
 
 (def reconciler
   (om/tree-reconciler
     {:app/title "Hello World!"
-     :app/state [{:app/count 0}
-                 {:app/count 0}
-                 {:app/count 0}]}))
+     :app/counters [{:id 0 :counter/count 0}
+                    {:id 1 :counter/count 0}
+                    {:id 2 :counter/count 0}]}))
 
 (comment
   (def reconciler

@@ -60,14 +60,16 @@
 
 (defn create-factory [cl]
   (fn [props children]
-    (js/React.createElement cl
-      #js {:key (:react-key props)
-           :omcljs$value props
-           :omcljs$reconciler *reconciler*
-           :omcljs$rootClass *root-class*
-           :omcljs$parent *parent*
-           :omcljs$depth *depth*}
-      children)))
+    (let [m (meta props)]
+      (js/React.createElement cl
+        #js {:key (:react-key m)
+             :omcljs$value props
+             :omcljs$index (::index m)
+             :omcljs$reconciler *reconciler*
+             :omcljs$rootClass *root-class*
+             :omcljs$parent *parent*
+             :omcljs$depth *depth*}
+        children))))
 
 (defn props [c]
   (.. c -props -omcljs$value))
@@ -95,10 +97,27 @@
   (.. c -props -omcljs$depth))
 
 (defn react-key [c]
-  (.. c -props -key))
+  (-> (. c -props) meta :react-key))
+
+(defn index [c]
+  (-> (. c -props) meta ::index))
 
 (defn should-update? [c next-props]
   (.shouldComponentUpdate c #js {:omcljs$value next-props} (state c)))
+
+(defn map-keys
+  ([ctor xs] (map-keys ctor nil xs))
+  ([ctor keyfn xs]
+    (cond
+      (nil? keyfn)
+      (map-indexed #(ctor (with-meta %2 {:react-key %1 ::index %1})) xs)
+
+      (or (keyword? keyfn) (fn? keyfn))
+      (map-indexed #(ctor (with-meta %2 {:react-key (keyfn %2) ::index %1})) xs)
+
+      :else
+      (throw (ex-info (str "Invalid keyfn " keyfn)
+               {:type ::invalid-keyfn})))))
 
 ;; =============================================================================
 ;; Reconciler API
@@ -183,12 +202,12 @@
         r      (reify
                  p/ICommitQueue
                  (commit! [_ next-props component]
-                   (let [key (react-key component)
-                         path (cond->
-                                (get-in idxs
-                                  [(root-class component)
-                                   :component->path (type component)])
-                                key (conj key))]
+                   (let [index (index component)
+                         path  (cond->
+                                 (get-in idxs
+                                   [(root-class component)
+                                    :component->path (type component)])
+                                 index (conj index))]
                      (swap! queue conj [component next-props])
                      (swap! state p/push next-props path)))
                  p/IReconciler
