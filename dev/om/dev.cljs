@@ -27,6 +27,14 @@
 
 (def counter (om/create-factory Counter))
 
+(def current-id (atom 2))
+
+(defn add-counter! [c app]
+  (let [id (swap! current-id inc)]
+    (om/commit! c
+      (update-in app [:app/counters]
+        conj {:id id :counter/count 0}))))
+
 (defui HelloWorld
   static om/IQueryParams
   (params [this]
@@ -39,6 +47,10 @@
     (let [{:keys [:app/title :app/counters] :as props} (om/props this)]
       (apply dom/div nil
         (dom/h2 nil title)
+        (dom/div nil
+          (dom/button
+            #js {:onClick (fn [e] (add-counter! this props))}
+            "Add Counter!"))
         (om/map-keys counter :id counters)))))
 
 (def reconciler
