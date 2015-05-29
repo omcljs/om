@@ -48,6 +48,15 @@
                  {:app/count 0}
                  {:app/count 0}]}))
 
+(comment
+  (def reconciler
+    (om/table-reconciler
+      {:app {:app/title "Hello World!" :app/state [0 1 2]}
+       :app/state [{:state/count 0}
+                   {:state/count 0}
+                   {:state/count 0}]}))
+  )
+
 (om/add-root! reconciler
   (gdom/getElement "app") HelloWorld)
 
