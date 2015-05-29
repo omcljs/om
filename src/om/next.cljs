@@ -93,14 +93,15 @@
 
 (defn schedule! [reconciler]
   (when (p/schedule! reconciler)
-    (cond
-      (fn? *raf*) (*raf*)
+    (let [f #(p/reconcile! reconciler)]
+      (cond
+        (fn? *raf*) (*raf* f)
 
-      (not (exists? js/requestAnimationFrame))
-      (js/setTimeout #(p/reconcile! reconciler) 16)
+        (not (exists? js/requestAnimationFrame))
+        (js/setTimeout f 16)
 
-      :else
-      (js/requestAnimationFrame #(p/reconcile! reconciler)))))
+        :else
+        (js/requestAnimationFrame f)))))
 
 (defn commit! [c tx-data]
   (let [r (reconciler c)]
