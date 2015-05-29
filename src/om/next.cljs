@@ -15,6 +15,8 @@
 
 (def ^{:dynamic true :private true} *root-class* nil)
 
+(def ^{:dynamic true :private true} *parent* nil)
+
 (def ^{:dynamic true :private true} *depth* 0)
 
 ;; =============================================================================
@@ -57,6 +59,7 @@
            :omcljs$value props
            :omcljs$reconciler *reconciler*
            :omcljs$rootClass *root-class*
+           :omcljs$parent *parent*
            :omcljs$depth *depth*}
       children)))
 
@@ -79,6 +82,9 @@
 (defn root-class [c]
   (.. c -props -omcljs$rootClass))
 
+(defn parent [c]
+  (.. c -props -omcljs$parent))
+
 (defn depth [c]
   (.. c -props -omcljs$depth))
 
@@ -89,7 +95,7 @@
   (.shouldComponentUpdate c #js {:omcljs$value next-props} (state c)))
 
 ;; =============================================================================
-;; Reconciliation Fns
+;; Reconciler API
 
 (defn schedule! [reconciler]
   (when (p/schedule! reconciler)
@@ -103,14 +109,6 @@
         :else
         (js/requestAnimationFrame f)))))
 
-(defn commit! [c tx-data]
-  (let [r (reconciler c)]
-    (p/commit! r tx-data c)
-    (schedule! r)))
-
-;; =============================================================================
-;; API
-
 (defn add-root!
   ([reconciler target root-class]
    (add-root! reconciler target root-class nil))
@@ -119,6 +117,32 @@
 
 (defn remove-root! [reconciler target]
   (p/remove-root! reconciler target))
+
+;; =============================================================================
+;; State Transition
+
+(defn commit! [c tx-data]
+  (let [r (reconciler c)]
+    (p/commit! r tx-data c)
+    (schedule! r)))
+
+(defn assert! [origin entity]
+  (loop [c origin]
+    (cond
+      (satisfies? p/IAssert c) (p/assert! c entity origin)
+      (nil? c) (commit! origin entity)
+      :else (recur (parent c)))))
+
+(defn retract! [origin entity]
+  (loop [c origin]
+    (cond
+      (satisfies? p/IRetract c) (p/retract! c entity origin)
+      (nil? c) (throw
+                 (ex-info
+                   (str "No retraction handler found for component of type"
+                     (.-name (type c)))
+                   {:type ::missing-retract-handler}))
+      :else (recur (parent c)))))
 
 ;; =============================================================================
 ;; Default Reconciler

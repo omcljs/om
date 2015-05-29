@@ -47,7 +47,8 @@
       `(~name ~args
          (binding [om.next/*reconciler* (om.next/reconciler ~this)
                    om.next/*root-class* (om.next/root-class ~this)
-                   om.next/*depth*      (om.next/depth ~this)]
+                   om.next/*depth*      (om.next/depth ~this)
+                   om.next/*parent*     ~this]
            ~@body)))}
    :defaults
    `{~'shouldComponentUpdate
