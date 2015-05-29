@@ -32,6 +32,12 @@
 (defprotocol IQuery
   (query [this]))
 
+(defprotocol IAssert
+  (handle-assert! [handler entity context]))
+
+(defprotocol IRetract
+  (handle-retract! [handler entity context]))
+
 (defn var? [x]
   (and (symbol? x)
        (gstring/startsWith (name x) "?")))
@@ -129,18 +135,18 @@
 (defn assert! [origin entity]
   (loop [c origin]
     (cond
-      (satisfies? p/IAssert c) (p/assert! c entity origin)
+      (satisfies? IAssert c) (handle-assert! c entity origin)
       (nil? c) (commit! origin entity)
       :else (recur (parent c)))))
 
 (defn retract! [origin entity]
   (loop [c origin]
     (cond
-      (satisfies? p/IRetract c) (p/retract! c entity origin)
+      (satisfies? IRetract c) (handle-retract! c entity origin)
       (nil? c) (throw
                  (ex-info
-                   (str "No retraction handler found for component of type"
-                     (.-name (type c)))
+                   (str "No retraction handler found for component of type "
+                     (type c))
                    {:type ::missing-retract-handler}))
       :else (recur (parent c)))))
 

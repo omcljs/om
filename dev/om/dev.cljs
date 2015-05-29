@@ -10,7 +10,7 @@
   (repl/connect "http://localhost:9000/repl"))
 
 (defn increment! [c props]
-  (om/commit! c (update-in props [:app/count] inc)))
+  (om/assert! c (update-in props [:app/count] inc)))
 
 (defui Counter
   static om/IQuery

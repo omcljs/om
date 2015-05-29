@@ -26,9 +26,3 @@
   (remove-root! [reconciler target])
   (schedule! [reconciler])
   (reconcile! [reconciler]))
-
-(defprotocol IAssert
-  (assert! [handler entity context]))
-
-(defprotocol IRetract
-  (retract! [handler entity context]))
