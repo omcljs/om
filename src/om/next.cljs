@@ -52,7 +52,7 @@
               node))]
     (walk/prewalk replace-var query)))
 
-(defn bound-query [cl]
+(defn get-query [cl]
   (with-meta (bind-query (query cl) (params cl)) {:component cl}))
 
 ;; =============================================================================
@@ -97,10 +97,10 @@
   (.. c -props -omcljs$depth))
 
 (defn react-key [c]
-  (-> (. c -props) meta :react-key))
+  (-> (props c) meta :react-key))
 
 (defn index [c]
-  (-> (. c -props) meta ::index))
+  (-> (props c) meta ::index))
 
 (defn should-update? [c next-props]
   (.shouldComponentUpdate c #js {:omcljs$value next-props} (state c)))
@@ -184,7 +184,7 @@
                     (swap! prop->component #(merge-with into % {attr #{cl}}))
                     (let [cl (-> sel meta :component)]
                       (build-index* cl sel (conj path attr)))))))]
-      (build-index* cl (bound-query cl) [])
+      (build-index* cl (get-query cl) [])
       {:prop->component @prop->component
        :component->path @component->path})))
 
@@ -220,7 +220,7 @@
                                                *root-class* root-class]
                                        (reset! ret
                                          (js/React.render (rctor data) target))))
-                           sel     (bound-query root-class)
+                           sel     (get-query root-class)
                            store   @state]
                        (swap! roots assoc target renderf)
                        (cond
