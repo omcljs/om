@@ -49,7 +49,9 @@
     (tree-pull data selector))
   p/IPush
   (push [_ entity ctxt]
-    (TreeStore. (assoc-in data ctxt entity))))
+    (if (empty? ctxt)
+      (TreeStore. entity)
+      (TreeStore. (assoc-in data ctxt entity)))))
 
 (comment
   (TreeStore. {:foo 1 :bar {:woz 2 :noz 3}} nil)
