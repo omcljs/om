@@ -1,6 +1,7 @@
 (ns om.next
   (:refer-clojure :exclude [deftype])
-  (:require [cljs.core :refer [deftype specify! this-as js-arguments]]))
+  (:require [cljs.core :refer [deftype specify! this-as js-arguments]]
+            [cljs.analyzer :as ana]))
 
 (defn collect-statics [dt]
   (letfn [(split-on-static [forms]
@@ -81,10 +82,11 @@
             (reduce add-defaults-step dt defaults))]
     (->> dt (map reshape*) vec add-defaults)))
 
-(defn defui* [name forms]
+(defn defui* [name forms env]
   (letfn [(field-set! [[field value]]
             `(set! (. ~name ~(symbol (str "-" field))) ~value))]
-    (let [{:keys [dt statics]} (collect-statics forms)]
+    (let [{:keys [dt statics]} (collect-statics forms)
+          rname (:name (ana/resolve-var (dissoc env :locals) name))]
       `(do
          (defn ~name []
            (this-as this#
@@ -93,10 +95,15 @@
          (specify! (.-prototype ~name) ~@(reshape dt reshape-map))
          (set! (.. ~name -prototype -constructor) ~name)
          ~@(map field-set! (:fields statics))
-         (specify! ~name ~@(:protocols statics))))))
+         (specify! ~name ~@(:protocols statics))
+         (set! (.-cljs$lang$type ~rname) true)
+         (set! (.-cljs$lang$ctorStr ~rname) ~(str rname))
+         (set! (.-cljs$lang$ctorPrWriter ~rname)
+           (fn [this# writer# opt#]
+             (cljs.core/-write writer# ~(str rname))))))))
 
 (defmacro defui [name & forms]
-  (defui* name forms))
+  (defui* name forms &env))
 
 (comment
   (collect-statics
