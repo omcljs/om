@@ -22,6 +22,7 @@
   (commit! [queue tx-data context]))
 
 (defprotocol IReconciler
+  (basis-t [this])
   (store [this])
   (add-root! [reconciler target root-class options])
   (remove-root! [reconciler target])

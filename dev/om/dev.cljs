@@ -74,6 +74,7 @@
 
 (comment
   (om/store reconciler)
+  (om/basis-t reconciler)
   )
 
 ;(def db

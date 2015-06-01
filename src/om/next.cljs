@@ -68,7 +68,8 @@
              :omcljs$reconciler *reconciler*
              :omcljs$rootClass *root-class*
              :omcljs$parent *parent*
-             :omcljs$depth *depth*}
+             :omcljs$depth *depth*
+             :omcljs$t (p/basis-t *reconciler*)}
         children))))
 
 (defn props [c]
@@ -124,6 +125,9 @@
 
 (defn store [reconciler]
   (p/store reconciler))
+
+(defn basis-t [reconciler]
+  (p/basis-t reconciler))
 
 (defn schedule! [reconciler]
   (when (p/schedule! reconciler)
@@ -202,6 +206,7 @@
         queue  (atom [])
         queued (atom false)
         roots  (atom {})
+        t      (atom 0)
         r      (reify
                  p/ICommitQueue
                  (commit! [_ next-props component]
@@ -214,6 +219,7 @@
                      (swap! queue conj [component next-props])
                      (swap! state p/push next-props path)))
                  p/IReconciler
+                 (basis-t [this] @t)
                  (store [this] @state)
                  (add-root! [this target root-class options]
                    (let [ret (atom nil)
@@ -235,7 +241,9 @@
                    (swap! roots dissoc target))
                  (schedule! [_]
                    (if-not @queued
-                     (swap! queued not)
+                     (do
+                       (swap! t inc)
+                       (swap! queued not))
                      false))
                  (reconcile! [_]
                    (if (empty? @queue)
