@@ -216,6 +216,7 @@
                                    [(root-class component)
                                     :component->path (type component)])
                                  index (conj index))]
+                     (swap! t inc) ;; TODO: probably should revisit doing this here
                      (swap! queue conj [component next-props])
                      (swap! state p/push next-props path)))
                  p/IReconciler
@@ -241,9 +242,7 @@
                    (swap! roots dissoc target))
                  (schedule! [_]
                    (if-not @queued
-                     (do
-                       (swap! t inc)
-                       (swap! queued not))
+                     (swap! queued not)
                      false))
                  (reconcile! [_]
                    (if (empty? @queue)
