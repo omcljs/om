@@ -83,8 +83,8 @@
     (->> dt (map reshape*) vec add-defaults)))
 
 (defn defui* [name forms env]
-  (letfn [(field-set! [[field value]]
-            `(set! (. ~name ~(symbol (str "-" field))) ~value))]
+  (letfn [(field-set! [obj [field value]]
+            `(set! (. ~obj ~(symbol (str "-" field))) ~value))]
     (let [{:keys [dt statics]} (collect-statics forms)
           rname (:name (ana/resolve-var (dissoc env :locals) name))]
       `(do
@@ -94,7 +94,7 @@
          (set! (.-prototype ~name) (goog.object/clone js/React.Component.prototype))
          (specify! (.-prototype ~name) ~@(reshape dt reshape-map))
          (set! (.. ~name -prototype -constructor) ~name)
-         ~@(map field-set! (:fields statics))
+         ~@(map #(field-set! name %) (:fields statics))
          (specify! ~name ~@(:protocols statics))
          (set! (.-cljs$lang$type ~rname) true)
          (set! (.-cljs$lang$ctorStr ~rname) ~(str rname))
