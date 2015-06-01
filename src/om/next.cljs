@@ -75,13 +75,6 @@
 (defn props [c]
   (.. c -props -omcljs$value))
 
-(defn update-props! [c next-props]
-  (set! (.. c -props -omcljs$value) next-props))
-
-(defn update-component! [c next-props]
-  (update-props! c next-props)
-  (.forceUpdate c))
-
 (defn state [c]
   (.-state c))
 
@@ -102,6 +95,14 @@
 
 (defn index [c]
   (-> (props c) meta ::index))
+
+(defn update-props! [c next-props]
+  (set! (.. c -props -omcljs$t) (p/basis-t (reconciler c)))
+  (set! (.. c -props -omcljs$value) next-props))
+
+(defn update-component! [c next-props]
+  (update-props! c next-props)
+  (.forceUpdate c))
 
 (defn should-update? [c next-props]
   (.shouldComponentUpdate c #js {:omcljs$value next-props} (state c)))
