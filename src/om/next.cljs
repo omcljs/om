@@ -72,14 +72,14 @@
              :omcljs$t (p/basis-t *reconciler*)}
         children))))
 
-(defn props [c]
-  (.. c -props -omcljs$value))
-
 (defn state [c]
   (.-state c))
 
 (defn reconciler [c]
   (.. c -props -omcljs$reconciler))
+
+(defn t [c]
+  (.. c -props -omcljs$t))
 
 (defn root-class [c]
   (.. c -props -omcljs$rootClass))
@@ -89,6 +89,13 @@
 
 (defn depth [c]
   (.. c -props -omcljs$depth))
+
+(defn props [c]
+  (if (= (t c) (-> c reconciler p/basis-t))
+    ;; fresh
+    (.. c -props -omcljs$value)
+    ;; stale
+    (.. c -props -omcljs$value)))
 
 (defn react-key [c]
   (-> (props c) meta :react-key))
