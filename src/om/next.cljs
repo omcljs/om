@@ -122,6 +122,9 @@
 ;; =============================================================================
 ;; Reconciler API
 
+(defn store [reconciler]
+  (p/store reconciler))
+
 (defn schedule! [reconciler]
   (when (p/schedule! reconciler)
     (let [f #(p/reconcile! reconciler)]
@@ -211,6 +214,7 @@
                      (swap! queue conj [component next-props])
                      (swap! state p/push next-props path)))
                  p/IReconciler
+                 (store [this] @state)
                  (add-root! [this target root-class options]
                    (let [ret (atom nil)
                          rctor (create-factory root-class)]

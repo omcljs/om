@@ -72,6 +72,10 @@
 (om/add-root! reconciler
   (gdom/getElement "app") HelloWorld)
 
+(comment
+  (om/store reconciler)
+  )
+
 ;(def db
 ;  {:albums
 ;   {0 {:album/name "Rock Rock" :album/tracks [0 1 2]}
