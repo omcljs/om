@@ -96,6 +96,7 @@
          (set! (.. ~name -prototype -constructor) ~name)
          ~@(map #(field-set! name %) (:fields statics))
          (specify! ~name ~@(:protocols statics))
+         (specify! (. ~name ~'-prototype) ~@(:protocols statics))
          (set! (.-cljs$lang$type ~rname) true)
          (set! (.-cljs$lang$ctorStr ~rname) ~(str rname))
          (set! (.-cljs$lang$ctorPrWriter ~rname)
