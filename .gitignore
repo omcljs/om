@@ -16,3 +16,5 @@ examples/history
 .repl*
 .idea
 om.iml
+node_modules
+.cljs_node_repl
