@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [var?])
   (:require [clojure.browser.repl :as repl]
             [om.next :as om :refer-macros [defui]]
+            [om.next.protocols :as p]
             [om.dom :as dom]
             [goog.object :as gobj]
             [goog.dom :as gdom]))
@@ -29,10 +30,10 @@
 
 (def current-id (atom 2))
 
-(defn add-counter! [c app]
+(defn add-counter! [c]
   (let [id (swap! current-id inc)]
     (om/commit! c
-      (update-in app [:app/counters]
+      (update-in (om/props c) [:app/counters]
         conj {:id id :counter/count 0}))))
 
 (defui HelloWorld
@@ -49,7 +50,7 @@
         (dom/h2 nil title)
         (dom/div nil
           (dom/button
-            #js {:onClick (fn [e] (add-counter! this props))}
+            #js {:onClick (fn [e] (add-counter! this))}
             "Add Counter!"))
         (om/map-keys counter :id counters)))))
 
@@ -75,6 +76,7 @@
 (comment
   (om/store reconciler)
   (om/basis-t reconciler)
+  (p/indexes reconciler)
   )
 
 ;(def db

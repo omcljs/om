@@ -20,6 +20,22 @@
 (def ^{:dynamic true :private true} *depth* 0)
 
 ;; =============================================================================
+;; Utilities
+
+(defn filter-selector [sel path]
+  (if (empty? path)
+    sel
+    (let [[k & ks] path]
+     (letfn [(match [x]
+               (let [k' (if (map? x) (ffirst x) x)]
+                 (= k k')))
+             (value [x]
+               (if (map? x)
+                 {(ffirst x) (filter-selector (-> x first second) ks)}
+                 x))]
+       (into [] (comp (filter match) (map value)) sel)))))
+
+;; =============================================================================
 ;; Query Protocols & Helpers
 
 (defprotocol IQueryParams
@@ -90,22 +106,25 @@
 (defn depth [c]
   (.. c -props -omcljs$depth))
 
-(defn props [c]
-  (if (= (t c) (-> c reconciler p/basis-t))
-    ;; fresh
-    (.. c -props -omcljs$value)
-    ;; stale
-    (.. c -props -omcljs$value)))
-
 (defn react-key [c]
-  (-> (props c) meta :react-key))
+  (-> (. c -props) meta :react-key))
 
 (defn index [c]
-  (-> (props c) meta ::index))
+  (-> (. c -props) meta ::index))
 
 (defn update-props! [c next-props]
   (set! (.. c -props -omcljs$t) (p/basis-t (reconciler c)))
   (set! (.. c -props -omcljs$value) next-props))
+
+(defn props [c]
+  (let [r (reconciler c)]
+    (if (= (t c) (p/basis-t r))
+      ;; fresh
+      (.. c -props -omcljs$value)
+      ;; stale
+      (let [fresh-props (p/props-for r c)]
+        (update-props! c fresh-props)
+        fresh-props))))
 
 (defn update-component! [c next-props]
   (update-props! c next-props)
@@ -189,7 +208,8 @@
 
 (defn build-index [cl]
   (let [component->path (atom {})
-        prop->component (atom {})]
+        prop->component (atom {})
+        rootq (get-query cl)]
     (letfn [(build-index* [cl sel path]
               (swap! component->path assoc cl path)
               (let [{ks true ms false} (group-by keyword? sel)]
@@ -199,9 +219,14 @@
                     (swap! prop->component #(merge-with into % {attr #{cl}}))
                     (let [cl (-> sel meta :component)]
                       (build-index* cl sel (conj path attr)))))))]
-      (build-index* cl (get-query cl) [])
+      (build-index* cl rootq [])
       {:prop->component @prop->component
-       :component->path @component->path})))
+       :component->path @component->path
+       :component->selector
+       (reduce-kv
+         (fn [ret class path]
+           (assoc ret class (filter-selector rootq path)))
+         {} @component->path)})))
 
 (defn tree-reconciler [data]
   (let [state  (cond
@@ -228,8 +253,18 @@
                      (swap! queue conj [component next-props])
                      (swap! state p/push next-props path)))
                  p/IReconciler
-                 (basis-t [this] @t)
-                 (store [this] @state)
+                 (basis-t [_] @t)
+                 (store [_] @state)
+                 (indexes [_] @idxs)
+                 (props-for [_ component]
+                   (let [index (index component)
+                         state @state]
+                     (cond-> (p/pull state
+                               (get-in @idxs
+                                 [(root-class component)
+                                  :component->selector (type component)])
+                               nil)
+                       index (get index))))
                  (add-root! [this target root-class options]
                    (let [ret (atom nil)
                          rctor (create-factory root-class)]

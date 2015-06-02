@@ -24,6 +24,8 @@
 (defprotocol IReconciler
   (basis-t [this])
   (store [this])
+  (indexes [this])
+  (props-for [this component])
   (add-root! [reconciler target root-class options])
   (remove-root! [reconciler target])
   (schedule! [reconciler])
