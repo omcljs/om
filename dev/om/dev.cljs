@@ -10,8 +10,8 @@
 (defonce conn
   (repl/connect "http://localhost:9000/repl"))
 
-(defn increment! [c props]
-  (om/assert! c (update-in props [:counter/count] inc)))
+(defn increment! [c]
+  (om/assert! c (update-in (om/props c) [:counter/count] inc)))
 
 (defui Counter
   static om/IQuery
@@ -23,7 +23,7 @@
       (dom/div nil
         (dom/p nil (str "Count: " count))
         (dom/button
-          #js {:onClick (fn [_] (increment! this props))}
+          #js {:onClick (fn [_] (increment! this))}
           "Click Me!")))))
 
 (def counter (om/create-factory Counter))
