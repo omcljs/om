@@ -32,7 +32,7 @@
 
 (defn add-counter! [c]
   (let [id (swap! current-id inc)]
-    (om/commit! c
+    (om/assert! c
       (update-in (om/props c) [:app/counters]
         conj {:id id :counter/count 0}))))
 

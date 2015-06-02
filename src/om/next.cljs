@@ -107,10 +107,10 @@
   (.. c -props -omcljs$depth))
 
 (defn react-key [c]
-  (-> (. c -props) meta :react-key))
+  (.. c -props -key))
 
 (defn index [c]
-  (-> (. c -props) meta ::index))
+  (.. c -props -omcljs$index))
 
 (defn update-props! [c next-props]
   (set! (.. c -props -omcljs$t) (p/basis-t (reconciler c)))
