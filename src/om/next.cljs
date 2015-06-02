@@ -138,6 +138,12 @@
       ;; stale
       (p/props-for r c))))
 
+(defn get-state [c]
+  (.. c -props -omcljs$state))
+
+(defn set-state! [c new-state]
+  (set! (.. c -props -omcljs$state) new-state))
+
 (defn update-component! [c next-props]
   (update-props! c next-props)
   (.forceUpdate c))
