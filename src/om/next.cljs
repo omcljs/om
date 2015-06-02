@@ -17,6 +17,10 @@
 
 (def ^{:dynamic true :private true} *parent* nil)
 
+(def ^{:dynamic true :private true} *shared* nil)
+
+(def ^{:dynamic true :private true} *instrument* nil)
+
 (def ^{:dynamic true :private true} *depth* 0)
 
 ;; =============================================================================
@@ -76,17 +80,21 @@
 
 (defn create-factory [cl]
   (fn [props children]
-    (let [m (meta props)]
-      (js/React.createElement cl
-        #js {:key (:react-key m)
-             :omcljs$value props
-             :omcljs$index (::index m)
-             :omcljs$reconciler *reconciler*
-             :omcljs$rootClass *root-class*
-             :omcljs$parent *parent*
-             :omcljs$depth *depth*
-             :omcljs$t (p/basis-t *reconciler*)}
-        children))))
+    (if *instrument*
+      (*instrument* props children)
+      (let [m (meta props)]
+        (js/React.createElement cl
+          #js {:key               (:react-key m)
+               :omcljs$value      props
+               :omcljs$index      (::index m)
+               :omcljs$reconciler *reconciler*
+               :omcljs$rootClass  *root-class*
+               :omcljs$parent     *parent*
+               :omcljs$shared     *shared*
+               :omcljs$instrument *instrument*
+               :omcljs$depth      *depth*
+               :omcljs$t          (p/basis-t *reconciler*)}
+          children)))))
 
 (defn state [c]
   (.-state c))
@@ -111,6 +119,12 @@
 
 (defn index [c]
   (.. c -props -omcljs$index))
+
+(defn shared [c]
+  (.. c -props -omcljs$shared))
+
+(defn instrument [c]
+  (.. c -props -omcljs$instrument))
 
 (defn update-props! [c next-props]
   (set! (.. c -props -omcljs$t) (p/basis-t (reconciler c)))
