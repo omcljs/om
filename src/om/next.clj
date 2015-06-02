@@ -48,14 +48,17 @@
       `(~name ~args
          (binding [om.next/*reconciler* (om.next/reconciler ~this)
                    om.next/*root-class* (om.next/root-class ~this)
-                   om.next/*depth*      (om.next/depth ~this)
-                   om.next/*parent*     ~this]
+                   om.next/*depth* (om.next/depth ~this)
+                   om.next/*parent* ~this]
            ~@body)))}
    :defaults
    `{~'shouldComponentUpdate
      ([this# next-props# next-state#]
-       (or (not= (om.next/props this#) (.-omcljs$value next-props#))
-           (not= (om.next/state this#) next-state#)))
+       (or (not= (.. this# ~'-props ~'-omcljs$value)
+                 (.-omcljs$value next-props#))
+           (and (.. this# ~'-state)
+                (not= (.. this# ~'-state ~'-omcljs$state)
+                      (.-omcljs$state next-state#)))))
      ~'componentWillMount
      ([this#]
        (let [reconciler# (om.next/reconciler this#)]

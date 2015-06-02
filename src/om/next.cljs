@@ -122,16 +122,19 @@
       ;; fresh
       (.. c -props -omcljs$value)
       ;; stale
-      (let [fresh-props (p/props-for r c)]
-        (update-props! c fresh-props)
-        fresh-props))))
+      (p/props-for r c))))
 
 (defn update-component! [c next-props]
   (update-props! c next-props)
   (.forceUpdate c))
 
-(defn should-update? [c next-props]
-  (.shouldComponentUpdate c #js {:omcljs$value next-props} (state c)))
+(defn should-update?
+  ([c next-props]
+   (should-update? c next-props nil))
+  ([c next-props next-state]
+   (.shouldComponentUpdate c
+     #js {:omcljs$value next-props}
+     #js {:omcljs$state next-state})))
 
 (defn map-keys
   ([ctor xs] (map-keys ctor nil xs))
