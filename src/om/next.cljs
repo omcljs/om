@@ -260,14 +260,18 @@
                  (store [_] @state)
                  (indexes [_] @idxs)
                  (props-for [_ component]
-                   (let [index (index component)
-                         state @state]
-                     (cond-> (p/pull state
-                               (get-in @idxs
-                                 [(root-class component)
-                                  :component->selector (type component)])
-                               nil)
-                       index (get index))))
+                   (let [rc    (root-class component)
+                         ct    (type component)
+                         index (index component)
+                         state @state
+                         path  (cond->
+                                 (get-in @idxs [rc :component->path ct])
+                                 index (conj index))]
+                     (get-in
+                       (p/pull state
+                         (get-in @idxs [rc :component->selector ct])
+                         nil)
+                       path)))
                  (add-root! [this target root-class options]
                    (let [ret (atom nil)
                          rctor (create-factory root-class)]
