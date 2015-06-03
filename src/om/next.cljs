@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [var? key])
   (:require-macros [om.next :refer [defui]])
   (:require [goog.string :as gstring]
+            [goog.object :as gobj]
             [clojure.walk :as walk]
             [om.next.protocols :as p]
             [om.next.stores :refer [TreeStore]]))
@@ -57,6 +58,12 @@
 
 (defprotocol IRetract
   (handle-retract! [handler entity context]))
+
+(defprotocol ILocalState
+  (-set-state! [this new-state])
+  (-get-state [this])
+  (-get-rendered-state [this])
+  (-merge-pending-state! [this]))
 
 (defn var? [x]
   (and (symbol? x)
@@ -138,11 +145,29 @@
       ;; stale
       (p/props-for r c))))
 
-(defn get-state [c]
-  (.. c -props -omcljs$state))
-
 (defn set-state! [c new-state]
-  (set! (.. c -props -omcljs$state) new-state))
+  (if (satisfies? ILocalState c)
+    (-set-state! c new-state)
+    (set! (.. c -state -omcljs$pendingState) new-state)))
+
+(defn get-state [c]
+  (if (satisfies? ILocalState c)
+    (-get-state c)
+    (when-let [state (. c -state)]
+      (or (. state -omcljs$pendingState)
+          (. state -omcljs$state)))))
+
+(defn get-rendered-state [c]
+  (if (satisfies? ILocalState c)
+    (-get-rendered-state c)
+    (some-> c .-state .-omcljs$state)))
+
+(defn merge-pending-state! [c]
+  (if (satisfies? ILocalState c)
+    (-merge-pending-state! c)
+    (when-let [pending (some-> c .-state .-omcljs$pendingState)]
+      (gobj/remove (. c -state) "omcljs$pendingState")
+      (set! (.. c -state -omcljs$state) pending))))
 
 (defn update-component! [c next-props]
   (update-props! c next-props)
