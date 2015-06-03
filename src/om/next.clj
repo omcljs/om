@@ -29,7 +29,12 @@
 
 (def reshape-map
   {:reshape
-   {'componentWillMount
+   {'getInitialState
+    (fn [[name [this :as args] & body]]
+      `(~name ~args
+         (let [ret# (do ~@body)]
+           (js-obj "omcljs$state" ret#))))
+    'componentWillMount
     (fn [[name [this :as args] & body]]
       `(~name ~args
          (let [reconciler# (om.next/reconciler ~this)]
@@ -87,26 +92,30 @@
             (reduce add-defaults-step dt defaults))]
     (->> dt (map reshape*) vec add-defaults)))
 
-(defn defui* [name forms env]
-  (letfn [(field-set! [obj [field value]]
-            `(set! (. ~obj ~(symbol (str "-" field))) ~value))]
-    (let [{:keys [dt statics]} (collect-statics forms)
-          rname (:name (ana/resolve-var (dissoc env :locals) name))]
-      `(do
-         (defn ~name []
-           (this-as this#
-             (.apply js/React.Component this# (js-arguments))))
-         (set! (.-prototype ~name) (goog.object/clone js/React.Component.prototype))
-         (specify! (.-prototype ~name) ~@(reshape dt reshape-map))
-         (set! (.. ~name -prototype -constructor) ~name)
-         ~@(map #(field-set! name %) (:fields statics))
-         (specify! ~name ~@(:protocols statics))
-         (specify! (. ~name ~'-prototype) ~@(:protocols statics))
-         (set! (.-cljs$lang$type ~rname) true)
-         (set! (.-cljs$lang$ctorStr ~rname) ~(str rname))
-         (set! (.-cljs$lang$ctorPrWriter ~rname)
-           (fn [this# writer# opt#]
-             (cljs.core/-write writer# ~(str rname))))))))
+(defn defui*
+  ([name form] (defui* name form nil))
+  ([name forms env]
+   (letfn [(field-set! [obj [field value]]
+             `(set! (. ~obj ~(symbol (str "-" field))) ~value))]
+     (let [{:keys [dt statics]} (collect-statics forms)
+           rname (if env
+                   (:name (ana/resolve-var (dissoc env :locals) name))
+                   name)]
+       `(do
+          (defn ~name []
+            (this-as this#
+              (.apply js/React.Component this# (js-arguments))))
+          (set! (.-prototype ~name) (goog.object/clone js/React.Component.prototype))
+          (specify! (.-prototype ~name) ~@(reshape dt reshape-map))
+          (set! (.. ~name -prototype -constructor) ~name)
+          ~@(map #(field-set! name %) (:fields statics))
+          (specify! ~name ~@(:protocols statics))
+          (specify! (. ~name ~'-prototype) ~@(:protocols statics))
+          (set! (.-cljs$lang$type ~rname) true)
+          (set! (.-cljs$lang$ctorStr ~rname) ~(str rname))
+          (set! (.-cljs$lang$ctorPrWriter ~rname)
+            (fn [this# writer# opt#]
+              (cljs.core/-write writer# ~(str rname)))))))))
 
 (defmacro defui [name & forms]
   (defui* name forms &env))
@@ -153,4 +162,12 @@
            (om.dom/div nil "Hello!"))
          (componentWillUnmount [this]
            (first [1 2 3])))))
+
+  (pprint
+    (defui* 'Artist
+      '(Object
+        (getInitialState [this]
+          {:foo 'bar})
+        (render [_ {:keys [self artists]}]
+          (om.dom/div nil "Hello!")))))
   )
