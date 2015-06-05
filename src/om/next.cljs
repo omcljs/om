@@ -166,8 +166,10 @@
   (if (satisfies? ILocalState c)
     (-merge-pending-state! c)
     (when-let [pending (some-> c .-state .-omcljs$pendingState)]
-      (gobj/remove (. c -state) "omcljs$pendingState")
-      (set! (.. c -state -omcljs$state) pending))))
+      (let [previous (.. c -state -omcljs$state)]
+        (gobj/remove (. c -state) "omcljs$pendingState")
+        (set! (.. c -state -omcljs$previousState) previous)
+        (set! (.. c -state -omcljs$state) pending)))))
 
 (defn update-component! [c next-props]
   (update-props! c next-props)

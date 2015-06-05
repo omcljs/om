@@ -34,6 +34,25 @@
       `(~name ~args
          (let [ret# (do ~@body)]
            (js-obj "omcljs$state" ret#))))
+    'componentWillReceiveProps
+    (fn [[name [this next-props :as args] & body]]
+      `(~name ~args
+         (let [~next-props (. ~next-props ~'-omcljs$value)]
+           ~@body)))
+    'componentWillUpdate
+    (fn [[name [this next-props next-state :as args] & body]]
+      `(~name ~args
+         (let [~next-props (. ~next-props ~'-omcljs$value)
+               ~next-state (. ~next-state ~'-omcljs$pendingState)
+               ret# (do ~@body)]
+           (om.next/merge-pending-state! ~this)
+           ret#)))
+    'componentDidUpdate
+    (fn [[name [this prev-props prev-state :as args] & body]]
+      `(~name ~args
+         (let [~prev-props (. ~prev-props ~'-omcljs$value)
+               ~prev-state (. ~prev-state ~'-omcjls$previousState)]
+           ~@body)))
     'componentWillMount
     (fn [[name [this :as args] & body]]
       `(~name ~args
@@ -66,6 +85,9 @@
            (and (.. this# ~'-state)
                 (not= (.. this# ~'-state ~'-omcljs$state)
                       (.-omcljs$state next-state#)))))
+     ~'componentWillUpdate
+     ([this# prev-props# prev-state#]
+       (om.next/merge-pending-state! this#))
      ~'componentWillMount
      ([this#]
        (let [reconciler# (om.next/reconciler this#)]
