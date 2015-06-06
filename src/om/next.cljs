@@ -139,7 +139,8 @@
 
 (defn props [c]
   (let [r (reconciler c)]
-    (if (= (t c) (p/basis-t r))
+    (if (or (nil? r)
+            (= (t c) (p/basis-t r)))
       ;; fresh
       (.. c -props -omcljs$value)
       ;; stale
