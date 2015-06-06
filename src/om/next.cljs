@@ -181,6 +181,16 @@
 (defn mounted? [c]
   (.isMounted c))
 
+(defn get-node
+  ([c]
+   (.getDOMNode c))
+  ([c name]
+   (some-> (.-refs c) (gobj/get name) (.getDOMNode))))
+
+(defn get-ref
+  [c name]
+  (some-> (.-refs c) (gobj/get name)))
+
 (defn update-component! [c next-props]
   (update-props! c next-props)
   (.forceUpdate c))
