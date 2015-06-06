@@ -172,6 +172,15 @@
         (set! (.. c -state -omcljs$previousState) previous)
         (set! (.. c -state -omcljs$state) pending)))))
 
+(defn react-set-state!
+  ([c new-state]
+   (react-set-state! c new-state nil))
+  ([c new-state cb]
+   (.setState c #js {:omcljs$state new-state} nil)))
+
+(defn mounted? [c]
+  (.isMounted c))
+
 (defn update-component! [c next-props]
   (update-props! c next-props)
   (.forceUpdate c))
