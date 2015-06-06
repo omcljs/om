@@ -91,16 +91,16 @@
       (*instrument* props children)
       (let [m (meta props)]
         (js/React.createElement cl
-          #js {:key               (:react-key m)
-               :omcljs$value      props
-               :omcljs$index      (::index m)
+          #js {:key (:react-key m)
+               :omcljs$value props
+               :omcljs$index (::index m)
                :omcljs$reconciler *reconciler*
-               :omcljs$rootClass  *root-class*
-               :omcljs$parent     *parent*
-               :omcljs$shared     *shared*
+               :omcljs$rootClass *root-class*
+               :omcljs$parent *parent*
+               :omcljs$shared *shared*
                :omcljs$instrument *instrument*
-               :omcljs$depth      *depth*
-               :omcljs$t          (p/basis-t *reconciler*)}
+               :omcljs$depth *depth*
+               :omcljs$t (when *reconciler* (p/basis-t *reconciler*))}
           children)))))
 
 (defn state [c]
