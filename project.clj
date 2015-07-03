@@ -4,7 +4,7 @@
   :license {:name "Eclipse"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
 
-  :repositories ["clojars" {:sign-releases false}]
+  :repositories [["clojars" {:sign-releases false}]]
 
   :jvm-opts ^:replace ["-Xms512m" "-Xmx512m" "-server"]
 
