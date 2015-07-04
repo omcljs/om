@@ -33,7 +33,7 @@
     (fn [[name [this :as args] & body]]
       `(~name ~args
          (let [ret# (do ~@body)]
-           (js-obj "omcljs$state" ret#))))
+           (cljs.core/js-obj "omcljs$state" ret#))))
     'componentWillReceiveProps
     (fn [[name [this next-props :as args] & body]]
       `(~name ~args
