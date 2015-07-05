@@ -122,7 +122,7 @@ examples:
 
 ## Using it
 
-The current version depends on React 0.12.2.
+The current version depends on React 0.13.3.
 
 Make sure you have [Leiningen](http://leiningen.org/) installed.
 
@@ -133,7 +133,7 @@ Your `project.clj` should include something like the following:
   ...
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/clojurescript "0.0-2760"]
-                 [org.omcljs/om "0.8.8"]]
+                 [org.omcljs/om "0.9.0"]]
   ...)
 ```
 
@@ -147,8 +147,8 @@ with Maven's exclusions feature:
   ...
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/clojurescript "0.0-2760"]
-                 [org.omcljs/om "0.8.8" :exclusions [cljsjs/react]]
-                 [cljsjs/react-with-addons "0.12.2-4"]]
+                 [org.omcljs/om "0.9.0" :exclusions [cljsjs/react]]
+                 [cljsjs/react-with-addons "0.13.3-0"]]
   ...)
 ```
 
