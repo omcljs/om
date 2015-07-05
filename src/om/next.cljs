@@ -193,6 +193,8 @@
   ([c new-state cb]
    (.setState c #js {:omcljs$state new-state} nil)))
 
+(defn update-query! [c bs])
+
 (defn mounted? [c]
   (.isMounted c))
 
