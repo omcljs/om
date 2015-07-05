@@ -151,6 +151,21 @@
     (-set-state! c new-state)
     (set! (.. c -state -omcljs$pendingState) new-state)))
 
+(defn update-state!
+  ([c f]
+   (set-state! c (f (get-state c))))
+  ([c f arg0]
+   (set-state! c (f (get-state c) arg0)))
+  ([c f arg0 arg1]
+   (set-state! c (f (get-state c) arg0 arg1)))
+  ([c f arg0 arg1 arg2]
+   (set-state! c (f (get-state c) arg0 arg1 arg2)))
+  ([c f arg0 arg1 arg2 arg3]
+   (set-state! c (f (get-state c) arg0 arg1 arg2 arg3)))
+  ([c f arg0 arg1 arg2 arg3 & arg-rest]
+   (set-state! c
+     (apply f (get-state c) arg0 arg1 arg2 arg3 arg-rest))))
+
 (defn get-state [c]
   (if (satisfies? ILocalState c)
     (-get-state c)
