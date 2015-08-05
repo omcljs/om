@@ -28,11 +28,9 @@
                                    (ex-info (str "Cannot pull " v)
                                      {:type :error/invalid-tree-pull-value})))]
                   (assoc ret k pv))
-                :else
                 (throw
                   (ex-info (str "Invalid key " k)
                     {:type :error/invalid-key})))))
-
           :else
           (throw
             (ex-info (str "Invalid selector fragment " k)
