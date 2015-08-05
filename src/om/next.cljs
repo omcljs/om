@@ -106,50 +106,63 @@
 (defn state [c]
   (.-state c))
 
+(defn- get-prop [c k]
+  (gobj/get (.-props c) k))
+
+(defn- set-prop! [c k v]
+  (gobj/set (.-props c) k v))
+
 (defn reconciler [c]
-  (.. c -props -omcljs$reconciler))
+  (get-prop c "omcljs$reconciler"))
 
 (defn t [c]
-  (.. c -props -omcljs$t))
+  (get-prop c "omcljs$t"))
 
 (defn root-class [c]
-  (.. c -props -omcljs$rootClass))
+  (get-prop c "omcljs$rootClass"))
 
 (defn parent [c]
-  (.. c -props -omcljs$parent))
+  (get-prop c "omcljs$parent"))
 
 (defn depth [c]
-  (.. c -props -omcljs$depth))
+  (get-prop c "omcljs$depth"))
 
 (defn react-key [c]
   (.. c -props -key))
 
 (defn index [c]
-  (.. c -props -omcljs$index))
+  (get-prop c "omcljs$index"))
 
 (defn shared [c]
-  (.. c -props -omcljs$shared))
+  (get-prop c "omcljs$shared"))
 
 (defn instrument [c]
-  (.. c -props -omcljs$instrument))
+  (get-prop c "omcljs$instrument"))
 
 (defn update-props! [c next-props]
-  (set! (.. c -props -omcljs$t) (p/basis-t (reconciler c)))
-  (set! (.. c -props -omcljs$value) next-props))
+  (set-prop! c "omcljs$t" (p/basis-t (reconciler c)))
+  (set-prop! c "omcljs$value" next-props))
 
 (defn props [c]
   (let [r (reconciler c)]
     (if (or (nil? r)
             (= (t c) (p/basis-t r)))
       ;; fresh
-      (.. c -props -omcljs$value)
+      (get-prop c "omcljs$value")
       ;; stale
       (p/props-for r c))))
 
 (defn set-state! [c new-state]
   (if (satisfies? ILocalState c)
     (-set-state! c new-state)
-    (set! (.. c -state -omcljs$pendingState) new-state)))
+    (gobj/set (.-state c) "omcljs$pendingState" new-state)))
+
+(defn get-state [c]
+  (if (satisfies? ILocalState c)
+    (-get-state c)
+    (when-let [state (. c -state)]
+      (or (gobj/get state "omcljs$pendingState")
+          (gobj/get state "omcljs$state")))))
 
 (defn update-state!
   ([c f]
@@ -166,13 +179,6 @@
    (set-state! c
      (apply f (get-state c) arg0 arg1 arg2 arg3 arg-rest))))
 
-(defn get-state [c]
-  (if (satisfies? ILocalState c)
-    (-get-state c)
-    (when-let [state (. c -state)]
-      (or (. state -omcljs$pendingState)
-          (. state -omcljs$state)))))
-
 (defn get-rendered-state [c]
   (if (satisfies? ILocalState c)
     (-get-rendered-state c)
@@ -181,11 +187,12 @@
 (defn merge-pending-state! [c]
   (if (satisfies? ILocalState c)
     (-merge-pending-state! c)
-    (when-let [pending (some-> c .-state .-omcljs$pendingState)]
-      (let [previous (.. c -state -omcljs$state)]
-        (gobj/remove (. c -state) "omcljs$pendingState")
-        (set! (.. c -state -omcljs$previousState) previous)
-        (set! (.. c -state -omcljs$state) pending)))))
+    (when-let [pending (some-> c .-state (gobj/get "omcljs$pendingState"))]
+      (let [state    (.-state c)
+            previous (gobj/get state "omcljs$state")]
+        (gobj/remove state "omcljs$pendingState")
+        (gobj/set state "omcljs$previousState" previous)
+        (gobj/set state "omcljs$state" pending)))))
 
 (defn react-set-state!
   ([c new-state]
