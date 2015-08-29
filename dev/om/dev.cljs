@@ -36,6 +36,14 @@
       (update-in (om/props c) [:app/counters]
         conj {:id id :counter/count 0}))))
 
+(defui HelloWorldTitle
+  Object
+  (render [this]
+    (apply dom/div nil
+      (om/get-children this))))
+
+(def app-title (om/create-factory HelloWorldTitle))
+
 (defui HelloWorld
   static om/IQueryParams
   (params [this]
@@ -47,7 +55,9 @@
   (render [this]
     (let [{:keys [:app/title :app/counters] :as props} (om/props this)]
       (apply dom/div nil
-        (dom/h2 nil title)
+        (app-title nil
+          (dom/h2 nil "Hello World!")
+          (dom/h3 nil "cool stuff"))
         (dom/div nil
           (dom/button
             #js {:onClick (fn [e] (add-counter! this))}

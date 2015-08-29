@@ -86,9 +86,9 @@
 ;; React Bridging
 
 (defn create-factory [cl]
-  (fn [props children]
+  (fn [props & children]
     (if *instrument*
-      (*instrument* props children)
+      (apply *instrument* props children)
       (let [m (meta props)]
         (js/React.createElement cl
           #js {:key (:react-key m)
@@ -214,6 +214,10 @@
 (defn get-ref
   [c name]
   (some-> (.-refs c) (gobj/get name)))
+
+(defn get-children
+  [c]
+  (.. c -props -children))
 
 (defn update-component! [c next-props]
   (update-props! c next-props)
