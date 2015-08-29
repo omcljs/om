@@ -19,7 +19,7 @@
   (drop-component! [this component]))
 
 (defprotocol ICommitQueue
-  (commit! [queue tx-data context]))
+  (commit! [queue tx-type tx-data context]))
 
 (defprotocol IReconciler
   (basis-t [this])

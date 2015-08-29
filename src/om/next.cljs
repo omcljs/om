@@ -54,10 +54,10 @@
   (-query [this]))
 
 (defprotocol IAssert
-  (-handle-assert! [handler entity context]))
+  (-handle-assert [handler entity context]))
 
 (defprotocol IRetract
-  (-handle-retract! [handler entity context]))
+  (-handle-retract [handler entity context]))
 
 (defprotocol ILocalState
   (-set-state! [this new-state])
@@ -280,28 +280,32 @@
 ;; =============================================================================
 ;; State Transition
 
-(defn commit! [c tx-data]
+(defn transact! [tx-type c tx-data]
   (let [r (reconciler c)]
-    (p/commit! r tx-data c)
+    (p/commit! r tx-type tx-data c)
     (schedule! r)))
 
 (defn assert! [origin entity]
-  (loop [c origin]
+  (loop [c origin entity entity]
     (cond
-      (satisfies? IAssert c) (-handle-assert! c entity origin)
-      (nil? c) (commit! origin entity)
-      :else (recur (parent c)))))
+      (satisfies? IAssert c)
+      (recur (parent c) (-handle-assert c entity origin))
+
+      (nil? c)
+      (transact! :assert origin entity)
+
+      :else (recur (parent c) entity))))
 
 (defn retract! [origin entity]
-  (loop [c origin]
+  (loop [c origin entity entity]
     (cond
-      (satisfies? IRetract c) (-handle-retract! c entity origin)
-      (nil? c) (throw
-                 (ex-info
-                   (str "No retraction handler found for component of type "
-                     (type c))
-                   {:type ::missing-retract-handler}))
-      :else (recur (parent c)))))
+      (satisfies? IRetract c)
+      (recur (parent c) (-handle-retract c entity origin))
+
+      (nil? c)
+      (transact! :retract origin entity)
+
+      :else (recur (parent c) entity))))
 
 ;; =============================================================================
 ;; Default Reconciler
@@ -342,7 +346,7 @@
         t      (atom 0)
         r      (reify
                  p/ICommitQueue
-                 (commit! [_ next-props component]
+                 (commit! [_ tx-type next-props component]
                    (let [index (index component)
                          path  (cond->
                                  (get-in @idxs
