@@ -44,20 +44,20 @@
 ;; Query Protocols & Helpers
 
 (defprotocol IQueryParams
-  (params [this]))
+  (-params [this]))
 
 (extend-type default
   IQueryParams
-  (params [_]))
+  (-params [_]))
 
 (defprotocol IQuery
-  (query [this]))
+  (-query [this]))
 
 (defprotocol IAssert
-  (handle-assert! [handler entity context]))
+  (-handle-assert! [handler entity context]))
 
 (defprotocol IRetract
-  (handle-retract! [handler entity context]))
+  (-handle-retract! [handler entity context]))
 
 (defprotocol ILocalState
   (-set-state! [this new-state])
@@ -79,8 +79,9 @@
               node))]
     (walk/prewalk replace-var query)))
 
-(defn get-query [cl]
-  (with-meta (bind-query (query cl) (params cl)) {:component cl}))
+(defn query [cl]
+  (with-meta (bind-query (-query cl) (-params cl))
+    {:component cl}))
 
 ;; =============================================================================
 ;; React Bridging
@@ -205,17 +206,17 @@
 (defn mounted? [c]
   (.isMounted c))
 
-(defn get-node
+(defn dom-node
   ([c]
    (.getDOMNode c))
   ([c name]
    (some-> (.-refs c) (gobj/get name) (.getDOMNode))))
 
-(defn get-ref
+(defn ref
   [c name]
   (some-> (.-refs c) (gobj/get name)))
 
-(defn get-children
+(defn children
   [c]
   (.. c -props -children))
 
@@ -231,6 +232,7 @@
      #js {:omcljs$value next-props}
      #js {:omcljs$state next-state})))
 
+;; FIXME: this needs conceptual work
 (defn map-keys
   ([ctor xs] (map-keys ctor nil xs))
   ([ctor keyfn xs]
@@ -286,14 +288,14 @@
 (defn assert! [origin entity]
   (loop [c origin]
     (cond
-      (satisfies? IAssert c) (handle-assert! c entity origin)
+      (satisfies? IAssert c) (-handle-assert! c entity origin)
       (nil? c) (commit! origin entity)
       :else (recur (parent c)))))
 
 (defn retract! [origin entity]
   (loop [c origin]
     (cond
-      (satisfies? IRetract c) (handle-retract! c entity origin)
+      (satisfies? IRetract c) (-handle-retract! c entity origin)
       (nil? c) (throw
                  (ex-info
                    (str "No retraction handler found for component of type "
@@ -307,7 +309,7 @@
 (defn build-index [cl]
   (let [component->path (atom {})
         prop->component (atom {})
-        rootq (get-query cl)]
+        rootq (query cl)]
     (letfn [(build-index* [cl sel path]
               (swap! component->path assoc cl path)
               (let [{ks true ms false} (group-by keyword? sel)]
@@ -376,7 +378,7 @@
                                                *root-class* root-class]
                                        (reset! ret
                                          (js/React.render (rctor data) target))))
-                           sel     (get-query root-class)
+                           sel     (query root-class)
                            store   @state]
                        (swap! roots assoc target renderf)
                        (cond

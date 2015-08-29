@@ -22,7 +22,7 @@
 
 (comment
   (om/queries Component)
-  (om/get-query Component)
-  (om/get-query ComponentList :components)
+  (om/query Component)
+  (om/query ComponentList :components)
   (om/queries ComponentList)
   )

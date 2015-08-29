@@ -40,14 +40,14 @@
   Object
   (render [this]
     (apply dom/div nil
-      (om/get-children this))))
+      (om/children this))))
 
 (def app-title (om/create-factory HelloWorldTitle))
 
 (defui HelloWorld
   static om/IQueryParams
   (params [this]
-    {:counter (om/get-query Counter)})
+    {:counter (om/query Counter)})
   static om/IQuery
   (query [this]
     '[:app/title {:app/counters ?counter}])
