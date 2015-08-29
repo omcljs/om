@@ -3,6 +3,7 @@
   (:require [clojure.browser.repl :as repl]
             [om.next :as om :refer-macros [defui]]
             [om.next.protocols :as p]
+            [om.next.stores :refer [TreeStore]]
             [om.dom :as dom]
             [goog.object :as gobj]
             [goog.dom :as gdom]))
@@ -64,12 +65,14 @@
             "Add Counter!"))
         (om/map-keys counter :id counters)))))
 
-(def reconciler
-  (om/tree-reconciler
-    {:app/title "Hello World!"
-     :app/counters [{:id 0 :counter/count 0}
-                    {:id 1 :counter/count 0}
-                    {:id 2 :counter/count 0}]}))
+(def app-state
+  (atom (TreeStore.
+          {:app/title "Hello World!"
+           :app/counters [{:id 0 :counter/count 0}
+                          {:id 1 :counter/count 0}
+                          {:id 2 :counter/count 0}]})))
+
+(def reconciler (om/tree-reconciler app-state))
 
 (comment
   (def reconciler
