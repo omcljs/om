@@ -11,7 +11,7 @@
   :source-paths  ["src" "dev"]
 
   :dependencies [[org.clojure/clojure "1.7.0" :scope "provided"]
-                 [org.clojure/clojurescript "1.7.107" :classifier "aot" :scope "provided"
+                 [org.clojure/clojurescript "1.7.122" :classifier "aot" :scope "provided"
                   :exclusions [org.clojure/data.json]]
                  [org.clojure/data.json "0.2.6" :classifier "aot" :scope "provided"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha" :scope "provided"]
