@@ -90,6 +90,16 @@
   (om/store reconciler)
   (om/basis-t reconciler)
   (p/indexes reconciler)
+
+  (require '[cljs.pprint :as pprint])
+  (pprint/pprint (om/build-index HelloWorld))
+
+  (-> (om/build-index HelloWorld)
+    :prop->component :id)
+
+  (pprint/pprint (om/indexes reconciler))
+
+  (om/indexes reconciler)
   )
 
 ;(def db

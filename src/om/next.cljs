@@ -253,6 +253,9 @@
 (defn store [reconciler]
   (p/store reconciler))
 
+(defn indexes [reconciler]
+  (p/indexes reconciler))
+
 (defn basis-t [reconciler]
   (p/basis-t reconciler))
 
@@ -330,7 +333,8 @@
        (reduce-kv
          (fn [ret class path]
            (assoc ret class (filter-selector rootq path)))
-         {} @component->path)})))
+         {} @component->path)
+       :type->components {}})))
 
 (defn tree-reconciler [data]
   (let [state  (cond
@@ -356,6 +360,11 @@
                      (swap! t inc) ;; TODO: probably should revisit doing this here
                      (swap! queue conj [component next-props])
                      (swap! state p/push next-props path)))
+                 p/IComponentIndex
+                 (index-component! [_ c]
+                   (swap! idxs update-in [:type->components (type c)] (fnil conj #{}) c))
+                 (drop-component! [_ c]
+                   (swap! idxs update-in [:type->components (type c)] disj c))
                  p/IReconciler
                  (basis-t [_] @t)
                  (store [_] @state)
