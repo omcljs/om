@@ -54,10 +54,10 @@
   (-query [this]))
 
 (defprotocol IAssert
-  (-handle-assert [handler entity context]))
+  (-assert [handler entity context]))
 
 (defprotocol IRetract
-  (-handle-retract [handler entity context]))
+  (-retract [handler entity context]))
 
 (defprotocol ILocalState
   (-set-state! [this new-state])
@@ -292,7 +292,8 @@
   (loop [c origin entity entity]
     (cond
       (satisfies? IAssert c)
-      (recur (parent c) (-handle-assert c entity origin))
+      (when-let [entity (-assert c entity origin)]
+        (recur (parent c) entity))
 
       (nil? c)
       (transact! :assert origin entity)
@@ -303,7 +304,8 @@
   (loop [c origin entity entity]
     (cond
       (satisfies? IRetract c)
-      (recur (parent c) (-handle-retract c entity origin))
+      (when-let [entity (-retract c entity origin)]
+        (recur (parent c) entity))
 
       (nil? c)
       (transact! :retract origin entity)
