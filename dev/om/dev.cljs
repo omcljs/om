@@ -11,6 +11,11 @@
 (defonce conn
   (repl/connect "http://localhost:9000/repl"))
 
+(def current-id (atom 2))
+
+;; -----------------------------------------------------------------------------
+;; Counter
+
 (defn increment! [c]
   (om/assert! c (update-in (om/props c) [:counter/count] inc)))
 
@@ -25,17 +30,16 @@
         (dom/p nil (str "Count: " count))
         (dom/button
           #js {:onClick (fn [_] (increment! this))}
-          "Click Me!")))))
+          "Click Me!")
+        (dom/button
+          #js {:style #js {:marginLeft "10px"}
+               :onClick (fn [_] (om/retract! this (om/props this)))}
+          "Delete")))))
 
 (def counter (om/create-factory Counter))
 
-(def current-id (atom 2))
-
-(defn add-counter! [c]
-  (let [id (swap! current-id inc)]
-    (om/assert! c
-      (update-in (om/props c) [:app/counters]
-        conj {:id id :counter/count 0}))))
+;; -----------------------------------------------------------------------------
+;; HelloWorldTitle
 
 (defui HelloWorldTitle
   Object
@@ -45,6 +49,15 @@
 
 (def app-title (om/create-factory HelloWorldTitle))
 
+;; -----------------------------------------------------------------------------
+;; HelloWorld
+
+(defn add-counter! [app]
+  (let [id (swap! current-id inc)]
+    (om/assert! app
+      (update-in (om/props app) [:app/counters]
+        conj {:id id :counter/count 0}))))
+
 (defui HelloWorld
   static om/IQueryParams
   (-params [this]
@@ -52,6 +65,12 @@
   static om/IQuery
   (-query [this]
     '[:app/title {:app/counters ?counter}])
+  om/IRetract
+  (-retract [this {:keys [id]} origin]
+    (om/assert! this
+      (update-in (om/props this) [:app/counters]
+        (fn [xs] (into [] (remove #(= id (:id %))) xs))))
+    nil)
   Object
   (render [this]
     (let [{:keys [:app/title :app/counters] :as props} (om/props this)]
@@ -65,6 +84,8 @@
             "Add Counter!"))
         (om/map-keys counter :id counters)))))
 
+;; -----------------------------------------------------------------------------
+
 (def app-state
   (atom (TreeStore.
           {:app/title "Hello World!"
@@ -74,7 +95,11 @@
 
 (def reconciler (om/tree-reconciler app-state))
 
+(om/add-root! reconciler
+  (gdom/getElement "app") HelloWorld)
+
 (comment
+  ;; table style (JSONGraph-ish)
   (def reconciler
     (om/table-reconciler
       {:app {:app/title "Hello World!" :app/state [0 1 2]}
@@ -82,9 +107,6 @@
                    {:state/count 0}
                    {:state/count 0}]}))
   )
-
-(om/add-root! reconciler
-  (gdom/getElement "app") HelloWorld)
 
 (comment
   (om/store reconciler)
