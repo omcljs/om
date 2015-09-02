@@ -58,6 +58,11 @@
       (update-in (om/props app) [:app/counters]
         conj {:id id :counter/count 0}))))
 
+(defn remove-counter! [app id]
+  (om/assert! app
+    (update-in (om/props app) [:app/counters]
+      (fn [xs] (into [] (remove #(= id (:id %))) xs)))))
+
 (defui HelloWorld
   static om/IQueryParams
   (-params [this]
@@ -66,10 +71,8 @@
   (-query [this]
     '[:app/title {:app/counters ?counter}])
   om/IRetract
-  (-retract [this {:keys [id]} origin]
-    (om/assert! this
-      (update-in (om/props this) [:app/counters]
-        (fn [xs] (into [] (remove #(= id (:id %))) xs))))
+  (-retract [this {:keys [id]} _]
+    (remove-counter! this id)
     nil)
   Object
   (render [this]
