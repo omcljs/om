@@ -53,12 +53,6 @@
 (defprotocol IQuery
   (-query [this]))
 
-(defprotocol IAssert
-  (-assert [handler entity context]))
-
-(defprotocol IRetract
-  (-retract [handler entity context]))
-
 (defprotocol ILocalState
   (-set-state! [this new-state])
   (-get-state [this])
@@ -113,7 +107,7 @@
 (defn- set-prop! [c k v]
   (gobj/set (.-props c) k v))
 
-(defn reconciler [c]
+(defn get-reconciler [c]
   (get-prop c "omcljs$reconciler"))
 
 (defn t [c]
@@ -141,11 +135,11 @@
   (get-prop c "omcljs$instrument"))
 
 (defn update-props! [c next-props]
-  (set-prop! c "omcljs$t" (p/basis-t (reconciler c)))
+  (set-prop! c "omcljs$t" (p/basis-t (get-reconciler c)))
   (set-prop! c "omcljs$value" next-props))
 
 (defn props [c]
-  (let [r (reconciler c)]
+  (let [r (get-reconciler c)]
     (if (or (nil? r)
             (= (t c) (p/basis-t r)))
       ;; fresh
@@ -281,46 +275,14 @@
   (p/remove-root! reconciler target))
 
 ;; =============================================================================
-;; State Transition
-
-(defn transact! [tx-type c tx-data]
-  (let [r (reconciler c)]
-    (p/commit! r tx-type tx-data c)
-    (schedule! r)))
-
-(defn assert! [origin entity]
-  (loop [c origin entity entity]
-    (cond
-      (satisfies? IAssert c)
-      (when-let [entity (-assert c entity origin)]
-        (recur (parent c) entity))
-
-      (nil? c)
-      (transact! :assert origin entity)
-
-      :else (recur (parent c) entity))))
-
-(defn retract! [origin entity]
-  (loop [c origin entity entity]
-    (cond
-      (satisfies? IRetract c)
-      (when-let [entity (-retract c entity origin)]
-        (recur (parent c) entity))
-
-      (nil? c)
-      (transact! :retract origin entity)
-
-      :else (recur (parent c) entity))))
-
-;; =============================================================================
-;; Default Reconciler
+;; Reconciler
 
 (defn build-index [cl]
-  (let [component->path (atom {})
+  (let [component->ref (atom {})
         prop->component (atom {})
         rootq (query cl)]
     (letfn [(build-index* [cl sel path]
-              (swap! component->path assoc cl path)
+              (swap! component->ref assoc cl path)
               (let [{ks true ms false} (group-by keyword? sel)]
                 (swap! prop->component #(merge-with into % (zipmap ks (repeat #{cl}))))
                 (doseq [m ms]
@@ -330,19 +292,18 @@
                       (build-index* cl sel (conj path attr)))))))]
       (build-index* cl rootq [])
       {:prop->component @prop->component
-       :component->path @component->path
+       :component->ref @component->ref
        :component->selector
        (reduce-kv
          (fn [ret class path]
            (assoc ret class (filter-selector rootq path)))
-         {} @component->path)
+         {} @component->ref)
        :type->components {}})))
 
-(defn tree-reconciler [data]
+(defn reconciler [data router indexer]
   (let [state  (cond
                  (satisfies? IAtom data) data
-                 (satisfies? p/IStore data) (atom data)
-                 (map? data) (atom (TreeStore. data))
+                 (map? data) (atom data)
                  :else (throw (ex-info "data must be an atom, store, or map"
                                 {:type ::invalid-argument})))
         idxs   (atom {})
@@ -357,7 +318,7 @@
                          path  (cond->
                                  (get-in @idxs
                                    [(root-class component)
-                                    :component->path (type component)])
+                                    :component->ref (type component)])
                                  index (conj index))]
                      (swap! t inc) ;; TODO: probably should revisit doing this here
                      (swap! queue conj [component next-props])
@@ -369,7 +330,7 @@
                    (swap! idxs update-in [:type->components (type c)] disj c))
                  p/IReconciler
                  (basis-t [_] @t)
-                 (store [_] @state)
+                 (state [_] @state)
                  (indexes [_] @idxs)
                  (props-for [_ component]
                    (let [rc    (root-class component)
@@ -377,7 +338,7 @@
                          index (index component)
                          state @state
                          path  (cond->
-                                 (get-in @idxs [rc :component->path ct])
+                                 (get-in @idxs [rc :component->ref ct])
                                  index (conj index))]
                      (get-in
                        (p/pull state
@@ -387,7 +348,7 @@
                  (add-root! [this target root-class options]
                    (let [ret (atom nil)
                          rctor (create-factory root-class)]
-                     (swap! idxs assoc root-class (build-index root-class))
+                     (swap! idxs assoc root-class ((:index-root indexer) root-class))
                      (let [renderf (fn [data]
                                      (binding [*reconciler* this
                                                *root-class* root-class]
@@ -396,9 +357,7 @@
                            sel     (query root-class)
                            store   @state]
                        (swap! roots assoc target renderf)
-                       (cond
-                         (satisfies? p/IPullAsync store) (p/pull-async store sel nil renderf)
-                         :else (renderf (p/pull store sel nil)))
+                       (router {:state store} sel renderf)
                        @ret)))
                  (remove-root! [_ target]
                    (swap! roots dissoc target))
