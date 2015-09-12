@@ -23,7 +23,7 @@
                                (if-not (= :om.next/skip resp')
                                  [(assoc resp k' resp')
                                   (if next'
-                                    (conj next' {k' next'})
+                                    (conj next {k' next'})
                                     next)]
                                  [resp (conj next sel)]))
 
@@ -49,7 +49,7 @@
 
   (defmethod join :todos/list
     [req _ sel]
-    [(into [] (map #(select-keys % sel)) todos) nil])
+    [(into [] (map #(select-keys % sel)) todos) [:todo/favorites]])
 
   (def r
     (router {:read read
