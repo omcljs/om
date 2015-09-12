@@ -1,27 +1,56 @@
 (ns om.next.router)
 
-(defn update-path [req k]
-  (update-in req [:path] (fnil conj []) k))
+(defn update-path
+  ([req k]
+   (update-path req k nil))
+  ([req k sel]
+   (cond-> (update-in req [:path] (fnil conj []) k)
+     sel (assoc-in [:selector] sel))))
 
-(defn route [{:keys [read call]}]
-  (fn [req expr]
-    (letfn [(step [[local remote req] k]
+(defn router [{:keys [read call]}]
+  (fn self [req sel]
+    (letfn [(step [[resp next] sel]
+              (println resp next sel)
               (cond
-                (seq? k)     (let [sym (first k)
-                                   ret (call (update-path req k) sym (second k))]
+                (keyword? sel) (let [ret (read req sel)]
+                                 (if-not (= :om.next/skip ret)
+                                   [(assoc resp sel ret) next]
+                                   [resp (conj next sel)]))
+
+                (seq? sel)     (let [[name params] sel
+                                     ret           (call req name params)]
+                                 (if-not (= :om.next/skip ret)
+                                   [(assoc resp sel ret) next]
+                                   [resp (conj next sel)]))
+
+                (map? sel)     (let [[k' sel'] (first sel)
+                                     ret       (read (update-path req k' sel') k')]
                                (if-not (= :om.next/skip ret)
-                                 [(assoc local k ret) remote]
-                                 [local (conj remote k)]))
-                (map? k)     (let [[k' v] (first k)
-                                   ret    (read (update-path req k') k' v)]
-                               (if-not (= :om.next/skip ret)
-                                 [(assoc local k' ret) remote]
-                                 [local (conj remote k)]))
-                (keyword? k) (let [ret (read req k)]
-                               (if-not (= :om.next/skip ret)
-                                 [(assoc local k ret) remote]
-                                 [local (conj remote k)]))
-                :else        (throw
-                               (ex-info (str "Invalid routing expression " k)
-                                 {:type :error/invalid-routing-expression}))))]
-      (reduce step [{} [] req] expr))))
+                                 [(assoc resp k' ret) next]
+                                 [resp (conj next sel)]))
+
+                :else          (throw
+                                 (ex-info (str "Invalid routing expression " sel)
+                                   {:type :error/invalid-routing-expression}))))]
+      (reduce step [{} []] sel))))
+
+(comment
+  (update-path {} :foo)
+  (update-path {} :foo [:bar :baz])
+
+  (def todos
+    [{:db/id 0 :todo/title "Walk dog" :todo/completed false}
+     {:db/id 1 :todo/title "Get milk" :todo/completed false}])
+
+  (defmulti read (fn [_ sel] sel))
+
+  (defmethod read :todos/count
+    [req _] (count todos))
+
+  (defmethod read :todos/user-icon
+    [req _] :om.next/skip)
+
+  (def r (router {:read read}))
+
+  (r {} [:todos/count :todos/user-icon])
+  )
