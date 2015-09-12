@@ -1,32 +1,30 @@
 (ns om.next.router)
 
-(defn update-path
-  ([req k]
-   (update-path req k nil))
-  ([req k sel]
-   (cond-> (update-in req [:path] (fnil conj []) k)
-     sel (assoc-in [:selector] sel))))
-
-(defn router [{:keys [read call]}]
+(defn router [{:keys [read join call]}]
   (fn self [req sel]
     (letfn [(step [[resp next] sel]
-              (println resp next sel)
               (cond
+                ;; lookup
                 (keyword? sel) (let [ret (read req sel)]
                                  (if-not (= :om.next/skip ret)
                                    [(assoc resp sel ret) next]
                                    [resp (conj next sel)]))
 
+                ;; invoke
                 (seq? sel)     (let [[name params] sel
                                      ret           (call req name params)]
                                  (if-not (= :om.next/skip ret)
                                    [(assoc resp sel ret) next]
                                    [resp (conj next sel)]))
 
-                (map? sel)     (let [[k' sel'] (first sel)
-                                     ret       (read (update-path req k' sel') k')]
-                               (if-not (= :om.next/skip ret)
-                                 [(assoc resp k' ret) next]
+                ;; join
+                (map? sel)     (let [[k' sel']     (first sel)
+                                     [resp' next'] (join req k' sel')]
+                               (if-not (= :om.next/skip resp')
+                                 [(assoc resp k' resp')
+                                  (if next'
+                                    (conj next' {k' next'})
+                                    next)]
                                  [resp (conj next sel)]))
 
                 :else          (throw
@@ -35,14 +33,11 @@
       (reduce step [{} []] sel))))
 
 (comment
-  (update-path {} :foo)
-  (update-path {} :foo [:bar :baz])
-
   (def todos
     [{:db/id 0 :todo/title "Walk dog" :todo/completed false}
      {:db/id 1 :todo/title "Get milk" :todo/completed false}])
 
-  (defmulti read (fn [_ sel] sel))
+  (defmulti read (fn [_ k] k))
 
   (defmethod read :todos/count
     [req _] (count todos))
@@ -50,7 +45,17 @@
   (defmethod read :todos/user-icon
     [req _] :om.next/skip)
 
-  (def r (router {:read read}))
+  (defmulti join (fn [_ k _] k))
+
+  (defmethod join :todos/list
+    [req _ sel]
+    [(into [] (map #(select-keys % sel)) todos) nil])
+
+  (def r
+    (router {:read read
+             :join join}))
 
   (r {} [:todos/count :todos/user-icon])
+
+  (r {} [:todos/count :todos/user-icon {:todos/list [:todo/title]}])
   )
