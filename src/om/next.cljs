@@ -377,6 +377,6 @@
                            (update-component! component next-props)))
                        (reset! queue [])))
                    (swap! queued not)))]
-    (add-watch state :om/simple-reconciler
+    (add-watch state :om/reconciler
       (fn [_ _ _ _] (schedule! r)))
     r))
