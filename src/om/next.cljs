@@ -274,17 +274,31 @@
   (p/remove-root! reconciler target))
 
 ;; =============================================================================
+;; Refs
+
+(defrecord Ref [id])
+
+(defn ^boolean ref? [x]
+  (instance? Ref x))
+
+(defn ref [root id]
+  (Ref. root id))
+
+(defn refs [root & ids]
+  (into [] (map #(ref root %)) ids))
+
+;; =============================================================================
 ;; Reconciler
 
-(defn indexer []
+(defn indexer [state]
   (let [idxs (atom {})]
     (reify
       p/IIndexer
       (indexes [_] @idxs)
       (index-root [cl]
-        (let [component->ref (atom {})
+        (let [component->ref  (atom {})
               prop->component (atom {})
-              rootq (query cl)]
+              rootq           (query cl)]
           (letfn [(build-index* [cl sel path]
                     (swap! component->ref assoc cl path)
                     (let [{ks true ms false} (group-by keyword? sel)]
@@ -321,12 +335,13 @@
                 nil)
               path))))))
 
-(defn reconciler [data router indexer]
+(defn reconciler [data router indexer-ctor]
   (let [state  (cond
                  (satisfies? IAtom data) data
                  (map? data) (atom data)
                  :else (throw (ex-info "data must be an atom, store, or map"
                                 {:type ::invalid-argument})))
+        indexer (indexer-ctor state)
         queue  (atom [])
         queued (atom false)
         roots  (atom {})
