@@ -109,6 +109,9 @@
 (defn get-reconciler [c]
   (get-prop c "omcljs$reconciler"))
 
+(defn router [r]
+  (p/router r))
+
 (defn t [c]
   (get-prop c "omcljs$t"))
 
@@ -273,6 +276,12 @@
   (into [] (map #(ref root %)) ids))
 
 ;; =============================================================================
+;; Call Support
+
+(defn call [c name param-map]
+  ((-> c get-reconciler router) `[(~name ~param-map)]))
+
+;; =============================================================================
 ;; Reconciler
 
 (defn indexer [ui->ref]
@@ -322,6 +331,7 @@
                    (swap! queue conj [component next-props]))
                  (basis-t [_] @t)
                  (state [_] @state)
+                 (router [_] router)
                  (add-root! [this target root-class options]
                    (let [ret (atom nil)
                          rctor (create-factory root-class)]

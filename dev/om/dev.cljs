@@ -13,10 +13,26 @@
 (def current-id (atom 2))
 
 ;; -----------------------------------------------------------------------------
+;; Parsing
+
+(defmulti prop (fn [_ k] k))
+(defmethod prop :default [_ k] {:quote k})
+
+(defmulti call (fn [_ k _] k))
+(defmethod call :default [_ k] {:quote k})
+
+;; -----------------------------------------------------------------------------
 ;; Counter
 
-(defn increment! [c]
-  )
+(defmethod call 'counter/increment
+  [{:keys [state ref]} _ _]
+  (swap! state update-in [ref :count] inc)
+  {:value [ref]})
+
+(defmethod call 'counters/delete
+  [{:keys [state ref]} _ _]
+  (swap! state update-in [:counters/list] remove #{ref})
+  {:value [ref :counters/list]})
 
 (defui Counter
   static om/IQuery
@@ -28,11 +44,11 @@
       (dom/div nil
         (dom/p nil (str "Count: " count))
         (dom/button
-          #js {:onClick (fn [_] (increment! this))}
+          #js {:onClick (fn [_] (om/call this 'counter/increment))}
           "Click Me!")
         (dom/button
           #js {:style #js {:marginLeft "10px"}
-               :onClick (fn [_] (om/retract! this (om/props this)))}
+               :onClick (fn [_] (om/call this 'counters/delete))}
           "Delete")))))
 
 (def counter (om/create-factory Counter))
@@ -50,10 +66,6 @@
 
 ;; -----------------------------------------------------------------------------
 ;; HelloWorld
-
-(defn add-counter! [app]
-  (let [id (swap! current-id inc)]
-    ))
 
 (defn remove-counter! [app id]
   )
