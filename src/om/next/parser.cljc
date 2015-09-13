@@ -11,7 +11,7 @@
   (let [[name params] sel
         ret (call env name params)]
     (cond
-      (contains? ret :value) [(assoc res sel (:value ret)) quoted]
+      (contains? ret :value) [(assoc res name (:value ret)) quoted]
       (contains? ret :quote) [res (conj quoted (:quote ret))]
       :else [res quoted])))
 
@@ -31,7 +31,7 @@
       (letfn [(step [[res quoted] sel]
                 (cond
                   (keyword? sel) (parse-prop prop res quoted env sel)
-                  (seq? sel) (parse-call prop res quoted env sel)
+                  (seq? sel) (parse-call call res quoted env sel)
                   (map? sel) (parse-ref prop res quoted env sel)
                   :else (throw
                           (ex-info (str "Invalid routing expression " sel)
@@ -82,6 +82,8 @@
   (p {:state state}
     [:todos/count :todos/user-icon {:todos/list [:todo/title]}])
 
-  (let [new-todo {:todo/title "Pay bills"}]
-    (p {:state state} `[(todo/create ~new-todo)]))
+  (let [new-todo {:todo/title "Pay more bills"}]
+    (p {:state state} `[(todos/create ~new-todo)]))
+
+  @state
   )
