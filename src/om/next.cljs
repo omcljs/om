@@ -4,8 +4,7 @@
   (:require [goog.string :as gstring]
             [goog.object :as gobj]
             [clojure.walk :as walk]
-            [om.next.protocols :as p]
-            [om.next.stores :refer [TreeStore]]))
+            [om.next.protocols :as p]))
 
 ;; =============================================================================
 ;; Globals & Dynamics
@@ -227,7 +226,7 @@
      #js {:omcljs$state next-state})))
 
 ;; FIXME: this needs conceptual work
-(defn map-keys
+#_(defn map-keys
   ([ctor xs] (map-keys ctor nil xs))
   ([ctor keyfn xs]
     (cond
@@ -244,8 +243,8 @@
 ;; =============================================================================
 ;; Reconciler API
 
-(defn store [reconciler]
-  (p/store reconciler))
+(defn state [reconciler]
+  (p/state reconciler))
 
 (defn indexes [reconciler]
   (p/indexes reconciler))
@@ -322,7 +321,7 @@
                                  index (conj index))]
                      (swap! t inc) ;; TODO: probably should revisit doing this here
                      (swap! queue conj [component next-props])
-                     (swap! state p/push next-props path)))
+                     #_(swap! state p/push next-props path)))
                  p/IComponentIndex
                  (index-component! [_ c]
                    (swap! idxs update-in [:type->components (type c)] (fnil conj #{}) c))
@@ -340,7 +339,7 @@
                          path  (cond->
                                  (get-in @idxs [rc :component->ref ct])
                                  index (conj index))]
-                     (get-in
+                     #_(get-in
                        (p/pull state
                          (get-in @idxs [rc :component->selector ct])
                          nil)

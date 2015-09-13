@@ -1,6 +1,6 @@
 (ns om.next.router)
 
-(defn router [{:keys [read join call]}]
+(defn router [{:keys [read read-ref call]}]
   (fn self [req sel]
     (letfn [(step [[resp next] sel]
               (cond
@@ -17,15 +17,15 @@
                                    [(assoc resp sel ret) next]
                                    [resp (conj next sel)]))
 
-                ;; join
+                ;; read-ref
                 (map? sel)     (let [[k' sel']     (first sel)
-                                     [resp' next'] (join req k' sel')]
-                               (if-not (= :om.next/skip resp')
-                                 [(assoc resp k' resp')
-                                  (if next'
-                                    (conj next {k' next'})
-                                    next)]
-                                 [resp (conj next sel)]))
+                                     [resp' next'] (read-ref req k' sel')]
+                                 (if-not (= :om.next/skip resp')
+                                   [(assoc resp k' resp')
+                                    (if next'
+                                      (conj next {k' next'})
+                                      next)]
+                                   [resp (conj next sel)]))
 
                 :else          (throw
                                  (ex-info (str "Invalid routing expression " sel)
@@ -39,21 +39,23 @@
 
   (defmulti read (fn [_ k] k))
 
+  (defmethod read :default
+    [_ k] {:next k})
+
   (defmethod read :todos/count
-    [req _] (count todos))
+    [{:keys [state]} _]
+    {:value (count (:todos/list state))})
 
-  (defmethod read :todos/user-icon
-    [req _] :om.next/skip)
+  (defmulti read-ref (fn [_ k] k))
 
-  (defmulti join (fn [_ k _] k))
-
-  (defmethod join :todos/list
-    [req _ sel]
-    [(into [] (map #(select-keys % sel)) todos) [:todo/favorites]])
+  (defmethod read-ref :todos/list
+    [{:keys [selector]} _]
+    {:value (into [] (map #(select-keys % selector)) todos)
+     :next  [:todo/favorites]})
 
   (def r
     (router {:read read
-             :join join}))
+             :read-ref read-ref}))
 
   (r {} [:todos/count :todos/user-icon])
 

@@ -3,7 +3,6 @@
   (:require [clojure.browser.repl :as repl]
             [om.next :as om :refer-macros [defui]]
             [om.next.protocols :as p]
-            [om.next.stores :refer [TreeStore]]
             [om.dom :as dom]
             [goog.object :as gobj]
             [goog.dom :as gdom]))
@@ -17,7 +16,7 @@
 ;; Counter
 
 (defn increment! [c]
-  (om/assert! c (update-in (om/props c) [:counter/count] inc)))
+  )
 
 (defui Counter
   static om/IQuery
@@ -54,14 +53,10 @@
 
 (defn add-counter! [app]
   (let [id (swap! current-id inc)]
-    (om/assert! app
-      (update-in (om/props app) [:app/counters]
-        conj {:id id :counter/count 0}))))
+    ))
 
 (defn remove-counter! [app id]
-  (om/assert! app
-    (update-in (om/props app) [:app/counters]
-      (fn [xs] (into [] (remove #(= id (:id %))) xs)))))
+  )
 
 (defui HelloWorld
   static om/IQueryParams
@@ -90,13 +85,12 @@
 ;; -----------------------------------------------------------------------------
 
 (def app-state
-  (atom (TreeStore.
-          {:app/title "Hello World!"
-           :app/counters [{:id 0 :counter/count 0}
-                          {:id 1 :counter/count 0}
-                          {:id 2 :counter/count 0}]})))
+  (atom {:app/title "Hello World!"
+         :app/counters [{:id 0 :counter/count 0}
+                        {:id 1 :counter/count 0}
+                        {:id 2 :counter/count 0}]}))
 
-(def reconciler (om/tree-reconciler app-state))
+(def reconciler (om/reconciler app-state))
 
 (om/add-root! reconciler
   (gdom/getElement "app") HelloWorld)
