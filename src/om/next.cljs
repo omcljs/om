@@ -280,7 +280,7 @@
 
 (defn call [c name param-map]
   (let [reconciler (get-reconciler c)
-        router (router r)]
+        router (router reconciler)]
     (router {:state (p/state reconciler)
              :reconciler reconciler
              :router router}
