@@ -279,7 +279,12 @@
 ;; Call Support
 
 (defn call [c name param-map]
-  ((-> c get-reconciler router) `[(~name ~param-map)]))
+  (let [reconciler (get-reconciler c)
+        router (router r)]
+    (router {:state (p/state reconciler)
+             :reconciler reconciler
+             :router router}
+      `[(~name ~param-map)])))
 
 ;; =============================================================================
 ;; Reconciler
