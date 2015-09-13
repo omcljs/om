@@ -5,13 +5,14 @@
   (index-root [this root-class])
   (index-component! [this component])
   (drop-component! [this component])
-  (props-for [this component]))
+  (ref-for [this component]))
 
 (defprotocol IReconciler
   (basis-t [this])
   (state [this])
+  (indexer [this])
   (add-root! [reconciler target root-class options])
   (remove-root! [reconciler target])
-  (commit! [queue tx-type tx-data context])
+  (commit! [queue component next-props])
   (schedule! [reconciler])
   (reconcile! [reconciler]))

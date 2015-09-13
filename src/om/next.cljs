@@ -225,21 +225,6 @@
      #js {:omcljs$value next-props}
      #js {:omcljs$state next-state})))
 
-;; FIXME: this needs conceptual work
-#_(defn map-keys
-  ([ctor xs] (map-keys ctor nil xs))
-  ([ctor keyfn xs]
-    (cond
-      (nil? keyfn)
-      (map-indexed #(ctor (with-meta %2 {:react-key %1 ::index %1})) xs)
-
-      (or (keyword? keyfn) (fn? keyfn))
-      (map-indexed #(ctor (with-meta %2 {:react-key (keyfn %2) ::index %1})) xs)
-
-      :else
-      (throw (ex-info (str "Invalid keyfn " keyfn)
-               {:type ::invalid-keyfn})))))
-
 ;; =============================================================================
 ;; Reconciler API
 
@@ -290,17 +275,17 @@
 ;; =============================================================================
 ;; Reconciler
 
-(defn indexer [state]
+(defn indexer [ui->ref]
   (let [idxs (atom {})]
     (reify
       p/IIndexer
       (indexes [_] @idxs)
       (index-root [cl]
-        (let [component->ref  (atom {})
+        (let [component->path  (atom {})
               prop->component (atom {})
               rootq           (query cl)]
           (letfn [(build-index* [cl sel path]
-                    (swap! component->ref assoc cl path)
+                    (swap! component->path assoc cl path)
                     (let [{ks true ms false} (group-by keyword? sel)]
                       (swap! prop->component #(merge-with into % (zipmap ks (repeat #{cl}))))
                       (doseq [m ms]
@@ -310,45 +295,29 @@
                             (build-index* cl sel (conj path attr)))))))]
             (build-index* cl rootq [])
             {:prop->component @prop->component
-             :component->ref @component->ref
+             :component->path @component->path
              :component->selector
              (reduce-kv
                (fn [ret class path]
                  (assoc ret class (filter-selector rootq path)))
-               {} @component->ref)
+               {} @component->path)
              :type->components {}})))
       (index-component! [_ c]
         (swap! idxs update-in [:type->components (type c)] (fnil conj #{}) c))
       (drop-component! [_ c]
         (swap! idxs update-in [:type->components (type c)] disj c))
-      (props-for [_ component]
-        (let [rc    (root-class component)
-              ct    (type component)
-              index (index component)
-              state @state
-              path  (cond->
-                      (get-in @idxs [rc :component->ref ct])
-                      index (conj index))]
-          #_(get-in
-              (p/pull state
-                (get-in @idxs [rc :component->selector ct])
-                nil)
-              path))))))
+      (ref-for [_ component]
+        (ui->ref component)))))
 
-(defn reconciler [data router indexer-ctor]
-  (let [state  (cond
-                 (satisfies? IAtom data) data
-                 (map? data) (atom data)
-                 :else (throw (ex-info "data must be an atom, store, or map"
-                                {:type ::invalid-argument})))
-        indexer (indexer-ctor state)
+(defn reconciler [{:keys [state router server ui->ref]}]
+  (let [idxr   (indexer ui->ref)
         queue  (atom [])
         queued (atom false)
         roots  (atom {})
         t      (atom 0)
         r      (reify
                  p/IReconciler
-                 (commit! [_ tx-type next-props component]
+                 (commit! [_ component next-props]
                    (swap! t inc) ;; TODO: probably should revisit doing this here
                    (swap! queue conj [component next-props]))
                  (basis-t [_] @t)
@@ -356,7 +325,7 @@
                  (add-root! [this target root-class options]
                    (let [ret (atom nil)
                          rctor (create-factory root-class)]
-                     (p/index-root indexer root-class)
+                     (p/index-root idxr root-class)
                      (let [renderf (fn [data]
                                      (binding [*reconciler* this
                                                *root-class* root-class]

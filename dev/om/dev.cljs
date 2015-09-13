@@ -86,9 +86,10 @@
 
 (def app-state
   (atom {:app/title "Hello World!"
-         :app/counters [{:id 0 :counter/count 0}
-                        {:id 1 :counter/count 0}
-                        {:id 2 :counter/count 0}]}))
+         :app/todos {0 {:db/id 0 :counter/count 0}
+                     1 {:db/id 1 :counter/count 0}
+                     2 {:db/id 2 :counter/count 0}}
+         :app/counters (om/refs :app/todos 0 1 2)}))
 
 (def reconciler (om/reconciler app-state))
 
