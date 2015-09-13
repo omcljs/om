@@ -2,6 +2,7 @@
 
 (defprotocol IIndexer
   (indexes [this])
+  (index-root [this root-class])
   (index-component! [this component])
   (drop-component! [this component])
   (props-for [this component]))

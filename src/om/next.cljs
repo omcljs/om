@@ -276,28 +276,50 @@
 ;; =============================================================================
 ;; Reconciler
 
-(defn build-index [cl]
-  (let [component->ref (atom {})
-        prop->component (atom {})
-        rootq (query cl)]
-    (letfn [(build-index* [cl sel path]
-              (swap! component->ref assoc cl path)
-              (let [{ks true ms false} (group-by keyword? sel)]
-                (swap! prop->component #(merge-with into % (zipmap ks (repeat #{cl}))))
-                (doseq [m ms]
-                  (let [[attr sel] (first m)]
-                    (swap! prop->component #(merge-with into % {attr #{cl}}))
-                    (let [cl (-> sel meta :component)]
-                      (build-index* cl sel (conj path attr)))))))]
-      (build-index* cl rootq [])
-      {:prop->component @prop->component
-       :component->ref @component->ref
-       :component->selector
-       (reduce-kv
-         (fn [ret class path]
-           (assoc ret class (filter-selector rootq path)))
-         {} @component->ref)
-       :type->components {}})))
+(defn indexer []
+  (let [idxs (atom {})]
+    (reify
+      p/IIndexer
+      (indexes [_] @idxs)
+      (index-root [cl]
+        (let [component->ref (atom {})
+              prop->component (atom {})
+              rootq (query cl)]
+          (letfn [(build-index* [cl sel path]
+                    (swap! component->ref assoc cl path)
+                    (let [{ks true ms false} (group-by keyword? sel)]
+                      (swap! prop->component #(merge-with into % (zipmap ks (repeat #{cl}))))
+                      (doseq [m ms]
+                        (let [[attr sel] (first m)]
+                          (swap! prop->component #(merge-with into % {attr #{cl}}))
+                          (let [cl (-> sel meta :component)]
+                            (build-index* cl sel (conj path attr)))))))]
+            (build-index* cl rootq [])
+            {:prop->component @prop->component
+             :component->ref @component->ref
+             :component->selector
+             (reduce-kv
+               (fn [ret class path]
+                 (assoc ret class (filter-selector rootq path)))
+               {} @component->ref)
+             :type->components {}})))
+      (index-component! [_ c]
+        (swap! idxs update-in [:type->components (type c)] (fnil conj #{}) c))
+      (drop-component! [_ c]
+        (swap! idxs update-in [:type->components (type c)] disj c))
+      (props-for [_ component]
+        (let [rc    (root-class component)
+              ct    (type component)
+              index (index component)
+              state @state
+              path  (cond->
+                      (get-in @idxs [rc :component->ref ct])
+                      index (conj index))]
+          #_(get-in
+              (p/pull state
+                (get-in @idxs [rc :component->selector ct])
+                nil)
+              path))))))
 
 (defn reconciler [data router indexer]
   (let [state  (cond
@@ -305,49 +327,21 @@
                  (map? data) (atom data)
                  :else (throw (ex-info "data must be an atom, store, or map"
                                 {:type ::invalid-argument})))
-        idxs   (atom {})
         queue  (atom [])
         queued (atom false)
         roots  (atom {})
         t      (atom 0)
         r      (reify
-                 p/ICommitQueue
-                 (commit! [_ tx-type next-props component]
-                   (let [index (index component)
-                         path  (cond->
-                                 (get-in @idxs
-                                   [(root-class component)
-                                    :component->ref (type component)])
-                                 index (conj index))]
-                     (swap! t inc) ;; TODO: probably should revisit doing this here
-                     (swap! queue conj [component next-props])
-                     #_(swap! state p/push next-props path)))
-                 p/IComponentIndex
-                 (index-component! [_ c]
-                   (swap! idxs update-in [:type->components (type c)] (fnil conj #{}) c))
-                 (drop-component! [_ c]
-                   (swap! idxs update-in [:type->components (type c)] disj c))
                  p/IReconciler
+                 (commit! [_ tx-type next-props component]
+                   (swap! t inc) ;; TODO: probably should revisit doing this here
+                   (swap! queue conj [component next-props]))
                  (basis-t [_] @t)
                  (state [_] @state)
-                 (indexes [_] @idxs)
-                 (props-for [_ component]
-                   (let [rc    (root-class component)
-                         ct    (type component)
-                         index (index component)
-                         state @state
-                         path  (cond->
-                                 (get-in @idxs [rc :component->ref ct])
-                                 index (conj index))]
-                     #_(get-in
-                       (p/pull state
-                         (get-in @idxs [rc :component->selector ct])
-                         nil)
-                       path)))
                  (add-root! [this target root-class options]
                    (let [ret (atom nil)
                          rctor (create-factory root-class)]
-                     (swap! idxs assoc root-class ((:index-root indexer) root-class))
+                     (p/index-root indexer root-class)
                      (let [renderf (fn [data]
                                      (binding [*reconciler* this
                                                *root-class* root-class]
@@ -366,9 +360,8 @@
                      false))
                  (reconcile! [_]
                    (if (empty? @queue)
-                     (do
-                       (doseq [[_ renderf] @roots]
-                         (renderf)))
+                     (doseq [[_ renderf] @roots]
+                       (renderf))
                      (do
                        (doseq [[component next-props]
                                (sort-by (comp depth first) @queue)]
