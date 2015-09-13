@@ -15,7 +15,7 @@
       (contains? ret :quote) [res (conj quoted (:quote ret))]
       :else [res quoted])))
 
-(defn parser-ref [prop res quoted env sel]
+(defn parse-ref [prop res quoted env sel]
   (let [[k' sel'] (first sel)
         ret (prop env k' sel')]
     [(if-let [[_ value] (find ret :value)]
@@ -32,7 +32,7 @@
                 (cond
                   (keyword? sel) (parse-prop prop res quoted env sel)
                   (seq? sel) (parse-call prop res quoted env sel)
-                  (map? sel) (parser-ref prop res quoted env sel)
+                  (map? sel) (parse-ref prop res quoted env sel)
                   :else (throw
                           (ex-info (str "Invalid routing expression " sel)
                             {:type :error/invalid-routing-expression}))))]
