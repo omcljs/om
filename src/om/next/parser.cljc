@@ -3,7 +3,7 @@
 (defn parse-prop [prop res quoted env sel]
   (let [ret (prop env sel)]
     (cond
-      (contains? ret :value) [(assoc res sel (:value ret))]
+      (contains? ret :value) [(assoc res sel (:value ret)) quoted]
       (contains? ret :quote) [res (conj quoted (:quote ret))]
       :else [res quoted])))
 
@@ -39,9 +39,10 @@
         (reduce step [{} []] sel)))))
 
 (comment
-  (def todos
-    [{:db/id 0 :todo/title "Walk dog" :todo/completed false}
-     {:db/id 1 :todo/title "Get milk" :todo/completed false}])
+  (def state
+    {:todos/list
+     [{:db/id 0 :todo/title "Walk dog" :todo/completed false}
+      {:db/id 1 :todo/title "Get milk" :todo/completed false}]})
 
   (defmulti prop (fn [_ k] k))
 
@@ -58,9 +59,10 @@
               (:todos/list state))
      :quote [:todo/favorites]})
 
-  (def p (parser {:prop key}))
+  (def p (parser {:prop prop}))
 
-  (p {} [:todos/count :todos/user-icon])
+  (p {:state state} [:todos/count :todos/user-icon])
 
-  (p {} [:todos/count :todos/user-icon {:todos/list [:todo/title]}])
+  (p {:state state}
+    [:todos/count :todos/user-icon {:todos/list [:todo/title]}])
   )
