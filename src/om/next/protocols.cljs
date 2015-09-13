@@ -1,18 +1,16 @@
 (ns om.next.protocols)
 
-(defprotocol IComponentIndex
+(defprotocol IIndexer
+  (indexes [this])
   (index-component! [this component])
-  (drop-component! [this component]))
-
-(defprotocol ICommitQueue
-  (commit! [queue tx-type tx-data context]))
+  (drop-component! [this component])
+  (props-for [this component]))
 
 (defprotocol IReconciler
   (basis-t [this])
   (state [this])
-  (indexes [this])
-  (props-for [this component])
   (add-root! [reconciler target root-class options])
   (remove-root! [reconciler target])
+  (commit! [queue tx-type tx-data context])
   (schedule! [reconciler])
   (reconcile! [reconciler]))
