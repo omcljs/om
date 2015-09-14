@@ -1,4 +1,4 @@
-(ns om.next.parser)
+(ns om.next.impl.parser)
 
 (defn parse-prop [prop res quoted env sel]
   (let [ret (prop env sel)]

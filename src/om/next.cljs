@@ -4,7 +4,8 @@
   (:require [goog.string :as gstring]
             [goog.object :as gobj]
             [clojure.walk :as walk]
-            [om.next.protocols :as p]))
+            [om.next.protocols :as p]
+            [om.next.impl.parser :as parser]))
 
 ;; =============================================================================
 ;; Globals & Dynamics
@@ -208,7 +209,7 @@
   ([c name]
    (some-> (.-refs c) (gobj/get name) (.getDOMNode))))
 
-(defn ref
+(defn react-ref
   [c name]
   (some-> (.-refs c) (gobj/get name)))
 
@@ -285,6 +286,12 @@
              :reconciler reconciler
              :router router}
       `[(~name ~param-map)])))
+
+;; =============================================================================
+;; Parser
+
+(defn parser [opts]
+  (parser/parser opts))
 
 ;; =============================================================================
 ;; Reconciler
