@@ -34,37 +34,36 @@
                   (seq? sel) (parse-call call res quoted env sel)
                   (map? sel) (parse-ref prop res quoted env sel)
                   :else (throw
-                          (ex-info (str "Invalid routing expression " sel)
-                            {:type :error/invalid-routing-expression}))))]
+                          (ex-info (str "Invalid expression " sel)
+                            {:type :error/invalid-expression}))))]
         (reduce step [{} []] sel)))))
 
 (comment
   (def state
     (atom
-      {:todos/next-id 2
-       :todos/list
-       [{:db/id 0 :todo/title "Walk dog" :todo/completed false}
-        {:db/id 1 :todo/title "Get milk" :todo/completed false}]}))
+      {:todos/next-id 2}))
 
-  (defmulti prop (fn [_ k] k))
+  (defmulti prop (fn [env k] k))
 
   (defmethod prop :default
-    [_ k] {:quote k})
+    [env k] {:quote k})
 
   (defmethod prop :todos/count
-    [{:keys [state]} _]
+    [{:keys [state] :as env} _]
     {:value (count (:todos/list @state))})
 
   (defmethod prop :todos/list
     [{:keys [state selector]} _]
-    {:value (into [] (map #(select-keys % selector))
-              (:todos/list @state))
-     :quote [:todo/favorites]})
+    (if (contains? @state :todos/list)
+      {:value (into [] (map #(select-keys % selector))
+                (:todos/list @state))
+       :quote [:todo/favorites]}
+      {:quote (conj selector :todo/favorites)}))
 
   (defmulti call (fn [_ k _] k))
 
   (defmethod call 'todos/create
-    [{:keys [state]} _ new-todo]
+    [{:keys [state component-ref]} _ new-todo]
     (swap! state
       (fn [state]
         (let [new-todo (merge new-todo
