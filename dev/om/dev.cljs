@@ -67,8 +67,16 @@
 ;; -----------------------------------------------------------------------------
 ;; HelloWorld
 
-(defn remove-counter! [app id]
-  )
+(defmethod call 'todos/create
+  [{:keys [state]} _ new-todo]
+  (swap! state
+    (fn [state]
+      (let [new-todo (merge new-todo
+                       {:db/id (:counters/cur-id state)})]
+        (-> state
+          (update-in [:counters/list] conj new-todo)
+          (update-in [:counters/cur-id] inc)))))
+  {:value [:counters/list]})
 
 (defui HelloWorld
   static om/IQueryParams
@@ -107,16 +115,6 @@
 
 (om/add-root! reconciler
   (gdom/getElement "app") HelloWorld)
-
-(comment
-  ;; table style (JSONGraph-ish)
-  (def reconciler
-    (om/table-reconciler
-      {:app {:app/title "Hello World!" :app/state [0 1 2]}
-       :app/state [{:state/count 0}
-                   {:state/count 0}
-                   {:state/count 0}]}))
-  )
 
 (comment
   (om/store reconciler)
