@@ -10,8 +10,6 @@
 (defonce conn
   (repl/connect "http://localhost:9000/repl"))
 
-(def current-id (atom 2))
-
 ;; -----------------------------------------------------------------------------
 ;; Parsing
 
@@ -103,10 +101,11 @@
 
 (def app-state
   (atom {:app/title "Hello World!"
-         :app/todos {0 {:db/id 0 :counter/count 0}
-                     1 {:db/id 1 :counter/count 0}
-                     2 {:db/id 2 :counter/count 0}}
-         :app/counters (om/refs :app/todos 0 1 2)}))
+         :app/counters
+         {0 {:db/id 0 :counter/count 0}
+          1 {:db/id 1 :counter/count 0}
+          2 {:db/id 2 :counter/count 0}}
+         :counters/list (om/refs :app/counters 0 1 2)}))
 
 (comment
   (def reconciler (om/reconciler app-state))
