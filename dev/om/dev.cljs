@@ -85,22 +85,19 @@
   static om/IQuery
   (-query [this]
     '[:app/title {:app/counters ?counter}])
-  om/IRetract
-  (-retract [this {:keys [id]} _]
-    (remove-counter! this id)
-    nil)
   Object
   (render [this]
-    (let [{:keys [:app/title :app/counters] :as props} (om/props this)]
+    (let [{:keys [:app/title :app/counters] :as props}
+          (om/props this)]
       (apply dom/div nil
         (app-title nil
           (dom/h2 nil "Hello World!")
           (dom/h3 nil "cool stuff"))
         (dom/div nil
           (dom/button
-            #js {:onClick (fn [e] (add-counter! this))}
+            #js {:onClick (fn [e] (om/call this 'counters/add!))}
             "Add Counter!"))
-        (om/map-keys counter :id counters)))))
+        #_(om/map-keys counter :id counters)))))
 
 ;; -----------------------------------------------------------------------------
 
@@ -111,12 +108,12 @@
                      2 {:db/id 2 :counter/count 0}}
          :app/counters (om/refs :app/todos 0 1 2)}))
 
-(def reconciler (om/reconciler app-state))
-
-(om/add-root! reconciler
-  (gdom/getElement "app") HelloWorld)
-
 (comment
+  (def reconciler (om/reconciler app-state))
+
+  (om/add-root! reconciler
+    (gdom/getElement "app") HelloWorld)
+
   (om/store reconciler)
   (om/basis-t reconciler)
   (p/indexes reconciler)

@@ -235,8 +235,8 @@
 (defn app-state [reconciler]
   (p/app-state reconciler))
 
-(defn indexes [reconciler]
-  (p/indexes reconciler))
+(defn get-indexer [reconciler]
+  (p/indexer reconciler))
 
 (defn basis-t [reconciler]
   (p/basis-t reconciler))
@@ -279,14 +279,17 @@
 ;; =============================================================================
 ;; Call Support
 
-(defn call [c name param-map]
-  (let [reconciler   (get-reconciler c)
-        parser       (p/parser reconciler)
-        req          {:state      (p/state reconciler)
-                      :reconciler reconciler
-                      :parser     parser}
-        [res quoted] (parser req `[(~name ~param-map)])]
-    ))
+(defn call
+  ([c name] (call c name nil))
+  ([c name param-map]
+   (let [reconciler   (get-reconciler c)
+         parser       (p/parser reconciler)
+         env          {:state      (p/app-state reconciler)
+                       :reconciler reconciler
+                       :indexer    (p/indexer reconciler)
+                       :parser     parser}
+         [res quoted] (parser env `[(~name ~param-map)])]
+     )))
 
 ;; =============================================================================
 ;; Parser
@@ -299,7 +302,9 @@
 
 (defrecord Indexer [idxs ui->ref]
   p/IIndexer
+
   (indexes [_] @idxs)
+
   (index-root [_ cl]
     (let [component->path (atom {})
           prop->component (atom {})
@@ -323,10 +328,13 @@
                (assoc ret class (filter-selector rootq path)))
              {} @component->path)
            :type->components {}}))))
+
   (index-component! [_ c]
     (swap! idxs update-in [:type->components (type c)] (fnil conj #{}) c))
+
   (drop-component! [_ c]
     (swap! idxs update-in [:type->components (type c)] disj c))
+
   (ref-for [_ component]
     (ui->ref component)))
 
@@ -338,12 +346,12 @@
 
 (defrecord Reconciler [config state]
   p/IReconciler
-  (commit! [_ component next-props]
-    (swap! t inc) ;; TODO: probably should revisit doing this here
-    (swap! state update-in [:queue] conj [component next-props]))
+
   (basis-t [_] @t)
-  (app-state [_] @state)
-  (parser [_] parser)
+  (app-state [_] {:state config})
+  (indexer [_] (:indexer config))
+  (parser [_] (:parser config))
+
   (add-root! [this target root-class options]
     (let [ret (atom nil)
           rctor (create-factory root-class)]
@@ -358,12 +366,19 @@
         (swap! state update-in [:roots] assoc target renderf)
         ((:parser config) {:state store} sel renderf)
         @ret)))
+
   (remove-root! [_ target]
     (swap! state update-in [:roots] dissoc target))
+
+  (commit! [_ component next-props]
+    (swap! t inc) ;; TODO: probably should revisit doing this here
+    (swap! state update-in [:queue] conj [component next-props]))
+
   (schedule! [_]
     (if-not (:queued @state)
       (swap! state update-in [:queued] not)
       false))
+
   (reconcile! [_]
     (if (empty? (:queue @state))
       (doseq [[_ renderf] (:roots @state)]
