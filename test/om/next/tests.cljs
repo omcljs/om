@@ -4,19 +4,19 @@
 
 (defui Component
   static om/IQuery
-  (-queries [this]
-    {:self [:foo/bar :baz/woz]})
+  (query [this]
+    '[:foo/bar :baz/woz])
   Object
   (render [this]))
 
 (defui ComponentList
   static om/IQueryParams
-  (-params [this]
-    {:components {:component (om/queries Component)}})
+  (params [this]
+    {:component (om/get-query Component)})
   static om/IQuery
-  (-queries [this]
+  (query [this]
     ;; '{:components ?component/self}
-    '{:components ?component})
+    '[{:components/list ?component}])
   Object
   (render [this]))
 
