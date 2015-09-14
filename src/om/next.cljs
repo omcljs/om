@@ -295,87 +295,91 @@
   (parser/parser opts))
 
 ;; =============================================================================
-;; Reconciler
+;; Indexer
+
+(defrecord Indexer [idxs ui->ref]
+  p/IIndexer
+  (indexes [_] @idxs)
+  (index-root [_ cl]
+    (let [component->path (atom {})
+          prop->component (atom {})
+          rootq           (query cl)]
+      (letfn [(build-index* [cl sel path]
+                (swap! component->path assoc cl path)
+                (let [{ks true ms false} (group-by keyword? sel)]
+                  (swap! prop->component #(merge-with into % (zipmap ks (repeat #{cl}))))
+                  (doseq [m ms]
+                    (let [[attr sel] (first m)]
+                      (swap! prop->component #(merge-with into % {attr #{cl}}))
+                      (let [cl (-> sel meta :component)]
+                        (build-index* cl sel (conj path attr)))))))]
+        (build-index* cl rootq [])
+        (reset! idxs
+          {:prop->component @prop->component
+           :component->path @component->path
+           :component->selector
+           (reduce-kv
+             (fn [ret class path]
+               (assoc ret class (filter-selector rootq path)))
+             {} @component->path)
+           :type->components {}}))))
+  (index-component! [_ c]
+    (swap! idxs update-in [:type->components (type c)] (fnil conj #{}) c))
+  (drop-component! [_ c]
+    (swap! idxs update-in [:type->components (type c)] disj c))
+  (ref-for [_ component]
+    (ui->ref component)))
 
 (defn indexer [ui->ref]
-  (let [idxs (atom {})]
-    (reify
-      p/IIndexer
-      (indexes [_] @idxs)
-      (index-root [_ cl]
-        (let [component->path (atom {})
-              prop->component (atom {})
-              rootq           (query cl)]
-          (letfn [(build-index* [cl sel path]
-                    (swap! component->path assoc cl path)
-                    (let [{ks true ms false} (group-by keyword? sel)]
-                      (swap! prop->component #(merge-with into % (zipmap ks (repeat #{cl}))))
-                      (doseq [m ms]
-                        (let [[attr sel] (first m)]
-                          (swap! prop->component #(merge-with into % {attr #{cl}}))
-                          (let [cl (-> sel meta :component)]
-                            (build-index* cl sel (conj path attr)))))))]
-            (build-index* cl rootq [])
-            {:prop->component @prop->component
-             :component->path @component->path
-             :component->selector
-             (reduce-kv
-               (fn [ret class path]
-                 (assoc ret class (filter-selector rootq path)))
-               {} @component->path)
-             :type->components {}})))
-      (index-component! [_ c]
-        (swap! idxs update-in [:type->components (type c)] (fnil conj #{}) c))
-      (drop-component! [_ c]
-        (swap! idxs update-in [:type->components (type c)] disj c))
-      (ref-for [_ component]
-        (ui->ref component)))))
+  (Indexer. (atom {}) ui->ref))
 
-(defn reconciler [{:keys [state parser ui->ref server]}]
-  (let [idxr   (indexer ui->ref)
-        queue  (atom [])
-        queued (atom false)
-        roots  (atom {})
-        t      (atom 0)
-        r      (reify
-                 p/IReconciler
-                 (commit! [_ component next-props]
-                   (swap! t inc) ;; TODO: probably should revisit doing this here
-                   (swap! queue conj [component next-props]))
-                 (basis-t [_] @t)
-                 (app-state [_] @state)
-                 (parser [_] parser)
-                 (add-root! [this target root-class options]
-                   (let [ret (atom nil)
-                         rctor (create-factory root-class)]
-                     (p/index-root idxr root-class)
-                     (let [renderf (fn [data]
-                                     (binding [*reconciler* this
-                                               *root-class* root-class]
-                                       (reset! ret
-                                         (js/React.render (rctor data) target))))
-                           sel     (query root-class)
-                           store   @state]
-                       (swap! roots assoc target renderf)
-                       (parser {:state store} sel renderf)
-                       @ret)))
-                 (remove-root! [_ target]
-                   (swap! roots dissoc target))
-                 (schedule! [_]
-                   (if-not @queued
-                     (swap! queued not)
-                     false))
-                 (reconcile! [_]
-                   (if (empty? @queue)
-                     (doseq [[_ renderf] @roots]
-                       (renderf))
-                     (do
-                       (doseq [[component next-props]
-                               (sort-by (comp depth first) @queue)]
-                         (when (should-update? component next-props)
-                           (update-component! component next-props)))
-                       (reset! queue [])))
-                   (swap! queued not)))]
+;; =============================================================================
+;; Reconciler
+
+(defrecord Reconciler [config state]
+  p/IReconciler
+  (commit! [_ component next-props]
+    (swap! t inc) ;; TODO: probably should revisit doing this here
+    (swap! state update-in [:queue] conj [component next-props]))
+  (basis-t [_] @t)
+  (app-state [_] @state)
+  (parser [_] parser)
+  (add-root! [this target root-class options]
+    (let [ret (atom nil)
+          rctor (create-factory root-class)]
+      (p/index-root (:indexer config) root-class)
+      (let [renderf (fn [data]
+                      (binding [*reconciler* this
+                                *root-class* root-class]
+                        (reset! ret
+                          (js/React.render (rctor data) target))))
+            sel (query root-class)
+            store @state]
+        (swap! state update-in [:roots] assoc target renderf)
+        ((:parser config) {:state store} sel renderf)
+        @ret)))
+  (remove-root! [_ target]
+    (swap! state update-in [:roots] dissoc target))
+  (schedule! [_]
+    (if-not (:queued @state)
+      (swap! state update-in [:queued] not)
+      false))
+  (reconcile! [_]
+    (if (empty? (:queue @state))
+      (doseq [[_ renderf] (:roots @state)]
+        (renderf))
+      (do
+        (doseq [[component next-props]
+                (sort-by (comp depth first) @(:queue state))]
+          (when (should-update? component next-props)
+            (update-component! component next-props)))
+        (swap! state assoc :queue [])))
+    (swap! state update-in [:queued] not)))
+
+(defn reconciler [{:keys [state parser ui->ref server] :as config}]
+  (let [ret (Reconciler.
+              (assoc config :indexer (indexer ui->ref))
+              (atom {:queue [] :queued false :roots {} :t 0}))]
     (add-watch state :om/reconciler
-      (fn [_ _ _ _] (schedule! r)))
-    r))
+      (fn [_ _ _ _] (schedule! ret)))
+    ret))
