@@ -110,8 +110,8 @@
 (defn get-reconciler [c]
   (get-prop c "omcljs$reconciler"))
 
-(defn router [r]
-  (p/router r))
+(defn get-parser [r]
+  (p/parser r))
 
 (defn t [c]
   (get-prop c "omcljs$t"))
@@ -232,8 +232,8 @@
 ;; =============================================================================
 ;; Reconciler API
 
-(defn state [reconciler]
-  (p/state reconciler))
+(defn app-state [reconciler]
+  (p/app-state reconciler))
 
 (defn indexes [reconciler]
   (p/indexes reconciler))
@@ -265,7 +265,7 @@
 ;; =============================================================================
 ;; Refs
 
-(defrecord Ref [id])
+(defrecord Ref [root id])
 
 (defn ^boolean ref? [x]
   (instance? Ref x))
@@ -302,7 +302,7 @@
     (reify
       p/IIndexer
       (indexes [_] @idxs)
-      (index-root [cl]
+      (index-root [_ cl]
         (let [component->path (atom {})
               prop->component (atom {})
               rootq           (query cl)]
@@ -343,7 +343,7 @@
                    (swap! t inc) ;; TODO: probably should revisit doing this here
                    (swap! queue conj [component next-props]))
                  (basis-t [_] @t)
-                 (state [_] @state)
+                 (app-state [_] @state)
                  (parser [_] parser)
                  (add-root! [this target root-class options]
                    (let [ret (atom nil)

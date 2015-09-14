@@ -9,7 +9,7 @@
 
 (defprotocol IReconciler
   (basis-t [this])
-  (state [this])
+  (app-state [this])
   (indexer [this])
   (parser [this])
   (add-root! [reconciler target root-class options])
