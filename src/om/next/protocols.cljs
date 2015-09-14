@@ -11,7 +11,7 @@
   (basis-t [this])
   (state [this])
   (indexer [this])
-  (router [this])
+  (parser [this])
   (add-root! [reconciler target root-class options])
   (remove-root! [reconciler target])
   (commit! [queue component next-props])

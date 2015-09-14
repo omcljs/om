@@ -280,12 +280,13 @@
 ;; Call Support
 
 (defn call [c name param-map]
-  (let [reconciler (get-reconciler c)
-        router (router reconciler)]
-    (router {:state (p/state reconciler)
-             :reconciler reconciler
-             :router router}
-      `[(~name ~param-map)])))
+  (let [reconciler   (get-reconciler c)
+        parser       (p/parser reconciler)
+        req          {:state      (p/state reconciler)
+                      :reconciler reconciler
+                      :parser     parser}
+        [res quoted] (parser req `[(~name ~param-map)])]
+    ))
 
 ;; =============================================================================
 ;; Parser
@@ -302,7 +303,7 @@
       p/IIndexer
       (indexes [_] @idxs)
       (index-root [cl]
-        (let [component->path  (atom {})
+        (let [component->path (atom {})
               prop->component (atom {})
               rootq           (query cl)]
           (letfn [(build-index* [cl sel path]
@@ -330,7 +331,7 @@
       (ref-for [_ component]
         (ui->ref component)))))
 
-(defn reconciler [{:keys [state router server ui->ref]}]
+(defn reconciler [{:keys [state parser ui->ref server]}]
   (let [idxr   (indexer ui->ref)
         queue  (atom [])
         queued (atom false)
@@ -343,7 +344,7 @@
                    (swap! queue conj [component next-props]))
                  (basis-t [_] @t)
                  (state [_] @state)
-                 (router [_] router)
+                 (parser [_] parser)
                  (add-root! [this target root-class options]
                    (let [ret (atom nil)
                          rctor (create-factory root-class)]
@@ -356,7 +357,7 @@
                            sel     (query root-class)
                            store   @state]
                        (swap! roots assoc target renderf)
-                       (router {:state store} sel renderf)
+                       (parser {:state store} sel renderf)
                        @ret)))
                  (remove-root! [_ target]
                    (swap! roots dissoc target))
