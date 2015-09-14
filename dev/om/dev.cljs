@@ -36,7 +36,7 @@
 
 (defui Counter
   static om/IQuery
-  (-query [this]
+  (query [this]
     '[:id :counter/count])
   Object
   (render [this]
@@ -80,10 +80,10 @@
 
 (defui HelloWorld
   static om/IQueryParams
-  (-params [this]
-    {:counter (om/query Counter)})
+  (params [this]
+    {:counter (om/get-query Counter)})
   static om/IQuery
-  (-query [this]
+  (query [this]
     '[:app/title {:app/counters ?counter}])
   Object
   (render [this]

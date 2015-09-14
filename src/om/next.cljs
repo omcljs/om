@@ -44,14 +44,14 @@
 ;; Query Protocols & Helpers
 
 (defprotocol IQueryParams
-  (-params [this]))
+  (params [this]))
 
 (extend-type default
   IQueryParams
-  (-params [_]))
+  (params [_]))
 
 (defprotocol IQuery
-  (-query [this]))
+  (query [this]))
 
 (defprotocol ILocalState
   (-set-state! [this new-state])
@@ -73,8 +73,8 @@
               node))]
     (walk/prewalk replace-var query)))
 
-(defn query [cl]
-  (with-meta (bind-query (-query cl) (-params cl))
+(defn get-query [cl]
+  (with-meta (bind-query (query cl) (params cl))
     {:component cl}))
 
 ;; =============================================================================
@@ -308,7 +308,7 @@
   (index-root [_ cl]
     (let [component->path (atom {})
           prop->component (atom {})
-          rootq           (query cl)]
+          rootq           (get-query cl)]
       (letfn [(build-index* [cl sel path]
                 (swap! component->path assoc cl path)
                 (let [{ks true ms false} (group-by keyword? sel)]
@@ -361,7 +361,7 @@
                                 *root-class* root-class]
                         (reset! ret
                           (js/React.render (rctor data) target))))
-            sel (query root-class)
+            sel (get-query root-class)
             store @state]
         (swap! state update-in [:roots] assoc target renderf)
         ((:parser config) {:state store} sel renderf)
