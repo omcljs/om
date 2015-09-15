@@ -37,7 +37,11 @@
   (let [idxr (om/indexer identity)
         idxs (p/index-root idxr ComponentList)]
     (is (= (set (keys (:prop->component idxs)))
-           #{:app/title :components/list :foo/bar :baz/woz}))))
+           #{:app/title :components/list :foo/bar :baz/woz}))
+    (is (= (get-in idxs [:component->path Component])
+           [:components/list]))
+    (is (= (get-in idxs [:component->selector Component])
+           [{:components/list [:foo/bar :baz/woz]}]))))
 
 (comment
   (run-tests)
