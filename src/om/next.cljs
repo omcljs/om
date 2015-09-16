@@ -328,21 +328,21 @@
                (assoc ret class (filter-selector rootq path)))
              {} @component->path)
            :type->components {}
-           :ref->component {}}))))
+           :ref->components {}}))))
 
   (index-component! [_ c]
     (swap! idxs
       (fn [idxs]
         (-> idxs
           (update-in [:type->components (type c)] (fnil conj #{}) c)
-          (assoc-in [:ref->component (ui->ref c)] c)))))
+          (update-in [:ref->components (ui->ref c)] (fnil conj #{}) c)))))
 
   (drop-component! [_ c]
     (swap! idxs
       (fn [idxs]
         (-> idxs
           (update-in [:type->components (type c)] disj c)
-          (assoc-in [:ref->component (ui->ref c)] c)))))
+          (update-in [:ref->components (ui->ref c)] disj c)))))
 
   (ref-for [_ component]
     (ui->ref component)))
