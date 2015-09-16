@@ -406,7 +406,7 @@
         (swap! state assoc :queue [])))
     (swap! state update-in [:queued] not)))
 
-(defn reconciler [{:keys [state parser ui->ref send] :as config}]
+(defn reconciler [{:keys [state parser ui->ref send merge] :as config}]
   (let [ret (Reconciler.
               (assoc config :indexer (indexer ui->ref))
               (atom {:queue [] :queued false :roots {} :t 0}))]
