@@ -345,7 +345,14 @@
           (update-in [:ref->components (ui->ref c)] disj c)))))
 
   (ref-for [_ component]
-    (ui->ref component)))
+    (ui->ref component))
+
+  (key->components [_ k]
+    (let [idxs @idxs]
+      (if (ref? k)
+        (get-in idxs [:ref->components k])
+        (get-in idxs
+          [:type->components (get-in idxs [:prop->component] k)])))))
 
 (defn indexer [ui->ref]
   (Indexer. (atom {}) ui->ref))
@@ -398,9 +405,9 @@
     (if (empty? (:queue @state))
       (doseq [[_ renderf] (:roots @state)]
         (renderf))
-      (do
-        (doseq [[component next-props]
-                (sort-by (comp depth first) @(:queue state))]
+      (let [cs (transduce (map #(p/key->components (:indexer config) %))
+                 #(into %1 %2) #{} @(:queue state))]
+        (doseq [[component next-props] (sort-by (comp depth first) cs)]
           (when (should-update? component next-props)
             (update-component! component next-props)))
         (swap! state assoc :queue [])))
