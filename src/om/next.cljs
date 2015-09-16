@@ -356,7 +356,7 @@
 (defrecord Reconciler [config state]
   p/IReconciler
 
-  (basis-t [_] @t)
+  (basis-t [_] (:t @state))
   (app-state [_] {:state config})
   (indexer [_] (:indexer config))
   (parser [_] (:parser config))
@@ -370,18 +370,21 @@
                                 *root-class* root-class]
                         (reset! ret
                           (js/React.render (rctor data) target))))
-            sel (get-query root-class)
-            store @state]
+            sel     (get-query root-class)
+            appst   (:state config)]
         (swap! state update-in [:roots] assoc target renderf)
-        ((:parser config) {:state store} sel renderf)
+        ((:parser config) {:state appst} sel renderf)
         @ret)))
 
   (remove-root! [_ target]
     (swap! state update-in [:roots] dissoc target))
 
   (commit! [_ component next-props]
-    (swap! t inc) ;; TODO: probably should revisit doing this here
-    (swap! state update-in [:queue] conj [component next-props]))
+    (swap! state
+      (fn [state]
+        (-> state
+          (update-in [:t] inc) ;; TODO: probably should revisit doing this here
+          (update-in [:queue] conj [component next-props])))))
 
   (schedule! [_]
     (if-not (:queued @state)
