@@ -110,9 +110,6 @@
 (defn get-reconciler [c]
   (get-prop c "omcljs$reconciler"))
 
-(defn get-parser [r]
-  (p/parser r))
-
 (defn t [c]
   (get-prop c "omcljs$t"))
 
@@ -232,12 +229,6 @@
 ;; =============================================================================
 ;; Reconciler API
 
-(defn app-state [reconciler]
-  (p/app-state reconciler))
-
-(defn get-indexer [reconciler]
-  (p/indexer reconciler))
-
 (defn basis-t [reconciler]
   (p/basis-t reconciler))
 
@@ -282,14 +273,15 @@
 (defn call
   ([c name] (call c name nil))
   ([c name param-map]
-   (let [reconciler   (get-reconciler c)
-         parser       (p/parser reconciler)
-         env          {:state      (p/app-state reconciler)
-                       :reconciler reconciler
-                       :indexer    (p/indexer reconciler)
-                       :parser     parser}
-         [res quoted] (parser env `[(~name ~param-map)])]
-     )))
+   (let [r      (get-reconciler c)
+         cfg    (:config r)
+         env    (assoc (select-keys cfg [:indexer :parser :state])
+                  :reconciler r)
+         [v v'] ((:parser cfg) env `[(~name ~param-map)])]
+     (p/queue! r (transduce #(into %1 %2) [] (vals v)))
+     ((:send cfg) v'
+       (fn [res]
+         (swap! (:state cfg) (:merge cfg) res))))))
 
 ;; =============================================================================
 ;; Parser
@@ -300,10 +292,8 @@
 ;; =============================================================================
 ;; Indexer
 
-(defrecord Indexer [idxs ui->ref]
+(defrecord Indexer [indexes ui->ref]
   p/IIndexer
-
-  (indexes [_] @idxs)
 
   (index-root [_ cl]
     (let [component->path (atom {})
@@ -319,7 +309,7 @@
                       (let [cl (-> sel meta :component)]
                         (build-index* cl sel (conj path attr)))))))]
         (build-index* cl rootq [])
-        (reset! idxs
+        (reset! indexes
           {:prop->component @prop->component
            :component->path @component->path
            :component->selector
@@ -331,16 +321,16 @@
            :ref->components {}}))))
 
   (index-component! [_ c]
-    (swap! idxs
-      (fn [idxs]
-        (-> idxs
+    (swap! indexes
+      (fn [idexes]
+        (-> idexes
           (update-in [:type->components (type c)] (fnil conj #{}) c)
           (update-in [:ref->components (ui->ref c)] (fnil conj #{}) c)))))
 
   (drop-component! [_ c]
-    (swap! idxs
-      (fn [idxs]
-        (-> idxs
+    (swap! indexes
+      (fn [indexes]
+        (-> indexes
           (update-in [:type->components (type c)] disj c)
           (update-in [:ref->components (ui->ref c)] disj c)))))
 
@@ -348,11 +338,11 @@
     (ui->ref component))
 
   (key->components [_ k]
-    (let [idxs @idxs]
+    (let [indexes @indexes]
       (if (ref? k)
-        (get-in idxs [:ref->components k])
-        (get-in idxs
-          [:type->components (get-in idxs [:prop->component] k)])))))
+        (get-in indexes [:ref->components k])
+        (get-in indexes
+          [:type->components (get-in indexes [:prop->component] k)])))))
 
 (defn indexer [ui->ref]
   (Indexer. (atom {}) ui->ref))
@@ -364,9 +354,6 @@
   p/IReconciler
 
   (basis-t [_] (:t @state))
-  (app-state [_] {:state config})
-  (indexer [_] (:indexer config))
-  (parser [_] (:parser config))
 
   (add-root! [this target root-class options]
     (let [ret (atom nil)

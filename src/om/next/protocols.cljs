@@ -10,9 +10,6 @@
 
 (defprotocol IReconciler
   (basis-t [this])
-  (app-state [this])
-  (indexer [this])
-  (parser [this])
   (add-root! [reconciler target root-class options])
   (remove-root! [reconciler target])
   (schedule-send! [reconciler expr])
