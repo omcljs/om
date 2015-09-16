@@ -379,12 +379,15 @@
   (remove-root! [_ target]
     (swap! state update-in [:roots] dissoc target))
 
-  (commit! [_ component next-props]
+  (queue! [_ k-or-ks]
     (swap! state
       (fn [state]
         (-> state
           (update-in [:t] inc) ;; TODO: probably should revisit doing this here
-          (update-in [:queue] conj [component next-props])))))
+          (update-in [:queue]
+            (fn [queue]
+              (let [ks (if-not (sequential? k-or-ks) [k-or-ks] k-or-ks)]
+                (into queue ks))))))))
 
   (schedule! [_]
     (if-not (:queued @state)

@@ -14,6 +14,6 @@
   (parser [this])
   (add-root! [reconciler target root-class options])
   (remove-root! [reconciler target])
-  (commit! [queue component next-props])
+  (queue! [queue k-or-ks])
   (schedule! [reconciler])
   (reconcile! [reconciler]))
