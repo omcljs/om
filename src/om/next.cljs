@@ -380,7 +380,17 @@
             sel     (get-query root-class)
             appst   (:state config)]
         (swap! state update-in [:roots] assoc target renderf)
-        ((:parser config) {:state appst} sel renderf)
+        (let [env    (assoc
+                       (select-keys config [:state :indexer :parser])
+                       :reconciler this)
+              [v v'] ((:parser config) env sel)]
+          (when-not (empty? v)
+            (renderf v))
+          (when-not (empty? v')
+            (when-let [send (:send config)]
+              (send v'
+                (fn [res]
+                  (renderf (swap! (:state config) (:merge config) res)))))))
         @ret)))
 
   (remove-root! [_ target]
