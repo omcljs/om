@@ -15,6 +15,7 @@
   (parser [this])
   (add-root! [reconciler target root-class options])
   (remove-root! [reconciler target])
+  (schedule-send! [reconciler expr])
   (queue! [queue k-or-ks])
-  (schedule! [reconciler])
+  (schedule-render! [reconciler])
   (reconcile! [reconciler]))

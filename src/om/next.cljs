@@ -241,8 +241,8 @@
 (defn basis-t [reconciler]
   (p/basis-t reconciler))
 
-(defn schedule! [reconciler]
-  (when (p/schedule! reconciler)
+(defn schedule-render! [reconciler]
+  (when (p/schedule-render! reconciler)
     (let [f #(p/reconcile! reconciler)]
       (cond
         (fn? *raf*) (*raf* f)
@@ -396,7 +396,7 @@
               (let [ks (if-not (sequential? k-or-ks) [k-or-ks] k-or-ks)]
                 (into queue ks))))))))
 
-  (schedule! [_]
+  (schedule-render! [_]
     (if-not (:queued @state)
       (swap! state update-in [:queued] not)
       false))
@@ -418,5 +418,5 @@
               (assoc config :indexer (indexer ui->ref))
               (atom {:queue [] :queued false :roots {} :t 0}))]
     (add-watch state :om/reconciler
-      (fn [_ _ _ _] (schedule! ret)))
+      (fn [_ _ _ _] (schedule-render! ret)))
     ret))
