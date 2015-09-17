@@ -90,11 +90,11 @@
        (om.next/merge-pending-state! this#))
      ~'componentWillMount
      ([this#]
-       (let [indexer# (-> this# om.next/get-reconciler om.next/get-indexer)]
+       (let [indexer# (get-in (om.next/get-reconciler this#) [:config :indexer])]
          (om.next.protocols/index-component! indexer# this#)))
      ~'componentWillUnmount
      ([this#]
-       (let [indexer# (-> this# om.next/get-reconciler om.next/get-indexer)]
+       (let [indexer# (get-in (om.next/get-reconciler this#) [:config :indexer])]
          (om.next.protocols/drop-component! indexer# this#)))}})
 
 (defn reshape [dt {:keys [reshape defaults]}]

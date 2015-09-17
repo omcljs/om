@@ -43,6 +43,12 @@
     (is (= (get-in idxs [:component->selector Component])
            [{:components/list [:foo/bar :baz/woz]}]))))
 
+(deftest test-reconciler-has-indexer
+  (let [r (om/reconciler
+            {:state (atom nil)
+             :ui->ref identity})]
+    (is (instance? om/Indexer (get-in r [:config :indexer])))))
+
 (comment
   (run-tests)
 
