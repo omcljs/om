@@ -425,7 +425,7 @@
                  #(into %1 %2) #{} @(:queue state))
             {:keys [ui->ref state]} config
             st @state]
-        (doseq [c (sort-by (comp depth first) cs)]
+        (doseq [c ((:optimize config) cs)]
           (let [next-props (get-in st (ui->ref c))]
             (when (should-update? c next-props)
               (update-component! c next-props))))
@@ -442,9 +442,11 @@
             (swap! (:state config) (:merge-state config) res)))))))
 
 (defn reconciler
-  [{:keys [state parser ui->ref send merge-send merge-state]
+  [{:keys [state parser ui->ref send
+           merge-send merge-state optimize]
     :or {merge-send  into
-         merge-state merge}
+         merge-state merge
+         optimize    (fn [cs] (sort-by depth cs))}
     :as config}]
   (let [ret (Reconciler.
               (assoc config :indexer (indexer ui->ref))
