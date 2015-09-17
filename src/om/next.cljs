@@ -349,6 +349,10 @@
 ;; =============================================================================
 ;; Reconciler
 
+(defn queue-calls! [r res]
+  (let [call-ks (into [] (filter symbol?) (keys res))]
+    (p/queue! r (transduce (map res) #(into %1 %2) [] call-ks))))
+
 (defrecord Reconciler [config state]
   p/IReconciler
 
@@ -376,6 +380,7 @@
             (when-let [send (:send config)]
               (send v'
                 (fn [res]
+                  (queue-calls! this res)
                   (swap! (:state config) (:merge-state config) res))))))
         @ret)))
 
@@ -422,13 +427,20 @@
         (swap! state assoc :queue [])))
     (swap! state update-in [:queued] not))
 
-  (send! [_]
+  (send! [this]
     (let [expr (:pending-send @state)]
-      ((:send config) expr
-        (fn [res]
-          (swap! (:state config) (:merge-state config) res))))))
+      (when expr
+        (swap! state assoc :pending-state nil)
+        ((:send config) expr
+          (fn [res]
+            (queue-calls! this res)
+            (swap! (:state config) (:merge-state config) res)))))))
 
-(defn reconciler [{:keys [state parser ui->ref send merge-send merge-state] :as config}]
+(defn reconciler
+  [{:keys [state parser ui->ref send merge-send merge-state]
+    :or {merge-send  into
+         merge-state merge}
+    :as config}]
   (let [ret (Reconciler.
               (assoc config :indexer (indexer ui->ref))
               (atom {:queue [] :queued false :pending-send nil
