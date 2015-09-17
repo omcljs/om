@@ -403,10 +403,13 @@
       (doseq [[_ renderf] (:roots @state)]
         (renderf))
       (let [cs (transduce (map #(p/key->components (:indexer config) %))
-                 #(into %1 %2) #{} @(:queue state))]
-        (doseq [[component next-props] (sort-by (comp depth first) cs)]
-          (when (should-update? component next-props)
-            (update-component! component next-props)))
+                 #(into %1 %2) #{} @(:queue state))
+            {:keys [ui->ref state]} config
+            st @state]
+        (doseq [c (sort-by (comp depth first) cs)]
+          (let [next-props (get-in st (ui->ref c))]
+            (when (should-update? c next-props)
+              (update-component! c next-props))))
         (swap! state assoc :queue [])))
     (swap! state update-in [:queued] not)))
 
