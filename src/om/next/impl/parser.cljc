@@ -27,7 +27,8 @@
 
 (defn parser [{:keys [prop call]}]
   (fn self [env sel]
-    (let [env (assoc env :parser self)]
+    (let [env (cond-> (assoc env :parser self)
+                (not (contains? env :path)) (assoc :path []))]
       (letfn [(step [[res quoted] sel]
                 (cond
                   (keyword? sel) (parse-prop prop res quoted env sel)
