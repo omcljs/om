@@ -189,7 +189,11 @@
   ([c new-state cb]
    (.setState c #js {:omcljs$state new-state} nil)))
 
-(defn update-query! [c bs])
+;; TODO: where to put queue mutations so that time travel can be
+;; preserved?
+
+(defn update-query! [c bs]
+  )
 
 (defn mounted? [c]
   (.isMounted c))
