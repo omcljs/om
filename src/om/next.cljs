@@ -279,7 +279,8 @@
      (when-not (empty? v)
        (p/queue! r (transduce #(into %1 %2) [((:ui->ref cfg) c)] (vals v))))
      (when-not (empty? v')
-       (p/queue-send! v')))))
+       (p/queue-send! r v')
+       (schedule-send! r)))))
 
 ;; =============================================================================
 ;; Parser
@@ -375,7 +376,7 @@
             (when-let [send (:send config)]
               (send v'
                 (fn [res]
-                  (renderf (swap! (:state config) (:merge config) res)))))))
+                  (swap! (:state config) (:merge-state config) res))))))
         @ret)))
 
   (remove-root! [_ target]
@@ -391,16 +392,25 @@
               (let [ks (if-not (sequential? k-or-ks) [k-or-ks] k-or-ks)]
                 (into queue ks))))))))
 
+  (queue-send! [_ expr]
+    (swap! state update-in [:queued-send]
+      (:merge-send config) expr))
+
   (schedule-render! [_]
     (if-not (:queued @state)
       (swap! state update-in [:queued] not)
+      false))
+
+  (schedule-send! [_]
+    (if-not (:send-queued @state)
+      (swap! state update-in [:send-queued] not)
       false))
 
   ;; TODO: need to reindex roots after reconcilation
   (reconcile! [_]
     (if (empty? (:queue @state))
       (doseq [[_ renderf] (:roots @state)]
-        (renderf))
+        (renderf @(:state config)))
       (let [cs (transduce (map #(p/key->components (:indexer config) %))
                  #(into %1 %2) #{} @(:queue state))
             {:keys [ui->ref state]} config
@@ -410,12 +420,19 @@
             (when (should-update? c next-props)
               (update-component! c next-props))))
         (swap! state assoc :queue [])))
-    (swap! state update-in [:queued] not)))
+    (swap! state update-in [:queued] not))
 
-(defn reconciler [{:keys [state parser ui->ref send merge] :as config}]
+  (send! [_]
+    (let [expr (:pending-send @state)]
+      ((:send config) expr
+        (fn [res]
+          (swap! (:state config) (:merge-state config) res))))))
+
+(defn reconciler [{:keys [state parser ui->ref send merge-send merge-state] :as config}]
   (let [ret (Reconciler.
               (assoc config :indexer (indexer ui->ref))
-              (atom {:queue [] :queued false :roots {} :t 0}))]
+              (atom {:queue [] :queued false :pending-send nil
+                     :send-queued false :roots {} :t 0}))]
     (add-watch state :om/reconciler
       (fn [_ _ _ _] (schedule-render! ret)))
     ret))
