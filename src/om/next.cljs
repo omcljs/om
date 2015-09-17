@@ -191,6 +191,7 @@
 
 ;; TODO: where to put queue mutations so that time travel can be
 ;; preserved?
+;; TODO: will need to reindex
 
 (defn update-query! [c bs]
   )
