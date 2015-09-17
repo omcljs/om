@@ -238,6 +238,10 @@
         :else
         (js/requestAnimationFrame f)))))
 
+(defn schedule-send! [reconciler]
+  (when (p/schedule-send! reconciler)
+    (js/setTimeout #(p/send! reconciler) 500)))
+
 (defn add-root!
   ([reconciler target root-class]
    (add-root! reconciler target root-class nil))
@@ -272,10 +276,10 @@
          env    (assoc (select-keys cfg [:indexer :parser :state])
                   :reconciler r)
          [v v'] ((:parser cfg) env `[(~name ~param-map)])]
-     (p/queue! r (transduce #(into %1 %2) [((:ui->ref cfg) c)] (vals v)))
-     ((:send cfg) v'
-       (fn [res]
-         (swap! (:state cfg) (:merge cfg) res))))))
+     (when-not (empty? v)
+       (p/queue! r (transduce #(into %1 %2) [((:ui->ref cfg) c)] (vals v))))
+     (when-not (empty? v')
+       (p/queue-send! v')))))
 
 ;; =============================================================================
 ;; Parser
