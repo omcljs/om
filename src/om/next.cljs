@@ -139,13 +139,7 @@
   (set-prop! c "omcljs$value" next-props))
 
 (defn props [c]
-  (let [r (get-reconciler c)]
-    (if (or (nil? r)
-            (= (t c) (p/basis-t r)))
-      ;; fresh
-      (get-prop c "omcljs$value")
-      ;; stale
-      (p/props-for r c))))
+  (get-prop c "omcljs$value"))
 
 (defn set-state! [c new-state]
   (if (satisfies? ILocalState c)
@@ -278,7 +272,7 @@
          env    (assoc (select-keys cfg [:indexer :parser :state])
                   :reconciler r)
          [v v'] ((:parser cfg) env `[(~name ~param-map)])]
-     (p/queue! r (transduce #(into %1 %2) [] (vals v)))
+     (p/queue! r (transduce #(into %1 %2) [((:ui->ref cfg) c)] (vals v)))
      ((:send cfg) v'
        (fn [res]
          (swap! (:state cfg) (:merge cfg) res))))))
