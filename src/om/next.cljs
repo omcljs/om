@@ -392,6 +392,7 @@
       (swap! state update-in [:queued] not)
       false))
 
+  ;; TODO: need to reindex roots after reconcilation
   (reconcile! [_]
     (if (empty? (:queue @state))
       (doseq [[_ renderf] (:roots @state)]
