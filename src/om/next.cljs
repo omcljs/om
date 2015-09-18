@@ -305,43 +305,43 @@
 (defrecord Indexer [indexes ui->ref]
   p/IIndexer
 
-  (index-root [_ cl]
-    (let [component->path (atom {})
-          prop->component (atom {})
-          rootq           (get-query cl)]
-      (letfn [(build-index* [cl sel path]
-                (swap! component->path assoc cl path)
-                (let [{ks true ms false} (group-by keyword? sel)]
-                  (swap! prop->component #(merge-with into % (zipmap ks (repeat #{cl}))))
-                  (doseq [m ms]
-                    (let [[attr sel] (first m)]
-                      (swap! prop->component #(merge-with into % {attr #{cl}}))
+  (index-root [_ klass]
+    (let [class->paths  (atom {})
+          prop->classes (atom {})
+          rootq         (get-query klass)]
+      (letfn [(build-index* [klass selector path]
+                (swap! class->paths update-in [klass] (fnil conj #{}) path)
+                (let [{props true joins false} (group-by keyword? selector)]
+                  (swap! prop->classes #(merge-with into % (zipmap props (repeat #{klass}))))
+                  (doseq [join joins]
+                    (let [[attr sel] (first join)]
+                      (swap! prop->classes #(merge-with into % {attr #{klass}}))
                       (let [cl (-> sel meta :component)]
                         (build-index* cl sel (conj path attr)))))))]
-        (build-index* cl rootq [])
+        (build-index* klass rootq [])
         (reset! indexes
-          {:prop->component @prop->component
-           :component->path @component->path
-           :component->selector
+          {:prop->classes @prop->classes
+           :class->paths @class->paths
+           :class->selectors
            (reduce-kv
-             (fn [ret class path]
-               (assoc ret class (filter-selector rootq path)))
-             {} @component->path)
-           :type->components {}
+             (fn [ret class paths]
+               (assoc ret class (into #{} (map #(filter-selector rootq %)) paths)))
+             {} @class->paths)
+           :class->components {}
            :ref->components {}}))))
 
   (index-component! [_ c]
     (swap! indexes
       (fn [idexes]
         (let [ref (ui->ref c)]
-          (cond-> (update-in indexes [:type->components (type c)] (fnil conj #{}) c)
+          (cond-> (update-in indexes [:class->components (type c)] (fnil conj #{}) c)
             ref (update-in [:ref->components ref] (fnil conj #{}) c))))))
 
   (drop-component! [_ c]
     (swap! indexes
       (fn [indexes]
         (let [ref (ui->ref c)]
-          (cond-> (update-in indexes [:type->components (type c)] disj c)
+          (cond-> (update-in indexes [:class->components (type c)] disj c)
             ref (update-in [:ref->components ref] disj c))))))
 
   (ref-for [_ component]
@@ -352,7 +352,7 @@
       (if (ref? k)
         (get-in indexes [:ref->components k])
         (get-in indexes
-          [:type->components (get-in indexes [:prop->component] k)])))))
+          [:class->components (get-in indexes [:prop->component] k)])))))
 
 (defn indexer [ui->ref]
   (Indexer. (atom {}) ui->ref))

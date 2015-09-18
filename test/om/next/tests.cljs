@@ -36,12 +36,12 @@
 (deftest test-indexer
   (let [idxr (om/indexer identity)
         idxs (p/index-root idxr ComponentList)]
-    (is (= (set (keys (:prop->component idxs)))
+    (is (= (set (keys (:prop->classes idxs)))
            #{:app/title :components/list :foo/bar :baz/woz}))
-    (is (= (get-in idxs [:component->path Component])
-           [:components/list]))
-    (is (= (get-in idxs [:component->selector Component])
-           [{:components/list [:foo/bar :baz/woz]}]))))
+    (is (= (get-in idxs [:class->paths Component])
+           #{[:components/list]}))
+    (is (= (get-in idxs [:class->selectors Component])
+           #{[{:components/list [:foo/bar :baz/woz]}]}))))
 
 (deftest test-reconciler-has-indexer
   (let [r (om/reconciler
