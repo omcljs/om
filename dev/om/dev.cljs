@@ -128,13 +128,16 @@
           2 {:db/id 2 :counter/count 0}}
          :counters/list (om/refs :app/counters 0 1 2)}))
 
-(defmulti ui->ref (fn [c] (gobj/get c "type")))
+(defn ctype [x]
+  (or (gobj/get x "type") (type x)))
+
+(defmulti ui->ref ctype)
 
 (defmethod ui->ref :default
   [c] (throw
         (js/Error.
           (str "ui->ref not defined for type "
-            (gobj/get (gobj/get c "type") "name")))))
+            (gobj/get (ctype c) "name")))))
 
 (defmethod ui->ref Counter
   [c] (om/ref :app/counters (:db/id (om/props c))))
