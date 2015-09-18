@@ -453,6 +453,7 @@
          merge-state merge
          optimize    (fn [cs] (sort-by depth cs))}
     :as config}]
+  {:pre [(map? config)]}
   (let [ret (Reconciler.
               (assoc config :indexer (indexer ui->ref))
               (atom {:queue [] :queued false :pending-send nil

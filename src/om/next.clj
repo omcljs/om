@@ -56,21 +56,21 @@
     'componentWillMount
     (fn [[name [this :as args] & body]]
       `(~name ~args
-         (let [reconciler# (om.next/reconciler ~this)]
+         (let [reconciler# (om.next/get-reconciler ~this)]
            (when (satisfies? om.next.protocols/IComponentIndex reconciler#)
              (om.next.protocols/index-component! reconciler# ~this)))
          ~@body))
     'componentWillUnmount
     (fn [[name [this :as args] & body]]
       `(~name ~args
-         (let [reconciler# (om.next/reconciler ~this)]
+         (let [reconciler# (om.next/get-reconciler ~this)]
            (when (satisfies? om.next.protocols/IComponentIndex reconciler#)
              (om.next.protocols/drop-component! reconciler# ~this)))
          ~@body))
     'render
     (fn [[name [this :as args] & body]]
       `(~name ~args
-         (binding [om.next/*reconciler* (om.next/reconciler ~this)
+         (binding [om.next/*reconciler* (om.next/get-reconciler ~this)
                    om.next/*root-class* (om.next/root-class ~this)
                    om.next/*depth*      (om.next/depth ~this)
                    om.next/*shared*     (om.next/shared ~this)
