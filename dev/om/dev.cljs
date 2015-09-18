@@ -14,16 +14,26 @@
 ;; Parsing
 
 (defmulti prop (fn [_ k] k))
+
 (defmethod prop :default
-  [{:keys [selector]} k]
-  {:quote (or selector k)})
+  [{:keys [state selector]} k]
+  (let [st @state]
+    (if (contains? st k)
+      {:value (get st k)}
+      {:quote (or selector k)})))
 
 (defmulti call (fn [_ k _] k))
+
 (defmethod call :default [_ k _]
   {:quote k})
 
-;; -----------------------------------------------------------------------------
-;; Counter
+(defn get-ref [state {:keys [root id]}]
+  (get-in state [root id]))
+
+(defmethod prop :counters/list
+  [{:keys [state]} _]
+  (let [st @state]
+    {:value (into [] (map #(get-ref st %)) (:counters/list st))}))
 
 (defmethod call 'counter/increment
   [{:keys [state ref]} _ _]
@@ -36,6 +46,20 @@
   (let [{:keys [db/id]} ref]
     (swap! state update-in [:counters/list] remove #{id}))
   {:value [:counters/list]})
+
+(defmethod call 'counters/create
+  [{:keys [state]} _ new-todo]
+  (swap! state
+    (fn [state]
+      (let [new-todo (merge new-todo
+                       {:db/id (:counters/cur-id state)})]
+        (-> state
+          (update-in [:counters/list] conj new-todo)
+          (update-in [:counters/cur-id] inc)))))
+  {:value [:counters/list]})
+
+;; -----------------------------------------------------------------------------
+;; Counter
 
 (defui Counter
   static om/IQuery
@@ -70,27 +94,16 @@
 ;; -----------------------------------------------------------------------------
 ;; HelloWorld
 
-(defmethod call 'counters/create
-  [{:keys [state]} _ new-todo]
-  (swap! state
-    (fn [state]
-      (let [new-todo (merge new-todo
-                       {:db/id (:counters/cur-id state)})]
-        (-> state
-          (update-in [:counters/list] conj new-todo)
-          (update-in [:counters/cur-id] inc)))))
-  {:value [:counters/list]})
-
 (defui HelloWorld
   static om/IQueryParams
   (params [this]
     {:counter (om/get-query Counter)})
   static om/IQuery
   (query [this]
-    '[:app/title {:app/counters ?counter}])
+    '[:app/title {:counters/list ?counter}])
   Object
   (render [this]
-    (let [{:keys [:app/title :app/counters] :as props}
+    (let [{:keys [:app/title :counters/list] :as props}
           (om/props this)]
       (apply dom/div nil
         (app-title nil
@@ -100,7 +113,8 @@
           (dom/button
             #js {:onClick (fn [e] (om/call this 'counters/add!))}
             "Add Counter!"))
-        #_(om/map-keys counter :id counters)))))
+        ;; todo we need to map keys on these
+        (map counter list)))))
 
 ;; -----------------------------------------------------------------------------
 ;; Reconciler setup
