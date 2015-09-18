@@ -24,13 +24,15 @@
 
 (defmethod call 'counter/increment
   [{:keys [state ref]} _ _]
-  (swap! state update-in [ref :count] inc)
-  {:value [ref]})
+  (let [{:keys [root id]} ref]
+    (swap! state update-in [root id :counter/count] inc))
+  {:value []})
 
 (defmethod call 'counters/delete
   [{:keys [state ref]} _ _]
-  (swap! state update-in [:counters/list] remove #{ref})
-  {:value [ref :counters/list]})
+  (let [{:keys [db/id]} ref]
+    (swap! state update-in [:counters/list] remove #{id}))
+  {:value [:counters/list]})
 
 (defui Counter
   static om/IQuery
@@ -65,7 +67,7 @@
 ;; -----------------------------------------------------------------------------
 ;; HelloWorld
 
-(defmethod call 'todos/create
+(defmethod call 'counters/create
   [{:keys [state]} _ new-todo]
   (swap! state
     (fn [state]
@@ -98,24 +100,43 @@
         #_(om/map-keys counter :id counters)))))
 
 ;; -----------------------------------------------------------------------------
+;; Reconciler setup
 
 (def app-state
   (atom {:app/title "Hello World!"
+         :app/current-id 3
          :app/counters
          {0 {:db/id 0 :counter/count 0}
           1 {:db/id 1 :counter/count 0}
           2 {:db/id 2 :counter/count 0}}
          :counters/list (om/refs :app/counters 0 1 2)}))
 
+(defmulti ui->ref (fn [c] (gobj/get c "type")))
+
+(defmethod ui->ref :default
+  [c] (throw
+        (js/Error.
+          (str "ui->ref not defined for type "
+            (gobj/get (gobj/get c "type") "name")))))
+
+(defmethod ui->ref Counter
+  [c] (om/ref :app/counters (:db/id (om/props c))))
+
+(def reconciler
+  (om/reconciler
+    {:state app-state
+     :parser {:prop prop :call call}
+     :ui->ref ui->ref}))
+
+(om/add-root! reconciler
+  (gdom/getElement "app") HelloWorld)
+
 (comment
-  (def reconciler (om/reconciler app-state))
-
-  (om/add-root! reconciler
-    (gdom/getElement "app") HelloWorld)
-
   (om/store reconciler)
   (om/basis-t reconciler)
   (p/indexes reconciler)
+
+  (ui->ref (counter {:db/id 0 :counter/count 0}))
 
   (require '[cljs.pprint :as pprint])
   (pprint/pprint (om/build-index HelloWorld))
