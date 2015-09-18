@@ -278,11 +278,12 @@
   ([c name param-map]
    (let [r      (get-reconciler c)
          cfg    (:config r)
+         ref    ((:ui->ref cfg) c)
          env    (assoc (select-keys cfg [:indexer :parser :state])
-                  :reconciler r :component c)
+                  :reconciler r :component c :ref ref)
          [v v'] ((:parser cfg) env `[(~name ~param-map)])]
      (when-not (empty? v)
-       (p/queue! r (transduce #(into %1 %2) [((:ui->ref cfg) c)] (vals v))))
+       (p/queue! r (transduce #(into %1 %2) [ref] (vals v))))
      (when-not (empty? v')
        (p/queue-send! r v')
        (schedule-send! r)))))
