@@ -14,10 +14,13 @@
 ;; Parsing
 
 (defmulti prop (fn [_ k] k))
-(defmethod prop :default [_ k] {:quote k})
+(defmethod prop :default
+  [{:keys [selector]} k]
+  {:quote (or selector k)})
 
 (defmulti call (fn [_ k _] k))
-(defmethod call :default [_ k] {:quote k})
+(defmethod call :default [_ k _]
+  {:quote k})
 
 ;; -----------------------------------------------------------------------------
 ;; Counter
@@ -37,7 +40,7 @@
 (defui Counter
   static om/IQuery
   (query [this]
-    '[:id :counter/count])
+    '[:db/id :counter/count])
   Object
   (render [this]
     (let [{:keys [:counter/count] :as props} (om/props this)]
@@ -139,6 +142,10 @@
 
   (-> (om/build-index HelloWorld)
     :prop->component :id)
+
+  ((om/parser {:prop prop :call call})
+    {:state app-state}
+    (om/get-query HelloWorld))
   )
 
 ;(def db
