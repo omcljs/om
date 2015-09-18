@@ -125,17 +125,13 @@
 (def reconciler
   (om/reconciler
     {:state app-state
-     :parser {:prop prop :call call}
+     :parser (om/parser {:prop prop :call call})
      :ui->ref ui->ref}))
 
 (om/add-root! reconciler
   (gdom/getElement "app") HelloWorld)
 
 (comment
-  (om/store reconciler)
-  (om/basis-t reconciler)
-  (p/indexes reconciler)
-
   (ui->ref (counter {:db/id 0 :counter/count 0}))
 
   (require '[cljs.pprint :as pprint])
@@ -143,10 +139,6 @@
 
   (-> (om/build-index HelloWorld)
     :prop->component :id)
-
-  (pprint/pprint (om/indexes reconciler))
-
-  (om/indexes reconciler)
   )
 
 ;(def db
