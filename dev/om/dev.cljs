@@ -113,8 +113,10 @@
           (dom/button
             #js {:onClick (fn [e] (om/call this 'counters/add!))}
             "Add Counter!"))
-        ;; todo we need to map keys on these
-        (map counter list)))))
+        (map-indexed
+          (fn [i props]
+            (counter (assoc props :om-index i)))
+          list)))))
 
 ;; -----------------------------------------------------------------------------
 ;; Reconciler setup
@@ -133,11 +135,7 @@
 
 (defmulti ui->ref ctype)
 
-(defmethod ui->ref :default
-  [c] (throw
-        (js/Error.
-          (str "ui->ref not defined for type "
-            (gobj/get (ctype c) "name")))))
+(defmethod ui->ref :default [c] nil)
 
 (defmethod ui->ref Counter
   [c] (om/ref :app/counters (:db/id (om/props c))))
