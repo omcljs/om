@@ -131,6 +131,9 @@
 (defn react-key [c]
   (.. c -props -key))
 
+(defn react-type [x]
+  (or (gobj/get x "type") (type x)))
+
 (defn index [c]
   (get-prop c "omcljs$index"))
 

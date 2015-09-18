@@ -130,10 +130,7 @@
           2 {:db/id 2 :counter/count 0}}
          :counters/list (om/refs :app/counters 0 1 2)}))
 
-(defn ctype [x]
-  (or (gobj/get x "type") (type x)))
-
-(defmulti ui->ref ctype)
+(defmulti ui->ref om/react-type)
 
 (defmethod ui->ref :default [c] nil)
 
