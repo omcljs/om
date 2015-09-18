@@ -49,6 +49,14 @@
              :ui->ref identity})]
     (is (instance? om/Indexer (get-in r [:config :indexer])))))
 
+(deftest test-ref
+  (let [r  (om/ref :foo 0)
+        rs (om/refs :foo 0)]
+    (is (= :foo (:root r)))
+    (is (= 0 (:id r)))
+    (is (= :foo (:root (first rs))))
+    (is (= 0 (:id (first rs))))))
+
 (comment
   (run-tests)
 

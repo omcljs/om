@@ -261,11 +261,11 @@
 
 (defrecord Ref [root id])
 
-(defn ^boolean ref? [x]
-  (instance? Ref x))
-
 (defn ref [root id]
   (Ref. root id))
+
+(defn ^boolean ref? [x]
+  (instance? Ref x))
 
 (defn refs [root & ids]
   (into [] (map #(ref root %)) ids))
