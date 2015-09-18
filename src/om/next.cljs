@@ -279,11 +279,16 @@
    (let [r      (get-reconciler c)
          cfg    (:config r)
          ref    ((:ui->ref cfg) c)
-         env    (assoc (select-keys cfg [:indexer :parser :state])
-                  :reconciler r :component c :ref ref)
+         env    (merge
+                  (select-keys cfg [:indexer :parser :state])
+                  {:reconciler r :component c}
+                  (when ref
+                    {:ref ref}))
          [v v'] ((:parser cfg) env `[(~name ~param-map)])]
      (when-not (empty? v)
-       (p/queue! r (transduce #(into %1 %2) [ref] (vals v))))
+       (p/queue! r
+         (transduce #(into %1 %2)
+           (if ref [ref] []) (vals v))))
      (when-not (empty? v')
        (p/queue-send! r v')
        (schedule-send! r)))))
@@ -328,16 +333,16 @@
   (index-component! [_ c]
     (swap! indexes
       (fn [idexes]
-        (-> idexes
-          (update-in [:type->components (type c)] (fnil conj #{}) c)
-          (update-in [:ref->components (ui->ref c)] (fnil conj #{}) c)))))
+        (let [ref (ui->ref c)]
+          (cond-> (update-in indexes [:type->components (type c)] (fnil conj #{}) c)
+            ref (update-in [:ref->components ref] (fnil conj #{}) c))))))
 
   (drop-component! [_ c]
     (swap! indexes
       (fn [indexes]
-        (-> indexes
-          (update-in [:type->components (type c)] disj c)
-          (update-in [:ref->components (ui->ref c)] disj c)))))
+        (let [ref (ui->ref c)]
+          (cond-> (update-in indexes [:type->components (type c)] disj c)
+            ref (update-in [:ref->components ref] disj c))))))
 
   (ref-for [_ component]
     (ui->ref component))
