@@ -279,7 +279,7 @@
    (let [r      (get-reconciler c)
          cfg    (:config r)
          env    (assoc (select-keys cfg [:indexer :parser :state])
-                  :reconciler r)
+                  :reconciler r :component c)
          [v v'] ((:parser cfg) env `[(~name ~param-map)])]
      (when-not (empty? v)
        (p/queue! r (transduce #(into %1 %2) [((:ui->ref cfg) c)] (vals v))))
