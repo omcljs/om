@@ -21,6 +21,9 @@
   Object
   (render [this]))
 
+;; -----------------------------------------------------------------------------
+;; Queries
+
 (deftest test-query
   (is (= (om/query Component)
          '[:foo/bar :baz/woz]))
@@ -32,6 +35,9 @@
          '[:foo/bar :baz/woz]))
   (is (= (om/get-query ComponentList)
          '[{:components/list [:foo/bar :baz/woz]} :app/title])))
+
+;; -----------------------------------------------------------------------------
+;; Indexer
 
 (deftest test-indexer
   (let [idxr (om/indexer identity)
@@ -49,6 +55,9 @@
              :ui->ref identity})]
     (is (instance? om/Indexer (get-in r [:config :indexer])))))
 
+;; -----------------------------------------------------------------------------
+;; Refs
+
 (deftest test-ref
   (let [r  (om/ref :foo 0)
         rs (om/refs :foo 0)]
@@ -56,6 +65,9 @@
     (is (= 0 (:id r)))
     (is (= :foo (:root (first rs))))
     (is (= 0 (:id (first rs))))))
+
+;; -----------------------------------------------------------------------------
+;; Parser
 
 (comment
   (run-tests)
