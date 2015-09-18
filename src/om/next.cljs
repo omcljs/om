@@ -80,12 +80,19 @@
 ;; =============================================================================
 ;; React Bridging
 
+(defn- compute-react-key [cl props]
+  (if-let [rk (:react-key props)]
+    rk
+    (if-let [idx (:om-index props)]
+      (str (. cl -name) "_" idx)
+      js/undefined)))
+
 (defn create-factory [cl]
   (fn [props & children]
     (if *instrument*
       (apply *instrument* props children)
       (js/React.createElement cl
-        #js {:key (or (:react-key props) js/undefined)
+        #js {:key (compute-react-key cl props)
              :omcljs$value props
              :omcljs$index (:om-index props)
              :omcljs$reconciler *reconciler*
