@@ -332,7 +332,7 @@
 
   (index-component! [_ c]
     (swap! indexes
-      (fn [idexes]
+      (fn [indexes]
         (let [ref (ui->ref c)]
           (cond-> (update-in indexes [:class->components (type c)] (fnil conj #{}) c)
             ref (update-in [:ref->components ref] (fnil conj #{}) c))))))
@@ -378,8 +378,7 @@
                                 *root-class* root-class]
                         (reset! ret
                           (js/React.render (rctor data) target))))
-            sel     (get-query root-class)
-            appst   (:state config)]
+            sel     (get-query root-class)]
         (swap! state update-in [:roots] assoc target renderf)
         (let [env    (assoc
                        (select-keys config [:state :indexer :parser])
