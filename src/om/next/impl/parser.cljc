@@ -7,7 +7,9 @@
         (assoc res sel value)
         res)
       (if-let [[_ quoted] (find ret :quote)]
-        (conj res quoted)
+        (if (true? quoted)
+          (conj res sel)
+          (conj res quoted))
         res))))
 
 (defn parse-call [call res quoted? env sel]
@@ -18,7 +20,9 @@
         (assoc res name value)
         res)
       (if-let [[_ quoted] (find ret :quote)]
-        (conj res quoted)
+        (if (true? quoted)
+          (conj res sel)
+          (conj res quoted))
         res))))
 
 (defn parse-ref [prop res quoted? env sel]
@@ -29,7 +33,9 @@
         (assoc res k' value)
         res)
       (if-let [[_ quoted] (find ret :quote)]
-        (conj res {k' quoted})
+        (if (true? quoted)
+          (conj res sel)
+          (conj res {k' quoted}))
         res))))
 
 (defn parser [{:keys [prop call]}]

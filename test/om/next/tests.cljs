@@ -78,21 +78,27 @@
 (defmulti prop (fn [env k] k))
 
 (defmethod prop :default
-  [env k] {:quote k})
+  [env k] {:quote true})
 
 (defmethod prop :foo/bar
   [{:keys [state]} k]
   (if-let [v (get @state k)]
     {:value v}
-    {:quote k}))
+    {:quote true}))
 
-(def p (om/parser {:prop prop}))
+(defmulti call (fn [env k params] k))
+
+(defmethod call 'do/it!
+  [{:keys [state]} k {:keys [id]}]
+  {:value [id] :quote true})
+
+(def p (om/parser {:prop prop :call call}))
 
 (defmethod prop :woz/noz
   [{:keys [state]} k]
   (if-let [v (get @state k)]
-    {:value v :quote k}
-    {:quote k}))
+    {:value v :quote true}
+    {:quote true}))
 
 (deftest test-basic-parsing
   (let [st (atom {:foo/bar 1})]
@@ -107,6 +113,12 @@
   (let [st (atom {:woz/noz 1})]
     (is (= (p {:state st} [:woz/noz]) {:woz/noz 1}))
     (is (= (p {:state st} [:woz/noz] true) [:woz/noz]))))
+
+(deftest test-call
+  (let [st (atom {:foo/bar 1})]
+    (is (= (p {:state st} '[(do/it! {:id 0})]) '{do/it! [0]}))
+    (is (= (p {} '[(do/it! {:id 0})] true)
+           '[(do/it! {:id 0})]))))
 
 (comment
   (run-tests)
