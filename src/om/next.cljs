@@ -104,6 +104,9 @@
              :omcljs$t (when *reconciler* (p/basis-t *reconciler*))}
         children))))
 
+(defn ^boolean component? [x]
+  (. x -om$isComponent))
+
 (defn state [c]
   (.-state c))
 
@@ -285,15 +288,17 @@
 (defn call
   ([c name] (call c name nil))
   ([c name param-map]
-   (let [r      (get-reconciler c)
-         cfg    (:config r)
-         ref    ((:ui->ref cfg) c)
-         env    (merge
-                  (select-keys cfg [:indexer :parser :state])
-                  {:reconciler r :component c}
-                  (when ref
-                    {:ref ref}))
-         [v v'] ((:parser cfg) env `[(~name ~param-map)])]
+   (let [r   (get-reconciler c)
+         cfg (:config r)
+         ref ((:ui->ref cfg) c)
+         env (merge
+               (select-keys cfg [:indexer :parser :state])
+               {:reconciler r :component c}
+               (when ref
+                 {:ref ref}))
+         exp `[(~name ~param-map)]
+         v   ((:parser cfg) env exp)
+         v'  ((:parser cfg) env exp true)]
      (when-not (empty? v)
        (p/queue! r
          (transduce #(into %1 %2)
@@ -389,10 +394,10 @@
                           (js/React.render (rctor data) target))))
             sel     (get-query root-class)]
         (swap! state update-in [:roots] assoc target renderf)
-        (let [env    (assoc
-                       (select-keys config [:state :indexer :parser])
-                       :reconciler this)
-              [v v'] ((:parser config) env sel)]
+        (let [env (assoc (select-keys config [:state :indexer :parser])
+                    :reconciler this)
+              v   ((:parser config) env sel)
+              v'  ((:parser config) env sel true)]
           (when-not (empty? v)
             (renderf v))
           (when-not (empty? v')

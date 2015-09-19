@@ -130,6 +130,7 @@
           (set! (.-prototype ~name) (goog.object/clone js/React.Component.prototype))
           (specify! (.-prototype ~name) ~@(reshape dt reshape-map))
           (set! (.. ~name -prototype -constructor) ~name)
+          (set! (.. ~name -prototype -om$isComponent) true)
           ~@(map #(field-set! name %) (:fields statics))
           (specify! ~name ~@(:protocols statics))
           (specify! (. ~name ~'-prototype) ~@(:protocols statics))

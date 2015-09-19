@@ -4,6 +4,9 @@
             [om.next.protocols :as p]
             [om.dom :as dom]))
 
+;; -----------------------------------------------------------------------------
+;; Components
+
 (defui Component
   static om/IQuery
   (query [this]
@@ -20,6 +23,9 @@
     '[{:components/list ?component} :app/title])
   Object
   (render [this]))
+
+(deftest test-component?
+  (is (om/component? (Component. {}))))
 
 ;; -----------------------------------------------------------------------------
 ;; Queries
