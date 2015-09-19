@@ -1,43 +1,52 @@
 (ns om.next.impl.parser)
 
-(defn parse-prop [prop res quoted env sel]
+(defn parse-prop [prop res quoted? env sel]
   (let [ret (prop env sel)]
-    (cond
-      (contains? ret :value) [(assoc res sel (:value ret)) quoted]
-      (contains? ret :quote) [res (conj quoted (:quote ret))]
-      :else [res quoted])))
+    (if-not quoted?
+      (if-let [[_ value] (find ret :value)]
+        (assoc res sel value)
+        res)
+      (if-let [[_ quoted] (find ret :quote)]
+        (conj res quoted)
+        res))))
 
-(defn parse-call [call res quoted env sel]
+(defn parse-call [call res quoted? env sel]
   (let [[name params] sel
         ret (call env name params)]
-    (cond
-      (contains? ret :value) [(assoc res name (:value ret)) quoted]
-      (contains? ret :quote) [res (conj quoted (:quote ret))]
-      :else [res quoted])))
+    (if-not quoted?
+      (if-let [[_ value] (find ret :value)]
+        (assoc res name value)
+        res)
+      (if-let [[_ quoted] (find ret :quote)]
+        (conj res quoted)
+        res))))
 
-(defn parse-ref [prop res quoted env sel]
+(defn parse-ref [prop res quoted? env sel]
   (let [[k' sel'] (first sel)
         ret (prop (assoc env :selector sel') k')]
-    [(if-let [[_ value] (find ret :value)]
-       (assoc res k' value)
-       res)
-     (if-let [[_ quoted'] (find ret :quote)]
-       (conj quoted {k' quoted'})
-       quoted)]))
+    (if-not quoted?
+      (if-let [[_ value] (find ret :value)]
+        (assoc res k' value)
+        res)
+      (if-let [[_ quoted] (find ret :quote)]
+        (conj res {k' quoted})
+        res))))
 
 (defn parser [{:keys [prop call]}]
-  (fn self [env sel]
-    (let [env (cond-> (assoc env :parser self)
-                (not (contains? env :path)) (assoc :path []))]
-      (letfn [(step [[res quoted] sel]
-                (cond
-                  (keyword? sel) (parse-prop prop res quoted env sel)
-                  (seq? sel) (parse-call call res quoted env sel)
-                  (map? sel) (parse-ref prop res quoted env sel)
-                  :else (throw
-                          (ex-info (str "Invalid expression " sel)
-                            {:type :error/invalid-expression}))))]
-        (reduce step [{} []] sel)))))
+  (fn self
+    ([env sel] (self env sel false))
+    ([env sel quoted?]
+     (let [env (cond-> (assoc env :parser self)
+                 (not (contains? env :path)) (assoc :path []))]
+       (letfn [(step [res sel]
+                 (cond
+                   (keyword? sel) (parse-prop prop res quoted? env sel)
+                   (seq? sel) (parse-call call res quoted? env sel)
+                   (map? sel) (parse-ref prop res quoted? env sel)
+                   :else (throw
+                           (ex-info (str "Invalid expression " sel)
+                             {:type :error/invalid-expression}))))]
+         (reduce step  (if-not quoted? {} []) sel))))))
 
 (comment
   (def state
@@ -79,8 +88,14 @@
 
   (p {:state state} [:todos/count :todos/user-icon])
 
+  (p {:state state} [:todos/count :todos/user-icon] true)
+
   (p {:state state}
     [:todos/count :todos/user-icon {:todos/list [:todo/title]}])
+
+  (p {:state state}
+    [:todos/count :todos/user-icon {:todos/list [:todo/title]}]
+    true)
 
   (let [new-todo {:todo/title "Pay more bills"}]
     (p {:state state} `[(todos/create ~new-todo)]))
