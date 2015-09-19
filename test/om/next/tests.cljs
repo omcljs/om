@@ -83,7 +83,13 @@
 (def p (om/parser {:prop prop}))
 
 (deftest test-basic-parsing
-  (is (= (p {} [:baz/woz]) [:baz/woz])))
+  (let [st (atom {:foo/bar 1})]
+    (is (= (p {} [:baz/woz]) {}))
+    (is (= (p {:state st} [:foo/bar]) {:foo/bar 1}))
+    (is (= (p {:state st} [:foo/bar :baz/woz]) {:foo/bar 1}))
+    (is (= (p {} [:baz/woz] true) [:baz/woz]))
+    (is (= (p {:state st} [:foo/bar] true) []))
+    (is (= (p {:state st} [:foo/bar :baz/woz] true) [:baz/woz]))))
 
 (comment
   (run-tests)
