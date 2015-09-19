@@ -86,19 +86,24 @@
     {:value v}
     {:quote true}))
 
+(defmethod prop :woz/noz
+  [{:keys [state]} k]
+  (if-let [v (get @state k)]
+    {:value v :quote true}
+    {:quote true}))
+
 (defmulti call (fn [env k params] k))
 
 (defmethod call 'do/it!
   [{:keys [state]} k {:keys [id]}]
   {:value [id] :quote true})
 
-(def p (om/parser {:prop prop :call call}))
+(defmethod call :user/pic
+  [env k {:keys [size]}]
+  (let [size-str (case size :small "50x50" :large "100x100")]
+    {:value (str "user" size-str ".png")}))
 
-(defmethod prop :woz/noz
-  [{:keys [state]} k]
-  (if-let [v (get @state k)]
-    {:value v :quote true}
-    {:quote true}))
+(def p (om/parser {:prop prop :call call}))
 
 (deftest test-basic-parsing
   (let [st (atom {:foo/bar 1})]
@@ -119,6 +124,11 @@
     (is (= (p {:state st} '[(do/it! {:id 0})]) '{do/it! [0]}))
     (is (= (p {} '[(do/it! {:id 0})] true)
            '[(do/it! {:id 0})]))))
+
+(deftest test-read-call
+  (let [st (atom {:foo/bar 1})]
+    (is (= (p {:state st} '[(:user/pic {:size :small})])
+           {:user/pic "user50x50.png"}))))
 
 (comment
   (run-tests)
