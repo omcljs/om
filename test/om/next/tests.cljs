@@ -88,6 +88,12 @@
 
 (def p (om/parser {:prop prop}))
 
+(defmethod prop :woz/noz
+  [{:keys [state]} k]
+  (if-let [v (get @state k)]
+    {:value v :quote k}
+    {:quote k}))
+
 (deftest test-basic-parsing
   (let [st (atom {:foo/bar 1})]
     (is (= (p {} [:baz/woz]) {}))
@@ -96,6 +102,11 @@
     (is (= (p {} [:baz/woz] true) [:baz/woz]))
     (is (= (p {:state st} [:foo/bar] true) []))
     (is (= (p {:state st} [:foo/bar :baz/woz] true) [:baz/woz]))))
+
+(deftest test-value-and-quote
+  (let [st (atom {:woz/noz 1})]
+    (is (= (p {:state st} [:woz/noz]) {:woz/noz 1}))
+    (is (= (p {:state st} [:woz/noz] true) [:woz/noz]))))
 
 (comment
   (run-tests)
