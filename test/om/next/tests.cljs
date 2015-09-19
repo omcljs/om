@@ -69,6 +69,22 @@
 ;; -----------------------------------------------------------------------------
 ;; Parser
 
+(defmulti prop (fn [env k] k))
+
+(defmethod prop :default
+  [env k] {:quote k})
+
+(defmethod prop :foo/bar
+  [{:keys [state]} k]
+  (if-let [v (get @state k)]
+    {:value v}
+    {:quote k}))
+
+(def p (om/parser {:prop prop}))
+
+(deftest test-basic-parsing
+  (is (= (p {} [:baz/woz]) [:baz/woz])))
+
 (comment
   (run-tests)
 
