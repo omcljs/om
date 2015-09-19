@@ -101,9 +101,21 @@
 (defmethod call :user/pic
   [env k {:keys [size]}]
   (let [size-str (case size :small "50x50" :large "100x100")]
-    {:value (str "user" size-str ".png")}))
+    {:value (str "user" size-str ".png") :quote true}))
 
 (def p (om/parser {:prop prop :call call}))
+
+(def todos-state
+  (atom
+    {:todos
+     {0 {:title "Walk dog"
+         :category 0}
+      1 {:title "Get milk"
+         :category 0}
+      2 {:title "Finish Om"
+         :category 1}}
+     :categories {0 :home 1 :work}
+     :todos/list [0 1 2]}))
 
 (deftest test-basic-parsing
   (let [st (atom {:foo/bar 1})]
@@ -128,7 +140,9 @@
 (deftest test-read-call
   (let [st (atom {:foo/bar 1})]
     (is (= (p {:state st} '[(:user/pic {:size :small})])
-           {:user/pic "user50x50.png"}))))
+           {:user/pic "user50x50.png"}))
+    (is (= (p {:state st} '[(:user/pic {:size :small})] true)
+           '[(:user/pic {:size :small})]))))
 
 (comment
   (run-tests)
