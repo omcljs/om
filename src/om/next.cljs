@@ -3,6 +3,7 @@
   (:require-macros [om.next :refer [defui]])
   (:require [goog.string :as gstring]
             [goog.object :as gobj]
+            [goog.dom :as gdom]
             [clojure.walk :as walk]
             [om.next.protocols :as p]
             [om.next.impl.parser :as parser]))
@@ -26,6 +27,9 @@
 
 ;; =============================================================================
 ;; Utilities
+
+(defn ^boolean nil-or-map? [x]
+  (or (nil? x) (map? x)))
 
 (defn filter-selector [sel path]
   (if (empty? path)
@@ -88,6 +92,7 @@
       js/undefined)))
 
 (defn create-factory [cl]
+  {:pre [(fn? cl)]}
   (fn [props & children]
     (if *instrument*
       (apply *instrument* props children)
@@ -108,6 +113,7 @@
   (. x -om$isComponent))
 
 (defn state [c]
+  {:pre [(component? c)]}
   (.-state c))
 
 (defn- get-prop [c k]
@@ -117,6 +123,7 @@
   (gobj/set (.-props c) k v))
 
 (defn get-reconciler [c]
+  {:pre [(component? c)]}
   (get-prop c "omcljs$reconciler"))
 
 (defn t [c]
@@ -141,24 +148,30 @@
   (get-prop c "omcljs$index"))
 
 (defn shared [c]
+  {:pre [(component? c)]}
   (get-prop c "omcljs$shared"))
 
 (defn instrument [c]
+  {:pre [(component? c)]}
   (get-prop c "omcljs$instrument"))
 
 (defn update-props! [c next-props]
+  {:pre [(component? c)]}
   (set-prop! c "omcljs$t" (p/basis-t (get-reconciler c)))
   (set-prop! c "omcljs$value" next-props))
 
 (defn props [c]
+  {:pre [(component? c)]}
   (get-prop c "omcljs$value"))
 
 (defn set-state! [c new-state]
+  {:pre [(component? c)]}
   (if (satisfies? ILocalState c)
     (-set-state! c new-state)
     (gobj/set (.-state c) "omcljs$pendingState" new-state)))
 
 (defn get-state [c]
+  {:pre [(component? c)]}
   (if (satisfies? ILocalState c)
     (-get-state c)
     (when-let [state (. c -state)]
@@ -181,6 +194,7 @@
      (apply f (get-state c) arg0 arg1 arg2 arg3 arg-rest))))
 
 (defn get-rendered-state [c]
+  {:pre [(component? c)]}
   (if (satisfies? ILocalState c)
     (-get-rendered-state c)
     (some-> c .-state .-omcljs$state)))
@@ -199,6 +213,7 @@
   ([c new-state]
    (react-set-state! c new-state nil))
   ([c new-state cb]
+   {:pre [(component? c)]}
    (.setState c #js {:omcljs$state new-state} nil)))
 
 ;; TODO: where to put queue mutations so that time travel can be
@@ -209,6 +224,7 @@
   )
 
 (defn mounted? [c]
+  {:pre [(component? c)]}
   (.isMounted c))
 
 (defn dom-node
@@ -226,6 +242,7 @@
   (.. c -props -children))
 
 (defn update-component! [c next-props]
+  {:pre [(component? c)]}
   (update-props! c next-props)
   (.forceUpdate c))
 
@@ -233,12 +250,15 @@
   ([c next-props]
    (should-update? c next-props nil))
   ([c next-props next-state]
+   {:pre [(component? c)]}
    (.shouldComponentUpdate c
      #js {:omcljs$value next-props}
      #js {:omcljs$state next-state})))
 
 ;; =============================================================================
 ;; Reconciler API
+
+(declare reconciler?)
 
 (defn basis-t [reconciler]
   (p/basis-t reconciler))
@@ -263,6 +283,7 @@
   ([reconciler target root-class]
    (add-root! reconciler target root-class nil))
   ([reconciler target root-class options]
+   {:pre [(reconciler? reconciler) (gdom/isElement target) (fn? root-class)]}
    (p/add-root! reconciler target root-class options)))
 
 (defn remove-root! [reconciler target]
@@ -288,6 +309,7 @@
 (defn call
   ([c name] (call c name nil))
   ([c name param-map]
+   {:pre [(component? c) (symbol? name) (nil-or-map? param-map)]}
    (let [r   (get-reconciler c)
          cfg (:config r)
          ref ((:ui->ref cfg) c)
@@ -311,6 +333,7 @@
 ;; Parser
 
 (defn parser [opts]
+  {:pre [(map? opts)]}
   (parser/parser opts))
 
 ;; =============================================================================
@@ -370,6 +393,9 @@
 
 (defn indexer [ui->ref]
   (Indexer. (atom {}) ui->ref))
+
+(defn ^boolean indexer? [x]
+  (instance? Indexer x))
 
 ;; =============================================================================
 ;; Reconciler
@@ -475,3 +501,6 @@
     (add-watch state :om/reconciler
       (fn [_ _ _ _] (schedule-render! ret)))
     ret))
+
+(defn ^boolean reconciler? [x]
+  (instance? Reconciler x))
