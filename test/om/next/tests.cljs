@@ -89,7 +89,8 @@
     (is (= :foo (:root r)))
     (is (= 0 (:id r)))
     (is (= :foo (:root (first rs))))
-    (is (= 0 (:id (first rs))))))
+    (is (= 0 (:id (first rs))))
+    (is (= (om/ref :foo 0) (om/ref :foo 0)))))
 
 ;; -----------------------------------------------------------------------------
 ;; Parser
