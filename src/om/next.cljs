@@ -569,7 +569,7 @@
       ps)))
 
 (defn reconciler
-  [{:keys [state parser indexer
+  [{:keys [state parser indexer resolve
            ui->ref ui->props
            send merge-send merge-state
            optimize]
@@ -583,7 +583,7 @@
   {:pre [(map? config)]}
   (let [idxr (indexer ui->ref)
         ret  (Reconciler.
-               {:state state :parser parser :indexer idxr
+               {:state state :parser parser :indexer idxr :resolve resolve
                 :ui->ref ui->ref :ui->props ui->props
                 :send send :merge-send merge-send :merge-state merge-state
                 :optimize optimize}
