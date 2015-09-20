@@ -545,7 +545,10 @@
   {:pre [(map? config)]}
   (let [idxr (indexer ui->ref)
         ret  (Reconciler.
-               (assoc config :indexer idxr)
+               {:state state :parser parser :indexer idxr
+                :ui->ref ui->ref :ui->props ui->props
+                :send send :merge-send merge-send :merge-state merge-state
+                :optimize optimize}
                (atom {:queue [] :queued false :pending-send nil
                       :send-queued false :roots {} :t 0}))]
     (add-watch state :om/reconciler
