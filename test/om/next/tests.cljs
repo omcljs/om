@@ -57,6 +57,10 @@
            [:baz/woz :bop/wop])
         [{:baz/woz [{:bop/wop [:nop/sop]}]}])))
 
+(deftest test-focus->path
+  (is (= (om/focus->path [{:baz/woz [{:bop/wop [:nop/sop]}]}])
+         [:baz/woz :bop/wop])))
+
 ;; -----------------------------------------------------------------------------
 ;; Indexer
 
