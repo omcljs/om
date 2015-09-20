@@ -45,14 +45,14 @@
   (is (= (om/get-query ComponentList)
          '[{:components/list [:foo/bar :baz/woz]} :app/title])))
 
-(deftest test-filter-selector
-  (is (= (om/filter-selector [:foo/bar] [])
+(deftest test-focus-selector
+  (is (= (om/focus-query [:foo/bar] [])
          [:foo/bar]))
-  (is (= (om/filter-selector
+  (is (= (om/focus-query
            [:foo/bar {:baz/woz [:goz/noz]}]
            [:baz/woz])
          [{:baz/woz [:goz/noz]}]))
-  (is (= (om/filter-selector
+  (is (= (om/focus-query
            [:foo/bar {:baz/woz [:goz/noz {:bop/wop [:nop/sop]} :cuz/wuz]}]
            [:baz/woz :bop/wop])
         [{:baz/woz [{:bop/wop [:nop/sop]}]}])))

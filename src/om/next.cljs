@@ -31,7 +31,7 @@
 (defn ^boolean nil-or-map? [x]
   (or (nil? x) (map? x)))
 
-(defn filter-selector [sel path]
+(defn focus-query [sel path]
   (if (empty? path)
     sel
     (let [[k & ks] path]
@@ -40,7 +40,7 @@
                  (= k k')))
              (value [x]
                (if (map? x)
-                 {(ffirst x) (filter-selector (-> x first second) ks)}
+                 {(ffirst x) (focus-query (-> x first second) ks)}
                  x))]
        (into [] (comp (filter match) (map value)) sel)))))
 
@@ -356,7 +356,7 @@
                 (swap! class->paths update-in [klass]
                   (fnil conj #{}) path)
                 (swap! classpath->query assoc classpath
-                  (filter-selector rootq path))
+                  (focus-query rootq path))
                 (let [{props true joins false} (group-by keyword? selector)]
                   (swap! prop->classes
                     #(merge-with into % (zipmap props (repeat #{klass}))))
@@ -374,7 +374,7 @@
            :class->selectors
            (reduce-kv
              (fn [ret class paths]
-               (assoc ret class (into #{} (map #(filter-selector rootq %)) paths)))
+               (assoc ret class (into #{} (map #(focus-query rootq %)) paths)))
              {} @class->paths)
            :class->components {}
            :ref->components {}
