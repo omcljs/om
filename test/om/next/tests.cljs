@@ -181,8 +181,8 @@
 
 (defmethod prop :todos/list
   [{:keys [state selector parse] :as env} _]
-  (let [st  @state
-        pf  #(parse (assoc env :data %) selector)]
+  (let [st @state
+        pf #(parse (assoc env :data %) selector)]
     {:value (into [] (comp (map (:todos st)) (map pf))
               (:todos/list st))}))
 

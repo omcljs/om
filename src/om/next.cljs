@@ -500,12 +500,13 @@
           (renderf @(:state config)))
         (let [cs (transduce (map #(p/key->components (:indexer config) %))
                    (completing into) #{} (:queue st))
-              {:keys [ui->props state]} config]
+              {:keys [ui->props state]} config
+              env (select-keys config [:state :parser :indexer :ui->ref])]
           (doseq [c ((:optimize config) cs)]
             ;; TODO: this should really be query-for or something like that
             ;; and we should just call parse again (opening the door for user
             ;; optimization)
-            (let [next-props (ui->props c)]
+            (let [next-props (ui->props env c)]
               (when (should-update? c next-props)
                 (update-component! c next-props))))
           (swap! state assoc :queue [])))
@@ -520,12 +521,22 @@
             (queue-calls! this res)
             (swap! (:state config) (:merge-state config) res)))))))
 
+(defn default-ui->props
+  [{:keys [state indexer]} c]
+  (let [st   @state
+        idxs @(:indexes indexer)
+        cp   (classpath c)
+        i    (index c)
+        path (get-in idxs [:classpath->query cp])]
+    (get-in st (cond-> path i (conj i)))))
+
 (defn reconciler
   [{:keys [state parser indexer
            ui->ref ui->props
            send merge-send merge-state
            optimize]
     :or {ui->ref     identity
+         ui->props   default-ui->props
          indexer     om.next/indexer
          merge-send  into
          merge-state merge
