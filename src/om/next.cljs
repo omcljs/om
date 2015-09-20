@@ -313,7 +313,8 @@
 ;; =============================================================================
 ;; Refs
 
-;; TODO: support conj so can be used as arg to update-in etc.
+;; TODO: support seq, conj so can be used as arg to update-in etc.
+;; TODO: convert to deftype
 
 (defrecord Ref [root id])
 
