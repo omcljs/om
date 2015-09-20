@@ -115,8 +115,8 @@
 (defmethod read :woz/noz
   [{:keys [state]} k params]
   (if-let [v (get @state k)]
-    {:value v :quote true}
-    {:quote true}))
+    {:value v :quote true} ;; local read AND remote read
+    {:quote true})) ;; no cached locally, must read remote
 
 (defmethod read :user/pic
   [env k {:keys [size]}]

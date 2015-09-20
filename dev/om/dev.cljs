@@ -27,13 +27,10 @@
 (defmethod call :default [_ k _]
   {:quote k})
 
-(defn get-ref [state {:keys [root id]}]
-  (get-in state [root id]))
-
 (defmethod prop :counters/list
   [{:keys [state]} _]
   (let [st @state]
-    {:value (into [] (map #(get-ref st %)) (:counters/list st))}))
+    {:value (into [] (map #(get-in st %)) (:counters/list st))}))
 
 (defmethod call 'counter/increment
   [{:keys [state ref]} _ _]
@@ -143,7 +140,7 @@
 (def reconciler
   (om/reconciler
     {:state app-state
-     :parser (om/parser {:prop prop :call call})
+     :parser (om/parser {:read prop :mutate call})
      :ui->ref ui->ref}))
 
 (om/add-root! reconciler
@@ -158,7 +155,7 @@
   (-> (om/build-index HelloWorld)
     :prop->component :id)
 
-  ((om/parser {:prop prop :call call})
+  ((om/parser {:read prop :mutate call})
     {:state app-state}
     (om/get-query HelloWorld))
   )
