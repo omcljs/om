@@ -154,6 +154,16 @@
     (is (= (p {:state st} '[(:user/pic {:size :small})] true)
            '[(:user/pic {:size :small})]))))
 
+(defmethod call 'mutate!
+  [{:keys [state]} k params]
+  (swap! state update-in [:count] inc))
+
+(deftest test-quote-does-not-mutate
+  (let [st (atom {:count 0})
+        _  (p {:state st} '[(mutate!)])
+        _  (p (:state st) '[(mutate!)] true)]
+    (is (= @st {:count 1}))))
+
 ;; -----------------------------------------------------------------------------
 ;; Recursive Parsing
 

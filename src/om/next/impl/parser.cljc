@@ -47,7 +47,8 @@
     ([env sel] (self env sel false))
     ([env sel ^boolean quoted?]
      (let [env (cond-> (assoc env :parse self)
-                 (not (contains? env :path)) (assoc :path []))]
+                 (not (contains? env :path)) (assoc :path [])
+                 quoted? (assoc :quoted true))]
        (letfn [(step [res sel]
                  (cond
                    (keyword? sel) (parse-prop prop res quoted? env sel)
