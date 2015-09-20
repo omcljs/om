@@ -161,15 +161,24 @@
   {:value (get-in @state [:categories (get data k)])})
 
 (defmethod prop :todos/list
-  [{:keys [state selector parse :as env]} _]
-  (let [todos (:todos/list state)
-        pf    #(parse (assoc env :data %) selector)]
-    {:value (into [] (map pf) state)}))
+  [{:keys [state selector parse] :as env} _]
+  (let [st  @state
+        pf  #(parse (assoc env :data %) selector)]
+    {:value (into [] (comp (map (:todos st)) (map pf))
+              (:todos/list st))}))
+
+(deftest test-recursive-parse
+  (is (= (p {:state todos-state} '[{:todos/list [:title :category]}])
+         '{:todos/list [{:title "Walk dog", :category :home}
+                        {:title "Get milk", :category :home}
+                        {:title "Finish Om Next", :category :work}]})))
 
 (comment
   (run-tests)
 
   (require '[cljs.pprint :as pp])
+
+  (p {:state todos-state} '[{:todos/list [:title :category]}])
 
   (let [idxr (om/indexer identity)]
     (pp/pprint (p/index-root idxr ComponentList)))

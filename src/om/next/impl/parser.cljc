@@ -42,7 +42,7 @@
   (fn self
     ([env sel] (self env sel false))
     ([env sel ^boolean quoted?]
-     (let [env (cond-> (assoc env :parser self)
+     (let [env (cond-> (assoc env :parse self)
                  (not (contains? env :path)) (assoc :path []))]
        (letfn [(step [res sel]
                  (cond
