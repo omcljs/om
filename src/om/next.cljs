@@ -323,7 +323,7 @@
          v'  ((:parser cfg) env exp true)]
      (when-not (empty? v)
        (p/queue! r
-         (transduce #(into %1 %2)
+         (transduce (map identity) (completing into)
            (if ref [ref] []) (vals v))))
      (when-not (empty? v')
        (p/queue-send! r v')
@@ -463,19 +463,19 @@
 
   ;; TODO: need to reindex roots after reconcilation
   (reconcile! [_]
-    (if (empty? (:queue @state))
-      (doseq [[_ renderf] (:roots @state)]
-        (renderf @(:state config)))
-      (let [cs (transduce (map #(p/key->components (:indexer config) %))
-                 #(into %1 %2) #{} @(:queue state))
-            {:keys [ui->ref state]} config
-            st @state]
-        (doseq [c ((:optimize config) cs)]
-          (let [next-props (get-in st (ui->ref c))]
-            (when (should-update? c next-props)
-              (update-component! c next-props))))
-        (swap! state assoc :queue [])))
-    (swap! state update-in [:queued] not))
+    (let [st @state]
+      (if (empty? (:queue st))
+        (doseq [[_ renderf] (:roots st)]
+          (renderf @(:state config)))
+        (let [cs (transduce (map #(p/key->components (:indexer config) %))
+                   (completing into) #{} (:queue st))
+              {:keys [ui->ref state]} config]
+          (doseq [c ((:optimize config) cs)]
+            (let [next-props (get-in st (ui->ref c))]
+              (when (should-update? c next-props)
+                (update-component! c next-props))))
+          (swap! state assoc :queue [])))
+      (swap! state update-in [:queued] not)))
 
   (send! [this]
     (let [expr (:pending-send @state)]
