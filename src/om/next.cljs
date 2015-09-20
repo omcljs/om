@@ -528,7 +528,7 @@
         cp   (classpath c)
         i    (index c)
         path (get-in idxs [:classpath->query cp])]
-    (get-in st (cond-> path i (conj i)))))
+    (get-in st (cond-> path (number? i) (conj i)))))
 
 (defn reconciler
   [{:keys [state parser indexer
