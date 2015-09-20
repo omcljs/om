@@ -411,6 +411,12 @@
 (defn ^boolean indexer? [x]
   (instance? Indexer x))
 
+(defn build-index
+  ([class] (build-index class identity))
+  ([class ui->ref]
+    (let [idxr (indexer ui->ref)]
+      (p/index-root idxr class))))
+
 ;; =============================================================================
 ;; Reconciler
 
