@@ -27,6 +27,9 @@
 (deftest test-component?
   (is (om/component? (Component. {}))))
 
+(deftest test-pr-str-component
+  (is (= (pr-str Component) "om.next.tests/Component")))
+
 ;; -----------------------------------------------------------------------------
 ;; Queries
 
