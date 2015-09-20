@@ -349,10 +349,10 @@
                 (let [{props true joins false} (group-by keyword? selector)]
                   (swap! prop->classes #(merge-with into % (zipmap props (repeat #{klass}))))
                   (doseq [join joins]
-                    (let [[attr sel] (first join)]
-                      (swap! prop->classes #(merge-with into % {attr #{klass}}))
-                      (let [cl (-> sel meta :component)]
-                        (build-index* cl sel (conj path attr)))))))]
+                    (let [[prop selector'] (first join)]
+                      (swap! prop->classes #(merge-with into % {prop #{klass}}))
+                      (let [klass' (-> selector' meta :component)]
+                        (build-index* klass' selector' (conj path prop)))))))]
         (build-index* klass rootq [])
         (reset! indexes
           {:prop->classes @prop->classes
@@ -364,6 +364,7 @@
              {} @class->paths)
            :class->components {}
            :ref->components {}
+           :classpath->query {}
            :component->path {}}))))
 
   (index-component! [_ c]
