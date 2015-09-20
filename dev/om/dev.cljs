@@ -41,11 +41,14 @@
     (swap! state update-in [root id :counter/count] inc))
   {:value []})
 
+;; TODO: doesn't work yet
+
 (defmethod call 'counters/delete
   [{:keys [state ref]} _ _]
-  (let [{:keys [db/id]} ref]
-    (swap! state update-in [:counters/list] remove #{id}))
+  (swap! state update-in [:counters/list] remove #{ref})
   {:value [:counters/list]})
+
+;; TODO: doesn't work yet
 
 (defmethod call 'counters/create
   [{:keys [state]} _ new-todo]

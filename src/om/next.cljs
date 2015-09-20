@@ -313,6 +313,8 @@
 ;; =============================================================================
 ;; Refs
 
+;; TODO: support conj so can be used as arg to update-in etc.
+
 (defrecord Ref [root id])
 
 (defn ref [root id]
