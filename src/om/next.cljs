@@ -166,10 +166,14 @@
   {:pre [(component? c)]}
   (get-prop c "omcljs$instrument"))
 
+;; TODO: this should set state
+
 (defn update-props! [c next-props]
   {:pre [(component? c)]}
   (set-prop! c "omcljs$t" (p/basis-t (get-reconciler c)))
   (set-prop! c "omcljs$value" next-props))
+
+;; TODO: this should read from state
 
 (defn props [c]
   {:pre [(component? c)]}
@@ -227,8 +231,7 @@
    {:pre [(component? c)]}
    (.setState c #js {:omcljs$state new-state} nil)))
 
-;; TODO: where to put queue mutations so that time travel can be
-;; preserved?
+;; TODO: where to put query mutations so that time travel can be preserved?
 ;; TODO: will need to reindex
 
 (defn update-query! [c bs]
