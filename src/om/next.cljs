@@ -348,16 +348,22 @@
   p/IIndexer
 
   (index-root [_ klass]
-    (let [class->paths  (atom {})
-          prop->classes (atom {})
-          rootq         (get-query klass)]
+    (let [class->paths     (atom {})
+          prop->classes    (atom {})
+          classpath->query (atom {})
+          rootq            (get-query klass)]
       (letfn [(build-index* [klass selector path classpath]
-                (swap! class->paths update-in [klass] (fnil conj #{}) path)
+                (swap! class->paths update-in [klass]
+                  (fnil conj #{}) path)
+                (swap! classpath->query assoc classpath
+                  (filter-selector rootq path))
                 (let [{props true joins false} (group-by keyword? selector)]
-                  (swap! prop->classes #(merge-with into % (zipmap props (repeat #{klass}))))
+                  (swap! prop->classes
+                    #(merge-with into % (zipmap props (repeat #{klass}))))
                   (doseq [join joins]
                     (let [[prop selector'] (first join)]
-                      (swap! prop->classes #(merge-with into % {prop #{klass}}))
+                      (swap! prop->classes
+                        #(merge-with into % {prop #{klass}}))
                       (let [klass' (-> selector' meta :component)]
                         (build-index* klass' selector'
                           (conj path prop) (conj classpath klass')))))))]
@@ -372,7 +378,7 @@
              {} @class->paths)
            :class->components {}
            :ref->components {}
-           :classpath->query {}
+           :classpath->query @classpath->query
            :component->path {}}))))
 
   (index-component! [_ c]
