@@ -469,12 +469,12 @@
           (renderf @(:state config)))
         (let [cs (transduce (map #(p/key->components (:indexer config) %))
                    (completing into) #{} (:queue st))
-              {:keys [ui->ref state]} config]
+              {:keys [ui->props state]} config]
           (doseq [c ((:optimize config) cs)]
             ;; TODO: this should really be query-for or something like that
             ;; and we should just call parse again (opening the door for user
             ;; optimization)
-            (let [next-props (get-in st (ui->ref c))]
+            (let [next-props (ui->props c)]
               (when (should-update? c next-props)
                 (update-component! c next-props))))
           (swap! state assoc :queue [])))
@@ -490,17 +490,19 @@
             (swap! (:state config) (:merge-state config) res)))))))
 
 (defn reconciler
-  [{:keys [state parser ui->ref send
+  [{:keys [state parser ui->ref ui->props send
            merge-send merge-state optimize]
-    :or {merge-send  into
+    :or {ui->ref     identity
+         merge-send  into
          merge-state merge
          optimize    (fn [cs] (sort-by depth cs))}
     :as config}]
   {:pre [(map? config)]}
-  (let [ret (Reconciler.
-              (assoc config :indexer (indexer ui->ref))
-              (atom {:queue [] :queued false :pending-send nil
-                     :send-queued false :roots {} :t 0}))]
+  (let [idxr (indexer ui->ref)
+        ret  (Reconciler.
+               (assoc config :indexer idxr)
+               (atom {:queue [] :queued false :pending-send nil
+                      :send-queued false :roots {} :t 0}))]
     (add-watch state :om/reconciler
       (fn [_ _ _ _] (schedule-render! ret)))
     ret))
