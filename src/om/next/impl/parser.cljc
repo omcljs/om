@@ -1,9 +1,7 @@
 (ns om.next.impl.parser)
 
-;; TODO: unify prop & call
-
-(defn parse-prop [prop res ^boolean quoted? env sel]
-  (let [ret (prop env sel)]
+(defn parse-prop [read res ^boolean quoted? env sel]
+  (let [ret (read env sel {})]
     (if-not quoted?
       (if-let [[_ value] (find ret :value)]
         (assoc res sel value)
@@ -14,11 +12,14 @@
           (conj res quoted))
         res))))
 
-(defn parse-call [call res ^boolean quoted? env sel]
+(defn parse-call [read mutate res ^boolean quoted? env sel]
   (let [[name params] sel
-        ret (if (and quoted? (symbol? name))
-              {:quote true}
-              (call env name params))]
+        mutation? (symbol? name)
+        ret (if mutation?
+              (if quoted?
+                {:quote true}
+                (mutate env name params))
+              (read env name params))]
     (if-not quoted?
       (if-let [[_ value] (find ret :value)]
         (assoc res name value)
@@ -29,9 +30,9 @@
           (conj res quoted))
         res))))
 
-(defn parse-ref [prop res ^boolean quoted? env sel]
+(defn parse-ref [read res ^boolean quoted? env sel]
   (let [[k' sel'] (first sel)
-        ret (prop (assoc env :selector sel') k')]
+        ret (read (assoc env :selector sel') k' {})]
     (if-not quoted?
       (if-let [[_ value] (find ret :value)]
         (assoc res k' value)
@@ -42,7 +43,7 @@
           (conj res {k' quoted}))
         res))))
 
-(defn parser [{:keys [prop call]}]
+(defn parser [{:keys [read mutate]}]
   (fn self
     ([env sel] (self env sel false))
     ([env sel ^boolean quoted?]
@@ -51,9 +52,9 @@
                  quoted? (assoc :quoted true))]
        (letfn [(step [res sel]
                  (cond
-                   (keyword? sel) (parse-prop prop res quoted? env sel)
-                   (seq? sel) (parse-call call res quoted? env sel)
-                   (map? sel) (parse-ref prop res quoted? env sel)
+                   (keyword? sel) (parse-prop read res quoted? env sel)
+                   (seq? sel) (parse-call read mutate res quoted? env sel)
+                   (map? sel) (parse-ref read res quoted? env sel)
                    :else (throw
                            (ex-info (str "Invalid expression " sel)
                              {:type :error/invalid-expression}))))]

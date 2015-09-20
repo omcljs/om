@@ -98,38 +98,38 @@
 ;; -----------------------------------------------------------------------------
 ;; Parser
 
-(defmulti prop (fn [env k] k))
+(defmulti read (fn [env k params] k))
 
-(defmethod prop :default
-  [{:keys [state data]} k]
+(defmethod read :default
+  [{:keys [state data]} k params]
   (if (and (not (nil? data)) (contains? data k))
     {:value (get data k)}
     {:quote true}))
 
-(defmethod prop :foo/bar
-  [{:keys [state]} k]
+(defmethod read :foo/bar
+  [{:keys [state]} k params]
   (if-let [v (get @state k)]
     {:value v}
     {:quote true}))
 
-(defmethod prop :woz/noz
-  [{:keys [state]} k]
+(defmethod read :woz/noz
+  [{:keys [state]} k params]
   (if-let [v (get @state k)]
     {:value v :quote true}
     {:quote true}))
 
-(defmulti call (fn [env k params] k))
-
-(defmethod call 'do/it!
-  [{:keys [state]} k {:keys [id]}]
-  {:value [id] :quote true})
-
-(defmethod call :user/pic
+(defmethod read :user/pic
   [env k {:keys [size]}]
   (let [size-str (case size :small "50x50" :large "100x100")]
     {:value (str "user" size-str ".png") :quote true}))
 
-(def p (om/parser {:prop prop :call call}))
+(defmulti mutate (fn [env k params] k))
+
+(defmethod mutate 'do/it!
+  [{:keys [state]} k {:keys [id]}]
+  {:value [id] :quote true})
+
+(def p (om/parser {:read read :mutate mutate}))
 
 (deftest test-basic-parsing
   (let [st (atom {:foo/bar 1})]
@@ -158,7 +158,7 @@
     (is (= (p {:state st} '[(:user/pic {:size :small})] true)
            '[(:user/pic {:size :small})]))))
 
-(defmethod call 'mutate!
+(defmethod mutate 'mutate!
   [{:keys [state]} k params]
   (swap! state update-in [:count] inc))
 
@@ -189,11 +189,11 @@
      :categories {0 :home 1 :work}
      :todos/list [0 1 2]}))
 
-(defmethod prop :category
+(defmethod read :category
   [{:keys [state data]} k]
   {:value (get-in @state [:categories (get data k)])})
 
-(defmethod prop :todos/list
+(defmethod read :todos/list
   [{:keys [state selector parse] :as env} _]
   (let [st @state
         pf #(parse (assoc env :data %) selector)]
