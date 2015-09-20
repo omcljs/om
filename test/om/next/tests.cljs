@@ -78,7 +78,10 @@
 (defmulti prop (fn [env k] k))
 
 (defmethod prop :default
-  [env k] {:quote true})
+  [{:keys [state data]} k]
+  (if (and (not (nil? data)) (contains? data k))
+    {:value (get data k)}
+    {:quote true}))
 
 (defmethod prop :foo/bar
   [{:keys [state]} k]
@@ -104,18 +107,6 @@
     {:value (str "user" size-str ".png") :quote true}))
 
 (def p (om/parser {:prop prop :call call}))
-
-(def todos-state
-  (atom
-    {:todos
-     {0 {:title "Walk dog"
-         :category 0}
-      1 {:title "Get milk"
-         :category 0}
-      2 {:title "Finish Om"
-         :category 1}}
-     :categories {0 :home 1 :work}
-     :todos/list [0 1 2]}))
 
 (deftest test-basic-parsing
   (let [st (atom {:foo/bar 1})]
@@ -143,6 +134,37 @@
            {:user/pic "user50x50.png"}))
     (is (= (p {:state st} '[(:user/pic {:size :small})] true)
            '[(:user/pic {:size :small})]))))
+
+;; -----------------------------------------------------------------------------
+;; Recursive Parsing
+
+(def todos-state
+  (atom
+    {:todos
+     {0 {:id 0
+         :title "Walk dog"
+         :completed false
+         :category 0}
+      1 {:id 0
+         :title "Get milk"
+         :completed true
+         :category 0}
+      2 {:id 0
+         :title "Finish Om Next"
+         :completed false
+         :category 1}}
+     :categories {0 :home 1 :work}
+     :todos/list [0 1 2]}))
+
+(defmethod prop :category
+  [{:keys [state data]} k]
+  {:value (get-in @state [:categories (get data k)])})
+
+(defmethod prop :todos/list
+  [{:keys [state selector parse :as env]} _]
+  (let [todos (:todos/list state)
+        pf    #(parse (assoc env :data %) selector)]
+    {:value (into [] (map pf) state)}))
 
 (comment
   (run-tests)
