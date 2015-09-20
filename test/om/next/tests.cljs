@@ -90,7 +90,10 @@
     (is (= 0 (:id r)))
     (is (= :foo (:root (first rs))))
     (is (= 0 (:id (first rs))))
-    (is (= (om/ref :foo 0) (om/ref :foo 0)))))
+    (is (= (om/ref :foo 0) (om/ref :foo 0)))
+    (is (= (seq (om/ref :foo 0)) [:foo 0]))
+    (is (= (seq (conj (om/ref :foo 0) :bar)) [:foo 0 :bar]))
+    (is (= (get-in {:foo {:bar {:baz 1}}} (om/ref :foo :bar :baz)) 1))))
 
 ;; -----------------------------------------------------------------------------
 ;; Parser
