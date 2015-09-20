@@ -255,6 +255,13 @@
      #js {:omcljs$value next-props}
      #js {:omcljs$state next-state})))
 
+(defn classpath [c]
+  {:pre [(component? c)]}
+  (loop [c c ret (list (type c))]
+    (if-let [p (parent c)]
+      (recur p (cons (type p) ret))
+      ret)))
+
 ;; =============================================================================
 ;; Reconciler API
 
@@ -344,7 +351,7 @@
     (let [class->paths  (atom {})
           prop->classes (atom {})
           rootq         (get-query klass)]
-      (letfn [(build-index* [klass selector path]
+      (letfn [(build-index* [klass selector path classpath]
                 (swap! class->paths update-in [klass] (fnil conj #{}) path)
                 (let [{props true joins false} (group-by keyword? selector)]
                   (swap! prop->classes #(merge-with into % (zipmap props (repeat #{klass}))))
@@ -352,8 +359,9 @@
                     (let [[prop selector'] (first join)]
                       (swap! prop->classes #(merge-with into % {prop #{klass}}))
                       (let [klass' (-> selector' meta :component)]
-                        (build-index* klass' selector' (conj path prop)))))))]
-        (build-index* klass rootq [])
+                        (build-index* klass' selector'
+                          (conj path prop) (conj classpath klass')))))))]
+        (build-index* klass rootq [] [klass])
         (reset! indexes
           {:prop->classes @prop->classes
            :class->paths @class->paths
