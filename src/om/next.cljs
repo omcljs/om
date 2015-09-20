@@ -489,9 +489,12 @@
             (swap! (:state config) (:merge-state config) res)))))))
 
 (defn reconciler
-  [{:keys [state parser ui->ref ui->props send
-           merge-send merge-state optimize]
+  [{:keys [state parser indexer
+           ui->ref ui->props
+           send merge-send merge-state
+           optimize]
     :or {ui->ref     identity
+         indexer     om.next/indexer
          merge-send  into
          merge-state merge
          optimize    (fn [cs] (sort-by depth cs))}
