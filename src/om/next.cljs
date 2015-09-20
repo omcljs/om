@@ -166,18 +166,16 @@
   {:pre [(component? c)]}
   (get-prop c "omcljs$instrument"))
 
-;; TODO: this should set state
-
 (defn update-props! [c next-props]
   {:pre [(component? c)]}
-  (set-prop! c "omcljs$t" (p/basis-t (get-reconciler c)))
-  (set-prop! c "omcljs$value" next-props))
-
-;; TODO: this should read from state
+  (gobj/set (.-state c) "omcljs$t" (p/basis-t (get-reconciler c)))
+  (gobj/set (.-state c) "omcljs$value" next-props))
 
 (defn props [c]
   {:pre [(component? c)]}
-  (get-prop c "omcljs$value"))
+  (let [cst (.-state c)]
+    (or (and (not (nil? cst)) (gobj/get cst "omcljs$value"))
+        (get-prop c "omcljs$value"))))
 
 (defn set-state! [c new-state]
   {:pre [(component? c)]}

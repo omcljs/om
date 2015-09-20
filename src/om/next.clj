@@ -125,8 +125,10 @@
           (defn ~name []
             (this-as this#
               (.apply js/React.Component this# (js-arguments))
-              (when-not (nil? (.-getInitialState this#))
-                (goog.object/set this# "state" (.getInitialState this#)))))
+              (if-not (nil? (.-getInitialState this#))
+                (set! (.-state this#) (.getInitialState this#))
+                (set! (.-state this#) (cljs.core/js-obj)))
+              this#))
           (set! (.-prototype ~name) (goog.object/clone js/React.Component.prototype))
           (specify! (.-prototype ~name) ~@(reshape dt reshape-map))
           (set! (.. ~name -prototype -constructor) ~name)
