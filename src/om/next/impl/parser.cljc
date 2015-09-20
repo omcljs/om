@@ -1,5 +1,7 @@
 (ns om.next.impl.parser)
 
+;; TODO: unify prop & call
+
 (defn parse-prop [prop res ^boolean quoted? env sel]
   (let [ret (prop env sel)]
     (if-not quoted?
@@ -14,7 +16,9 @@
 
 (defn parse-call [call res ^boolean quoted? env sel]
   (let [[name params] sel
-        ret (call env name params)]
+        ret (if (and quoted? (symbol? name))
+              {:quote true}
+              (call env name params))]
     (if-not quoted?
       (if-let [[_ value] (find ret :value)]
         (assoc res name value)

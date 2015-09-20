@@ -527,8 +527,14 @@
         idxs @(:indexes indexer)
         cp   (classpath c)
         i    (index c)
-        path (get-in idxs [:classpath->query cp])]
-    (get-in st (cond-> path (number? i) (conj i)))))
+        path (get-in idxs [:classpath->query cp])
+        ps   (get-in st
+               (cond-> (focus->path path)
+                 (number? i) (conj i)))]
+    (if (ref? ps)
+      (let [{:keys [root id]} ps]
+        (get-in st [root id]))
+      ps)))
 
 (defn reconciler
   [{:keys [state parser indexer
