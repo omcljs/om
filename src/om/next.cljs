@@ -471,6 +471,9 @@
                    (completing into) #{} (:queue st))
               {:keys [ui->ref state]} config]
           (doseq [c ((:optimize config) cs)]
+            ;; TODO: this should really be query-for or something like that
+            ;; and we should just call parse again (opening the door for user
+            ;; optimization)
             (let [next-props (get-in st (ui->ref c))]
               (when (should-update? c next-props)
                 (update-component! c next-props))))
