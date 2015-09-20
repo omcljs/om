@@ -322,9 +322,7 @@
          v   ((:parser cfg) env exp)
          v'  ((:parser cfg) env exp true)]
      (when-not (empty? v)
-       (p/queue! r
-         (transduce (map identity) (completing into)
-           (if ref [ref] []) (vals v))))
+       (p/queue! r (reduce into (if ref [ref] []) (vals v))))
      (when-not (empty? v')
        (p/queue-send! r v')
        (schedule-send! r)))))
@@ -365,7 +363,8 @@
                (assoc ret class (into #{} (map #(filter-selector rootq %)) paths)))
              {} @class->paths)
            :class->components {}
-           :ref->components {}}))))
+           :ref->components {}
+           :component->path {}}))))
 
   (index-component! [_ c]
     (swap! indexes
@@ -402,7 +401,7 @@
 
 (defn queue-calls! [r res]
   (let [call-ks (into [] (filter symbol?) (keys res))]
-    (p/queue! r (transduce (map res) #(into %1 %2) [] call-ks))))
+    (p/queue! r (transduce (map res) (completing into) [] call-ks))))
 
 (defrecord Reconciler [config state]
   p/IReconciler
