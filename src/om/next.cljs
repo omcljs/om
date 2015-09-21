@@ -275,7 +275,7 @@
 
 (defn data-path [c]
   {:pre [(component? c)]}
-  (loop [c c ret (list (type c))]
+  (loop [c c ret (list (or (index c) '*))]
     (if-let [p (parent c)]
       (recur p (cons (or (index p) '*) ret))
       ret)))

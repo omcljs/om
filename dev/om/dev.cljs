@@ -153,17 +153,18 @@
   (gdom/getElement "app") HelloWorld)
 
 (comment
-  (ui->ref (counter {:db/id 0 :counter/count 0}))
-
   (require '[cljs.pprint :as pprint])
+
   (pprint/pprint (om/build-index HelloWorld))
 
-  (-> (om/build-index HelloWorld)
-    :prop->component :id)
+  (def idxr (get-in reconciler [:config :indexer]))
 
-  ((om/parser {:read prop :mutate call})
-    {:state app-state}
-    (om/get-query HelloWorld))
+  (pprint/pprint @(:indexes idxr))
+
+  ;; works
+  (om/data-path
+    (first (get-in @(:indexes idxr)
+             [:ref->components (om/ref :app/counters 1)])))
   )
 
 ;(def db
