@@ -293,14 +293,15 @@
        (map? (first x))))
 
 (defn state-path [focus data-path]
-  (loop [focus focus data-path data-path]
-    (if (focused? focus)
-      (let [[k v] (ffirst focus)
-            index (first data-path)]
-        (if-not (= '* index)
-          [(list {k (state-path v (rest data-path))} {:index index})]
-          [{k (state-path v (rest data-path))}]))
-      focus)))
+  (letfn [(state-path* [focus data-path]
+            (if (focused? focus)
+              (let [[k v] (ffirst focus)
+                    index (first data-path)]
+                (if-not (= '* index)
+                  [(list {k (state-path v (rest data-path))} {:index index})]
+                  [{k (state-path v (rest data-path))}]))
+              focus))]
+    (state-path* focus (rest data-path))))
 
 ;; =============================================================================
 ;; Reconciler API

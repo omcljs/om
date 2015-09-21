@@ -161,10 +161,19 @@
 
   (pprint/pprint @(:indexes idxr))
 
-  ;; works
-  (om/data-path
+  (def c
     (first (get-in @(:indexes idxr)
              [:ref->components (om/ref :app/counters 1)])))
+
+  ;; works
+  (def dp (om/data-path c))
+
+  (def cp (om/class-path c))
+
+  (def q (get-in @(:indexes idxr) [:classpath->query cp]))
+
+  ;; TODO: doesn't work
+  (om/state-path q dp)
   )
 
 ;(def db

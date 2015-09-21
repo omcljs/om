@@ -64,7 +64,7 @@
          [])))
 
 (deftest test-state-path
-  (is (= (om/state-path [{:todos/list [:title]}] '(1))
+  (is (= (om/state-path [{:todos/list [:title]}] '(* 1))
          '[({:todos/list [:title]} {:index 1})])))
 
 ;; -----------------------------------------------------------------------------
