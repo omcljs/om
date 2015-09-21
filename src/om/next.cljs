@@ -443,10 +443,12 @@
 
   (key->components [_ k]
     (let [indexes @indexes]
-      (if (ref? k)
-        (get-in indexes [:ref->components k])
-        (get-in indexes
-          [:class->components (get-in indexes [:prop->component] k)])))))
+      (cond
+        (ref? k) (get-in indexes [:ref->components k])
+        (keyword? k) (let [cs (get-in indexes [:prop->classes k])]
+                       (transduce (map #(get-in indexes [:class->components %]))
+                         (completing into) #{} cs))
+        :else (throw (js/Error. (str "Invalid key " k ", key must be ref or keyword")))))))
 
 (defn indexer [ui->ref]
   (Indexer. (atom {}) ui->ref))
