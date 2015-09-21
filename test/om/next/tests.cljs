@@ -168,6 +168,15 @@
         _  (p (:state st) '[(mutate!)] true)]
     (is (= @st {:count 1}))))
 
+(defmethod read :now/wow
+  [{:keys [state selector]} k params]
+  {:value {:selector selector :params params}})
+
+(deftest test-parameterized-ref
+  (let [st (atom {:foo/bar 1})]
+    (is (= (p {:state st} '[({:now/wow [:a :b]} {:slice [10 20]})])
+           '{:now/wow {:selector [:a :b] :params {:slice [10 20]}}}))))
+
 ;; -----------------------------------------------------------------------------
 ;; Recursive Parsing
 

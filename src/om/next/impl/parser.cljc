@@ -13,13 +13,18 @@
         res))))
 
 (defn parse-call [read mutate res ^boolean quoted? env sel]
-  (let [[name params] sel
-        mutation? (symbol? name)
-        ret (if mutation?
-              (if quoted?
-                {:quote true}
-                (mutate env name params))
-              (read env name params))]
+  (let [[name params]   sel
+        [name selector] (if (map? name)
+                          (first name)
+                          [name nil])
+        env             (cond-> env selector
+                          (assoc :selector selector))
+        mutation?       (symbol? name)
+        ret             (if mutation?
+                          (if quoted?
+                            {:quote true}
+                            (mutate env name params))
+                          (read env name params))]
     (if-not quoted?
       (if-let [[_ value] (find ret :value)]
         (assoc res name value)
