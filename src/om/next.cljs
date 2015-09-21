@@ -266,11 +266,18 @@
      #js {:omcljs$value next-props}
      #js {:omcljs$state next-state})))
 
-(defn classpath [c]
+(defn class-path [c]
   {:pre [(component? c)]}
   (loop [c c ret (list (type c))]
     (if-let [p (parent c)]
       (recur p (cons (type p) ret))
+      ret)))
+
+(defn data-path [c]
+  {:pre [(component? c)]}
+  (loop [c c ret (list (type c))]
+    (if-let [p (parent c)]
+      (recur p (cons (or (index p) '*) ret))
       ret)))
 
 ;; =============================================================================
@@ -555,7 +562,7 @@
   [{:keys [state indexer]} c]
   (let [st   @state
         idxs @(:indexes indexer)
-        cp   (classpath c)
+        cp   (class-path c)
         i    (index c)
         fcs  (get-in idxs [:classpath->query cp])
         ps   (get-in st
