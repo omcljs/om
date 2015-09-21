@@ -42,7 +42,12 @@
 
 (defmethod call 'counters/delete
   [{:keys [state ref]} _ _]
-  (swap! state update-in [:counters/list] remove #{ref})
+  (println ref)
+  (swap! state
+    (fn [state]
+      (-> state
+        (update-in (pop ref) dissoc (peek ref))
+        (update-in [:counters/list] #(vec (remove #{ref} %))))))
   {:value [:counters/list]})
 
 ;; TODO: doesn't work yet
@@ -51,10 +56,11 @@
   [{:keys [state]} _ new-todo]
   (swap! state
     (fn [state]
-      (let [new-todo (merge new-todo
-                       {:db/id (:counters/cur-id state)})]
+      (let [id (:counters/cur-id state)
+            new-todo (merge new-todo {:db/id id})]
         (-> state
-          (update-in [:counters/list] conj new-todo)
+          (update-in [:app/counters] conj new-todo)
+          (update-in [:counters/list] conj (om/ref :app/counters id))
           (update-in [:counters/cur-id] inc)))))
   {:value [:counters/list]})
 
