@@ -91,6 +91,9 @@
   (with-meta (bind-query (query cl) (params cl))
     {:component cl}))
 
+(defn iquery? [x]
+  (satisfies? IQuery x))
+
 ;; =============================================================================
 ;; React Bridging
 
@@ -273,12 +276,31 @@
       (recur p (cons (type p) ret))
       ret)))
 
-(defn data-path [c]
-  {:pre [(component? c)]}
-  (loop [c c ret (list (or (index c) '*))]
-    (if-let [p (parent c)]
-      (recur p (cons (or (index p) '*) ret))
-      ret)))
+(defn data-path
+  ([c]
+   (let [f (fn [c] (and (iquery? c) (index c)))]
+     (data-path c f)))
+  ([c f]
+   {:pre [(component? c) (fn? f)]}
+   (loop [c c ret (list (or (f c) '*))]
+     (if-let [p (parent c)]
+       (recur p (cons (or (f p) '*) ret))
+       ret))))
+
+(defn focused? [x]
+  (and (vector? x)
+       (== 1 (count x))
+       (map? (first x))))
+
+(defn state-path [focus data-path]
+  (loop [focus focus data-path data-path]
+    (if (focused? focus)
+      (let [[k v] (ffirst focus)
+            index (first data-path)]
+        (if-not (= '* index)
+          [(list {k (state-path v (rest data-path))} {:index index})]
+          [{k (state-path v (rest data-path))}]))
+      focus)))
 
 ;; =============================================================================
 ;; Reconciler API
