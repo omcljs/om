@@ -50,7 +50,7 @@
    {:pre [(vector? focus)]}
    (if (some map? focus)
      (do
-       (assert (= 1 (count focus)) (str next " is not a valid focus"))
+       (assert (= 1 (count focus)) (str focus " is not a valid focus"))
        (let [[k focus'] (ffirst focus)]
          (recur focus' (conj path k))))
      path)))
@@ -558,9 +558,9 @@
         idxs @(:indexes indexer)
         cp   (classpath c)
         i    (index c)
-        path (get-in idxs [:classpath->query cp])
+        fcs  (get-in idxs [:classpath->query cp])
         ps   (get-in st
-               (cond-> (focus->path path)
+               (cond-> (focus->path fcs)
                  (number? i) (conj i)))]
     (if (ref? ps)
       (let [{:keys [root id]} ps]
