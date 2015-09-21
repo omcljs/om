@@ -312,6 +312,9 @@
 ;; Refs
 
 (deftype Ref [path]
+  IPrintWithWriter
+  (-pr-writer [this writer opts]
+    (-write writer (str "#object[om.next.Ref " path "]")))
   IHash
   (-hash [this]
     (-hash path))
