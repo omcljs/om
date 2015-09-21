@@ -48,11 +48,10 @@
   ([focus] (focus->path focus []))
   ([focus path]
    {:pre [(vector? focus)]}
-   (if (some map? focus)
-     (do
-       (assert (= 1 (count focus)) (str focus " is not a valid focus"))
-       (let [[k focus'] (ffirst focus)]
-         (recur focus' (conj path k))))
+   (if (and (some map? focus)
+            (== 1 (count focus)))
+     (let [[k focus'] (ffirst focus)]
+       (recur focus' (conj path k)))
      path)))
 
 ;; =============================================================================

@@ -59,7 +59,9 @@
 
 (deftest test-focus->path
   (is (= (om/focus->path [{:baz/woz [{:bop/wop [:nop/sop]}]}])
-         [:baz/woz :bop/wop])))
+         [:baz/woz :bop/wop]))
+  (is (= (om/focus->path [:app/title {:counters/list [:db/id :counter/count]}])
+         [])))
 
 ;; -----------------------------------------------------------------------------
 ;; Indexer
