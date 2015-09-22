@@ -218,7 +218,7 @@
   {:pre [(component? c)]}
   (if (satisfies? ILocalState c)
     (-get-rendered-state c)
-    (some-> c .-state .-omcljs$state)))
+    (some-> c .-state (gobj/get "omcljs$state"))))
 
 (defn merge-pending-state! [c]
   (if (satisfies? ILocalState c)
@@ -438,12 +438,12 @@
   (index-root [_ klass]
     (let [class->paths     (atom {})
           prop->classes    (atom {})
-          classpath->query (atom {})
+          class-path->query (atom {})
           rootq            (get-query klass)]
       (letfn [(build-index* [klass selector path classpath]
                 (swap! class->paths update-in [klass]
                   (fnil conj #{}) path)
-                (swap! classpath->query assoc classpath
+                (swap! class-path->query assoc classpath
                   (focus-query rootq path))
                 (let [{props true joins false} (group-by keyword? selector)]
                   (swap! prop->classes
@@ -466,7 +466,7 @@
              {} @class->paths)
            :class->components {}
            :ref->components {}
-           :classpath->query @classpath->query
+           :class-path->query @class-path->query
            :component->path {}}))))
 
   (index-component! [_ c]
@@ -603,7 +603,7 @@
   [{:keys [state indexer parser] :as env} c]
   (let [st   @state
         idxs @(:indexes indexer)
-        fcs  (get-in idxs [:classpath->query (class-path c)])
+        fcs  (get-in idxs [:class-path->query (class-path c)])
         ps   (get-in (parser env fcs) (state-path fcs (data-path c)))]
     (if (ref? ps)
       (let [{:keys [root id]} ps]

@@ -159,7 +159,7 @@
 
   (def cp (om/class-path c))
 
-  (def q (get-in @(:indexes idxr) [:classpath->query cp]))
+  (def q (get-in @(:indexes idxr) [:class-path->query cp]))
 
   ;; TODO: doesn't work
   (om/state-path q dp)
