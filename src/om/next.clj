@@ -72,7 +72,7 @@
       `(~name ~args
          (binding [om.next/*reconciler* (om.next/get-reconciler ~this)
                    om.next/*root-class* (om.next/root-class ~this)
-                   om.next/*depth*      (om.next/depth ~this)
+                   om.next/*depth*      (inc (om.next/depth ~this))
                    om.next/*shared*     (om.next/shared ~this)
                    om.next/*instrument* (om.next/instrument ~this)
                    om.next/*parent*     ~this]
