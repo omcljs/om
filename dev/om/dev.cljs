@@ -80,20 +80,20 @@
 (def counter (om/create-factory Counter))
 
 ;; -----------------------------------------------------------------------------
-;; HelloWorldTitle
+;; CountersAppTitle
 
-(defui HelloWorldTitle
+(defui CountersAppTitle
   Object
   (render [this]
     (apply dom/div nil
       (om/children this))))
 
-(def app-title (om/create-factory HelloWorldTitle))
+(def app-title (om/create-factory CountersAppTitle))
 
 ;; -----------------------------------------------------------------------------
-;; HelloWorld
+;; CountersApp
 
-(defui HelloWorld
+(defui CountersApp
   static om/IQueryParams
   (params [this]
     {:counter (om/get-query Counter)})
@@ -139,12 +139,12 @@
                   c))}))
 
 (om/add-root! reconciler
-  (gdom/getElement "app") HelloWorld)
+  (gdom/getElement "app") CountersApp)
 
 (comment
   (require '[cljs.pprint :as pprint])
 
-  (pprint/pprint (om/build-index HelloWorld))
+  (pprint/pprint (om/build-index CountersApp))
 
   (def idxr (get-in reconciler [:config :indexer]))
 
