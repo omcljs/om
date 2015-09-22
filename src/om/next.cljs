@@ -292,16 +292,26 @@
        (== 1 (count x))
        (map? (first x))))
 
-(defn state-path [focus data-path]
-  (letfn [(state-path* [focus data-path]
+(defn state-query [focus data-path]
+  (letfn [(state-query* [focus data-path]
             (if (focused? focus)
               (let [[k v] (ffirst focus)
                     index (first data-path)]
                 (if-not (= '* index)
-                  [(list {k (state-path v (rest data-path))} {:index index})]
-                  [{k (state-path v (rest data-path))}]))
+                  [(list {k (state-query* v (rest data-path))} {:index index})]
+                  [{k (state-query* v (rest data-path))}]))
               focus))]
-    (state-path* focus (rest data-path))))
+    (state-query* focus (rest data-path))))
+
+(defn state-path [focus data-path]
+  (loop [focus focus data-path (rest data-path) ret []]
+    (if (focused? focus)
+      (let [[k v] (ffirst focus)
+            index (first data-path)]
+        (recur v (rest data-path)
+          (cond-> (conj ret k)
+            (not= '* index) (conj index))))
+      ret)))
 
 ;; =============================================================================
 ;; Reconciler API
@@ -582,15 +592,11 @@
             (swap! (:state config) (:merge-state config) res)))))))
 
 (defn default-ui->props
-  [{:keys [state indexer]} c]
+  [{:keys [state indexer parser] :as env} c]
   (let [st   @state
         idxs @(:indexes indexer)
-        cp   (class-path c)
-        i    (index c)
-        fcs  (get-in idxs [:classpath->query cp])
-        ps   (get-in st
-               (cond-> (focus->path fcs)
-                 (number? i) (conj i)))]
+        fcs  (get-in idxs [:classpath->query (class-path c)])
+        ps   (get-in (parser env fcs) (state-path fcs (data-path c)))]
     (if (ref? ps)
       (let [{:keys [root id]} ps]
         (get-in st [root id]))
