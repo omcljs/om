@@ -1,6 +1,7 @@
 (ns om.next.impl.parser)
 
-(defn parse-prop [read res ^boolean quoted? env sel]
+(defn parse-prop
+  [read res #?@(:clj [quoted?] :cljs [^boolean quoted?])  env sel]
   (let [ret (read env sel {})]
     (if-not quoted?
       (if-let [[_ value] (find ret :value)]
@@ -12,7 +13,8 @@
           (conj res quoted))
         res))))
 
-(defn parse-call [read mutate res ^boolean quoted? env sel]
+(defn parse-call
+  [read mutate res #?@(:clj [quoted?] :cljs [^boolean quoted?]) env sel]
   (let [[name params]   sel
         [name selector] (if (map? name)
                           (first name)
@@ -35,7 +37,8 @@
           (conj res quoted))
         res))))
 
-(defn parse-ref [read res ^boolean quoted? env sel]
+(defn parse-ref
+  [read res #?@(:clj [quoted?] :cljs [^boolean quoted?]) env sel]
   (let [[k' sel'] (first sel)
         ret (read (assoc env :selector sel') k' {})]
     (if-not quoted?
@@ -51,7 +54,7 @@
 (defn parser [{:keys [read mutate]}]
   (fn self
     ([env sel] (self env sel false))
-    ([env sel ^boolean quoted?]
+    ([env sel #?@(:clj [quoted?] :cljs [^boolean quoted?])]
      (let [env (cond-> (assoc env :parse self)
                  (not (contains? env :path)) (assoc :path [])
                  quoted? (assoc :quoted true))]
