@@ -13,36 +13,32 @@
 ;; -----------------------------------------------------------------------------
 ;; Parsing
 
-(defmulti prop (fn [_ k] k))
+(defmulti read (fn [_ k] k))
 
-(defmethod prop :default
-  [{:keys [state selector]} k]
+(defmulti mutate (fn [_ k _] k))
+
+(defmethod read :default
+  [{:keys [state]} k params]
   (let [st @state]
     (if (contains? st k)
-      {:value (get st k)}
-      {:quote (or selector k)})))
+     {:value (get st k)}
+     {:quote true})))
 
-(defmulti call (fn [_ k _] k))
+(defmethod read :counters/list
+  [{:keys [state selector]} _]
+  (let [st @state
+        xf (map #(select-keys (get-in st %) selector))]
+    {:value (into [] xf (:counters/list st))}))
 
-(defmethod call :default [_ k _]
-  {:quote k})
-
-(defmethod prop :counters/list
-  [{:keys [state]} _]
-  (let [st @state]
-    {:value (into [] (map #(get-in st %)) (:counters/list st))}))
-
-(defmethod call 'counter/increment
+(defmethod mutate 'counter/increment
   [{:keys [state ref]} _ _]
-  (let [{:keys [root id]} ref]
-    (swap! state update-in [root id :counter/count] inc))
+  (swap! state update-in (conj ref :counter/count) inc)
   {:value []})
 
 ;; TODO: doesn't work yet
 
-(defmethod call 'counters/delete
+(defmethod mutate 'counters/delete
   [{:keys [state ref]} _ _]
-  (println ref)
   (swap! state
     (fn [state]
       (-> state
@@ -52,7 +48,7 @@
 
 ;; TODO: doesn't work yet
 
-(defmethod call 'counters/create
+(defmethod mutate 'counters/create
   [{:keys [state]} _ new-todo]
   (swap! state
     (fn [state]
@@ -70,7 +66,7 @@
 (defui Counter
   static om/IQuery
   (query [this]
-    '[:db/id :counter/count])
+    '[:id :counter/count])
   Object
   (render [this]
     (let [{:keys [:counter/count] :as props} (om/props this)]
@@ -131,23 +127,19 @@
   (atom {:app/title "Hello World!"
          :app/current-id 3
          :app/counters
-         {0 {:db/id 0 :counter/count 0}
-          1 {:db/id 1 :counter/count 0}
-          2 {:db/id 2 :counter/count 0}}
+         {0 {:id 0 :counter/count 0}
+          1 {:id 1 :counter/count 0}
+          2 {:id 2 :counter/count 0}}
          :counters/list (om/refs :app/counters 0 1 2)}))
-
-(defmulti ui->ref om/react-type)
-
-(defmethod ui->ref :default [c] nil)
-
-(defmethod ui->ref Counter
-  [c] (om/ref :app/counters (:db/id (om/props c))))
 
 (def reconciler
   (om/reconciler
     {:state app-state
-     :parser (om/parser {:read prop :mutate call})
-     :ui->ref ui->ref}))
+     :parser (om/parser {:read read :mutate mutate})
+     :ui->ref (fn [c]
+                (if (instance? Counter c)
+                  (om/ref :app/counters (-> c om/props :id))
+                  c))}))
 
 (om/add-root! reconciler
   (gdom/getElement "app") HelloWorld)
