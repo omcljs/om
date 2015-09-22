@@ -584,7 +584,8 @@
               env (select-keys config [:state :parser :indexer :ui->ref])]
           (doseq [c ((:optimize config) cs)]
             (let [next-props (ui->props env c)]
-              (when (should-update? c next-props)
+              (when (and (should-update? c next-props)
+                         (mounted? c))
                 (update-component! c next-props))))
           (swap! state assoc :queue [])))
       (swap! state update-in [:queued] not)))

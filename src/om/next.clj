@@ -78,7 +78,12 @@
                    om.next/*parent*     ~this]
            ~@body)))}
    :defaults
-   `{~'shouldComponentUpdate
+   `{~'isMounted
+     ([this#]
+       (boolean
+         (goog.object/getValueByKeys this#
+           "_reactInternalInstance" "_renderedComponent")) )
+     ~'shouldComponentUpdate
      ([this# next-props# next-state#]
        (or (not= (.. this# ~'-props ~'-omcljs$value)
                  (.-omcljs$value next-props#))
