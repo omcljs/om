@@ -489,6 +489,7 @@
   (key->components [_ k]
     (let [indexes @indexes]
       (cond
+        (component? k) #{k}
         (ref? k) (get-in indexes [:ref->components k])
         (keyword? k) (let [cs (get-in indexes [:prop->classes k])]
                        (transduce (map #(get-in indexes [:class->components %]))

@@ -5,7 +5,8 @@
             [om.next.protocols :as p]
             [om.dom :as dom]
             [goog.object :as gobj]
-            [goog.dom :as gdom]))
+            [goog.dom :as gdom]
+            [cljs.pprint :as pprint]))
 
 (defonce conn
   (repl/connect "http://localhost:9000/repl"))
@@ -35,8 +36,6 @@
   (swap! state update-in (conj ref :counter/count) inc)
   {:value []})
 
-;; TODO: doesn't work yet
-
 (defmethod mutate 'counters/delete
   [{:keys [state ref]} _ _]
   (swap! state
@@ -46,18 +45,16 @@
         (update-in [:counters/list] #(vec (remove #{ref} %))))))
   {:value [:counters/list]})
 
-;; TODO: doesn't work yet
-
 (defmethod mutate 'counters/create
-  [{:keys [state]} _ new-todo]
+  [{:keys [state]} _ _]
   (swap! state
     (fn [state]
-      (let [id (:counters/cur-id state)
-            new-todo (merge new-todo {:db/id id})]
+      (let [id (:app/current-id state)
+            counter {:id id :counter/count 0}]
         (-> state
-          (update-in [:app/counters] conj new-todo)
+          (assoc-in [:app/counters id] counter)
           (update-in [:counters/list] conj (om/ref :app/counters id))
-          (update-in [:counters/cur-id] inc)))))
+          (update-in [:app/current-id] inc)))))
   {:value [:counters/list]})
 
 ;; -----------------------------------------------------------------------------
@@ -113,7 +110,7 @@
           (dom/h3 nil "cool stuff"))
         (dom/div nil
           (dom/button
-            #js {:onClick (fn [e] (om/call this 'counters/add!))}
+            #js {:onClick (fn [e] (om/call this 'counters/create))}
             "Add Counter!"))
         (map-indexed
           (fn [i props]
