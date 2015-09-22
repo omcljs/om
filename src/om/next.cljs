@@ -175,9 +175,15 @@
 
 (defn props [c]
   {:pre [(component? c)]}
-  (let [cst (.-state c)]
-    (or (and (not (nil? cst)) (gobj/get cst "omcljs$value"))
-        (get-prop c "omcljs$value"))))
+  (let [cst (.-state c)
+        cps (.-props c)]
+    (if (nil? cst)
+      (gobj/get cps "omcljs$value")
+      (let [t0 (gobj/get cst "omcljs$t")
+            t1 (gobj/get cps "omcljs$t")]
+        (if (> t0 t1)
+          (gobj/get cst "omcljs$value")
+          (gobj/get cps "omcljs$value"))))))
 
 (defn set-state! [c new-state]
   {:pre [(component? c)]}
