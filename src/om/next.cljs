@@ -191,13 +191,17 @@
     (-set-state! c new-state)
     (gobj/set (.-state c) "omcljs$pendingState" new-state)))
 
-(defn get-state [c]
-  {:pre [(component? c)]}
-  (if (satisfies? ILocalState c)
-    (-get-state c)
-    (when-let [state (. c -state)]
-      (or (gobj/get state "omcljs$pendingState")
-          (gobj/get state "omcljs$state")))))
+(defn get-state
+  ([c]
+   (get-state c []))
+  ([c & ks]
+   {:pre [(component? c)]}
+   (let [cst (if (satisfies? ILocalState c)
+               (-get-state c)
+               (when-let [state (. c -state)]
+                 (or (gobj/get state "omcljs$pendingState")
+                   (gobj/get state "omcljs$state"))))]
+     (get-in cst ks))))
 
 (defn update-state!
   ([c f]
