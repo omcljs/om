@@ -33,29 +33,35 @@
 
 (defmethod mutate 'counter/increment
   [{:keys [state ref]} _ _]
-  (swap! state update-in (conj ref :counter/count) inc)
-  {:value []})
+  {:value []
+   :action
+   (fn []
+     (swap! state update-in (conj ref :counter/count) inc))})
 
 (defmethod mutate 'counters/delete
   [{:keys [state ref]} _ _]
-  (swap! state
-    (fn [state]
-      (-> state
-        (update-in (pop ref) dissoc (peek ref))
-        (update-in [:counters/list] #(vec (remove #{ref} %))))))
-  {:value [:counters/list]})
+  {:value [:counters/list]
+   :action
+   (fn []
+     (swap! state
+       (fn [state]
+         (-> state
+           (update-in (pop ref) dissoc (peek ref))
+           (update-in [:counters/list] #(vec (remove #{ref} %)))))))})
 
 (defmethod mutate 'counters/create
   [{:keys [state]} _ _]
-  (swap! state
-    (fn [state]
-      (let [id (:app/current-id state)
-            counter {:id id :counter/count 0}]
-        (-> state
-          (assoc-in [:app/counters id] counter)
-          (update-in [:counters/list] conj (om/ref :app/counters id))
-          (update-in [:app/current-id] inc)))))
-  {:value [:counters/list]})
+  {:value [:counters/list]
+   :action
+   (fn []
+     (swap! state
+       (fn [state]
+         (let [id (:app/current-id state)
+               counter {:id id :counter/count 0}]
+           (-> state
+             (assoc-in [:app/counters id] counter)
+             (update-in [:counters/list] conj (om/ref :app/counters id))
+             (update-in [:app/current-id] inc))))))})
 
 ;; -----------------------------------------------------------------------------
 ;; Counter

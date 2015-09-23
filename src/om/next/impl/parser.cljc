@@ -23,10 +23,13 @@
                           (assoc :selector selector))
         mutation?       (symbol? name)
         ret             (if mutation?
-                          (if quoted?
-                            {:quote true}
-                            (mutate env name params))
+                          (mutate env name params)
                           (read env name params))]
+    (when (and mutation? (not quoted?))
+      (let [action (:action ret)]
+        (assert action
+          (str name " mutation does not supply :action"))
+        (action)))
     (if-not quoted?
       (if-let [[_ value] (find ret :value)]
         (assoc res name value)
