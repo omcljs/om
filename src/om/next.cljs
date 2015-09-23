@@ -492,13 +492,17 @@
 
   (key->components [_ k]
     (let [indexes @indexes]
-      (cond
-        (component? k) #{k}
-        (ref? k) (get-in indexes [:ref->components k])
-        (keyword? k) (let [cs (get-in indexes [:prop->classes k])]
-                       (transduce (map #(get-in indexes [:class->components %]))
-                         (completing into) #{} cs))
-        :else (throw (js/Error. (str "Invalid key " k ", key must be ref or keyword")))))))
+      (if (component? k)
+        #{k}
+        (let [cs (get-in indexes [:ref->components k] ::not-found)]
+          (if-not (keyword-identical? ::not-found cs)
+            cs
+            (if (keyword? k)
+              ;; TODO: more robust validation, might be bogus key
+              (let [cs (get-in indexes [:prop->classes k])]
+                (transduce (map #(get-in indexes [:class->components %]))
+                  (completing into) #{} cs))
+              (throw (js/Error. (str "Invalid key " k ", key must be ref or keyword"))))))))))
 
 (defn indexer [ui->ref]
   (Indexer. (atom {}) ui->ref))
