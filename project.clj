@@ -15,7 +15,9 @@
                   :exclusions [org.clojure/data.json]]
                  [org.clojure/data.json "0.2.6" :classifier "aot" :scope "provided"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha" :scope "provided"]
-                 [cljsjs/react "0.13.3-0"]]
+                 [cljsjs/react "0.13.3-0"]
+                 [com.cognitect/transit-clj "0.8.281" :scope "provided"]
+                 [com.cognitect/transit-cljs "0.8.225" :scope "provided"]]
 
   :plugins [[lein-cljsbuild "1.0.5"]]
 
