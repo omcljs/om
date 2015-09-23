@@ -440,10 +440,10 @@
   p/IIndexer
 
   (index-root [_ klass]
-    (let [class->paths     (atom {})
-          prop->classes    (atom {})
+    (let [class->paths      (atom {})
+          prop->classes     (atom {})
           class-path->query (atom {})
-          rootq            (get-query klass)]
+          rootq             (get-query klass)]
       (letfn [(build-index* [klass selector path classpath]
                 (swap! class->paths update-in [klass]
                   (fnil conj #{}) path)
