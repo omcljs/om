@@ -517,7 +517,8 @@
 
 (defn queue-calls! [r res]
   (let [call-ks (into [] (filter symbol?) (keys res))]
-    (p/queue! r (transduce (map res) (completing into) [] call-ks))))
+    (p/queue! r (transduce (comp (map res) (distinct))
+                  (completing into) [] call-ks))))
 
 (defrecord Reconciler [config state]
   p/IReconciler
