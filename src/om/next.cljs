@@ -35,14 +35,14 @@
   (if (empty? path)
     sel
     (let [[k & ks] path]
-     (letfn [(match [x]
-               (let [k' (if (map? x) (ffirst x) x)]
-                 (= k k')))
-             (value [x]
-               (if (map? x)
-                 {(ffirst x) (focus-query (-> x first second) ks)}
-                 x))]
-       (into [] (comp (filter match) (map value)) sel)))))
+      (letfn [(match [x]
+                (let [k' (if (map? x) (ffirst x) x)]
+                  (= k k')))
+              (value [x]
+                (if (map? x)
+                  {(ffirst x) (focus-query (-> x first second) ks)}
+                  x))]
+        (into [] (comp (filter match) (map value)) sel)))))
 
 (defn focus->path
   ([focus] (focus->path focus []))
