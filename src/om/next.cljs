@@ -574,7 +574,9 @@
 
   (schedule-send! [_]
     (if-not (:send-queued @state)
-      (swap! state update-in [:send-queued] not)
+      (do
+        (swap! state assoc [:send-queued] true)
+        true)
       false))
 
   ;; TODO: need to reindex roots after reconcilation
@@ -596,9 +598,13 @@
       (swap! state update-in [:queued] not)))
 
   (send! [this]
-    (let [expr (:pending-send @state)]
+    (let [expr (:queued-send @state)]
       (when expr
-        (swap! state assoc :pending-state nil)
+        (swap! state
+          (fn [state]
+            (-> state
+              (assoc :queued-send nil)
+              (assoc :send-queued false))))
         ((:send config) expr
           (fn [res]
             (queue-calls! this res)
@@ -634,7 +640,7 @@
                 :ui->ref ui->ref :ui->props ui->props
                 :send send :merge-send merge-send :merge-state merge-state
                 :optimize optimize}
-               (atom {:queue [] :queued false :pending-send nil
+               (atom {:queue [] :queued false :queued-send nil
                       :send-queued false :roots {} :t 0}))]
     (add-watch state :om/reconciler
       (fn [_ _ _ _] (schedule-render! ret)))
