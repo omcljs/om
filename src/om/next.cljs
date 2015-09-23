@@ -531,7 +531,7 @@
               (send v'
                 (fn [res]
                   (queue-calls! this res)
-                  (swap! (:state config) (:merge-state config) res))))))
+                  (swap! (:state config) (:merge-tree config) res))))))
         @ret)))
 
   (remove-root! [_ target]
@@ -592,7 +592,7 @@
         ((:send config) expr
           (fn [res]
             (queue-calls! this res)
-            (swap! (:state config) (:merge-state config) res)))))))
+            (swap! (:state config) (:merge-tree config) res)))))))
 
 (defn default-ui->props
   [{:keys [state indexer parser] :as env} c]
@@ -605,16 +605,21 @@
         (get-in st [root id]))
       ps)))
 
+(defn default-merge-ref [env tree ref]
+  tree)
+
 (defn reconciler
   [{:keys [state parser indexer resolve
            ui->ref ui->props
-           send merge-send merge-state
+           send merge-send
+           merge-tree merge-ref
            optimize]
     :or {ui->ref     identity
          ui->props   default-ui->props
          indexer     om.next/indexer
          merge-send  into
-         merge-state merge
+         merge-tree  merge
+         merge-ref   default-merge-ref
          optimize    (fn [cs] (sort-by depth cs))}
     :as config}]
   {:pre [(map? config)]}
@@ -622,7 +627,7 @@
         ret  (Reconciler.
                {:state state :parser parser :indexer idxr :resolve resolve
                 :ui->ref ui->ref :ui->props ui->props
-                :send send :merge-send merge-send :merge-state merge-state
+                :send send :merge-send merge-send :merge-tree merge-tree
                 :optimize optimize}
                (atom {:queue [] :queued false :queued-send nil
                       :send-queued false :roots {} :t 0}))]
