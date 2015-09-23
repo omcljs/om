@@ -1,5 +1,6 @@
 (ns om.next.transit
   (:require [cognitect.transit :as t]
+            [com.cognitect.transit :as ct]
             [om.next.impl.refs :as refs #?@(:cljs [:refer [Ref]])])
   #?(:clj (:import [com.cognitect.transit TransitFactory WriteHandler]
                    [om.next.impl.refs Ref])))
@@ -8,7 +9,7 @@
    (deftype RefHandler []
      Object
      (tag [_ _] "om/ref")
-     (rep [_ r] (t/tagged "array" [(nth r 0) (nth r 1)]))
+     (rep [_ r] (ct/tagged "array" #js [(nth r 0) (nth r 1)]))
      (stringRep [_ _] nil)))
 
 #?(:clj
@@ -19,12 +20,22 @@
      (stringRep [_ _] nil)
      (getVerboseHandler [_] nil)))
 
-(defn writer [opts]
-  (t/writer :json
-    (assoc opts
-      [:handlers "om/ref"]
-      (fn [v] (Ref. v)))))
+(defn writer
+  ([]
+   (writer {}))
+  ([opts]
+   (t/writer :json
+     (assoc-in opts [:handlers Ref] (RefHandler.)))))
 
-(defn reader [opts]
-  (t/reader :json
-    (assoc-in opts [:handlers Ref] RefHandler)))
+(defn reader
+  ([]
+   (reader {}))
+  ([opts]
+   (t/reader :json
+     (assoc-in opts
+       [:handlers "om/ref"]
+       (fn [v] (Ref. v))))))
+
+(comment
+  (t/write (writer) (Ref. [:root 0]))
+  )
