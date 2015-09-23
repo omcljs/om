@@ -477,8 +477,9 @@
     (swap! indexes
       (fn [indexes]
         (let [ref (ui->ref c)]
-          (cond-> (update-in indexes [:class->components (type c)] (fnil conj #{}) c)
-            ref (update-in [:ref->components ref] (fnil conj #{}) c))))))
+          (when-not (component? ref)
+            (cond-> (update-in indexes [:class->components (type c)] (fnil conj #{}) c)
+              ref (update-in [:ref->components ref] (fnil conj #{}) c)))))))
 
   (drop-component! [_ c]
     (swap! indexes
