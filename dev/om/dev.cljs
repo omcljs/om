@@ -154,6 +154,8 @@
 
   (def idxr (get-in reconciler [:config :indexer]))
 
+  (p/key->components idxr :counters/list)
+
   (pprint/pprint @(:indexes idxr))
 
   (def c
