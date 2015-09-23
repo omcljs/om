@@ -169,8 +169,7 @@
 
   (def q (get-in @(:indexes idxr) [:class-path->query cp]))
 
-  ;; TODO: doesn't work
-  (om/state-path q dp)
+  (om/state-path c idxr)
   )
 
 ;(def db

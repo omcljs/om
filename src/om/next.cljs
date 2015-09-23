@@ -314,7 +314,7 @@
               focus))]
     (state-query* focus (rest data-path))))
 
-(defn state-path [focus data-path]
+(defn state-path* [focus data-path]
   (loop [focus focus data-path (rest data-path) ret []]
     (if (focused? focus)
       (let [[k v] (ffirst focus)
@@ -323,6 +323,11 @@
           (cond-> (conj ret k)
             (not= '* index) (conj index))))
       ret)))
+
+(defn state-path [c indexer]
+  (let [idxs @(:indexes indexer)
+        fcs  (get-in idxs [:class-path->query (class-path c)])]
+    (state-path* fcs (data-path c))))
 
 ;; =============================================================================
 ;; Reconciler API
@@ -599,14 +604,18 @@
   (let [st   @state
         idxs @(:indexes indexer)
         fcs  (get-in idxs [:class-path->query (class-path c)])
-        ps   (get-in (parser env fcs) (state-path fcs (data-path c)))]
+        ps   (get-in (parser env fcs) (state-path* fcs (data-path c)))]
     (if (ref? ps)
       (let [{:keys [root id]} ps]
         (get-in st [root id]))
       ps)))
 
-(defn default-merge-ref [env tree ref]
-  tree)
+(defn default-merge-ref
+  [{:keys [indexer] :as env} tree [[ref props]]]
+  (letfn [(merge-ref-step [tree c]
+            (update-in tree (state-path c indexer) merge props))]
+    (reduce merge-ref-step tree
+      (p/key->components indexer ref))))
 
 (defn reconciler
   [{:keys [state parser indexer resolve
