@@ -406,9 +406,12 @@
 ;; Call Support
 
 (defn call
-  ([c name] (call c name nil))
+  ([c name]
+   (call c name nil))
   ([c name param-map]
-   {:pre [(component? c) (symbol? name) (nil-or-map? param-map)]}
+    (call c name param-map []))
+  ([c name param-map reads]
+   {:pre [(component? c) (symbol? name) (nil-or-map? param-map) (vector? reads)]}
    (let [r   (get-reconciler c)
          cfg (:config r)
          ref ((:ui->ref cfg) c)
@@ -417,7 +420,7 @@
                {:reconciler r :component c}
                (when ref
                  {:ref ref}))
-         exp `[(~name ~param-map)]
+         exp (into `[(~name ~param-map)] reads)
          v   ((:parser cfg) env exp)
          v'  ((:parser cfg) env exp true)]
      (when-not (empty? v)
