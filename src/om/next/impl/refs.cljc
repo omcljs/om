@@ -22,7 +22,7 @@
          not-found))
      clojure.lang.Indexed
      (nth [this i]
-       (.nth this i))
+       (.nth this i nil))
      (nth [this i not-found]
        (case i
          0 (nth path 0)
