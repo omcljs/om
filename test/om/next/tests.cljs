@@ -147,7 +147,9 @@
 
 (defmethod mutate 'do/it!
   [{:keys [state]} k {:keys [id]}]
-  {:value [id] :quote true})
+  {:value [id]
+   :action #()
+   :quote true})
 
 (def p (om/parser {:read read :mutate mutate}))
 
@@ -180,7 +182,8 @@
 
 (defmethod mutate 'mutate!
   [{:keys [state]} k params]
-  (swap! state update-in [:count] inc))
+  {:value  []
+   :action #(swap! state update-in [:count] inc)} )
 
 (deftest test-quote-does-not-mutate
   (let [st (atom {:count 0})
