@@ -13,14 +13,20 @@
           (conj res quoted))
         res))))
 
+(defn parse-call-key [key env]
+  (if (map? key)
+    (let [[k v :as kv] (first key)]
+      (if (vector? k)
+        [(nth k 0) v (assoc env :id (nth k 1))]
+        [k v env]))
+    [key nil env]))
+
 (defn parse-call
   [read mutate res #?@(:clj [quoted?] :cljs [^boolean quoted?]) env sel]
   (let [[name params]   sel
-        [name selector] (if (map? name)
-                          (first name)
-                          [name nil])
-        env             (cond-> env selector
-                          (assoc :selector selector))
+        [name sel' env] (parse-call-key name env)
+        env             (cond-> env
+                          sel' (assoc :selector sel'))
         mutation?       (symbol? name)
         ret             (if mutation?
                           (mutate env name params)
@@ -40,9 +46,12 @@
           (conj res quoted))
         res))))
 
-(defn parse-ref
+(defn parse-join
   [read res #?@(:clj [quoted?] :cljs [^boolean quoted?]) env sel]
   (let [[k' sel'] (first sel)
+        [k' env]  (if (vector? k')
+                    [(nth k' 0) (assoc env :id (nth k' 1))]
+                    [k' env])
         ret (read (assoc env :selector sel') k' {})]
     (if-not quoted?
       (if-let [[_ value] (find ret :value)]
@@ -65,7 +74,7 @@
                  (cond
                    (keyword? sel) (parse-prop read res quoted? env sel)
                    (seq? sel) (parse-call read mutate res quoted? env sel)
-                   (map? sel) (parse-ref read res quoted? env sel)
+                   (map? sel) (parse-join read res quoted? env sel)
                    :else (throw
                            (ex-info (str "Invalid expression " sel)
                              {:type :error/invalid-expression}))))]

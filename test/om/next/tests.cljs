@@ -143,6 +143,10 @@
   (let [size-str (case size :small "50x50" :large "100x100")]
     {:value (str "user" size-str ".png") :quote true}))
 
+(defmethod read :user/by-id
+  [env k {:keys [id] :as params}]
+  {:value [id]})
+
 (defmulti mutate (fn [env k params] k))
 
 (defmethod mutate 'do/it!
@@ -195,7 +199,7 @@
   [{:keys [state selector]} k params]
   {:value {:selector selector :params params}})
 
-(deftest test-parameterized-ref
+(deftest test-parameterized-join
   (let [st (atom {:foo/bar 1})]
     (is (= (p {:state st} '[({:now/wow [:a :b]} {:slice [10 20]})])
            '{:now/wow {:selector [:a :b] :params {:slice [10 20]}}}))))
