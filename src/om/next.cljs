@@ -59,14 +59,14 @@
 ;; Query Protocols & Helpers
 
 (defprotocol IQueryParams
-  (params [this]))
+  (params [this] "Return the query parameters"))
 
 (extend-type default
   IQueryParams
   (params [_]))
 
 (defprotocol IQuery
-  (query [this]))
+  (query [this] "Return the component's unbound query"))
 
 (defprotocol ILocalState
   (-set-state! [this new-state])
@@ -88,7 +88,9 @@
               node))]
     (walk/prewalk replace-var query)))
 
-(defn get-query [cl]
+(defn get-query
+  "Return a component's bound query."
+  [cl]
   (with-meta (bind-query (query cl) (params cl))
     {:component cl}))
 
@@ -105,7 +107,10 @@
       (str (. cl -name) "_" idx)
       js/undefined)))
 
-(defn create-factory [cl]
+(defn create-factory
+  "Create a factory constructor from a component class created with
+   om.next/defui."
+  [cl]
   {:pre [(fn? cl)]}
   (fn [props & children]
     (if *instrument*
@@ -120,13 +125,15 @@
              :omcljs$shared *shared*
              :omcljs$instrument *instrument*
              :omcljs$depth *depth*
-             :omcljs$t (when *reconciler* (p/basis-t *reconciler*))}
+             :omcljs$t (if *reconciler* (p/basis-t *reconciler*) 0)}
         children))))
 
-(defn ^boolean component? [x]
+(defn ^boolean component?
+  "Returns true if the argument is an Om component."
+  [x]
   (. x -om$isComponent))
 
-(defn state [c]
+(defn- state [c]
   {:pre [(component? c)]}
   (.-state c))
 
@@ -136,29 +143,53 @@
 (defn- set-prop! [c k v]
   (gobj/set (.-props c) k v))
 
-(defn get-reconciler [c]
+(defn get-reconciler
+  "Get the reconciler associated with a component."
+  [c]
   {:pre [(component? c)]}
   (get-prop c "omcljs$reconciler"))
 
-(defn t [c]
-  (get-prop c "omcljs$t"))
+(defn t
+  "Get basis t value for when the component last read its props from the
+   global state."
+  [c]
+  (let [cst (.-state c)
+        cps (.-props c)]
+    (if (nil? cst)
+      (gobj/get cps "omcljs$t")
+      (let [t0 (gobj/get cst "omcljs$t")
+            t1 (gobj/get cps "omcljs$t")]
+        (max t0 t1)))))
 
-(defn root-class [c]
+(defn root-class
+  [c]
   (get-prop c "omcljs$rootClass"))
 
-(defn parent [c]
+(defn parent
+  "Returns the parent Om component."
+  [c]
   (get-prop c "omcljs$parent"))
 
-(defn depth [c]
+(defn depth
+  "Returns the render depth (a integer) of the component relative to the
+  mount root."
+  [c]
   (get-prop c "omcljs$depth"))
 
-(defn react-key [c]
+(defn react-key
+  "Returns the components React key."
+  [c]
   (.. c -props -key))
 
-(defn react-type [x]
+(defn react-type
+  "Returns the component type, regardless of whether the component has been
+   mounted"
+  [x]
   (or (gobj/get x "type") (type x)))
 
-(defn index [c]
+(defn index
+  "Returns the component's Om index."
+  [c]
   (get-prop c "omcljs$index"))
 
 (defn shared [c]
@@ -174,7 +205,9 @@
   (gobj/set (.-state c) "omcljs$t" (p/basis-t (get-reconciler c)))
   (gobj/set (.-state c) "omcljs$value" next-props))
 
-(defn props [c]
+(defn props
+  "Return a components props."
+  [c]
   {:pre [(component? c)]}
   (let [cst (.-state c)
         cps (.-props c)]
@@ -186,13 +219,18 @@
           (gobj/get cst "omcljs$value")
           (gobj/get cps "omcljs$value"))))))
 
-(defn set-state! [c new-state]
+(defn set-state!
+  "Set the component local state of the component. Analogous to React's
+   setState."
+  [c new-state]
   {:pre [(component? c)]}
   (if (satisfies? ILocalState c)
     (-set-state! c new-state)
     (gobj/set (.-state c) "omcljs$pendingState" new-state)))
 
 (defn get-state
+  "Get a component's local state. Variadic, may provide keys for indexed access
+   into the component's local state."
   ([c]
    (get-state c []))
   ([c & ks]
@@ -205,6 +243,7 @@
      (get-in cst ks))))
 
 (defn update-state!
+  "Update a component's local state. Similar to Clojure(Script)'s update-in."
   ([c f]
    (set-state! c (f (get-state c))))
   ([c f arg0]
@@ -219,7 +258,10 @@
    (set-state! c
      (apply f (get-state c) arg0 arg1 arg2 arg3 arg-rest))))
 
-(defn get-rendered-state [c]
+(defn get-rendered-state
+  "Get the rendered state of component. om.next/get-state always returns the
+   up-to-date state."
+  [c]
   {:pre [(component? c)]}
   (if (satisfies? ILocalState c)
     (-get-rendered-state c)
@@ -248,21 +290,26 @@
 (defn update-query! [c bs]
   )
 
-(defn mounted? [c]
+(defn mounted?
+  "Returns true if the component is mounted."
+  [c]
   {:pre [(component? c)]}
   (.isMounted c))
 
 (defn dom-node
+  "Returns the dom node associated with a component's React ref."
   ([c]
    (.getDOMNode c))
   ([c name]
    (some-> (.-refs c) (gobj/get name) (.getDOMNode))))
 
 (defn react-ref
+  "Returns the component associated with a component's React ref."
   [c name]
   (some-> (.-refs c) (gobj/get name)))
 
 (defn children
+  "Returns the component's children."
   [c]
   (.. c -props -children))
 

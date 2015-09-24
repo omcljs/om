@@ -1,5 +1,6 @@
 (ns om.next.tests
   (:require [cljs.test :refer-macros [deftest is testing run-tests]]
+            [goog.object :as gobj]
             [om.next :as om :refer-macros [defui]]
             [om.next.protocols :as p]
             [om.dom :as dom]))
@@ -14,6 +15,8 @@
   Object
   (render [this]))
 
+(def component (om/create-factory Component))
+
 (defui ComponentList
   static om/IQueryParams
   (params [this]
@@ -24,11 +27,18 @@
   Object
   (render [this]))
 
+(def component-list (om/create-factory ComponentList))
+
 (deftest test-component?
   (is (om/component? (Component. {}))))
 
 (deftest test-pr-str-component
   (is (= (pr-str Component) "om.next.tests/Component")))
+
+(deftest test-construction
+  (let [c (component-list {:foo/bar 1})]
+    (is (= (om/react-type c) ComponentList))
+    (is (= (om/t c) 0))))
 
 ;; -----------------------------------------------------------------------------
 ;; Queries
