@@ -3,6 +3,7 @@
             [goog.object :as gobj]
             [om.next :as om :refer-macros [defui]]
             [om.next.protocols :as p]
+            [om.next.impl.parser :as parser]
             [om.dom :as dom]))
 
 ;; -----------------------------------------------------------------------------
@@ -117,6 +118,24 @@
 
 ;; -----------------------------------------------------------------------------
 ;; Parser
+
+(deftest test-ast
+  (is (= (parser/->ast :foo)
+         {:type :prop :key :foo :dkey :foo}))
+  (is (= (parser/->ast [:foo 0])
+         {:type :ref :key [:foo 0] :dkey :foo :id 0}))
+  (is (= (parser/->ast {:foo [:bar]})
+         {:type :join :key :foo :dkey :foo :sel [:bar]}))
+  (is (= (parser/->ast {[:foo 0] [:bar]})
+         {:type :ref :key [:foo 0] :dkey :foo :id 0 :sel [:bar]}))
+  (is (= (parser/->ast '(:foo {:bar 1}))
+         {:type :call :key :foo :dkey :foo :params {:bar 1}}))
+  (is (= (parser/->ast '({:foo [:bar :baz]} {:woz 1}))
+         {:type :call :key :foo :dkey :foo :sel [:bar :baz] :params {:woz 1}}))
+  (is (= (parser/->ast '({[:foo 0] [:bar :baz]} {:woz 1}))
+         {:type :call :key [:foo 0] :dkey :foo :id 0 :sel [:bar :baz] :params {:woz 1}}))
+  (is (= (parser/->ast '(do/it {:woz 1}))
+         {:type :call :key 'do/it :dkey 'do/it :params {:woz 1}})))
 
 (defmulti read (fn [env k params] k))
 

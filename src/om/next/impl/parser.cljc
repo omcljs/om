@@ -63,6 +63,46 @@
           (conj res {k' quoted}))
         res))))
 
+(declare ->ast)
+
+(defn symbol->ast [k]
+  {:dkey k
+   :key  k})
+
+(defn keyword->ast [k]
+  {:type :prop
+   :dkey k
+   :key  k})
+
+(defn call->ast [[f args]]
+  (merge (->ast f)
+    {:type :call
+     :params args}))
+
+(defn join->ast [join]
+  (let [[k v] (first join)
+        ast   (->ast k)
+        ref?  (= (:type ast k) :ref)]
+    (merge ast
+      {:type :join
+       :sel v}
+      (when ref?
+        {:type :ref}))))
+
+(defn ref->ast [[k id :as ref]]
+  {:type :ref
+   :dkey k
+   :key  ref
+   :id   id})
+
+(defn ->ast [x]
+  (cond
+    (symbol? x)  (symbol->ast x)
+    (keyword? x) (keyword->ast x)
+    (map? x)     (join->ast x)
+    (vector? x)  (ref->ast x)
+    (seq? x)     (call->ast x)))
+
 (defn parser [{:keys [read mutate]}]
   (fn self
     ([env sel] (self env sel false))
