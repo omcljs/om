@@ -75,19 +75,17 @@
    :key  k})
 
 (defn call->ast [[f args]]
-  (merge (->ast f)
-    {:type :call
-     :params args}))
+  (let [ast (assoc (->ast f) :params args)]
+    (cond-> ast
+      (symbol? (:dkey ast)) (assoc :type :call))))
 
 (defn join->ast [join]
   (let [[k v] (first join)
         ast   (->ast k)
-        ref?  (= (:type ast k) :ref)]
-    (merge ast
-      {:type :join
-       :sel v}
-      (when ref?
-        {:type :ref}))))
+        ref?  (= :ref (:type ast k))
+        ast   (assoc ast :type :join :sel v)]
+    (cond-> ast
+      ref? (assoc :type :ref))))
 
 (defn ref->ast [[k id :as ref]]
   {:type :ref
