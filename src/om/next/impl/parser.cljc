@@ -75,7 +75,7 @@
    :key  k})
 
 (defn call->ast [[f args]]
-  (let [ast (assoc (->ast f) :params args)]
+  (let [ast (update-in (->ast f) [:params] merge args)]
     (cond-> ast
       (symbol? (:dkey ast)) (assoc :type :call))))
 
@@ -88,10 +88,10 @@
       ref? (assoc :type :ref))))
 
 (defn ref->ast [[k id :as ref]]
-  {:type :ref
-   :dkey k
-   :key  ref
-   :id   id})
+  {:type   :ref
+   :dkey   k
+   :key    ref
+   :params {:id id}})
 
 (defn ->ast [x]
   (cond
