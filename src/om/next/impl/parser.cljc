@@ -73,3 +73,5 @@
                          (cond-> ret
                            (not (nil? value)) (assoc key value)))))))]
          (reduce step (if-not quoted? {} []) sel))))))
+
+(defn dispatch [_ k _] k)
