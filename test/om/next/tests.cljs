@@ -163,8 +163,10 @@
     {:value (str "user" size-str ".png") :quote true}))
 
 (defmethod read :user/by-id
-  [env k {:keys [id] :as params}]
-  {:value [id]})
+  [{:keys [selector] :as env} k {:keys [id] :as params}]
+  {:value (cond-> {:name/first "Bob" :name/last "Smith"}
+            selector (select-keys selector))
+   :quote true})
 
 (defmulti mutate (fn [env k params] k))
 
@@ -222,6 +224,17 @@
   (let [st (atom {:foo/bar 1})]
     (is (= (p {:state st} '[({:now/wow [:a :b]} {:slice [10 20]})])
            '{:now/wow {:selector [:a :b] :params {:slice [10 20]}}}))))
+
+(deftest test-refs
+  (let [st (atom {:foo/bar 1})]
+    (is (= (p {:state st} [[:user/by-id 0]])
+           {[:user/by-id 0] {:name/first "Bob" :name/last "Smith"}}))
+    (is (= (p {:state st} [[:user/by-id 0]] true)
+           [[:user/by-id 0]]))
+    (is (= (p {:state st} [{[:user/by-id 0] [:name/last]}])
+           {[:user/by-id 0] {:name/last "Smith"}}))
+    (is (= (p {:state st} [{[:user/by-id 0] [:name/last]}] true)
+           [{[:user/by-id 0] [:name/last]}]))))
 
 ;; -----------------------------------------------------------------------------
 ;; Recursive Parsing
