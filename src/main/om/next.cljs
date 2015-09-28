@@ -427,6 +427,25 @@
 ;; =============================================================================
 ;; Call Support
 
+(defn transact
+  [c tx]
+  {:pre [(component? c) (vector? tx)]}
+  (let [r   (get-reconciler c)
+        cfg (:config r)
+        ref ((:ui->ref cfg) c)
+        env (merge
+              (select-keys cfg [:indexer :parser :state])
+              {:reconciler r :component c}
+              (when ref
+                {:ref ref}))
+        v   ((:parser cfg) env tx)
+        v'  ((:parser cfg) env tx true)]
+    (when-not (empty? v)
+      (p/queue! r (reduce into (if ref [ref] []) (vals v))))
+    (when-not (empty? v')
+      (p/queue-send! r v')
+      (schedule-send! r))))
+
 (defn call
   ([c name]
    (call c name nil))
@@ -434,22 +453,7 @@
     (call c name param-map []))
   ([c name param-map reads]
    {:pre [(component? c) (symbol? name) (nil-or-map? param-map) (vector? reads)]}
-   (let [r   (get-reconciler c)
-         cfg (:config r)
-         ref ((:ui->ref cfg) c)
-         env (merge
-               (select-keys cfg [:indexer :parser :state])
-               {:reconciler r :component c}
-               (when ref
-                 {:ref ref}))
-         exp (into `[(~name ~param-map)] reads)
-         v   ((:parser cfg) env exp)
-         v'  ((:parser cfg) env exp true)]
-     (when-not (empty? v)
-       (p/queue! r (reduce into (if ref [ref] []) (vals v))))
-     (when-not (empty? v')
-       (p/queue-send! r v')
-       (schedule-send! r)))))
+   (transact c (into `[(~name ~param-map)] reads))))
 
 ;; =============================================================================
 ;; Parser
