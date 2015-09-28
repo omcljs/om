@@ -401,7 +401,7 @@
 
 (defn schedule-send! [reconciler]
   (when (p/schedule-send! reconciler)
-    (js/setTimeout #(p/send! reconciler) 500)))
+    (js/setTimeout #(p/send! reconciler) 300)))
 
 (defn add-root!
   ([reconciler target root-class]
