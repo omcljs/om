@@ -459,8 +459,10 @@
 ;; Indexer
 
 (defrecord Indexer [indexes ui->ref]
-  p/IIndexer
+  IDeref
+  (-deref [_] @indexes)
 
+  p/IIndexer
   (index-root [_ klass]
     (let [class->paths      (atom {})
           prop->classes     (atom {})
@@ -547,6 +549,9 @@
   ([class ui->ref]
     (let [idxr (indexer ui->ref)]
       (p/index-root idxr class))))
+
+(defn key->components [indexer ref]
+  (p/key->components indexer ref))
 
 ;; =============================================================================
 ;; Reconciler
@@ -687,8 +692,9 @@
                 :optimize optimize}
                (atom {:queue [] :queued false :queued-send nil
                       :send-queued false :roots {} :t 0}))]
-    (add-watch state :om/reconciler
-      (fn [_ _ _ _] (schedule-render! ret)))
+    (when state
+      (add-watch state :om/reconciler
+        (fn [_ _ _ _] (schedule-render! ret))))
     ret))
 
 (defn ^boolean reconciler? [x]
