@@ -12,7 +12,7 @@
    :key  k})
 
 (defn call->ast [[f args]]
-  (let [ast (update-in (->ast f) [:params] merge args)]
+  (let [ast (update-in (->ast f) [:params] merge (or args {}))]
     (cond-> ast
       (symbol? (:dkey ast)) (assoc :type :call))))
 
@@ -57,21 +57,24 @@
                    (if quoted?
                      (cond-> ret
                        (true? (:quote res)) (conj expr))
-                     (do
-                       (when (= :call type)
-                         (if-not (nil? (:action res))
-                           (do
-                             ((:action res))
-                             (let [value (:value res)]
-                               (cond-> ret
-                                 (not (nil? value)) (assoc key value))))
-                           (throw
-                             (ex-info
-                               (str "Mutation " dkey " does not return an :action")
-                               {:type :error/invalid-mutation}))))
-                       (let [value (:value res)]
-                         (cond-> ret
-                           (not (nil? value)) (assoc key value)))))))]
+                     (if-not (contains? res :value)
+                       ret
+                       (do
+                         (when (= :call type)
+                           (if-not (nil? (:action res))
+                             (do
+                               ((:action res))
+                               (let [value (:value res)]
+                                 (cond-> ret
+                                   (not (nil? value)) (assoc key value))))
+                             (when-not (true? (:quote res))
+                               (throw
+                                 (ex-info
+                                   (str "Mutation " dkey " does not return an :action")
+                                   {:type :error/invalid-mutation})))))
+                         (let [value (:value res)]
+                           (cond-> ret
+                             (not (nil? value)) (assoc key value))))))))]
          (reduce step (if-not quoted? {} []) sel))))))
 
 (defn dispatch [_ k _] k)

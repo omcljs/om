@@ -237,6 +237,22 @@
            [{[:user/by-id 0] [:name/last]}]))))
 
 ;; -----------------------------------------------------------------------------
+;; Edge cases
+
+(defmethod read :missing/thing
+  [env k params]
+  {})
+
+(deftest test-missing-value
+  (is (= (p {} [:missing/thing]) {})))
+
+(defmethod mutate 'quoted/action
+  [env k params] {:quote true})
+
+(deftest test-quoted-action
+  (is (= (p {} '[(quoted/action)]) {})))
+
+;; -----------------------------------------------------------------------------
 ;; Recursive Parsing
 
 (def todos-state
