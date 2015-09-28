@@ -560,6 +560,10 @@
   (reduce #(conj %1 (state-path indexer %2))
     #{} (p/key->components indexer k)))
 
+(defn get-indexer [r]
+  {:pre [(reconciler? r)]}
+  (get-in r [:config :indexer]))
+
 ;; =============================================================================
 ;; Reconciler
 
