@@ -701,7 +701,7 @@
       (p/key->components indexer ref))))
 
 (defn reconciler
-  [{:keys [state parser indexer resolve
+  [{:keys [state parser indexer
            ui->ref ui->props
            send merge-send
            merge-tree merge-ref
@@ -717,9 +717,10 @@
   {:pre [(map? config)]}
   (let [idxr (indexer ui->ref)
         ret  (Reconciler.
-               {:state state :parser parser :indexer idxr :resolve resolve
+               {:state state :parser parser :indexer idxr
                 :ui->ref ui->ref :ui->props ui->props
-                :send send :merge-send merge-send :merge-tree merge-tree
+                :send send :merge-send merge-send
+                :merge-tree merge-tree :merge-ref merge-ref
                 :optimize optimize}
                (atom {:queue [] :queued false :queued-send nil
                       :send-queued false :roots {} :t 0}))]
