@@ -226,20 +226,23 @@
   {:pre [(component? c)]}
   (if (satisfies? ILocalState c)
     (-set-state! c new-state)
-    (gobj/set (.-state c) "omcljs$pendingState" new-state)))
+    (gobj/set (.-state c) "omcljs$pendingState" new-state))
+  (if-let [r (get-reconciler c)]
+    (p/queue! r c)
+    (.forceUpdate c)))
 
 (defn get-state
-  "Get a component's local state. Variadic, may provide keys for indexed access
-   into the component's local state."
+  "Get a component's local state. Variadic, may provide seq of keys for indexed
+   access into the component's local state."
   ([c]
    (get-state c []))
-  ([c & ks]
+  ([c ks]
    {:pre [(component? c)]}
    (let [cst (if (satisfies? ILocalState c)
                (-get-state c)
                (when-let [state (. c -state)]
                  (or (gobj/get state "omcljs$pendingState")
-                   (gobj/get state "omcljs$state"))))]
+                     (gobj/get state "omcljs$state"))))]
      (get-in cst ks))))
 
 (defn update-state!
@@ -632,7 +635,7 @@
               env (select-keys config [:state :parser :indexer :ui->ref])]
           (doseq [c ((:optimize config) cs)]
             (let [next-props (ui->props env c)]
-              (when (and (should-update? c next-props)
+              (when (and (should-update? c next-props (get-state c))
                          (mounted? c))
                 (update-component! c next-props))))
           (swap! state assoc :queue [])))
