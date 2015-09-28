@@ -249,8 +249,17 @@
 (defmethod mutate 'quoted/action
   [env k params] {:quote true})
 
-(deftest test-quoted-action
-  (is (= (p {} '[(quoted/action)]) {})))
+(defmethod mutate 'action/no-value
+  [{:keys [state] :as env} k params]
+  {:action (fn [] (reset! state :changed))})
+
+(deftest test-action-no-value
+  (let [state (atom nil)]
+    (is (= (p {:state state} '[(action/no-value)]) {}))
+    (is (= :changed @state)))
+  (let [state (atom nil)]
+    (is (= (p {:state state} '[(action/no-value)] true) []))
+    (is (= nil @state))))
 
 ;; -----------------------------------------------------------------------------
 ;; Recursive Parsing

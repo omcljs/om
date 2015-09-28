@@ -48,19 +48,20 @@
                  quoted? (assoc :quoted true))]
        (letfn [(step [ret expr]
                  (let [{:keys [key dkey params sel] :as ast} (->ast expr)
-                       env  (cond-> env
-                              (not (nil? sel)) (assoc :selector sel))
-                       type (:type ast)
-                       res  (case type
-                              :call (mutate env dkey params)
-                              :prop (read env dkey params))]
+                       env   (cond-> env
+                               (not (nil? sel)) (assoc :selector sel))
+                       type  (:type ast)
+                       call? (= :call type)
+                       res   (case type
+                               :call (mutate env dkey params)
+                               :prop (read env dkey params))]
                    (if quoted?
                      (cond-> ret
                        (true? (:quote res)) (conj expr))
-                     (if-not (contains? res :value)
+                     (if-not (or call? (contains? res :value))
                        ret
                        (do
-                         (when (= :call type)
+                         (when call?
                            (if-not (nil? (:action res))
                              (do
                                ((:action res))
