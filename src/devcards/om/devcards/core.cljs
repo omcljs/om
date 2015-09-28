@@ -3,5 +3,7 @@
   (:require [om.next :as om]
             [om.dom :as dom]))
 
+(enable-console-print!)
+
 (defcard test-card
   "Hello")

@@ -8,7 +8,7 @@
 
   :jvm-opts ^:replace ["-Xms512m" "-Xmx512m" "-server"]
 
-  :source-paths  ["src/main"]
+  :source-paths  ["src/main" "src/devcards"]
 
   :dependencies [[org.clojure/clojure "1.7.0" :scope "provided"]
                  [org.clojure/clojurescript "1.7.122" :scope "provided"]

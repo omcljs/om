@@ -6,6 +6,7 @@
    :build-ids ["devcards"]
    :all-builds
    [{:id "devcards"
+     :figwheel {:devcards true}
      :source-paths ["src/main" "src/devcards"]
      :compiler {:main 'om.devcards.core
                 :asset-path "/devcards/out"
