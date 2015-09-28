@@ -14,7 +14,7 @@
   (remove-root! [reconciler target])
   (schedule-render! [reconciler])
   (schedule-send! [reconciler])
-  (queue! [reconciler k-or-ks])
+  (queue! [reconciler ks])
   (queue-send! [reconciler expr])
   (reconcile! [reconciler])
   (send! [reconciler]))

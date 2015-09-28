@@ -228,7 +228,7 @@
     (-set-state! c new-state)
     (gobj/set (.-state c) "omcljs$pendingState" new-state))
   (if-let [r (get-reconciler c)]
-    (p/queue! r c)
+    (p/queue! r [c])
     (.forceUpdate c)))
 
 (defn get-state
@@ -441,7 +441,9 @@
         v   ((:parser cfg) env tx)
         v'  ((:parser cfg) env tx true)]
     (when-not (empty? v)
-      (p/queue! r (reduce into (if ref [ref] []) (vals v))))
+      (p/queue! r
+        (into (if ref [ref] [])
+          (remove symbol? (keys v)))))
     (when-not (empty? v')
       (p/queue-send! r v')
       (schedule-send! r))))
@@ -578,9 +580,7 @@
 ;; Reconciler
 
 (defn queue-calls! [r res]
-  (let [call-ks (into [] (filter symbol?) (keys res))]
-    (p/queue! r (transduce (comp (map res) (distinct))
-                  (completing into) [] call-ks))))
+  (p/queue! r (into [] (remove symbol?) (keys res))))
 
 (defn- merge-refs [tree {:keys [merge-ref indexer]} refs]
   (letfn [(step [tree [ref props]]
@@ -626,15 +626,12 @@
   (remove-root! [_ target]
     (swap! state update-in [:roots] dissoc target))
 
-  (queue! [_ k-or-ks]
+  (queue! [_ ks]
     (swap! state
       (fn [state]
         (-> state
           (update-in [:t] inc) ;; TODO: probably should revisit doing this here
-          (update-in [:queue]
-            (fn [queue]
-              (let [ks (if-not (sequential? k-or-ks) [k-or-ks] k-or-ks)]
-                (into queue ks))))))))
+          (update-in [:queue] into ks)))))
 
   (queue-send! [_ expr]
     (swap! state update-in [:queued-send]
