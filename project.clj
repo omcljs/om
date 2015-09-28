@@ -16,9 +16,8 @@
                  [cljsjs/react "0.13.3-0"]
                  [com.cognitect/transit-clj "0.8.281" :scope "provided"]
                  [com.cognitect/transit-cljs "0.8.225" :scope "provided"]
-                 [figwheel-sidecar "0.4.0"]]
-
-  :profiles {:dev {:dependencies [[devcards "0.2.0-SNAPSHOT"]]}}
+                 [figwheel-sidecar "0.4.0" :scope "provided"]
+                 [devcards "0.2.0-SNAPSHOT" :scope "provided"]]
 
   :plugins [[lein-cljsbuild "1.1.0"]]
 

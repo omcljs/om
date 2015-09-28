@@ -6,7 +6,11 @@
    :build-ids ["devcards"]
    :all-builds
    [{:id "devcards"
-     :source-paths ["src" "dev"]
-     :compiler }]})
+     :source-paths ["src/main" "src/devcards"]
+     :compiler {:main 'om.devcards.core
+                :asset-path "/devcards/out"
+                :output-to "resources/public/devcards/main.js"
+                :output-dir "resources/public/devcards/out"
+                :verbose true}}]})
 
 (ra/cljs-repl)
