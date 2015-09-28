@@ -620,10 +620,7 @@
             (renderf v))
           (when-not (empty? v')
             (when-let [send (:send config)]
-              (send v'
-                (fn [res]
-                  (queue-calls! this res)
-                  (swap! (:state config) (:merge-tree config) res))))))
+              (send v' #(merge-novelty this %)))))
         @ret)))
 
   (remove-root! [_ target]
@@ -681,10 +678,7 @@
             (-> state
               (assoc :queued-send nil)
               (assoc :send-queued false))))
-        ((:send config) expr
-          (fn [res]
-            (queue-calls! this res)
-            (swap! (:state config) (:merge-tree config) res)))))))
+        ((:send config) expr #(merge-novelty this %))))))
 
 (defn default-ui->props
   [{:keys [state indexer parser] :as env} c]
