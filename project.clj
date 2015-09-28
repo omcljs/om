@@ -8,24 +8,25 @@
 
   :jvm-opts ^:replace ["-Xms512m" "-Xmx512m" "-server"]
 
-  :source-paths  ["src" "dev"]
+  :source-paths  ["src/main"]
 
   :dependencies [[org.clojure/clojure "1.7.0" :scope "provided"]
-                 [org.clojure/clojurescript "1.7.122" :classifier "aot" :scope "provided"
-                  :exclusions [org.clojure/data.json]]
-                 [org.clojure/data.json "0.2.6" :classifier "aot" :scope "provided"]
+                 [org.clojure/clojurescript "1.7.122" :scope "provided"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha" :scope "provided"]
                  [cljsjs/react "0.13.3-0"]
                  [com.cognitect/transit-clj "0.8.281" :scope "provided"]
-                 [com.cognitect/transit-cljs "0.8.225" :scope "provided"]]
+                 [com.cognitect/transit-cljs "0.8.225" :scope "provided"]
+                 [figwheel-sidecar "0.4.0"]]
 
-  :plugins [[lein-cljsbuild "1.0.5"]]
+  :profiles {:dev {:dependencies [[devcards "0.2.0-SNAPSHOT"]]}}
+
+  :plugins [[lein-cljsbuild "1.1.0"]]
 
   :clean-targets ^{:protect false} ["resources/out"]
 
   :cljsbuild {
     :builds [{:id "dev"
-              :source-paths ["src" "dev"]
+              :source-paths ["src/main" "src/dev"]
               :compiler {:main om.dev
                          :asset-path "out"
                          :output-to "resources/out/app.js"

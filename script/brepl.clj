@@ -2,7 +2,7 @@
 (require '[cljs.repl :as repl])
 (require '[cljs.repl.browser :as browser])
 
-(b/build (b/inputs "src" "dev")
+(b/build (b/inputs "src/main" "src/dev")
   {:main 'om.dev
    :asset-path "out"
    :output-to "resources/out/app.js"
