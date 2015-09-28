@@ -583,9 +583,9 @@
   (p/queue! r (into [] (remove symbol?) (keys res))))
 
 (defn- merge-refs [tree {:keys [merge-ref indexer]} refs]
-  (letfn [(step [tree [ref props]]
-            (merge-ref indexer tree ref props))]
-    (reduce step state refs)))
+  (letfn [(step [tree' [ref props]]
+            (merge-ref indexer tree' ref props))]
+    (reduce step tree refs)))
 
 (defn- merge-novelty [r res]
   (let [config      (:config r)
