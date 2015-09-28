@@ -582,14 +582,13 @@
     (reduce step state refs)))
 
 (defn- merge-novelty [r res]
-  (let [config     (:config r)
-        [refs res] (sift-refs res)]
+  (let [config      (:config r)
+        [refs res'] (sift-refs res)]
     (queue-calls! r res)
     (swap! (:state config)
-      (fn [state]
-        (-> state
-          (merge-refs config refs)
-          ((:merge-tree config) res))))))
+      #(-> %
+        (merge-refs config refs)
+        ((:merge-tree config) res')))))
 
 (defrecord Reconciler [config state]
   p/IReconciler
