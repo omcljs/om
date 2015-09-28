@@ -582,9 +582,9 @@
 (defn queue-calls! [r res]
   (p/queue! r (into [] (remove symbol?) (keys res))))
 
-(defn- merge-refs [tree {:keys [merge-ref indexer]} refs]
+(defn- merge-refs [tree {:keys [merge-ref] :as config} refs]
   (letfn [(step [tree' [ref props]]
-            (merge-ref indexer tree' ref props))]
+            (merge-ref config tree' ref props))]
     (reduce step tree refs)))
 
 (defn- merge-novelty! [r res]
