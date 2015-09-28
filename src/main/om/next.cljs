@@ -564,6 +564,10 @@
   {:pre [(reconciler? r)]}
   (get-in r [:config :indexer]))
 
+(defn sift-refs [res]
+  (let [{refs true rest false} (group-by #(vector? (first %)) res)]
+    [(into {} refs) (into {} rest)]))
+
 ;; =============================================================================
 ;; Reconciler
 
