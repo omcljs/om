@@ -675,7 +675,7 @@
         (swap! state
           (fn [state]
             (-> state
-              (assoc :queued-send nil)
+              (assoc :queued-send [])
               (assoc :send-queued false))))
         ((:send config) expr
           #(do
@@ -722,7 +722,7 @@
                 :send send :merge-send merge-send
                 :merge-tree merge-tree :merge-ref merge-ref
                 :optimize optimize}
-               (atom {:queue [] :queued false :queued-send nil
+               (atom {:queue [] :queued false :queued-send []
                       :send-queued false :roots {} :t 0}))]
     (when state
       (add-watch state :om/reconciler
