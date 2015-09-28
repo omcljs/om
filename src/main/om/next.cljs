@@ -232,18 +232,18 @@
     (.forceUpdate c)))
 
 (defn get-state
-  "Get a component's local state. Variadic, may provide seq of keys for indexed
-   access into the component's local state."
+  "Get a component's local state. May provide a single key or a sequential
+   collection of keys for indexed access into the component's local state."
   ([c]
    (get-state c []))
-  ([c ks]
+  ([c k-or-ks]
    {:pre [(component? c)]}
    (let [cst (if (satisfies? ILocalState c)
                (-get-state c)
                (when-let [state (. c -state)]
                  (or (gobj/get state "omcljs$pendingState")
                      (gobj/get state "omcljs$state"))))]
-     (get-in cst ks))))
+     (get-in cst (if (sequential? k-or-ks) k-or-ks [k-or-ks])))))
 
 (defn update-state!
   "Update a component's local state. Similar to Clojure(Script)'s update-in."
