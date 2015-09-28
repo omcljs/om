@@ -56,16 +56,16 @@
     'componentWillMount
     (fn [[name [this :as args] & body]]
       `(~name ~args
-         (let [reconciler# (om.next/get-reconciler ~this)]
-           (when (satisfies? om.next.protocols/IComponentIndex reconciler#)
-             (om.next.protocols/index-component! reconciler# ~this)))
+         (let [indexer# (get-in (om.next/get-reconciler ~this) [:config :indexer])]
+           (when-not (nil? indexer#)
+             (om.next.protocols/index-component! indexer# ~this)))
          ~@body))
     'componentWillUnmount
     (fn [[name [this :as args] & body]]
       `(~name ~args
-         (let [reconciler# (om.next/get-reconciler ~this)]
-           (when (satisfies? om.next.protocols/IComponentIndex reconciler#)
-             (om.next.protocols/drop-component! reconciler# ~this)))
+         (let [indexer# (get-in (om.next/get-reconciler ~this) [:config :indexer])]
+           (when-not (nil? indexer#)
+             (om.next.protocols/drop-component! indexer# ~this)))
          ~@body))
     'render
     (fn [[name [this :as args] & body]]
@@ -96,11 +96,13 @@
      ~'componentWillMount
      ([this#]
        (let [indexer# (get-in (om.next/get-reconciler this#) [:config :indexer])]
-         (om.next.protocols/index-component! indexer# this#)))
+         (when-not (nil? indexer#)
+           (om.next.protocols/index-component! indexer# this#))))
      ~'componentWillUnmount
      ([this#]
        (let [indexer# (get-in (om.next/get-reconciler this#) [:config :indexer])]
-         (om.next.protocols/drop-component! indexer# this#)))}})
+         (when-not (nil? indexer#)
+           (om.next.protocols/drop-component! indexer# this#))))}})
 
 (defn reshape [dt {:keys [reshape defaults]}]
   (letfn [(reshape* [x]
