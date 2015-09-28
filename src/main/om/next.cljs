@@ -587,10 +587,9 @@
             (merge-ref indexer tree' ref props))]
     (reduce step tree refs)))
 
-(defn- merge-novelty [r res]
+(defn- merge-novelty! [r res]
   (let [config      (:config r)
         [refs res'] (sift-refs res)]
-    (queue-calls! r res)
     (swap! (:state config)
       #(-> %
         (merge-refs config refs)
@@ -620,7 +619,10 @@
             (renderf v))
           (when-not (empty? v')
             (when-let [send (:send config)]
-              (send v' #(merge-novelty this %)))))
+              (send v'
+                #(do
+                   (merge-novelty! this %)
+                   (renderf %))))))
         @ret)))
 
   (remove-root! [_ target]
@@ -675,7 +677,10 @@
             (-> state
               (assoc :queued-send nil)
               (assoc :send-queued false))))
-        ((:send config) expr #(merge-novelty this %))))))
+        ((:send config) expr
+          #(do
+             (queue-calls! this %)
+             (merge-novelty! this %)))))))
 
 (defn default-ui->props
   [{:keys [state indexer parser] :as env} c]
