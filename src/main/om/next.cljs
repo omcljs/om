@@ -576,6 +576,21 @@
     (p/queue! r (transduce (comp (map res) (distinct))
                   (completing into) [] call-ks))))
 
+(defn- merge-refs [tree {:keys [merge-ref indexer]} refs]
+  (letfn [(step [tree [ref props]]
+            (merge-ref indexer tree ref props))]
+    (reduce step state refs)))
+
+(defn- merge-novelty [r res]
+  (let [config     (:config r)
+        [refs res] (sift-refs res)]
+    (queue-calls! r res)
+    (swap! (:state config)
+      (fn [state]
+        (-> state
+          (merge-refs config refs)
+          ((:merge-tree config) res))))))
+
 (defrecord Reconciler [config state]
   p/IReconciler
 
@@ -678,7 +693,7 @@
       ps)))
 
 (defn default-merge-ref
-  [{:keys [indexer] :as env} tree ref props]
+  [{:keys [indexer] :as config} tree ref props]
   (letfn [(merge-ref-step [tree c]
             (update-in tree (state-path indexer c) merge props))]
     (reduce merge-ref-step tree
