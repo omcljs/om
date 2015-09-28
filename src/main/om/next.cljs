@@ -374,7 +374,7 @@
             (not= '* index) (conj index))))
       ret)))
 
-(defn state-path [c indexer]
+(defn state-path [indexer c]
   (let [idxs @(:indexes indexer)
         fcs  (get-in idxs [:class-path->query (class-path c)])]
     (state-path* fcs (data-path c))))
@@ -553,8 +553,12 @@
     (let [idxr (indexer ui->ref)]
       (p/index-root idxr class))))
 
-(defn key->components [indexer ref]
-  (p/key->components indexer ref))
+(defn key->components [indexer k]
+  (p/key->components indexer k))
+
+(defn key->paths [indexer k]
+  (reduce #(conj %1 (state-path indexer %2))
+    #{} (p/key->components indexer k)))
 
 ;; =============================================================================
 ;; Reconciler
@@ -666,9 +670,9 @@
       ps)))
 
 (defn default-merge-ref
-  [{:keys [indexer] :as env} tree [[ref props]]]
+  [{:keys [indexer] :as env} tree ref props]
   (letfn [(merge-ref-step [tree c]
-            (update-in tree (state-path c indexer) merge props))]
+            (update-in tree (state-path indexer c) merge props))]
     (reduce merge-ref-step tree
       (p/key->components indexer ref))))
 
