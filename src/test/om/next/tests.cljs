@@ -242,6 +242,10 @@
     (is (= (p {:state st} [{[:user/by-id 0] [:name/last]}] true)
            [{[:user/by-id 0] [:name/last]}]))))
 
+(deftest test-forced-quoted
+  (is (= (p {} '['(foo/bar)]) {}))
+  (is (= (p {} '['(foo/bar)] true) '[(foo/bar)])))
+
 ;; -----------------------------------------------------------------------------
 ;; Edge cases
 

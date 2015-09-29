@@ -12,9 +12,11 @@
    :key  k})
 
 (defn call->ast [[f args]]
-  (let [ast (update-in (->ast f) [:params] merge (or args {}))]
-    (cond-> ast
-      (symbol? (:dkey ast)) (assoc :type :call))))
+  (if (= 'quote f)
+    {:type :quoted}
+    (let [ast (update-in (->ast f) [:params] merge (or args {}))]
+     (cond-> ast
+       (symbol? (:dkey ast)) (assoc :type :call)))))
 
 (defn join->ast [join]
   (let [[k v] (first join)
@@ -53,12 +55,14 @@
                        type  (:type ast)
                        call? (= :call type)
                        res   (case type
-                               :call (mutate env dkey params)
-                               :prop (read env dkey params))]
+                               :call   (mutate env dkey params)
+                               :prop   (read env dkey params)
+                               :quoted nil)]
                    (if quoted?
                      (cond-> ret
-                       (true? (:quote res)) (conj expr))
-                     (if-not (or call? (contains? res :value))
+                       (true? (:quote res)) (conj expr)
+                       (= :quoted type)     (conj (second expr)))
+                     (if-not (or call? (not= :quoted type) (contains? res :value))
                        ret
                        (do
                          (when call?
