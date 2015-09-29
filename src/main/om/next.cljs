@@ -572,6 +572,9 @@
   (reduce #(conj %1 (state-path indexer %2))
     #{} (p/key->components indexer k)))
 
+(defn key->any [indexer k]
+  (state-path indexer (first (p/key->components indexer k))))
+
 (defn subpath [k paths]
   (rest (drop-while #(not= k %) paths)))
 
