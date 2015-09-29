@@ -137,10 +137,14 @@
   {:pre [(component? c)]}
   (.-state c))
 
-(defn- get-prop [c k]
+(defn get-prop
+  "PRIVATE: Do not use"
+  [c k]
   (gobj/get (.-props c) k))
 
-(defn- set-prop! [c k v]
+(defn set-prop!
+  "PRIVATE: Do not use"
+  [c k v]
   (gobj/set (.-props c) k v))
 
 (defn get-reconciler

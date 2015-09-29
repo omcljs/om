@@ -37,21 +37,21 @@
     'componentWillReceiveProps
     (fn [[name [this next-props :as args] & body]]
       `(~name ~args
-         (let [~next-props (. ~next-props ~'-omcljs$value)]
+         (let [~next-props (goog.object/get ~next-props "omcljs$value")]
            ~@body)))
     'componentWillUpdate
     (fn [[name [this next-props next-state :as args] & body]]
       `(~name ~args
-         (let [~next-props (. ~next-props ~'-omcljs$value)
-               ~next-state (. ~next-state ~'-omcljs$pendingState)
+         (let [~next-props (goog.object/get ~next-props "omcljs$value")
+               ~next-state (goog.object/get ~next-state "omcljs$pendingState")
                ret# (do ~@body)]
            (om.next/merge-pending-state! ~this)
            ret#)))
     'componentDidUpdate
     (fn [[name [this prev-props prev-state :as args] & body]]
       `(~name ~args
-         (let [~prev-props (. ~prev-props ~'-omcljs$value)
-               ~prev-state (. ~prev-state ~'-omcjls$previousState)]
+         (let [~prev-props (goog.object/get ~prev-props "omcljs$value")
+               ~prev-state (goog.object/get ~prev-state "omcjls$previousState")]
            ~@body)))
     'componentWillMount
     (fn [[name [this :as args] & body]]
@@ -85,11 +85,11 @@
            "_reactInternalInstance" "_renderedComponent")) )
      ~'shouldComponentUpdate
      ([this# next-props# next-state#]
-       (or (not= (.. this# ~'-props ~'-omcljs$value)
-                 (.-omcljs$value next-props#))
+       (or (not= (goog.object/get (. this# ~'-props) "omcljs$value")
+                 (goog.object/get next-props# "omcljs$value"))
            (and (.. this# ~'-state)
-                (not= (.. this# ~'-state ~'-omcljs$state)
-                      (.-omcljs$state next-state#)))))
+                (not= (goog.object/get (. this# ~'-state) "omcljs$state")
+                      (goog.object/get next-state# "omcljs$state")))))
      ~'componentWillUpdate
      ([this# prev-props# prev-state#]
        (om.next/merge-pending-state! this#))
