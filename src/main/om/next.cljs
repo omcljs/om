@@ -431,9 +431,10 @@
 ;; =============================================================================
 ;; Call Support
 
-(defn transact
-  [c tx]
-  {:pre [(component? c) (vector? tx)]}
+(defprotocol ITxIntercept
+  (tx-intercept [c tx]))
+
+(defn transact* [c tx]
   (let [r   (get-reconciler c)
         cfg (:config r)
         ref ((:ui->ref cfg) c)
@@ -451,6 +452,17 @@
     (when-not (empty? v')
       (p/queue-send! r v')
       (schedule-send! r))))
+
+(defn transact
+  [c tx]
+  {:pre [(component? c) (vector? tx)]}
+  (loop [p (parent c) tx tx]
+    (if (nil? p)
+      (transact* c tx)
+      (let [tx (if (satisfies? ITxIntercept p)
+                 (tx-intercept p tx)
+                 tx)]
+        (recur (parent p) tx)))))
 
 (defn call
   ([c name]
