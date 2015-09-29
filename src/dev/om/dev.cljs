@@ -80,7 +80,9 @@
           "Click Me!")
         (dom/button
           #js {:style #js {:marginLeft "10px"}
-               :onClick (fn [_] (om/call this 'counters/delete))}
+               :onClick
+               (fn [_] (om/transact this
+                         '[(counters/delete) :counters/list]))}
           "Delete")))))
 
 (def counter (om/create-factory Counter))
@@ -149,6 +151,8 @@
 
 (comment
   (require '[cljs.pprint :as pprint])
+
+  (pprint/pprint @app-state)
 
   (pprint/pprint (om/build-index CountersApp))
 
