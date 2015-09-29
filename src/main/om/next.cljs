@@ -568,6 +568,9 @@
   (reduce #(conj %1 (state-path indexer %2))
     #{} (p/key->components indexer k)))
 
+(defn subpath [k paths]
+  (rest (drop-while #(not= k %) paths)))
+
 (defn get-indexer [r]
   {:pre [(reconciler? r)]}
   (get-in r [:config :indexer]))
