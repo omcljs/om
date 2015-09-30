@@ -64,14 +64,13 @@
                        (= :remote type)     (conj (second expr)))
                      (if-not (or call? (not= :remote type) (contains? res :value))
                        ret
-                       (do
+                       (let [error (atom nil)]
                          (when call?
                            (if-not (nil? (:action res))
-                             (do
+                             (try
                                ((:action res))
-                               (let [value (:value res)]
-                                 (cond-> ret
-                                   (not (nil? value)) (assoc key value))))
+                               (catch :default e
+                                 (reset! error e)))
                              (when-not (true? (:remote res))
                                (throw
                                  (ex-info
@@ -79,6 +78,7 @@
                                    {:type :error/invalid-mutation})))))
                          (let [value (:value res)]
                            (cond-> ret
+                             @error (assoc key @error)
                              (not (nil? value)) (assoc key value))))))))]
          (reduce step (if-not remote? {} []) sel))))))
 

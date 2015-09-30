@@ -246,6 +246,13 @@
   (is (= (p {} '['(foo/bar)]) {}))
   (is (= (p {} '['(foo/bar)] true) '[(foo/bar)])))
 
+(defmethod mutate 'this/throws
+  [_ _ _]
+  {:action #(throw (js/Error.))})
+
+(deftest test-throw
+  (is (instance? js/Error (get (p {} '[(this/throws)]) 'this/throws))))
+
 ;; -----------------------------------------------------------------------------
 ;; Edge cases
 
