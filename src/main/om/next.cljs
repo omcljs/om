@@ -90,9 +90,9 @@
 
 (defn get-query
   "Return a component's bound query."
-  [cl]
-  (with-meta (bind-query (query cl) (params cl))
-    {:component cl}))
+  [class]
+  (with-meta (bind-query (query class) (params class))
+    {:component class}))
 
 (defn iquery? [x]
   (satisfies? IQuery x))
@@ -110,13 +110,13 @@
 (defn create-factory
   "Create a factory constructor from a component class created with
    om.next/defui."
-  [cl]
-  {:pre [(fn? cl)]}
+  [class]
+  {:pre [(fn? class)]}
   (fn [props & children]
     (if *instrument*
       (apply *instrument* props children)
-      (js/React.createElement cl
-        #js {:key (compute-react-key cl props)
+      (js/React.createElement class
+        #js {:key (compute-react-key class props)
              :omcljs$value props
              :omcljs$index (:om-index props)
              :omcljs$reconciler *reconciler*
@@ -148,7 +148,6 @@
   (gobj/set (.-props c) k v))
 
 (defn get-reconciler
-  "Get the reconciler associated with a component."
   [c]
   {:pre [(component? c)]}
   (get-prop c "omcljs$reconciler"))
@@ -166,24 +165,24 @@
         (max t0 t1)))))
 
 (defn root-class
-  [c]
-  (get-prop c "omcljs$rootClass"))
+  [component]
+  (get-prop component "omcljs$rootClass"))
 
 (defn parent
   "Returns the parent Om component."
-  [c]
-  (get-prop c "omcljs$parent"))
+  [component]
+  (get-prop component "omcljs$parent"))
 
 (defn depth
   "Returns the render depth (a integer) of the component relative to the
   mount root."
-  [c]
-  (get-prop c "omcljs$depth"))
+  [component]
+  (get-prop component "omcljs$depth"))
 
 (defn react-key
   "Returns the components React key."
-  [c]
-  (.. c -props -key))
+  [component]
+  (.. component -props -key))
 
 (defn react-type
   "Returns the component type, regardless of whether the component has been
@@ -196,13 +195,13 @@
   [c]
   (get-prop c "omcljs$index"))
 
-(defn shared [c]
-  {:pre [(component? c)]}
-  (get-prop c "omcljs$shared"))
+(defn shared [component]
+  {:pre [(component? component)]}
+  (get-prop component "omcljs$shared"))
 
-(defn instrument [c]
-  {:pre [(component? c)]}
-  (get-prop c "omcljs$instrument"))
+(defn instrument [component]
+  {:pre [(component? component)]}
+  (get-prop component "omcljs$instrument"))
 
 (defn update-props! [c next-props]
   {:pre [(component? c)]}
@@ -211,10 +210,10 @@
 
 (defn props
   "Return a components props."
-  [c]
-  {:pre [(component? c)]}
-  (let [cst (.-state c)
-        cps (.-props c)]
+  [component]
+  {:pre [(component? component)]}
+  (let [cst (.-state component)
+        cps (.-props component)]
     (if (nil? cst)
       (gobj/get cps "omcljs$value")
       (let [t0 (gobj/get cst "omcljs$t")
@@ -226,53 +225,53 @@
 (defn set-state!
   "Set the component local state of the component. Analogous to React's
    setState."
-  [c new-state]
-  {:pre [(component? c)]}
-  (if (satisfies? ILocalState c)
-    (-set-state! c new-state)
-    (gobj/set (.-state c) "omcljs$pendingState" new-state))
-  (if-let [r (get-reconciler c)]
-    (p/queue! r [c])
-    (.forceUpdate c)))
+  [component new-state]
+  {:pre [(component? component)]}
+  (if (satisfies? ILocalState component)
+    (-set-state! component new-state)
+    (gobj/set (.-state component) "omcljs$pendingState" new-state))
+  (if-let [r (get-reconciler component)]
+    (p/queue! r [component])
+    (.forceUpdate component)))
 
 (defn get-state
   "Get a component's local state. May provide a single key or a sequential
    collection of keys for indexed access into the component's local state."
-  ([c]
-   (get-state c []))
-  ([c k-or-ks]
-   {:pre [(component? c)]}
-   (let [cst (if (satisfies? ILocalState c)
-               (-get-state c)
-               (when-let [state (. c -state)]
+  ([component]
+   (get-state component []))
+  ([component k-or-ks]
+   {:pre [(component? component)]}
+   (let [cst (if (satisfies? ILocalState component)
+               (-get-state component)
+               (when-let [state (. component -state)]
                  (or (gobj/get state "omcljs$pendingState")
                      (gobj/get state "omcljs$state"))))]
      (get-in cst (if (sequential? k-or-ks) k-or-ks [k-or-ks])))))
 
 (defn update-state!
   "Update a component's local state. Similar to Clojure(Script)'s update-in."
-  ([c f]
-   (set-state! c (f (get-state c))))
-  ([c f arg0]
-   (set-state! c (f (get-state c) arg0)))
-  ([c f arg0 arg1]
-   (set-state! c (f (get-state c) arg0 arg1)))
-  ([c f arg0 arg1 arg2]
-   (set-state! c (f (get-state c) arg0 arg1 arg2)))
-  ([c f arg0 arg1 arg2 arg3]
-   (set-state! c (f (get-state c) arg0 arg1 arg2 arg3)))
-  ([c f arg0 arg1 arg2 arg3 & arg-rest]
-   (set-state! c
-     (apply f (get-state c) arg0 arg1 arg2 arg3 arg-rest))))
+  ([component f]
+   (set-state! component (f (get-state component))))
+  ([component f arg0]
+   (set-state! component (f (get-state component) arg0)))
+  ([component f arg0 arg1]
+   (set-state! component (f (get-state component) arg0 arg1)))
+  ([component f arg0 arg1 arg2]
+   (set-state! component (f (get-state component) arg0 arg1 arg2)))
+  ([component f arg0 arg1 arg2 arg3]
+   (set-state! component (f (get-state component) arg0 arg1 arg2 arg3)))
+  ([component f arg0 arg1 arg2 arg3 & arg-rest]
+   (set-state! component
+     (apply f (get-state component) arg0 arg1 arg2 arg3 arg-rest))))
 
 (defn get-rendered-state
   "Get the rendered state of component. om.next/get-state always returns the
    up-to-date state."
-  [c]
-  {:pre [(component? c)]}
-  (if (satisfies? ILocalState c)
-    (-get-rendered-state c)
-    (some-> c .-state (gobj/get "omcljs$state"))))
+  [component]
+  {:pre [(component? component)]}
+  (if (satisfies? ILocalState component)
+    (-get-rendered-state component)
+    (some-> component .-state (gobj/get "omcljs$state"))))
 
 (defn merge-pending-state! [c]
   (if (satisfies? ILocalState c)
@@ -285,11 +284,11 @@
         (gobj/set state "omcljs$state" pending)))))
 
 (defn react-set-state!
-  ([c new-state]
-   (react-set-state! c new-state nil))
-  ([c new-state cb]
-   {:pre [(component? c)]}
-   (.setState c #js {:omcljs$state new-state} nil)))
+  ([component new-state]
+   (react-set-state! component new-state nil))
+  ([component new-state cb]
+   {:pre [(component? component)]}
+   (.setState component #js {:omcljs$state new-state} nil)))
 
 ;; TODO: where to put query mutations so that time travel can be preserved?
 ;; TODO: will need to reindex
@@ -299,26 +298,26 @@
 
 (defn mounted?
   "Returns true if the component is mounted."
-  [c]
-  {:pre [(component? c)]}
-  (.isMounted c))
+  [component]
+  {:pre [(component? component)]}
+  (.isMounted component))
 
 (defn dom-node
   "Returns the dom node associated with a component's React ref."
-  ([c]
-   (.getDOMNode c))
-  ([c name]
-   (some-> (.-refs c) (gobj/get name) (.getDOMNode))))
+  ([component]
+   (.getDOMNode component))
+  ([component name]
+   (some-> (.-refs component) (gobj/get name) (.getDOMNode))))
 
 (defn react-ref
   "Returns the component associated with a component's React ref."
-  [c name]
-  (some-> (.-refs c) (gobj/get name)))
+  [component name]
+  (some-> (.-refs component) (gobj/get name)))
 
 (defn children
   "Returns the component's children."
-  [c]
-  (.. c -props -children))
+  [component]
+  (.. component -props -children))
 
 (defn update-component! [c next-props]
   {:pre [(component? c)]}
@@ -408,13 +407,20 @@
     (js/setTimeout #(p/send! reconciler) 300)))
 
 (defn add-root!
+  "Given a target root DOM node and a root component class, instantiate and
+   render the root class using the reconciler's :state property. The reconciler
+   will continue to observe state changes to the :state and keep the components
+   in sync."
   ([reconciler target root-class]
    (add-root! reconciler target root-class nil))
   ([reconciler target root-class options]
    {:pre [(reconciler? reconciler) (gdom/isElement target) (fn? root-class)]}
    (p/add-root! reconciler target root-class options)))
 
-(defn remove-root! [reconciler target]
+(defn remove-root!
+  "Remove a root target (a DOM elment) from a reconciler. The reconciler will no
+   longer attempt to reconcile application state with the specified root."
+  [reconciler target]
   (p/remove-root! reconciler target))
 
 ;; =============================================================================
@@ -432,7 +438,9 @@
 ;; Call Support
 
 (defprotocol ITxIntercept
-  (tx-intercept [c tx]))
+  (tx-intercept [c tx]
+    "An optional protocol that component may implement to intercept child
+     transactions."))
 
 (defn transact* [c tx]
   (let [r   (get-reconciler c)
@@ -454,33 +462,56 @@
       (schedule-send! r))))
 
 (defn transact
-  [c tx]
-  {:pre [(component? c) (vector? tx)]}
-  (loop [p (parent c) tx tx]
+  "Given a component run a transaction. tx is a parse expression that should
+   include mutations followed by any necessary read. The reads will be used
+   to trigger component re-rendering.
+
+   Example:
+
+     (om/transact! widget
+       '[(do/this!) (do/that!)
+         :read/this :read/that])"
+  [component tx]
+  {:pre [(component? component) (vector? tx)]}
+  (loop [p (parent component) tx tx]
     (if (nil? p)
-      (transact* c tx)
+      (transact* component tx)
       (let [tx (if (satisfies? ITxIntercept p)
                  (tx-intercept p tx)
                  tx)]
         (recur (parent p) tx)))))
 
 (defn call
-  ([c name]
-   (call c name nil))
-  ([c name param-map]
-    (call c name param-map []))
-  ([c name param-map reads]
-   {:pre [(component? c) (symbol? name) (nil-or-map? param-map) (vector? reads)]}
-   (transact c (into `[(~name ~param-map)] reads))))
+  "Given a component a symbol identifying a mutation run a transaction. May
+   supply a parse expression of reads that will be used to trigger re-renders
+   that depend on the provided keys. Does not return a meaningful value.
+
+   Example:
+
+     (om/call widget 'do/it! [:changed/key])"
+  ([component name]
+   (call component name nil))
+  ([component name param-map]
+    (call component name param-map []))
+  ([component name param-map reads]
+   {:pre [(component? component) (symbol? name)
+          (nil-or-map? param-map) (vector? reads)]}
+   (transact component (into `[(~name ~param-map)] reads))))
 
 ;; =============================================================================
 ;; Parser
 
-(defn parser [opts]
+(defn parser
+  "Create a parser. The argument is a map of two keys, :read and :mutate. Both
+   functions should have the signature (Env -> Key -> Params -> ParseResult)."
+  [{:keys [read mutate] :as opts}]
   {:pre [(map? opts)]}
   (parser/parser opts))
 
-(defn dispatch [_ k _] k)
+(defn dispatch
+  "Helper function for implementing :read and :mutate as multimethods. Use this
+   as the dispatch-fn."
+  [_ key _] key)
 
 ;; =============================================================================
 ;; Indexer
@@ -565,10 +596,14 @@
                   (completing into) #{} cs))
               (throw (js/Error. (str "Invalid key " k ", key must be ref or keyword"))))))))))
 
-(defn indexer [ui->ref]
+(defn indexer
+  "Given a function (Component -> Ref), return an indexer."
+  [ui->ref]
   (Indexer. (atom {}) ui->ref))
 
-(defn ^boolean indexer? [x]
+(defn ^boolean indexer?
+  "Returns true if x is an indexer."
+  [x]
   (instance? Indexer x))
 
 (defn build-index
@@ -577,22 +612,41 @@
     (let [idxr (indexer ui->ref)]
       (p/index-root idxr class))))
 
-(defn key->components [indexer k]
-  (p/key->components indexer k))
+(defn ref->components
+  "Return all components for a given ref."
+  [indexer ref]
+  (p/key->components indexer ref))
 
-(defn key->paths [indexer k]
+(defn ref->any
+  "Get any component from the indexer that matches the ref."
+  [indexer ref]
+  (state-path indexer
+    (first (p/key->components indexer ref))))
+
+(defn ref->paths
+  "Return all paths for a given ref."
+  [indexer ref]
   (reduce #(conj %1 (state-path indexer %2))
-    #{} (p/key->components indexer k)))
+    #{} (p/key->components indexer ref)))
 
-(defn key->any [indexer k]
-  (state-path indexer (first (p/key->components indexer k))))
+(defn ref->any-path
+  "Get any path from the indexer that matches the given ref. See also
+   om.next/ref->paths."
+  [indexer ref]
+  (state-path indexer
+    (first (p/key->components indexer ref))))
 
-(defn subpath [k paths]
-  (rest (drop-while #(not= k %) paths)))
+(defn subpath
+  "Given a key path into the application state return the path after the
+   given key"
+  [path key]
+  (rest (drop-while #(not= key %) path)))
 
-(defn get-indexer [r]
-  {:pre [(reconciler? r)]}
-  (get-in r [:config :indexer]))
+(defn get-indexer
+  "Get the indexer associated with the reconciler."
+  [reconciler]
+  {:pre [(reconciler? reconciler)]}
+  (get-in reconciler [:config :indexer]))
 
 (defn sift-refs [res]
   (let [{refs true rest false} (group-by #(vector? (first %)) res)]
@@ -609,13 +663,21 @@
             (merge-ref config tree' ref props))]
     (reduce step tree refs)))
 
-(defn- merge-novelty! [r res]
+(defn- merge-novelty!
+  [r res]
   (let [config      (:config r)
         [refs res'] (sift-refs res)]
     (swap! (:state config)
       #(-> %
         (merge-refs config refs)
         ((:merge-tree config) res')))))
+
+(defn merge!
+  "Merge a state delta into the application state. Affected components managed
+   by the reconciler will re-render."
+  [reconciler delta]
+  (queue-calls! reconciler delta)
+  (merge-novelty! reconciler delta))
 
 (defrecord Reconciler [config state]
   p/IReconciler
@@ -723,6 +785,15 @@
       (p/key->components indexer ref))))
 
 (defn reconciler
+  "Construct a reconciler from a configuration map, the following options
+   are required:
+
+   :state  - the application state, must be IAtom.
+   :parser - the parser to be used
+   :send   - required only if the parser will return a non-empty value when
+             run in remote mode. send is a function of two arguments, the
+             remote expression and a callback which should be invoked with
+             the resolved expression."
   [{:keys [state parser indexer
            ui->ref ui->props
            send merge-send
@@ -751,5 +822,7 @@
         (fn [_ _ _ _] (schedule-render! ret))))
     ret))
 
-(defn ^boolean reconciler? [x]
+(defn ^boolean reconciler?
+  "Returns true if x is a reconciler."
+  [x]
   (instance? Reconciler x))

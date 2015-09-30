@@ -120,7 +120,7 @@
 ;; Path Helpers
 
 (deftest test-subpath
-  (is (= (om/subpath :foo [1 :foo 2]) '(2))))
+  (is (= (om/subpath [1 :foo 2] :foo) '(2))))
 
 ;; -----------------------------------------------------------------------------
 ;; Parser
