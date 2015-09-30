@@ -13,7 +13,7 @@
 
 (defn call->ast [[f args]]
   (if (= 'quote f)
-    {:type :quoted}
+    {:type :remote}
     (let [ast (update-in (->ast f) [:params] merge (or args {}))]
      (cond-> ast
        (symbol? (:dkey ast)) (assoc :type :call)))))
@@ -44,10 +44,10 @@
 (defn parser [{:keys [read mutate]}]
   (fn self
     ([env sel] (self env sel false))
-    ([env sel #?@(:clj [quoted?] :cljs [^boolean quoted?])]
+    ([env sel #?@(:clj [remote?] :cljs [^boolean remote?])]
      (let [env (cond-> (assoc env :parse self)
                  (not (contains? env :path)) (assoc :path [])
-                 quoted? (assoc :quoted true))]
+                 remote? (assoc :remote true))]
        (letfn [(step [ret expr]
                  (let [{:keys [key dkey params sel] :as ast} (->ast expr)
                        env   (cond-> env
@@ -57,12 +57,12 @@
                        res   (case type
                                :call   (mutate env dkey params)
                                :prop   (read env dkey params)
-                               :quoted nil)]
-                   (if quoted?
+                               :remote nil)]
+                   (if remote?
                      (cond-> ret
-                       (true? (:quote res)) (conj expr)
-                       (= :quoted type)     (conj (second expr)))
-                     (if-not (or call? (not= :quoted type) (contains? res :value))
+                       (true? (:remote res)) (conj expr)
+                       (= :remote type)     (conj (second expr)))
+                     (if-not (or call? (not= :remote type) (contains? res :value))
                        ret
                        (do
                          (when call?
@@ -72,7 +72,7 @@
                                (let [value (:value res)]
                                  (cond-> ret
                                    (not (nil? value)) (assoc key value))))
-                             (when-not (true? (:quote res))
+                             (when-not (true? (:remote res))
                                (throw
                                  (ex-info
                                    (str "Mutation " dkey " does not return an :action")
@@ -80,6 +80,6 @@
                          (let [value (:value res)]
                            (cond-> ret
                              (not (nil? value)) (assoc key value))))))))]
-         (reduce step (if-not quoted? {} []) sel))))))
+         (reduce step (if-not remote? {} []) sel))))))
 
 (defn dispatch [_ k _] k)

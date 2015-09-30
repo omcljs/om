@@ -23,7 +23,7 @@
   (let [st @state]
     (if (contains? st k)
      {:value (get st k)}
-     {:quote true})))
+     {:remote true})))
 
 (defmethod read :counters/list
   [{:keys [state selector]} _]

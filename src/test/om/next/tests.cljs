@@ -149,30 +149,30 @@
   [{:keys [state data]} k params]
   (if (and (not (nil? data)) (contains? data k))
     {:value (get data k)}
-    {:quote true}))
+    {:remote true}))
 
 (defmethod read :foo/bar
   [{:keys [state]} k params]
   (if-let [v (get @state k)]
     {:value v}
-    {:quote true}))
+    {:remote true}))
 
 (defmethod read :woz/noz
   [{:keys [state]} k params]
   (if-let [v (get @state k)]
-    {:value v :quote true} ;; local read AND remote read
-    {:quote true})) ;; no cached locally, must read remote
+    {:value v :remote true} ;; local read AND remote read
+    {:remote true})) ;; no cached locally, must read remote
 
 (defmethod read :user/pic
   [env k {:keys [size]}]
   (let [size-str (case size :small "50x50" :large "100x100")]
-    {:value (str "user" size-str ".png") :quote true}))
+    {:value (str "user" size-str ".png") :remote true}))
 
 (defmethod read :user/by-id
   [{:keys [selector] :as env} k {:keys [id] :as params}]
   {:value (cond-> {:name/first "Bob" :name/last "Smith"}
             selector (select-keys selector))
-   :quote true})
+   :remote true})
 
 (defmulti mutate (fn [env k params] k))
 
@@ -180,7 +180,7 @@
   [{:keys [state]} k {:keys [id]}]
   {:value [id]
    :action #()
-   :quote true})
+   :remote true})
 
 (def p (om/parser {:read read :mutate mutate}))
 
@@ -193,7 +193,7 @@
     (is (= (p {:state st} [:foo/bar] true) []))
     (is (= (p {:state st} [:foo/bar :baz/woz] true) [:baz/woz]))))
 
-(deftest test-value-and-quote
+(deftest test-value-and-remote
   (let [st (atom {:woz/noz 1})]
     (is (= (p {:state st} [:woz/noz]) {:woz/noz 1}))
     (is (= (p {:state st} [:woz/noz] true) [:woz/noz]))))
@@ -216,7 +216,7 @@
   {:value  []
    :action #(swap! state update-in [:count] inc)} )
 
-(deftest test-quote-does-not-mutate
+(deftest test-remote-does-not-mutate
   (let [st (atom {:count 0})
         _  (p {:state st} '[(mutate!)])
         _  (p (:state st) '[(mutate!)] true)]
@@ -242,7 +242,7 @@
     (is (= (p {:state st} [{[:user/by-id 0] [:name/last]}] true)
            [{[:user/by-id 0] [:name/last]}]))))
 
-(deftest test-forced-quoted
+(deftest test-forced-remote
   (is (= (p {} '['(foo/bar)]) {}))
   (is (= (p {} '['(foo/bar)] true) '[(foo/bar)])))
 
@@ -256,8 +256,8 @@
 (deftest test-missing-value
   (is (= (p {} [:missing/thing]) {})))
 
-(defmethod mutate 'quoted/action
-  [env k params] {:quote true})
+(defmethod mutate 'remote/action
+  [env k params] {:remote true})
 
 (defmethod mutate 'action/no-value
   [{:keys [state] :as env} k params]
