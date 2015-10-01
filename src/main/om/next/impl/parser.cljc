@@ -69,8 +69,10 @@
                            (if-not (nil? (:action res))
                              (try
                                ((:action res))
-                               (catch :default e
-                                 (reset! error e)))
+                               #?(:clj  (catch Throwable e
+                                          (reset! error e))
+                                  :cljs (catch :default e
+                                          (reset! error e))))
                              (when-not (true? (:remote res))
                                (throw
                                  (ex-info
