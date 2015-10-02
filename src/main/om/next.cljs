@@ -8,7 +8,9 @@
             [clojure.walk :as walk]
             [om.next.protocols :as p]
             [om.next.impl.parser :as parser]
-            [om.next.impl.refs :as refs]))
+            [om.next.impl.refs :as refs]
+            [om.next.cache :as c])
+  (:import [goog.debug Console]))
 
 ;; =============================================================================
 ;; Globals & Dynamics
@@ -453,7 +455,11 @@
               (when ref
                 {:ref ref}))
         v   ((:parser cfg) env tx)
-        v'  ((:parser cfg) env tx true)]
+        v'  ((:parser cfg) env tx true)
+        id  (random-uuid)]
+    (.add (:history cfg) id @(:state cfg))
+    (glog/info (:logger cfg)
+      (str (pr-str ref) " transacted " tx ", " id))
     (when-not (empty? v)
       (p/queue! r
         (into (if ref [ref] [])
@@ -799,14 +805,16 @@
            ui->ref ui->props
            send merge-send
            merge-tree merge-ref
-           optimize]
+           optimize
+           history]
     :or {ui->ref     identity
          ui->props   default-ui->props
          indexer     om.next/indexer
          merge-send  into
          merge-tree  merge
          merge-ref   default-merge-ref
-         optimize    (fn [cs] (sort-by depth cs))}
+         optimize    (fn [cs] (sort-by depth cs))
+         history     100}
     :as config}]
   {:pre [(map? config)]}
   (let [idxr (indexer ui->ref)
@@ -815,7 +823,11 @@
                 :ui->ref ui->ref :ui->props ui->props
                 :send send :merge-send merge-send
                 :merge-tree merge-tree :merge-ref merge-ref
-                :optimize optimize}
+                :optimize optimize
+                :history (c/cache history)
+                :logger (when ^boolean goog.DEBUG
+                          (.setCapturing (Console.) true)
+                          (goog.log/getLogger "om.next"))}
                (atom {:queue [] :queued false :queued-send []
                       :send-queued false :roots {} :t 0}))]
     (when state
@@ -827,3 +839,6 @@
   "Returns true if x is a reconciler."
   [x]
   (instance? Reconciler x))
+
+(defn from-history [reconciler uuid]
+  (.get (get-in reconciler [:config :history]) uuid))
