@@ -4,6 +4,7 @@
   (:require [goog.string :as gstring]
             [goog.object :as gobj]
             [goog.dom :as gdom]
+            [goog.log :as glog]
             [clojure.walk :as walk]
             [om.next.protocols :as p]
             [om.next.impl.parser :as parser]
