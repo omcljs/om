@@ -12,8 +12,15 @@
             [om.next.cache :as c])
   (:import [goog.debug Console]))
 
+(defonce *logger*
+  (when ^boolean goog.DEBUG
+    (.setCapturing (Console.) true)
+    (glog/getLogger "om.next")))
+
 ;; =============================================================================
 ;; Globals & Dynamics
+
+(def ^:private roots (atom {}))
 
 (def ^{:dynamic true} *raf* nil)
 
@@ -409,12 +416,17 @@
   (when (p/schedule-send! reconciler)
     (js/setTimeout #(p/send! reconciler) 300)))
 
+(declare remove-root!)
+
 (defn add-root!
   "Given a target root DOM node and a root component class, instantiate and
    render the root class using the reconciler's :state property. The reconciler
    will continue to observe state changes to the :state and keep the components
    in sync."
   ([reconciler target root-class]
+   (when-let [old-reconciler (get @roots target)]
+     (remove-root! old-reconciler target))
+   (swap! roots assoc target reconciler)
    (add-root! reconciler target root-class nil))
   ([reconciler target root-class options]
    {:pre [(reconciler? reconciler) (gdom/isElement target) (fn? root-class)]}
@@ -458,7 +470,7 @@
         v'  ((:parser cfg) env tx true)
         id  (random-uuid)]
     (.add (:history cfg) id @(:state cfg))
-    (glog/info (:logger cfg)
+    (glog/info *logger*
       (str (pr-str ref) " transacted " tx ", " id))
     (when-not (empty? v)
       (p/queue! r
@@ -824,10 +836,7 @@
                 :send send :merge-send merge-send
                 :merge-tree merge-tree :merge-ref merge-ref
                 :optimize optimize
-                :history (c/cache history)
-                :logger (when ^boolean goog.DEBUG
-                          (.setCapturing (Console.) true)
-                          (goog.log/getLogger "om.next"))}
+                :history (c/cache history)}
                (atom {:queue [] :queued false :queued-send []
                       :send-queued false :roots {} :t 0}))]
     (when state
