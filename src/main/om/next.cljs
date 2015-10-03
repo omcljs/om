@@ -466,13 +466,13 @@
               {:reconciler r :component c}
               (when ref
                 {:ref ref}))
+        id  (random-uuid)
+        _   (.add (:history cfg) id @(:state cfg))
+        _   (when-not (nil? *logger*)
+              (glog/info *logger*
+                (str (pr-str ref) " transacted " tx ", " (pr-str id))))
         v   ((:parser cfg) env tx)
-        v'  ((:parser cfg) env tx true)
-        id  (random-uuid)]
-    (.add (:history cfg) id @(:state cfg))
-    (when-not (nil? *logger*)
-      (glog/info *logger*
-        (str (pr-str ref) " transacted " tx ", " (pr-str id))))
+        v'  ((:parser cfg) env tx true)]
     (when-not (empty? v)
       (p/queue! r
         (into (if ref [ref] [])
