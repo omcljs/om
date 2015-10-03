@@ -472,7 +472,7 @@
     (.add (:history cfg) id @(:state cfg))
     (when-not (nil? *logger*)
       (glog/info *logger*
-        (str (pr-str ref) " transacted " tx ", " id)))
+        (str (pr-str ref) " transacted " tx ", " (pr-str id))))
     (when-not (empty? v)
       (p/queue! r
         (into (if ref [ref] [])
