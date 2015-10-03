@@ -470,8 +470,9 @@
         v'  ((:parser cfg) env tx true)
         id  (random-uuid)]
     (.add (:history cfg) id @(:state cfg))
-    (glog/info *logger*
-      (str (pr-str ref) " transacted " tx ", " id))
+    (when-not (nil? *logger*)
+      (glog/info *logger*
+        (str (pr-str ref) " transacted " tx ", " id)))
     (when-not (empty? v)
       (p/queue! r
         (into (if ref [ref] [])
