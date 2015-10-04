@@ -65,19 +65,13 @@
                      (if-not (or call? (not= :remote type) (contains? res :value))
                        ret
                        (let [error (atom nil)]
-                         (when call?
-                           (if-not (nil? (:action res))
-                             (try
-                               ((:action res))
-                               #?(:clj  (catch Throwable e
-                                          (reset! error e))
-                                  :cljs (catch :default e
-                                          (reset! error e))))
-                             (when-not (true? (:remote res))
-                               (throw
-                                 (ex-info
-                                   (str "Mutation " dkey " does not return an :action")
-                                   {:type :error/invalid-mutation})))))
+                         (when (and call? (not (nil? (:action res))))
+                           (try
+                             ((:action res))
+                             #?(:clj  (catch Throwable e
+                                        (reset! error e))
+                                :cljs (catch :default e
+                                        (reset! error e)))))
                          (let [value (:value res)]
                            (cond-> ret
                              @error (assoc key @error)
