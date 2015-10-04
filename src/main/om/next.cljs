@@ -715,21 +715,20 @@
                         (reset! ret
                           (js/React.render (rctor data) target))))
             sel     (get-query root-class)]
+        (swap! state update-in [:roots] assoc target renderf)
         (if-not (nil? sel)
-          (do
-            (swap! state update-in [:roots] assoc target renderf)
-            (let [env (assoc (select-keys config [:state :indexer :parser])
-                        :reconciler this)
-                  v   ((:parser config) env sel)
-                  v'  ((:parser config) env sel true)]
-              (when-not (empty? v)
-                (renderf v))
-              (when-not (empty? v')
-                (when-let [send (:send config)]
-                  (send v'
-                    #(do
-                      (merge-novelty! this %)
-                      (renderf %)))))))
+          (let [env (assoc (select-keys config [:state :indexer :parser])
+                      :reconciler this)
+                v   ((:parser config) env sel)
+                v'  ((:parser config) env sel true)]
+            (when-not (empty? v)
+              (renderf v))
+            (when-not (empty? v')
+              (when-let [send (:send config)]
+                (send v'
+                  #(do
+                    (merge-novelty! this %)
+                    (renderf %))))))
           (renderf @(:state config)))
         @ret)))
 
