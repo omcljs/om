@@ -146,8 +146,7 @@
                   (om/ref :app/counters (-> c om/props :id))
                   c))}))
 
-(om/add-root! reconciler
-  (gdom/getElement "app") CountersApp)
+(om/add-root! reconciler CountersApp (gdom/getElement "app"))
 
 (comment
   (require '[cljs.pprint :as pprint])

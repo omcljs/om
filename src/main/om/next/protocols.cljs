@@ -10,7 +10,7 @@
 
 (defprotocol IReconciler
   (basis-t [this])
-  (add-root! [reconciler target root-class options])
+  (add-root! [reconciler root-class target options])
   (remove-root! [reconciler target])
   (schedule-render! [reconciler])
   (schedule-send! [reconciler])

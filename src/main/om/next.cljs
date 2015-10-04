@@ -420,18 +420,18 @@
 (declare remove-root!)
 
 (defn add-root!
-  "Given a target root DOM node and a root component class, instantiate and
+  "Given a a root component class and a target root DOM node, instantiate and
    render the root class using the reconciler's :state property. The reconciler
    will continue to observe state changes to the :state and keep the components
    in sync."
-  ([reconciler target root-class]
+  ([reconciler root-class target]
    (when-let [old-reconciler (get @roots target)]
      (remove-root! old-reconciler target))
    (swap! roots assoc target reconciler)
-   (add-root! reconciler target root-class nil))
-  ([reconciler target root-class options]
-   {:pre [(reconciler? reconciler) (gdom/isElement target) (fn? root-class)]}
-   (p/add-root! reconciler target root-class options)))
+   (add-root! reconciler root-class target nil))
+  ([reconciler root-class target options]
+   {:pre [(reconciler? reconciler) (fn? root-class) (gdom/isElement target)]}
+   (p/add-root! reconciler root-class target options)))
 
 (defn remove-root!
   "Remove a root target (a DOM elment) from a reconciler. The reconciler will no
@@ -705,7 +705,7 @@
 
   (basis-t [_] (:t @state))
 
-  (add-root! [this target root-class options]
+  (add-root! [this root-class target options]
     (let [ret (atom nil)
           rctor (create-factory root-class)]
       (p/index-root (:indexer config) root-class)
