@@ -223,6 +223,10 @@
   "Return a components props."
   [component]
   {:pre [(component? component)]}
+  ;; When force updating we write temporarily props into state to avoid bogus
+  ;; complaints from React. We record the basis T of the reconciler to determine
+  ;; if the props recorded into state are more recent - props will get updated
+  ;; when React actually re-renders the component.
   (let [cst (.-state component)
         cps (.-props component)]
     (if (nil? cst)
