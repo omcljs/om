@@ -487,7 +487,7 @@
         _   (when-not (nil? *logger*)
               (glog/info *logger*
                 (str (when ref (str (pr-str ref) " "))
-                  "transacted " tx ", " (pr-str id))))
+                  "transacted '" tx ", " (pr-str id))))
         v   ((:parser cfg) env tx)
         v'  ((:parser cfg) env tx true)]
     (when-not (empty? v)
