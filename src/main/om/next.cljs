@@ -42,7 +42,7 @@
 (defn ^boolean nil-or-map? [x]
   (or (nil? x) (map? x)))
 
-(defn focus-query [sel path]
+(defn- focus-query [sel path]
   (if (empty? path)
     sel
     (let [[k & ks] path]
@@ -55,7 +55,7 @@
                   x))]
         (into [] (comp (filter match) (map value)) sel)))))
 
-(defn focus->path
+(defn- focus->path
   ([focus] (focus->path focus []))
   ([focus path]
    {:pre [(vector? focus)]}
@@ -79,19 +79,19 @@
   (query [this] "Return the component's unbound query"))
 
 (defprotocol ILocalState
-  (-set-state! [this new-state])
-  (-get-state [this])
-  (-get-rendered-state [this])
-  (-merge-pending-state! [this]))
+  (-set-state! [this new-state] "Set the component's local state")
+  (-get-state [this] "Get the component's local state")
+  (-get-rendered-state [this] "Get the component's rendered local state")
+  (-merge-pending-state! [this] "Get the component's pending local state"))
 
-(defn var? [x]
+(defn- var? [x]
   (and (symbol? x)
        (gstring/startsWith (name x) "?")))
 
-(defn var->keyword [x]
+(defn- var->keyword [x]
   (keyword (.substring (name x) 1)))
 
-(defn bind-query [query params]
+(defn- bind-query [query params]
   (letfn [(replace-var [node]
             (if (var? node)
               (get params (var->keyword node) node)
@@ -148,24 +148,24 @@
   {:pre [(component? c)]}
   (.-state c))
 
-(defn get-prop
+(defn- get-prop
   "PRIVATE: Do not use"
   [c k]
   (gobj/get (.-props c) k))
 
-(defn set-prop!
+(defn- set-prop!
   "PRIVATE: Do not use"
   [c k v]
   (gobj/set (.-props c) k v))
 
-(defn get-reconciler
+(defn- get-reconciler
   [c]
   {:pre [(component? c)]}
   (get-prop c "omcljs$reconciler"))
 
-(defn t
-  "Get basis t value for when the component last read its props from the
-   global state."
+(defn- t
+  "Get basis t value for when the component last read its props from
+   the global state."
   [c]
   (let [cst (.-state c)
         cps (.-props c)]
@@ -175,18 +175,18 @@
             t1 (gobj/get cps "omcljs$t")]
         (max t0 t1)))))
 
-(defn root-class
+(defn- root-class
   [component]
   (get-prop component "omcljs$rootClass"))
 
-(defn parent
+(defn- parent
   "Returns the parent Om component."
   [component]
   (get-prop component "omcljs$parent"))
 
-(defn depth
-  "Returns the render depth (a integer) of the component relative to the
-  mount root."
+(defn- depth
+  "PRIVATE: Returns the render depth (a integer) of the component relative to
+  the mount root."
   [component]
   (get-prop component "omcljs$depth"))
 
@@ -201,7 +201,7 @@
   [x]
   (or (gobj/get x "type") (type x)))
 
-(defn index
+(defn- index
   "Returns the component's Om index."
   [c]
   (get-prop c "omcljs$index"))
@@ -214,7 +214,7 @@
   {:pre [(component? component)]}
   (get-prop component "omcljs$instrument"))
 
-(defn update-props! [c next-props]
+(defn- update-props! [c next-props]
   {:pre [(component? c)]}
   (gobj/set (.-state c) "omcljs$t" (p/basis-t (get-reconciler c)))
   (gobj/set (.-state c) "omcljs$value" next-props))
@@ -288,7 +288,7 @@
     (-get-rendered-state component)
     (some-> component .-state (gobj/get "omcljs$state"))))
 
-(defn merge-pending-state! [c]
+(defn- merge-pending-state! [c]
   (if (satisfies? ILocalState c)
     (-merge-pending-state! c)
     (when-let [pending (some-> c .-state (gobj/get "omcljs$pendingState"))]
@@ -344,7 +344,7 @@
   [component]
   (.. component -props -children))
 
-(defn update-component! [c next-props]
+(defn- update-component! [c next-props]
   {:pre [(component? c)]}
   (update-props! c next-props)
   (.forceUpdate c))
@@ -358,14 +358,14 @@
      #js {:omcljs$value next-props}
      #js {:omcljs$state next-state})))
 
-(defn class-path [c]
+(defn- class-path [c]
   {:pre [(component? c)]}
   (loop [c c ret (list (type c))]
     (if-let [p (parent c)]
       (recur p (cons (type p) ret))
       ret)))
 
-(defn data-path
+(defn- data-path
   ([c]
    (let [f (fn [c] (and (iquery? c) (index c)))]
      (data-path c f)))
@@ -376,12 +376,12 @@
        (recur p (cons (or (f p) '*) ret))
        ret))))
 
-(defn focused? [x]
+(defn- focused? [x]
   (and (vector? x)
        (== 1 (count x))
        (map? (first x))))
 
-(defn state-query [focus data-path]
+(defn- state-query [focus data-path]
   (letfn [(state-query* [focus data-path]
             (if (focused? focus)
               (let [[k v] (ffirst focus)
@@ -392,7 +392,7 @@
               focus))]
     (state-query* focus (rest data-path))))
 
-(defn state-path* [focus data-path]
+(defn- state-path* [focus data-path]
   (loop [focus focus data-path (rest data-path) ret []]
     (if (focused? focus)
       (let [[k v] (ffirst focus)
@@ -402,7 +402,7 @@
             (not= '* index) (conj index))))
       ret)))
 
-(defn state-path [indexer c]
+(defn- state-path [indexer c]
   (let [idxs @(:indexes indexer)
         fcs  (get-in idxs [:class-path->query (class-path c)])]
     (state-path* fcs (data-path c))))
@@ -412,7 +412,7 @@
 
 (declare reconciler?)
 
-(defn basis-t [reconciler]
+(defn- basis-t [reconciler]
   (p/basis-t reconciler))
 
 (defn schedule-render! [reconciler]
@@ -648,7 +648,7 @@
   [x]
   (instance? Indexer x))
 
-(defn build-index
+(defn- build-index
   ([class] (build-index class identity))
   ([class ui->ref]
     (let [idxr (indexer ui->ref)]
@@ -690,14 +690,14 @@
   {:pre [(reconciler? reconciler)]}
   (-> reconciler :config :indexer))
 
-(defn sift-refs [res]
+(defn- sift-refs [res]
   (let [{refs true rest false} (group-by #(vector? (first %)) res)]
     [(into {} refs) (into {} rest)]))
 
 ;; =============================================================================
 ;; Reconciler
 
-(defn queue-calls! [r res]
+(defn- queue-calls! [r res]
   (p/queue! r (into [] (remove symbol?) (keys res))))
 
 (defn- merge-refs [tree {:keys [merge-ref] :as config} refs]
@@ -810,7 +810,7 @@
              (queue-calls! this %)
              (merge-novelty! this %)))))))
 
-(defn default-ui->props
+(defn- default-ui->props
   [{:keys [state indexer parser] :as env} c]
   (let [st   @state
         idxs @(:indexes indexer)
@@ -821,7 +821,7 @@
         (get-in st [root id]))
       ps)))
 
-(defn default-merge-ref
+(defn- default-merge-ref
   [{:keys [indexer] :as config} tree ref props]
   (letfn [(merge-ref-step [tree c]
             (update-in tree (state-path indexer c) merge props))]
