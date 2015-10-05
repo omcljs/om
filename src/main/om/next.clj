@@ -85,7 +85,7 @@
            "_reactInternalInstance" "_renderedComponent")) )
      ~'shouldComponentUpdate
      ([this# next-props# next-state#]
-       (or (not= (goog.object/get (. this# ~'-props) "omcljs$value")
+       (or (not= (om.next/props this#)
                  (goog.object/get next-props# "omcljs$value"))
            (and (.. this# ~'-state)
                 (not= (goog.object/get (. this# ~'-state) "omcljs$state")
