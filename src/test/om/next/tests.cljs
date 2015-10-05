@@ -16,7 +16,7 @@
   Object
   (render [this]))
 
-(def component (om/create-factory Component))
+(def component (om/factory Component))
 
 (defui ComponentList
   static om/IQueryParams
@@ -28,7 +28,7 @@
   Object
   (render [this]))
 
-(def component-list (om/create-factory ComponentList))
+(def component-list (om/factory ComponentList))
 
 (deftest test-component?
   (is (om/component? (Component. {}))))

@@ -85,7 +85,7 @@
                          '[(counters/delete) :counters/list]))}
           "Delete")))))
 
-(def counter (om/create-factory Counter))
+(def counter (om/factory Counter))
 
 ;; -----------------------------------------------------------------------------
 ;; CountersAppTitle
@@ -96,7 +96,7 @@
     (apply dom/div nil
       (om/children this))))
 
-(def app-title (om/create-factory CountersAppTitle))
+(def app-title (om/factory CountersAppTitle))
 
 ;; -----------------------------------------------------------------------------
 ;; CountersApp

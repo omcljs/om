@@ -118,7 +118,7 @@
       (str (. cl -name) "_" idx)
       js/undefined)))
 
-(defn create-factory
+(defn factory
   "Create a factory constructor from a component class created with
    om.next/defui."
   [class]
@@ -707,7 +707,7 @@
 
   (add-root! [this root-class target options]
     (let [ret (atom nil)
-          rctor (create-factory root-class)]
+          rctor (factory root-class)]
       (p/index-root (:indexer config) root-class)
       (let [renderf (fn [data]
                       (binding [*reconciler* this

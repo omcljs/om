@@ -11,7 +11,7 @@
   (render [this]
     (dom/p nil (-> this om/props :text))))
 
-(def hello (om/create-factory Hello))
+(def hello (om/factory Hello))
 
 (defcard simple-component
   "Test that Om Next component work as regular React components."
@@ -40,7 +40,7 @@
                              [:indexes :ref->components])]
           [(dom/p nil (pr-str indexes))])))))
 
-(def binder (om/create-factory Binder))
+(def binder (om/factory Binder))
 
 (defcard basic-nested-component
   "Test that component nesting works"
