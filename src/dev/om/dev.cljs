@@ -76,13 +76,12 @@
       (dom/div nil
         (dom/p nil (str "Count: " count))
         (dom/button
-          #js {:onClick (fn [_] (om/transact this '[(counter/increment)]))}
+          #js {:onClick (fn [_] (om/transact! this '[(counter/increment)]))}
           "Click Me!")
         (dom/button
           #js {:style #js {:marginLeft "10px"}
                :onClick
-               (fn [_] (om/transact this
-                         '[(counters/delete) :counters/list]))}
+               (fn [_] (om/transact! this '[(counters/delete) :counters/list]))}
           "Delete")))))
 
 (def counter (om/factory Counter))

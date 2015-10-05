@@ -308,6 +308,9 @@
 ;; TODO: where to put query mutations so that time travel can be preserved?
 ;; TODO: will need to reindex
 
+(defn set-query! []
+  )
+
 (defn update-query! [c bs]
   )
 
@@ -488,7 +491,7 @@
       (p/queue-send! r v')
       (schedule-send! r))))
 
-(defn transact
+(defn transact!
   "Given a reconciler or component run a transaction. tx is a parse expression
    that should include mutations followed by any necessary read. The reads will
    be used to trigger component re-rendering. If given a reconciler can be
@@ -528,7 +531,7 @@
   ([component name param-map reads]
    {:pre [(component? component) (symbol? name)
           (nil-or-map? param-map) (vector? reads)]}
-   (transact component (into `[(~name ~param-map)] reads))))
+   (transact! component (into `[(~name ~param-map)] reads))))
 
 ;; =============================================================================
 ;; Parser
