@@ -76,7 +76,7 @@
       (dom/div nil
         (dom/p nil (str "Count: " count))
         (dom/button
-          #js {:onClick (fn [_] (om/call this 'counter/increment))}
+          #js {:onClick (fn [_] (om/transact this '[(counter/increment)]))}
           "Click Me!")
         (dom/button
           #js {:style #js {:marginLeft "10px"}
@@ -118,11 +118,11 @@
           (dom/h3 nil "cool stuff"))
         (dom/div nil
           (dom/button
-            #js {:onClick (fn [e] (om/call this 'counters/create))}
+            #js {:onClick (fn [e] (om/transact this '[(counters/create)]))}
             "Add Counter!"))
         (map-indexed
           (fn [i props]
-            (counter (assoc props :om-index i)))
+            (counter (assoc props :react-key (:id props) :om-index i)))
           list)))))
 
 ;; -----------------------------------------------------------------------------

@@ -458,10 +458,11 @@
     "An optional protocol that component may implement to intercept child
      transactions."))
 
-(defn transact* [c tx]
-  (let [r   (get-reconciler c)
-        cfg (:config r)
-        ref ((:ui->ref cfg) c)
+(defn transact* [r c ref tx]
+  (let [cfg (:config r)
+        ref (if (and c (not ref))
+              ((:ui->ref cfg) c)
+              ref)
         env (merge
               (select-keys cfg [:indexer :parser :state])
               {:reconciler r :component c}
@@ -471,7 +472,8 @@
         _   (.add (:history cfg) id @(:state cfg))
         _   (when-not (nil? *logger*)
               (glog/info *logger*
-                (str (pr-str ref) " transacted " tx ", " (pr-str id))))
+                (str (when ref (str (pr-str ref) " "))
+                  "transacted " tx ", " (pr-str id))))
         v   ((:parser cfg) env tx)
         v'  ((:parser cfg) env tx true)]
     (when-not (empty? v)
@@ -483,24 +485,29 @@
       (schedule-send! r))))
 
 (defn transact
-  "Given a component run a transaction. tx is a parse expression that should
-   include mutations followed by any necessary read. The reads will be used
-   to trigger component re-rendering.
+  "Given a reconciler or component run a transaction. tx is a parse expression
+   that should include mutations followed by any necessary read. The reads will
+   be used to trigger component re-rendering. If given a reconciler can be
+   optionally passed a ref as the second argument.
 
    Example:
 
      (om/transact! widget
        '[(do/this!) (do/that!)
          :read/this :read/that])"
-  [component tx]
-  {:pre [(component? component) (vector? tx)]}
-  (loop [p (parent component) tx tx]
-    (if (nil? p)
-      (transact* component tx)
-      (let [tx (if (satisfies? ITxIntercept p)
-                 (tx-intercept p tx)
-                 tx)]
-        (recur (parent p) tx)))))
+  ([x tx]
+   {:pre [(vector? tx)]}
+   (if (reconciler? x)
+     (transact* x nil nil tx)
+     (loop [p (parent x) tx tx]
+       (if (nil? p)
+         (transact* (get-reconciler x) x nil tx)
+         (let [tx (if (satisfies? ITxIntercept p)
+                    (tx-intercept p tx)
+                    tx)]
+           (recur (parent p) tx))))))
+  ([r ref tx]
+   (transact* r nil ref tx)))
 
 (defn call
   "Given a component a symbol identifying a mutation run a transaction. May
