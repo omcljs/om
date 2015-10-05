@@ -9,7 +9,7 @@
 ;; -----------------------------------------------------------------------------
 ;; Components
 
-(defui Component
+(defui ^:once Component
   static om/IQuery
   (query [this]
     '[:foo/bar :baz/woz])
