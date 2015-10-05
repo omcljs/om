@@ -317,7 +317,7 @@
 (defn set-params! [component new-params]
   {:pre [(component? component)]}
   (let [r  (get-reconciler component)
-        st (->r :config :state)]
+        st (-> r :config :state)]
     (swap! st update-in [:om.next/queries component] merge {:params new-params})
     (p/queue! r [component])))
 
