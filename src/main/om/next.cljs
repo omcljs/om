@@ -766,7 +766,7 @@
           (renderf @(:state config)))
         (let [cs (transduce (map #(p/key->components (:indexer config) %))
                    (completing into) #{} (:queue st))
-              {:keys [ui->props state]} config
+              {:keys [ui->props]} config
               env (select-keys config [:state :parser :indexer :ui->ref])]
           (doseq [c ((:optimize config) cs)]
             (let [next-props (ui->props env c)]
