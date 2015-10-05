@@ -63,7 +63,12 @@
     'componentWillUnmount
     (fn [[name [this :as args] & body]]
       `(~name ~args
-         (let [indexer# (get-in (om.next/get-reconciler ~this) [:config :indexer])]
+         (let [r#       (om.next/get-reconciler ~this)
+               cfg#     (:config r#)
+               st#      (:state cfg#)
+               indexer# (:indexer cfg#)]
+           (when-not (nil? st#)
+             (swap! st# update-in [:om.next/queries] dissoc ~this))
            (when-not (nil? indexer#)
              (om.next.protocols/drop-component! indexer# ~this)))
          ~@body))
@@ -100,7 +105,12 @@
            (om.next.protocols/index-component! indexer# this#))))
      ~'componentWillUnmount
      ([this#]
-       (let [indexer# (get-in (om.next/get-reconciler this#) [:config :indexer])]
+       (let [r#       (om.next/get-reconciler this#)
+             cfg#     (:config r#)
+             st#      (:state cfg#)
+             indexer# (:indexer cfg#)]
+         (when-not (nil? st#)
+           (swap! st# update-in [:om.next/queries] dissoc this#))
          (when-not (nil? indexer#)
            (om.next.protocols/drop-component! indexer# this#))))}})
 

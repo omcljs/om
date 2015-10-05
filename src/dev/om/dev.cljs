@@ -117,7 +117,7 @@
           (dom/h3 nil "cool stuff"))
         (dom/div nil
           (dom/button
-            #js {:onClick (fn [e] (om/transact this '[(counters/create)]))}
+            #js {:onClick (fn [e] (om/transact! this '[(counters/create)]))}
             "Add Counter!"))
         (map-indexed
           (fn [i props]

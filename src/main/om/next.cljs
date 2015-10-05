@@ -305,14 +305,21 @@
    {:pre [(component? component)]}
    (.setState component #js {:omcljs$state new-state} nil)))
 
-;; TODO: where to put query mutations so that time travel can be preserved?
 ;; TODO: will need to reindex
 
-(defn set-query! []
-  )
+(defn set-query! [component new-query]
+  {:pre [(component? component)]}
+  (let [r  (get-reconciler component)
+        st (-> r :config :state)]
+    (swap! st update-in [:om.next/queries component] merge {:query new-query})
+    (p/queue! r [component])))
 
-(defn update-query! [c bs]
-  )
+(defn set-params! [component new-params]
+  {:pre [(component? component)]}
+  (let [r  (get-reconciler component)
+        st (->r :config :state)]
+    (swap! st update-in [:om.next/queries component] merge {:params new-params})
+    (p/queue! r [component])))
 
 (defn mounted?
   "Returns true if the component is mounted."
@@ -681,7 +688,7 @@
   "Get the indexer associated with the reconciler."
   [reconciler]
   {:pre [(reconciler? reconciler)]}
-  (get-in reconciler [:config :indexer]))
+  (-> reconciler :config :indexer))
 
 (defn sift-refs [res]
   (let [{refs true rest false} (group-by #(vector? (first %)) res)]
@@ -868,4 +875,4 @@
   (instance? Reconciler x))
 
 (defn from-history [reconciler uuid]
-  (.get (get-in reconciler [:config :history]) uuid))
+  (.get (-> reconciler :config :history) uuid))
