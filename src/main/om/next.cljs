@@ -99,11 +99,12 @@
     (walk/prewalk replace-var query)))
 
 (defn get-query
-  "Return a component's bound query."
-  [class]
-  (when (satisfies? IQuery class)
-    (with-meta (bind-query (query class) (params class))
-      {:component class})))
+  "Return a IQuery/IParams instance bound query. Works for component classes
+   and component instances."
+  [x]
+  (when (satisfies? IQuery x)
+    (with-meta (bind-query (query x) (params x))
+      {:component x})))
 
 (defn iquery? [x]
   (satisfies? IQuery x))
