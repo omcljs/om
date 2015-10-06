@@ -614,21 +614,21 @@
           prop->classes     (atom {})
           class-path->query (atom {})
           rootq             (get-query class)]
-      (letfn [(build-index* [klass selector path classpath]
-                (swap! class->paths update-in [klass]
+      (letfn [(build-index* [class selector path classpath]
+                (swap! class->paths update-in [class]
                   (fnil conj #{}) path)
                 (swap! class-path->query assoc classpath
                   (query-template (focus-query rootq path) path))
                 (let [{props true joins false} (group-by keyword? selector)]
                   (swap! prop->classes
-                    #(merge-with into % (zipmap props (repeat #{klass}))))
+                    #(merge-with into % (zipmap props (repeat #{class}))))
                   (doseq [join joins]
                     (let [[prop selector'] (first join)]
                       (swap! prop->classes
-                        #(merge-with into % {prop #{klass}}))
-                      (let [klass' (-> selector' meta :component)]
-                        (build-index* klass' selector'
-                          (conj path prop) (conj classpath klass')))))))]
+                        #(merge-with into % {prop #{class}}))
+                      (let [class' (-> selector' meta :component)]
+                        (build-index* class' selector'
+                          (conj path prop) (conj classpath class')))))))]
         (build-index* class rootq [] [class])
         (reset! indexes
           {:prop->classes     @prop->classes
