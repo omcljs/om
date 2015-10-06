@@ -604,6 +604,10 @@
 ;; =============================================================================
 ;; Indexer
 
+(defn- join? [x]
+  (let [x (if (seq? x) (first x) x)]
+    (map? x)))
+
 (defrecord Indexer [indexes ui->ref]
   IDeref
   (-deref [_] @indexes)
@@ -619,11 +623,11 @@
                   (fnil conj #{}) path)
                 (swap! class-path->query assoc classpath
                   (query-template (focus-query rootq path) path))
-                (let [{props true joins false} (group-by keyword? selector)]
+                (let [{props false joins true} (group-by join? selector)]
                   (swap! prop->classes
                     #(merge-with into % (zipmap props (repeat #{class}))))
                   (doseq [join joins]
-                    (let [[prop selector'] (first join)]
+                    (let [[prop selector'] (if (map? join) (first join) (ffirst join))]
                       (swap! prop->classes
                         #(merge-with into % {prop #{class}}))
                       (let [class' (-> selector' meta :component)]
@@ -716,6 +720,12 @@
   [x ref]
   (let [indexer (if (reconciler? x) (get-indexer x) x)]
     (first (p/key->components indexer ref))))
+
+(defn class->any
+  "Get any component from the indexer that matches the component class."
+  [x class]
+  (let [indexer (if (reconciler? x) (get-indexer x) x)]
+    (first (get-in @indexer [:class->components class]))))
 
 (defn ref->paths
   "Return all paths for a given ref."
