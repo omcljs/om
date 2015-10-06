@@ -172,5 +172,5 @@
   (def q (get-in @(:indexes idxr) [:class-path->query cp]))
 
   (om/state-path idxr c)
-  (om/key->paths idxr (om/ref :app/counters 0))
+  (om/ref->any reconciler (om/ref :app/counters 0))
   )

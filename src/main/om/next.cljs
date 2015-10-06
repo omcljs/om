@@ -699,40 +699,44 @@
     (let [idxr (indexer ui->ref)]
       (p/index-root idxr class))))
 
+(defn get-indexer
+  "Get the indexer associated with the reconciler."
+  [reconciler]
+  {:pre [(reconciler? reconciler)]}
+  (-> reconciler :config :indexer))
+
 (defn ref->components
   "Return all components for a given ref."
-  [indexer ref]
-  (p/key->components indexer ref))
+  [x ref]
+  (let [indexer (if (reconciler? x) (get-indexer x) x)]
+    (p/key->components indexer ref)))
 
 (defn ref->any
   "Get any component from the indexer that matches the ref."
-  [indexer ref]
-  (first (p/key->components indexer ref)))
+  [x ref]
+  (let [indexer (if (reconciler? x) (get-indexer x) x)]
+    (first (p/key->components indexer ref))))
 
 (defn ref->paths
   "Return all paths for a given ref."
-  [indexer ref]
-  (reduce #(conj %1 (state-path indexer %2))
-    #{} (p/key->components indexer ref)))
+  [x ref]
+  (let [indexer (if (reconciler? x) (get-indexer x) x)]
+    (reduce #(conj %1 (state-path indexer %2))
+     #{} (p/key->components indexer ref))))
 
 (defn ref->any-path
   "Get any path from the indexer that matches the given ref. See also
    om.next/ref->paths."
-  [indexer ref]
-  (state-path indexer
-    (first (p/key->components indexer ref))))
+  [x ref]
+  (let [indexer (if (reconciler? x) (get-indexer x) x)]
+    (state-path indexer
+     (first (p/key->components indexer ref)))))
 
 (defn subpath
   "Given a key path into the application state return the path after the
    given key"
   [path key]
   (rest (drop-while #(not= key %) path)))
-
-(defn get-indexer
-  "Get the indexer associated with the reconciler."
-  [reconciler]
-  {:pre [(reconciler? reconciler)]}
-  (-> reconciler :config :indexer))
 
 (defn- sift-refs [res]
   (let [{refs true rest false} (group-by #(vector? (first %)) res)]
