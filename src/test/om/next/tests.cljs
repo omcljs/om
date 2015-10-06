@@ -1,6 +1,7 @@
 (ns om.next.tests
   (:require [cljs.test :refer-macros [deftest is testing run-tests]]
             [goog.object :as gobj]
+            [clojure.zip :as zip]
             [om.next :as om :refer-macros [defui]]
             [om.next.protocols :as p]
             [om.next.impl.parser :as parser]
@@ -81,6 +82,26 @@
 (deftest test-state-path
   (is (= (om/state-path* [{:todos/list [:title]}] '(* 1))
         '[:todos/list 1])))
+
+;; -----------------------------------------------------------------------------
+;; Query Templating
+
+(deftest test-node->key
+  (is (= :foo (om/node->key {:foo []})))
+  (is (= :foo (om/node->key '({:foo []} {:bar :baz})))))
+
+(deftest test-query-template
+  (is (= [:app/title {:todos/list [:db/id :todo/title]}]
+         (-> (om/query-template
+               [:app/title {:todos/list [:db/id :todo/title :todo/completed]}]
+               [:todos/list])
+           (om/replace [:db/id :todo/title]))))
+  (is (= '[:app/title ({:todos/list [:db/id :todo/title]} {:start 0 :end 10})]
+         (-> (om/query-template
+               '[:app/title ({:todos/list [:db/id :todo/title :todo/completed]}
+                             {:start 0 :end 10})]
+               '[:todos/list])
+           (om/replace [:db/id :todo/title])))))
 
 ;; -----------------------------------------------------------------------------
 ;; Indexer
