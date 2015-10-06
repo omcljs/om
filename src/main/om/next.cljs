@@ -631,17 +631,16 @@
                           (conj path prop) (conj classpath klass')))))))]
         (build-index* class rootq [] [class])
         (reset! indexes
-          {:prop->classes @prop->classes
-           :class->paths @class->paths
-           :class->selectors
-           (reduce-kv
-             (fn [ret class paths]
-               (assoc ret class (into #{} (map #(focus-query rootq %)) paths)))
-             {} @class->paths)
+          {:prop->classes     @prop->classes
+           :class->paths      @class->paths
+           ;:class->selectors
+           ;(reduce-kv
+           ;  (fn [ret class paths]
+           ;    (assoc ret class (into #{} (map #(focus-query rootq %)) paths)))
+           ;  {} @class->paths)
            :class->components {}
-           :ref->components {}
-           :class-path->query @class-path->query
-           :component->path {}}))))
+           :ref->components   {}
+           :class-path->query @class-path->query}))))
 
   (index-component! [_ c]
     (swap! indexes
