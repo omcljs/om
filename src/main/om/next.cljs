@@ -98,13 +98,27 @@
               node))]
     (walk/prewalk replace-var query)))
 
+(declare component? get-reconciler)
+
+(defn get-component-query [c]
+  (let [r   (get-reconciler c)
+        cfg (:config r)
+        st  (when-not (nil? r) @(:state cfg))
+        ref (when-not (nil? r) ((:ui->ref cfg) c))
+        qps (get (::queries st) c)
+        q   (:query qps (query c))
+        ps  (:params qps (params c))]
+    (with-meta {ref (bind-query q ps)} {:component c})))
+
 (defn get-query
   "Return a IQuery/IParams instance bound query. Works for component classes
    and component instances."
   [x]
   (when (satisfies? IQuery x)
-    (with-meta (bind-query (query x) (params x))
-      {:component x})))
+    (if (component? x)
+      (get-component-query x)
+      (with-meta (bind-query (query x) (params x))
+        {:component x}))))
 
 (defn iquery? [x]
   (satisfies? IQuery x))
@@ -663,8 +677,7 @@
 (defn ref->any
   "Get any component from the indexer that matches the ref."
   [indexer ref]
-  (state-path indexer
-    (first (p/key->components indexer ref))))
+  (first (p/key->components indexer ref)))
 
 (defn ref->paths
   "Return all paths for a given ref."
