@@ -113,8 +113,10 @@
            #{:app/title :components/list :foo/bar :baz/woz}))
     (is (= (get-in idxs [:class->paths Component])
            #{[:components/list]}))
-    (is (= (get-in idxs [:class->selectors Component])
-           #{[{:components/list [:foo/bar :baz/woz]}]}))))
+    ;; not using this index ATM
+    ;(is (= (get-in idxs [:class->selectors Component])
+    ;       #{[{:components/list [:foo/bar :baz/woz]}]}))
+    ))
 
 (deftest test-reconciler-has-indexer
   (let [r (om/reconciler
