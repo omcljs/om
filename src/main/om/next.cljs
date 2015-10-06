@@ -358,14 +358,16 @@
   (let [r  (get-reconciler component)
         st (-> r :config :state)]
     (swap! st update-in [:om.next/queries component] merge {:query new-query})
-    (p/queue! r [component])))
+    (p/queue! r [component])
+    nil))
 
 (defn set-params! [component new-params]
   {:pre [(component? component)]}
   (let [r  (get-reconciler component)
         st (-> r :config :state)]
     (swap! st update-in [:om.next/queries component] merge {:params new-params})
-    (p/queue! r [component])))
+    (p/queue! r [component])
+    nil))
 
 (defn mounted?
   "Returns true if the component is mounted."
