@@ -136,10 +136,11 @@
         cfg (:config r)
         st  (when-not (nil? r) @(:state cfg))
         ref (when-not (nil? r) ((:ui->ref cfg) c))
-        qps (get (::queries st) c)
-        q   (:query qps (query c))
-        ps  (:params qps (params c))]
-    (with-meta {ref (bind-query q ps)} {:component c})))
+        qps (get (::queries st) c)]
+    (with-meta
+      (bind-query
+        (:query qps (query c)) (:params qps (params c)))
+      {:component c})))
 
 (defn get-query
   "Return a IQuery/IParams instance bound query. Works for component classes
@@ -148,8 +149,7 @@
   (when (satisfies? IQuery x)
     (if (component? x)
       (get-component-query x)
-      (with-meta (bind-query (query x) (params x))
-        {:component x}))))
+      (with-meta (bind-query (query x) (params x)) {:component x}))))
 
 (defn iquery? [x]
   (satisfies? IQuery x))
@@ -862,7 +862,10 @@
   [{:keys [state indexer parser] :as env} c]
   (let [st   @state
         idxs @(:indexes indexer)
-        fcs  (zip/root (get-in idxs [:class-path->query (class-path c)]))
+        _    (println (get-query c))
+        fcs  (replace
+               (get-in idxs [:class-path->query (class-path c)])
+               (get-query c))
         ps   (get-in (parser env fcs) (state-path* fcs (data-path c)))]
     (if (ref? ps)
       (let [{:keys [root id]} ps]
