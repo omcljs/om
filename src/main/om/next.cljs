@@ -862,7 +862,6 @@
   [{:keys [state indexer parser] :as env} c]
   (let [st   @state
         idxs @(:indexes indexer)
-        _    (println (get-query c))
         fcs  (replace
                (get-in idxs [:class-path->query (class-path c)])
                (get-query c))
