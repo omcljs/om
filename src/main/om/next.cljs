@@ -1,5 +1,5 @@
 (ns om.next
-  (:refer-clojure :exclude [var? key])
+  (:refer-clojure :exclude [var? key replace])
   (:require-macros [om.next :refer [defui]])
   (:require [goog.string :as gstring]
             [goog.object :as gobj]
@@ -9,7 +9,8 @@
             [om.next.protocols :as p]
             [om.next.impl.parser :as parser]
             [om.next.impl.refs :as refs]
-            [om.next.cache :as c])
+            [om.next.cache :as c]
+            [clojure.zip :as zip])
   (:import [goog.debug Console]))
 
 (defonce *logger*
@@ -21,19 +22,12 @@
 ;; Globals & Dynamics
 
 (def ^:private roots (atom {}))
-
 (def ^{:dynamic true} *raf* nil)
-
 (def ^{:dynamic true :private true} *reconciler* nil)
-
 (def ^{:dynamic true :private true} *root-class* nil)
-
 (def ^{:dynamic true :private true} *parent* nil)
-
 (def ^{:dynamic true :private true} *shared* nil)
-
 (def ^{:dynamic true :private true} *instrument* nil)
-
 (def ^{:dynamic true :private true} *depth* 0)
 
 ;; =============================================================================
@@ -42,9 +36,46 @@
 (defn ^boolean nil-or-map? [x]
   (or (nil? x) (map? x)))
 
-(defn- focus-query [sel path]
+(defn node->key [node]
+  (cond
+    (map? node) (ffirst node)
+    (seq? node) (let [node' (first node)]
+                  (when (map? node')
+                    (ffirst node')))
+    :else nil))
+
+(defn query-zip [root]
+  (zip/zipper
+    #(or (vector? %) (map? %) (seq? %))
+    seq
+    (fn [node children]
+      (let [ret (cond
+                  (vector? node) (vec children)
+                  (map? node)    (into {} children)
+                  (seq? node)    children)]
+        (with-meta ret (meta node))))
+    root))
+
+(defn- query-template [query path]
+  (letfn [(query-template* [loc path]
+            (if (empty? path)
+              loc
+              (let [[k & ks] path
+                    node     (zip/node loc)
+                    k'       (node->key node)]
+                (if (keyword-identical? k k')
+                  (if (map? node)
+                    (recur (-> loc zip/down zip/down zip/right) ks)
+                    (recur (-> loc zip/down zip/down zip/down zip/right) ks))
+                  (recur (zip/right loc) path)))))]
+    (query-template* (zip/down (query-zip query)) path)))
+
+(defn- replace [template new-query]
+  (-> template (zip/replace new-query) zip/root))
+
+(defn- focus-query [query path]
   (if (empty? path)
-    sel
+    query
     (let [[k & ks] path]
       (letfn [(match [x]
                 (let [k' (if (map? x) (ffirst x) x)]
@@ -53,7 +84,7 @@
                 (if (map? x)
                   {(ffirst x) (focus-query (-> x first second) ks)}
                   x))]
-        (into [] (comp (filter match) (map value)) sel)))))
+        (into [] (comp (filter match) (map value)) query)))))
 
 (defn- focus->path
   ([focus] (focus->path focus []))
@@ -578,11 +609,11 @@
   (-deref [_] @indexes)
 
   p/IIndexer
-  (index-root [_ klass]
+  (index-root [_ class]
     (let [class->paths      (atom {})
           prop->classes     (atom {})
           class-path->query (atom {})
-          rootq             (get-query klass)]
+          rootq             (get-query class)]
       (letfn [(build-index* [klass selector path classpath]
                 (swap! class->paths update-in [klass]
                   (fnil conj #{}) path)
@@ -598,7 +629,7 @@
                       (let [klass' (-> selector' meta :component)]
                         (build-index* klass' selector'
                           (conj path prop) (conj classpath klass')))))))]
-        (build-index* klass rootq [] [klass])
+        (build-index* class rootq [] [class])
         (reset! indexes
           {:prop->classes @prop->classes
            :class->paths @class->paths
