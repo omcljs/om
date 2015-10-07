@@ -809,30 +809,33 @@
   (basis-t [_] (:t @state))
 
   (add-root! [this root-class target options]
-    (let [ret (atom nil)
+    (let [ret   (atom nil)
           rctor (factory root-class)]
       (p/index-root (:indexer config) root-class)
       (let [renderf (fn [data]
                       (binding [*reconciler* this
                                 *root-class* root-class]
-                        (reset! ret
-                          (js/React.render (rctor data) target))))
-            sel     (get-query root-class)]
-        (swap! state update-in [:roots] assoc target renderf)
-        (if-not (nil? sel)
-          (let [env (assoc (select-keys config [:state :indexer :parser])
-                      :reconciler this)
-                v   ((:parser config) env sel)
-                v'  ((:parser config) env sel true)]
-            (when-not (empty? v)
-              (renderf v))
-            (when-not (empty? v')
-              (when-let [send (:send config)]
-                (send v'
-                  #(do
-                    (merge-novelty! this %)
-                    (renderf %))))))
-          (renderf @(:state config)))
+                        (let [c (js/React.render (rctor data) target)]
+                          (when (nil? @ret)
+                            (reset! ret c)))))
+            parsef  (fn []
+                      (let [sel (get-query (or @ret root-class))]
+                        (if-not (nil? sel)
+                          (let [env (assoc (select-keys config [:state :indexer :parser])
+                                      :reconciler this)
+                                v   ((:parser config) env sel)
+                                v'  ((:parser config) env sel true)]
+                            (when-not (empty? v)
+                              (renderf v))
+                            (when-not (empty? v')
+                              (when-let [send (:send config)]
+                                (send v'
+                                  #(do
+                                    (merge-novelty! this %)
+                                    (renderf %))))))
+                          (renderf @(:state config)))))]
+        (swap! state update-in [:roots] assoc target parsef)
+        (parsef)
         @ret)))
 
   (remove-root! [_ target]
@@ -865,8 +868,8 @@
   (reconcile! [_]
     (let [st @state]
       (if (empty? (:queue st))
-        (doseq [[_ renderf] (:roots st)]
-          (renderf @(:state config)))
+        (doseq [[_ parsef] (:roots st)]
+          (parsef))
         (let [cs (transduce (map #(p/key->components (:indexer config) %))
                    (completing into) #{} (:queue st))
               {:keys [ui->props]} config
