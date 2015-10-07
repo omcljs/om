@@ -36,7 +36,7 @@
 (defn ^boolean nil-or-map? [x]
   (or (nil? x) (map? x)))
 
-(defn node->key [node]
+(defn- node->key [node]
   (cond
     (map? node) (ffirst node)
     (seq? node) (let [node' (first node)]
@@ -44,7 +44,7 @@
                     (ffirst node')))
     :else nil))
 
-(defn query-zip [root]
+(defn- query-zip [root]
   (zip/zipper
     #(or (vector? %) (map? %) (seq? %))
     seq
