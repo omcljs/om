@@ -146,7 +146,7 @@
 
 (defn get-query
   "Return a IQuery/IParams instance bound query. Works for component classes
-   and component instances."
+   and component instances. See also om.next/full-query."
   [x]
   (when (satisfies? IQuery x)
     (if (component? x)
@@ -453,8 +453,11 @@
 
 (defn- state-query [focus data-path]
   (letfn [(state-query* [focus data-path]
-            (if (focused? focus)
-              (let [[k v] (ffirst focus)
+            (if (and (seq data-path) (focused? focus))
+              (let [node  (first focus)
+                    [k v] (if (seq? node)
+                            (ffirst node)
+                            (first node))
                     index (first data-path)]
                 (if-not (= '* index)
                   [(list {k (state-query* v (rest data-path))} {:index index})]
@@ -464,8 +467,11 @@
 
 (defn- state-path* [focus data-path]
   (loop [focus focus data-path (rest data-path) ret []]
-    (if (focused? focus)
-      (let [[k v] (ffirst focus)
+    (if (and (seq data-path) (focused? focus))
+      (let [node  (first focus)
+            [k v] (if (seq? node)
+                    (ffirst node)
+                    (first node))
             index (first data-path)]
         (recur v (rest data-path)
           (cond-> (conj ret k)
@@ -772,6 +778,15 @@
   [path key]
   (rest (drop-while #(not= key %) path)))
 
+(defn full-query
+  "Returns the absolute query for a given component, not relative like
+   om.next/get-query."
+  [component]
+  (replace
+    (get-in @(-> component get-reconciler get-indexer)
+      [:class-path->query (class-path component)])
+    (get-query component)))
+
 (defn- sift-refs [res]
   (let [{refs true rest false} (group-by #(vector? (first %)) res)]
     [(into {} refs) (into {} rest)]))
@@ -897,12 +912,9 @@
 
 (defn- default-ui->props
   [{:keys [state indexer parser] :as env} c]
-  (let [st   @state
-        idxs @(:indexes indexer)
-        fcs  (replace
-               (get-in idxs [:class-path->query (class-path c)])
-               (get-query c))
-        ps   (get-in (parser env fcs) (state-path* fcs (data-path c)))]
+  (let [st  @state
+        fq (full-query c)
+        ps (get-in (parser env fq) (state-path* fq (data-path c)))]
     (if (ref? ps)
       (let [{:keys [root id]} ps]
         (get-in st [root id]))
