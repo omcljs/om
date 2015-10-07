@@ -357,16 +357,32 @@
 
 (defn set-query! [component new-query]
   {:pre [(component? component)]}
-  (let [r  (get-reconciler component)
-        st (-> r :config :state)]
+  (let [r   (get-reconciler component)
+        cfg (:config r)
+        st  (:state cfg)
+        id  (random-uuid)
+        _   (.add (:history cfg) id @st)]
+    (when-not (nil? *logger*)
+      (glog/info *logger*
+        (str (when-let [ref ((:ui->ref cfg) component)]
+               (str (pr-str ref) " "))
+          "changed query '" new-query ", " (pr-str id))))
     (swap! st update-in [:om.next/queries component] merge {:query new-query})
     (p/queue! r [component])
     nil))
 
 (defn set-params! [component new-params]
   {:pre [(component? component)]}
-  (let [r  (get-reconciler component)
-        st (-> r :config :state)]
+  (let [r   (get-reconciler component)
+        cfg (:config r)
+        st  (:state cfg)
+        id  (random-uuid)
+        _   (.add (:history cfg) id @st)]
+    (when-not (nil? *logger*)
+      (glog/info *logger*
+        (str (when-let [ref ((:ui->ref cfg) component)]
+               (str (pr-str ref) " "))
+          "changed query params " new-params", " (pr-str id))))
     (swap! st update-in [:om.next/queries component] merge {:params new-params})
     (p/queue! r [component])
     nil))
