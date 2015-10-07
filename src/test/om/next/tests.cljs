@@ -103,6 +103,13 @@
                '[:todos/list])
            (om/replace [:db/id :todo/title])))))
 
+(deftest test-query-template-roota
+  (is (= [:app/title {:todos/list [:db/id :todo/title]}]
+         (-> (om/query-template
+               [:app/title {:todos/list [:db/id :todo/title :todo/completed]}]
+               [])
+           (om/replace [:app/title])))))
+
 ;; -----------------------------------------------------------------------------
 ;; Indexer
 

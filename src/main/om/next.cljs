@@ -60,15 +60,17 @@
   (letfn [(query-template* [loc path]
             (if (empty? path)
               loc
-              (let [[k & ks] path
-                    node     (zip/node loc)
-                    k'       (node->key node)]
-                (if (keyword-identical? k k')
-                  (if (map? node)
-                    (recur (-> loc zip/down zip/down zip/right) ks)
-                    (recur (-> loc zip/down zip/down zip/down zip/right) ks))
-                  (recur (zip/right loc) path)))))]
-    (query-template* (zip/down (query-zip query)) path)))
+              (let [node (zip/node loc)]
+                (if (vector? node)
+                  (recur (zip/down loc) path)
+                  (let [[k & ks] path
+                        k' (node->key node)]
+                    (if (keyword-identical? k k')
+                      (if (map? node)
+                        (recur (-> loc zip/down zip/down zip/right) ks)
+                        (recur (-> loc zip/down zip/down zip/down zip/right) ks))
+                      (recur (zip/right loc) path)))))))]
+    (query-template* (query-zip query) path)))
 
 (defn- replace [template new-query]
   (-> template (zip/replace new-query) zip/root))
