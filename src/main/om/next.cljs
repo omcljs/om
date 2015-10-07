@@ -355,7 +355,9 @@
 
 ;; TODO: will need to reindex
 
-(defn set-query! [component new-query]
+(defn set-query!
+  "Change the query of a component. Will schedule a re-render."
+  [component new-query]
   {:pre [(component? component)]}
   (let [r   (get-reconciler component)
         cfg (:config r)
@@ -371,7 +373,9 @@
     (p/queue! r [component])
     nil))
 
-(defn set-params! [component new-params]
+(defn set-params!
+  "Change the query parameters of a component. Will schedule a re-render."
+  [component new-params]
   {:pre [(component? component)]}
   (let [r   (get-reconciler component)
         cfg (:config r)
