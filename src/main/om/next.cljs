@@ -153,7 +153,7 @@
 
 (defn get-query
   "Return a IQuery/IParams instance bound query. Works for component classes
-   and component instances."
+   and component instances. See also om.next/full-query."
   [x]
   (when (satisfies? IQuery x)
     (if (component? x)
@@ -460,8 +460,11 @@
 
 (defn- state-query [focus data-path]
   (letfn [(state-query* [focus data-path]
-            (if (focused? focus)
-              (let [[k v] (ffirst focus)
+            (if (and (seq data-path) (focused? focus))
+              (let [node  (first focus)
+                    [k v] (if (seq? node)
+                            (ffirst node)
+                            (first node))
                     index (first data-path)]
                 (if-not (= '* index)
                   [(list {k (state-query* v (rest data-path))} {:index index})]
@@ -471,8 +474,11 @@
 
 (defn- state-path* [focus data-path]
   (loop [focus focus data-path (rest data-path) ret []]
-    (if (focused? focus)
-      (let [[k v] (ffirst focus)
+    (if (and (seq data-path) (focused? focus))
+      (let [node  (first focus)
+            [k v] (if (seq? node)
+                    (ffirst node)
+                    (first node))
             index (first data-path)]
         (recur v (rest data-path)
           (cond-> (conj ret k)
@@ -549,13 +555,17 @@
     "An optional protocol that component may implement to intercept child
      transactions."))
 
+(defn- to-env [x]
+  (let [config (if (reconciler? x) (:config x) x)]
+    (select-keys config [:state :shared :indexer :parser :ui->ref])))
+
 (defn transact* [r c ref tx]
   (let [cfg (:config r)
         ref (if (and c (not ref))
               (ident c)
               ref)
         env (merge
-              (select-keys cfg [:indexer :parser :state])
+              (to-env cfg)
               {:reconciler r :component c}
               (when ref
                 {:ref ref}))
@@ -775,6 +785,15 @@
   [path key]
   (rest (drop-while #(not= key %) path)))
 
+(defn full-query
+  "Returns the absolute query for a given component, not relative like
+   om.next/get-query."
+  [component]
+  (replace
+    (get-in @(-> component get-reconciler get-indexer)
+      [:class-path->query (class-path component)])
+    (get-query component)))
+
 (defn- sift-refs [res]
   (let [{refs true rest false} (group-by #(vector? (first %)) res)]
     [(into {} refs) (into {} rest)]))
@@ -817,15 +836,15 @@
       (p/index-root (:indexer config) root-class)
       (let [renderf (fn [data]
                       (binding [*reconciler* this
-                                *root-class* root-class]
+                                *root-class* root-class
+                                *shared*     (:shared config)]
                         (let [c (js/React.render (rctor data) target)]
                           (when (nil? @ret)
                             (reset! ret c)))))
             parsef  (fn []
                       (let [sel (get-query (or @ret root-class))]
                         (if-not (nil? sel)
-                          (let [env (assoc (select-keys config [:state :indexer :parser])
-                                      :reconciler this)
+                          (let [env (to-env config)
                                 v   ((:parser config) env sel)
                                 v'  ((:parser config) env sel true)]
                             (when-not (empty? v)
@@ -876,7 +895,7 @@
         (let [cs (transduce (map #(p/key->components (:indexer config) %))
                    (completing into) #{} (:queue st))
               {:keys [ui->props]} config
-              env (select-keys config [:state :parser :indexer])]
+              env (to-env config)]
           (doseq [c ((:optimize config) cs)]
             (let [next-props (ui->props env c)]
               (when (and (should-update? c next-props (get-state c))
@@ -900,12 +919,9 @@
 
 (defn- default-ui->props
   [{:keys [state indexer parser] :as env} c]
-  (let [st   @state
-        idxs @(:indexes indexer)
-        fcs  (replace
-               (get-in idxs [:class-path->query (class-path c)])
-               (get-query c))
-        ps   (get-in (parser env fcs) (state-path* fcs (data-path c)))]
+  (let [st  @state
+        fq (full-query c)
+        ps (get-in (parser env fq) (state-path* fq (data-path c)))]
     (if (ref? ps)
       (let [{:keys [root id]} ps]
         (get-in st [root id]))
@@ -928,7 +944,7 @@
              run in remote mode. send is a function of two arguments, the
              remote expression and a callback which should be invoked with
              the resolved expression."
-  [{:keys [state parser indexer
+  [{:keys [state shared parser indexer
            ui->props
            send merge-send
            merge-tree merge-ref
@@ -945,7 +961,7 @@
   {:pre [(map? config)]}
   (let [idxr (indexer)
         ret  (Reconciler.
-               {:state state :parser parser :indexer idxr
+               {:state state :shared shared :parser parser :indexer idxr
                 :ui->props ui->props
                 :send send :merge-send merge-send
                 :merge-tree merge-tree :merge-ref merge-ref
