@@ -486,9 +486,9 @@
       ret)))
 
 (defn- state-path [indexer c]
-  (let [idxs @(:indexes indexer)
-        fcs  (get-in idxs [:class-path->query (class-path c)])]
-    (state-path* fcs (data-path c))))
+  (let [idxs  @(:indexes indexer)
+        focus (get-in idxs [:class-path->query (class-path c)])]
+    (state-path* focus (data-path c))))
 
 ;; =============================================================================
 ;; Reconciler API
