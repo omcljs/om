@@ -102,7 +102,7 @@
 ;; Query Protocols & Helpers
 
 (defprotocol Ident
-  (ident [this] "Return the identifier for this component"))
+  (ident [this] "Return the ref for this component"))
 
 (extend-type default
   Ident
