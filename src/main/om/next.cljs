@@ -548,13 +548,17 @@
     "An optional protocol that component may implement to intercept child
      transactions."))
 
+(defn- to-env [x]
+  (let [config (if (reconciler? x) (:config x) x)]
+    (select-keys config [:state :shared :indexer :parser :ui->ref])))
+
 (defn transact* [r c ref tx]
   (let [cfg (:config r)
         ref (if (and c (not ref))
               ((:ui->ref cfg) c)
               ref)
         env (merge
-              (select-keys cfg [:indexer :parser :state])
+              (to-env cfg)
               {:reconciler r :component c}
               (when ref
                 {:ref ref}))
@@ -829,15 +833,15 @@
       (p/index-root (:indexer config) root-class)
       (let [renderf (fn [data]
                       (binding [*reconciler* this
-                                *root-class* root-class]
+                                *root-class* root-class
+                                *shared*     (:shared config)]
                         (let [c (js/React.render (rctor data) target)]
                           (when (nil? @ret)
                             (reset! ret c)))))
             parsef  (fn []
                       (let [sel (get-query (or @ret root-class))]
                         (if-not (nil? sel)
-                          (let [env (assoc (select-keys config [:state :indexer :parser])
-                                      :reconciler this)
+                          (let [env (to-env config)
                                 v   ((:parser config) env sel)
                                 v'  ((:parser config) env sel true)]
                             (when-not (empty? v)
@@ -888,7 +892,7 @@
         (let [cs (transduce (map #(p/key->components (:indexer config) %))
                    (completing into) #{} (:queue st))
               {:keys [ui->props]} config
-              env (select-keys config [:state :parser :indexer :ui->ref])]
+              env (to-env config)]
           (doseq [c ((:optimize config) cs)]
             (let [next-props (ui->props env c)]
               (when (and (should-update? c next-props (get-state c))
@@ -937,7 +941,7 @@
              run in remote mode. send is a function of two arguments, the
              remote expression and a callback which should be invoked with
              the resolved expression."
-  [{:keys [state parser indexer
+  [{:keys [state shared parser indexer
            ui->ref ui->props
            send merge-send
            merge-tree merge-ref
@@ -955,7 +959,7 @@
   {:pre [(map? config)]}
   (let [idxr (indexer ui->ref)
         ret  (Reconciler.
-               {:state state :parser parser :indexer idxr
+               {:state state :shared shared :parser parser :indexer idxr
                 :ui->ref ui->ref :ui->props ui->props
                 :send send :merge-send merge-send
                 :merge-tree merge-tree :merge-ref merge-ref
