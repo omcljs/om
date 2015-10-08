@@ -101,6 +101,13 @@
 ;; =============================================================================
 ;; Query Protocols & Helpers
 
+(defprotocol Ident
+  (ident [this] "Return the identifier for this component"))
+
+(extend-type default
+  Ident
+  (ident [this] this))
+
 (defprotocol IQueryParams
   (params [this] "Return the query parameters"))
 
@@ -137,7 +144,7 @@
   (let [r   (get-reconciler c)
         cfg (:config r)
         st  (when-not (nil? r) @(:state cfg))
-        ref (when-not (nil? r) ((:ui->ref cfg) c))
+        ref (ident c)
         qps (get (::queries st) c)]
     (with-meta
       (bind-query
@@ -366,7 +373,7 @@
         _   (.add (:history cfg) id @st)]
     (when-not (nil? *logger*)
       (glog/info *logger*
-        (str (when-let [ref ((:ui->ref cfg) component)]
+        (str (when-let [ref (ident component)]
                (str (pr-str ref) " "))
           "changed query '" new-query ", " (pr-str id))))
     (swap! st update-in [:om.next/queries component] merge {:query new-query})
@@ -384,7 +391,7 @@
         _   (.add (:history cfg) id @st)]
     (when-not (nil? *logger*)
       (glog/info *logger*
-        (str (when-let [ref ((:ui->ref cfg) component)]
+        (str (when-let [ref (ident component)]
                (str (pr-str ref) " "))
           "changed query params " new-params", " (pr-str id))))
     (swap! st update-in [:om.next/queries component] merge {:params new-params})
@@ -545,7 +552,7 @@
 (defn transact* [r c ref tx]
   (let [cfg (:config r)
         ref (if (and c (not ref))
-              ((:ui->ref cfg) c)
+              (ident c)
               ref)
         env (merge
               (select-keys cfg [:indexer :parser :state])
@@ -632,7 +639,7 @@
   (let [x (if (seq? x) (first x) x)]
     (map? x)))
 
-(defrecord Indexer [indexes ui->ref]
+(defrecord Indexer [indexes]
   IDeref
   (-deref [_] @indexes)
 
@@ -676,7 +683,7 @@
         (let [indexes (update-in indexes
                         [:class->components (type c)]
                         (fnil conj #{}) c)
-              ref     (ui->ref c)]
+              ref     (ident c)]
           (if-not (component? ref)
             (cond-> indexes
               ref (update-in [:ref->components ref] (fnil conj #{}) c))
@@ -688,14 +695,11 @@
         (let [indexes (update-in indexes
                         [:class->components (type c)]
                         disj c)
-              ref     (ui->ref c)]
+              ref     (ident c)]
           (if-not (component? ref)
             (cond-> indexes
               ref (update-in [:ref->components ref] disj c))
             indexes)))))
-
-  (ref-for [_ component]
-    (ui->ref component))
 
   (key->components [_ k]
     (let [indexes @indexes]
@@ -713,8 +717,8 @@
 
 (defn indexer
   "Given a function (Component -> Ref), return an indexer."
-  [ui->ref]
-  (Indexer. (atom {}) ui->ref))
+  []
+  (Indexer. (atom {})))
 
 (defn ^boolean indexer?
   "Returns true if x is an indexer."
@@ -722,10 +726,9 @@
   (instance? Indexer x))
 
 (defn- build-index
-  ([class] (build-index class identity))
-  ([class ui->ref]
-    (let [idxr (indexer ui->ref)]
-      (p/index-root idxr class))))
+  [class]
+  (let [idxr (indexer)]
+    (p/index-root idxr class)))
 
 (defn get-indexer
   "Get the indexer associated with the reconciler."
@@ -873,7 +876,7 @@
         (let [cs (transduce (map #(p/key->components (:indexer config) %))
                    (completing into) #{} (:queue st))
               {:keys [ui->props]} config
-              env (select-keys config [:state :parser :indexer :ui->ref])]
+              env (select-keys config [:state :parser :indexer])]
           (doseq [c ((:optimize config) cs)]
             (let [next-props (ui->props env c)]
               (when (and (should-update? c next-props (get-state c))
@@ -926,13 +929,12 @@
              remote expression and a callback which should be invoked with
              the resolved expression."
   [{:keys [state parser indexer
-           ui->ref ui->props
+           ui->props
            send merge-send
            merge-tree merge-ref
            optimize
            history]
-    :or {ui->ref     identity
-         ui->props   default-ui->props
+    :or {ui->props   default-ui->props
          indexer     om.next/indexer
          merge-send  into
          merge-tree  merge
@@ -941,10 +943,10 @@
          history     100}
     :as config}]
   {:pre [(map? config)]}
-  (let [idxr (indexer ui->ref)
+  (let [idxr (indexer)
         ret  (Reconciler.
                {:state state :parser parser :indexer idxr
-                :ui->ref ui->ref :ui->props ui->props
+                :ui->props ui->props
                 :send send :merge-send merge-send
                 :merge-tree merge-tree :merge-ref merge-ref
                 :optimize optimize

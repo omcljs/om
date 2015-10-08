@@ -70,6 +70,9 @@
   static om/IQuery
   (query [this]
     '[:id :counter/count])
+  om/Ident
+  (ident [this]
+    (om/ref :app/counters (-> this om/props :id)))
   Object
   (render [this]
     (let [{:keys [:counter/count] :as props} (om/props this)]
@@ -139,11 +142,7 @@
 (def reconciler
   (om/reconciler
     {:state app-state
-     :parser (om/parser {:read read :mutate mutate})
-     :ui->ref (fn [c]
-                (if (instance? Counter c)
-                  (om/ref :app/counters (-> c om/props :id))
-                  c))}))
+     :parser (om/parser {:read read :mutate mutate})}))
 
 (om/add-root! reconciler CountersApp (gdom/getElement "app"))
 
