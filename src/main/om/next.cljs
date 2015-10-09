@@ -439,7 +439,9 @@
   {:pre [(component? c)]}
   (loop [c c ret (list (type c))]
     (if-let [p (parent c)]
-      (recur p (cons (type p) ret))
+      (if (iquery? p)
+        (recur p (cons (type p) ret))
+        (recur p ret))
       ret)))
 
 (defn- data-path
@@ -450,12 +452,11 @@
    {:pre [(component? c) (fn? f)]}
    (loop [c c ret (list (or (f c) '*))]
      (if-let [p (parent c)]
-       (let [idx (f p)]
-         (if-not (nil? idx)
-           (recur p (cons idx ret))
-           (if (iquery? p)
-             (recur p (cons '* ret))
-             (recur p ret))))
+       (if-let [idx (f p)]
+         (recur p (cons idx ret))
+         (if (iquery? p)
+           (recur p (cons '* ret))
+           (recur p ret)))
        ret))))
 
 (defn- focused? [x]
