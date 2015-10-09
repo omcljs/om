@@ -450,7 +450,12 @@
    {:pre [(component? c) (fn? f)]}
    (loop [c c ret (list (or (f c) '*))]
      (if-let [p (parent c)]
-       (recur p (cons (or (f p) '*) ret))
+       (let [idx (f p)]
+         (if-not (nil? idx)
+           (recur p (cons idx ret))
+           (if (iquery? p)
+             (recur p (cons '* ret))
+             (recur p ret))))
        ret))))
 
 (defn- focused? [x]
