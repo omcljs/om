@@ -949,8 +949,11 @@
       (if (empty? (:queue st))
         (doseq [[_ parsef] (:roots st)]
           (parsef))
-        (let [cs (transduce (map #(p/key->components (:indexer config) %))
-                   (completing into) #{} (:queue st))
+        (let [cs (transduce
+                   (comp
+                     (map #(p/key->components (:indexer config) %))
+                     (mapcat #(into [] (map to-resolveable) %)))
+                   conj #{} (:queue st))
               {:keys [ui->props]} config
               env (to-env config)]
           (doseq [c ((:optimize config) cs)]
