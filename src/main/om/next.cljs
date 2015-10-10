@@ -493,7 +493,7 @@
 
 (defn- state-path [indexer c]
   (let [idxs  @(:indexes indexer)
-        focus (get-in idxs [:class-path->query (class-path c)])]
+        focus (zip/root (first (get-in idxs [:class-path->query (class-path c)])))]
     (state-path* focus (data-path c))))
 
 ;; =============================================================================
@@ -668,7 +668,8 @@
       (letfn [(build-index* [class selector path classpath]
                 (swap! class->paths update-in [class]
                   (fnil conj #{}) path)
-                (swap! class-path->query assoc classpath
+                (swap! class-path->query update-in [classpath]
+                  (fnil conj #{})
                   (query-template (focus-query rootq path) path))
                 (let [{props false joins true} (group-by join? selector)]
                   (swap! prop->classes
@@ -770,6 +771,13 @@
   (let [indexer (if (reconciler? x) (get-indexer x) x)]
     (first (get-in @indexer [:class->components class]))))
 
+(defn class-path->query
+  [x y]
+  (let [indexer (if (reconciler? x) (get-indexer x) x)
+        cp      (if (component? y) (class-path y) y)]
+    (into #{} (map zip/root)
+      (get-in @indexer [:class-path->query cp]))))
+
 (defn ref->paths
   "Return all paths for a given ref."
   [x ref]
@@ -783,7 +791,7 @@
   [x ref]
   (let [indexer (if (reconciler? x) (get-indexer x) x)]
     (state-path indexer
-     (first (p/key->components indexer ref)))))
+      (first (p/key->components indexer ref)))))
 
 (defn subpath
   "Given a key path into the application state return the path after the
@@ -796,8 +804,9 @@
    om.next/get-query."
   [component]
   (replace
-    (get-in @(-> component get-reconciler get-indexer)
-      [:class-path->query (class-path component)])
+    (first
+      (get-in @(-> component get-reconciler get-indexer)
+        [:class-path->query (class-path component)]))
     (get-query component)))
 
 (defn- sift-refs [res]
@@ -925,13 +934,13 @@
 
 (defn- default-ui->props
   [{:keys [state indexer parser] :as env} c]
-  (let [st  @state
-        fq (full-query c)
-        ps (get-in (parser env fq) (state-path* fq (data-path c)))]
-    (if (ref? ps)
-      (let [{:keys [root id]} ps]
+  (let [st    @state
+        fq    (full-query c)
+        props (get-in (parser env fq) (state-path* fq (data-path c)))]
+    (if (ref? props)
+      (let [{:keys [root id]} props]
         (get-in st [root id]))
-      ps)))
+      props)))
 
 (defn- default-merge-ref
   [{:keys [indexer] :as config} tree ref props]
