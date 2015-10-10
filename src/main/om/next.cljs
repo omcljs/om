@@ -118,6 +118,9 @@
 (defprotocol IQuery
   (query [this] "Return the component's unbound query"))
 
+(defprotocol INormalize
+  (normalize [this] "Normalize the component's props."))
+
 (defprotocol ILocalState
   (-set-state! [this new-state] "Set the component's local state")
   (-get-state [this] "Get the component's local state")
