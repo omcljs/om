@@ -71,8 +71,8 @@
   (query [this]
     '[:id :counter/count])
   om/Ident
-  (ident [this]
-    (om/ref :app/counters (-> this om/props :id)))
+  (ident [this {:keys [id]}]
+    (om/ref :app/counters id))
   Object
   (render [this]
     (let [{:keys [:counter/count] :as props} (om/props this)]

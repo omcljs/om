@@ -102,11 +102,11 @@
 ;; Query Protocols & Helpers
 
 (defprotocol Ident
-  (ident [this] "Return the ref for this component"))
+  (ident [this props] "Return the ref for this component"))
 
 (extend-type default
   Ident
-  (ident [this] this))
+  (ident [this props] this))
 
 (defprotocol IQueryParams
   (params [this] "Return the query parameters"))
@@ -141,13 +141,13 @@
               node))]
     (walk/prewalk replace-var query)))
 
-(declare component? get-reconciler)
+(declare component? get-reconciler props)
 
 (defn get-component-query [c]
   (let [r   (get-reconciler c)
         cfg (:config r)
         st  (when-not (nil? r) @(:state cfg))
-        ref (ident c)
+        ref (ident c (props c))
         qps (get (::queries st) c)]
     (with-meta
       (bind-query
@@ -376,7 +376,7 @@
         _   (.add (:history cfg) id @st)]
     (when-not (nil? *logger*)
       (glog/info *logger*
-        (str (when-let [ref (ident component)]
+        (str (when-let [ref (ident component (props component))]
                (str (pr-str ref) " "))
           "changed query '" new-query ", " (pr-str id))))
     (swap! st update-in [:om.next/queries component] merge {:query new-query})
@@ -394,7 +394,7 @@
         _   (.add (:history cfg) id @st)]
     (when-not (nil? *logger*)
       (glog/info *logger*
-        (str (when-let [ref (ident component)]
+        (str (when-let [ref (ident component (props component))]
                (str (pr-str ref) " "))
           "changed query params " new-params", " (pr-str id))))
     (swap! st update-in [:om.next/queries component] merge {:params new-params})
@@ -573,7 +573,7 @@
 (defn transact* [r c ref tx]
   (let [cfg (:config r)
         ref (if (and c (not ref))
-              (ident c)
+              (ident c (props c))
               ref)
         env (merge
               (to-env cfg)
@@ -705,7 +705,7 @@
         (let [indexes (update-in indexes
                         [:class->components (type c)]
                         (fnil conj #{}) c)
-              ref     (ident c)]
+              ref     (ident c (props c))]
           (if-not (component? ref)
             (cond-> indexes
               ref (update-in [:ref->components ref] (fnil conj #{}) c))
@@ -717,7 +717,7 @@
         (let [indexes (update-in indexes
                         [:class->components (type c)]
                         disj c)
-              ref     (ident c)]
+              ref     (ident c (props c))]
           (if-not (component? ref)
             (cond-> indexes
               ref (update-in [:ref->components ref] disj c))
