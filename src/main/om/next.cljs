@@ -446,7 +446,7 @@
 
 (defn- data-path
   ([c]
-   (let [f (fn [c] (and (iquery? c) (index c)))]
+   (let [f (fn [c] (index c))]
      (data-path c f)))
   ([c f]
    {:pre [(component? c) (fn? f)]}
@@ -808,6 +808,22 @@
       (get-in @(-> component get-reconciler get-indexer)
         [:class-path->query (class-path component)]))
     (get-query component)))
+
+(defn- to-resolveable
+  "Given a component return the nearest parent (including the component itself)
+   for which there is a known data path."
+  [x]
+  (loop [c x]
+    (if (nil? (parent c))
+      c
+      (let [cp (class-path c)
+            dp (data-path c)]
+       (if-not (== (count cp) (count dp))
+         (recur (parent c))
+         (let [qs (class-path->query (get-reconciler c) c)]
+           (if (< 1 (count qs))
+             (recur (parent c))
+             c)))))))
 
 (defn- sift-refs [res]
   (let [{refs true rest false} (group-by #(vector? (first %)) res)]
