@@ -947,23 +947,29 @@
 
   ;; TODO: need to reindex roots after reconcilation
   (reconcile! [_]
-    (let [st @state]
-      (if (empty? (:queue st))
+    (let [st @state
+          q  (:queue st)]
+      (cond
+        (empty? q)
         (doseq [[_ parsef] (:roots st)]
           (parsef))
+
+        (= [::skip] q) nil
+
+        :else
         (let [cs (transduce
                    (comp
                      (map #(p/key->components (:indexer config) %))
                      (mapcat #(into [] (map to-resolveable) %)))
-                   conj #{} (:queue st))
+                   conj #{} q)
               {:keys [ui->props]} config
               env (to-env config)]
           (doseq [c ((:optimize config) cs)]
             (let [next-props (ui->props env c)]
               (when (and (should-update? c next-props (get-state c))
                          (mounted? c))
-                (update-component! c next-props))))
-          (swap! state assoc :queue [])))
+                (update-component! c next-props))))))
+      (swap! state assoc :queue [])
       (swap! state update-in [:queued] not)))
 
   (send! [this]
@@ -1010,7 +1016,6 @@
            ui->props
            send merge-send
            merge-tree merge-ref
-           normalize cache
            optimize
            history]
     :or {ui->props   default-ui->props
@@ -1018,25 +1023,25 @@
          merge-send  into
          merge-tree  merge
          merge-ref   default-merge-ref
-         normalize   true
-         cache       (atom {})
          optimize    (fn [cs] (sort-by depth cs))
          history     100}
     :as config}]
   {:pre [(map? config)]}
-  (let [idxr (indexer)
-        ret  (Reconciler.
-               {:state state :shared shared :parser parser :indexer idxr
-                :ui->props ui->props
-                :send send :merge-send merge-send
-                :merge-tree merge-tree :merge-ref merge-ref
-                :optimize optimize
-                :normalize normalize :cache (when normalize cache)
-                :history (c/cache history)}
-               (atom {:queue [] :queued false :queued-send []
-                      :send-queued false :roots {} :t 0}))]
-    (when state
-      (add-watch state :om/reconciler
+  (let [idxr   (indexer)
+        norm?  (satisfies? IAtom state)
+        state' (if norm? state (atom state))
+        ret    (Reconciler.
+                 {:state state' :shared shared :parser parser :indexer idxr
+                  :ui->props ui->props
+                  :send send :merge-send merge-send
+                  :merge-tree merge-tree :merge-ref merge-ref
+                  :optimize optimize
+                  :normalize (not norm?)
+                  :history (c/cache history)}
+                 (atom {:queue [] :queued false :queued-send []
+                        :send-queued false :roots {} :t 0}))]
+    (when state'
+      (add-watch state' :om/reconciler
         (fn [_ _ _ _] (schedule-render! ret))))
     ret))
 

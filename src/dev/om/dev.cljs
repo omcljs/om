@@ -141,8 +141,7 @@
 
 (def reconciler
   (om/reconciler
-    {:state app-state
-     :normalize false
+    {:state  app-state
      :parser (om/parser {:read read :mutate mutate})}))
 
 (om/add-root! reconciler CountersApp (gdom/getElement "app"))
