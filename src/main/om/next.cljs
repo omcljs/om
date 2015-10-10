@@ -119,7 +119,11 @@
   (query [this] "Return the component's unbound query"))
 
 (defprotocol INormalize
-  (normalize [this] "Normalize the component's props."))
+  (normalize [this props] "Return normalized props."))
+
+(extend-type default
+  INormalize
+  (normalize [this _] (ident this)))
 
 (defprotocol ILocalState
   (-set-state! [this new-state] "Set the component's local state")
