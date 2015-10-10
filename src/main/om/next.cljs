@@ -121,10 +121,6 @@
 (defprotocol INormalize
   (normalize [this props] "Return normalized props."))
 
-(extend-type default
-  INormalize
-  (normalize [this _] (ident this)))
-
 (defprotocol ILocalState
   (-set-state! [this new-state] "Set the component's local state")
   (-get-state [this] "Get the component's local state")
