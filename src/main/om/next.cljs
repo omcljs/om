@@ -565,7 +565,7 @@
 
 (defn- to-env [x]
   (let [config (if (reconciler? x) (:config x) x)]
-    (select-keys config [:state :shared :indexer :parser :ui->ref])))
+    (select-keys config [:state :cache :shared :indexer :parser :ui->ref])))
 
 (defn transact* [r c ref tx]
   (let [cfg (:config r)
@@ -902,10 +902,12 @@
                       (let [sel (get-query (or @ret root-class))]
                         (if-not (nil? sel)
                           (let [env (to-env config)
-                                v   ((:parser config) env sel)
                                 v'  ((:parser config) env sel true)]
-                            (when-not (empty? v)
-                              (renderf v))
+                            (if-not (:normalize config)
+                              (let [v ((:parser config) env sel)]
+                                (when-not (empty? v)
+                                  (renderf v)))
+                              (renderf @(:state config)))
                             (when-not (empty? v')
                               (when-let [send (:send config)]
                                 (send v'
@@ -1008,6 +1010,7 @@
            ui->props
            send merge-send
            merge-tree merge-ref
+           normalize cache
            optimize
            history]
     :or {ui->props   default-ui->props
@@ -1015,6 +1018,8 @@
          merge-send  into
          merge-tree  merge
          merge-ref   default-merge-ref
+         normalize   true
+         cache       (atom {})
          optimize    (fn [cs] (sort-by depth cs))
          history     100}
     :as config}]
@@ -1026,6 +1031,7 @@
                 :send send :merge-send merge-send
                 :merge-tree merge-tree :merge-ref merge-ref
                 :optimize optimize
+                :normalize normalize :cache (when normalize cache)
                 :history (c/cache history)}
                (atom {:queue [] :queued false :queued-send []
                       :send-queued false :roots {} :t 0}))]
