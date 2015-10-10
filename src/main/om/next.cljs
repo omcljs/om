@@ -446,18 +446,20 @@
 
 (defn- data-path
   ([c]
-   (let [f (fn [c] (index c))]
+   (let [f (fn [c] (and (iquery? c) (index c)))]
      (data-path c f)))
   ([c f]
    {:pre [(component? c) (fn? f)]}
-   (loop [c c ret (list (or (f c) '*))]
-     (if-let [p (parent c)]
-       (if-let [idx (f p)]
-         (recur p (cons idx ret))
-         (if (iquery? p)
-           (recur p (cons '* ret))
-           (recur p ret)))
-       ret))))
+   (loop [c c ret ()]
+     (let [idx (f c)
+           ret (cond
+                 idx (cons idx ret)
+                 (iquery? c) (cons '* ret)
+                 :else ret)
+           p   (parent c)]
+       (if-not (nil? p)
+         (recur p ret)
+         ret)))))
 
 (defn- focused? [x]
   (and (vector? x)
