@@ -811,21 +811,45 @@
         [:class-path->query (class-path component)]))
     (get-query component)))
 
+(defn- to-unique-path
+  "Return the most specific unique class-path for a component."
+  [r cp]
+  (let [cps (->> (range (dec (count cp)))
+              (reductions butlast cp)
+              reverse)]
+    (loop [last (first cps) cps (rest cps)]
+      (if (seq cps)
+        (let [cp (first cps)
+              qs (class-path->query r cp)]
+          (if (< 1 (count qs))
+            last
+            (recur cp (rest cps))))
+        last))))
+
+(defn- to-unique-parent
+  "Given a class-path return the parent with the matching class of the last
+   element of the class-path."
+  [cp c]
+  (let [t (last cp)]
+    (loop [c c]
+      (if (= t (type c))
+        c
+        (recur (parent c))))))
+
 (defn- to-resolveable
   "Given a component return the nearest parent (including the component itself)
    for which there is a known data path."
-  [x]
-  (loop [c x]
-    (if (nil? (parent c))
-      c
-      (let [cp (class-path c)
-            dp (data-path c)]
-       (if-not (== (count cp) (count dp))
-         (recur (parent c))
-         (let [qs (class-path->query (get-reconciler c) c)]
-           (if (< 1 (count qs))
-             (recur (parent c))
-             c)))))))
+  [c]
+  (let [r  (get-reconciler c)
+        cp (to-unique-path r (class-path c))
+        c  (to-unique-parent cp c)]
+    (loop [c c]
+      (if (nil? (parent c))
+        c
+        (if (== (count (class-path c))
+                (count (data-path c)))
+          c
+          (recur (parent c)))))))
 
 (defn- sift-refs [res]
   (let [{refs true rest false} (group-by #(vector? (first %)) res)]
