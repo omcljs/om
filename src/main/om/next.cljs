@@ -618,23 +618,6 @@
   ([r ref tx]
    (transact* r nil ref tx)))
 
-(defn call
-  "Given a component a symbol identifying a mutation run a transaction. May
-   supply a parse expression of reads that will be used to trigger re-renders
-   that depend on the provided keys. Does not return a meaningful value.
-
-   Example:
-
-     (om/call widget 'do/it! [:changed/key])"
-  ([component name]
-   (call component name nil))
-  ([component name param-map]
-    (call component name param-map []))
-  ([component name param-map reads]
-   {:pre [(component? component) (symbol? name)
-          (nil-or-map? param-map) (vector? reads)]}
-   (transact! component (into `[(~name ~param-map)] reads))))
-
 ;; =============================================================================
 ;; Parser
 
@@ -687,11 +670,6 @@
         (reset! indexes
           {:prop->classes     @prop->classes
            :class->paths      @class->paths
-           ;:class->selectors
-           ;(reduce-kv
-           ;  (fn [ret class paths]
-           ;    (assoc ret class (into #{} (map #(focus-query rootq %)) paths)))
-           ;  {} @class->paths)
            :class->components {}
            :ref->components   {}
            :class-path->query @class-path->query}))))
@@ -779,27 +757,6 @@
         cp      (if (component? y) (class-path y) y)]
     (into #{} (map zip/root)
       (get-in @indexer [:class-path->query cp]))))
-
-(defn ref->paths
-  "Return all paths for a given ref."
-  [x ref]
-  (let [indexer (if (reconciler? x) (get-indexer x) x)]
-    (reduce #(conj %1 (state-path indexer %2))
-     #{} (p/key->components indexer ref))))
-
-(defn ref->any-path
-  "Get any path from the indexer that matches the given ref. See also
-   om.next/ref->paths."
-  [x ref]
-  (let [indexer (if (reconciler? x) (get-indexer x) x)]
-    (state-path indexer
-      (first (p/key->components indexer ref)))))
-
-(defn subpath
-  "Given a key path into the application state return the path after the
-   given key"
-  [path key]
-  (rest (drop-while #(not= key %) path)))
 
 (defn full-query
   "Returns the absolute query for a given component, not relative like
