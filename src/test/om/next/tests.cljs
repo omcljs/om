@@ -103,8 +103,8 @@
                '[:todos/list])
            (om/replace [:db/id :todo/title])))))
 
-(deftest test-query-template-roota
-  (is (= [:app/title {:todos/list [:db/id :todo/title]}]
+(deftest test-query-template-root
+  (is (= [:app/title]
          (-> (om/query-template
                [:app/title {:todos/list [:db/id :todo/title :todo/completed]}]
                [])
