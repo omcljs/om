@@ -346,7 +346,43 @@
                         {:title "Get milk", :category :home}
                         {:title "Finish Om Next", :category :work}]})))
 
+;; -----------------------------------------------------------------------------
+;; Normalization
+
+(def data
+  {:list/one [{:name "John" :points 0}
+              {:name "Mary" :points 0}
+              {:name "Bob" :points 0}]
+   :list/two [{:name "Gwen" :points 0}
+              {:name "Mary" :points 0}
+              {:name "Jeff" :points 0}]})
+
+(defui Person
+  static om/Ident
+  (ident [this {:keys [name]}]
+    [:person/by-name name])
+  static om/IQuery
+  (query [this] [:name :points])
+  Object
+  (render [this]))
+
+(defui ListView
+  Object
+  (render [this]))
+
+(defui RootView
+  static om/IQuery
+  (query [this]
+    (let [subquery (om/get-query Person)]
+      [{:list/one subquery} {:list/two subquery}]))
+  Object
+  (render [this]))
+
 (comment
+  (om/normalize RootView data)
+
+  (om/get-query RootView)
+
   (run-tests)
 
   (require '[cljs.pprint :as pp])

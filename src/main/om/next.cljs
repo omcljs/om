@@ -862,7 +862,7 @@
                 is      (into [] (map #(ident class %)) xs)]
             (swap! refs update-in [(ffirst is)]
               merge (zipmap (map second is) xs))
-            (recur (next q) (assoc ret k xs)))
+            (recur (next q) (assoc ret k is)))
           (let [k (if (seq? node) (first node) node)]
             (recur (next q) (assoc ret k (get data k))))))
       ret)))
