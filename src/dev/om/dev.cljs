@@ -151,6 +151,8 @@
 
   (pprint/pprint @app-state)
 
+  (pprint/pprint @reconciler)
+
   (pprint/pprint (om/build-index CountersApp))
 
   (def idxr (get-in reconciler [:config :indexer]))

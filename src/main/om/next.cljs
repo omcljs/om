@@ -907,14 +907,21 @@
   (merge-novelty! reconciler delta))
 
 (defrecord Reconciler [config state]
-  p/IReconciler
+  IDeref
+  (-deref [this] @(:state config))
 
+  p/IReconciler
   (basis-t [_] (:t @state))
 
   (add-root! [this root-class target options]
     (let [ret   (atom nil)
           rctor (factory root-class)]
       (p/index-root (:indexer config) root-class)
+      (when (and (:normalize config)
+                 (not (:normalized @state)))
+        (reset! (:state config) (normalize root-class @(:state config)))
+        (swap! state assoc :normalized true)
+        (p/queue! this [::skip]))
       (let [renderf (fn [data]
                       (binding [*reconciler* this
                                 *root-class* root-class
@@ -926,12 +933,10 @@
                       (let [sel (get-query (or @ret root-class))]
                         (if-not (nil? sel)
                           (let [env (to-env config)
+                                v   ((:parser config) env sel)
                                 v'  ((:parser config) env sel true)]
-                            (if-not (:normalize config)
-                              (let [v ((:parser config) env sel)]
-                                (when-not (empty? v)
-                                  (renderf v)))
-                              (renderf @(:state config)))
+                            (when-not (empty? v)
+                              (renderf v))
                             (when-not (empty? v')
                               (when-let [send (:send config)]
                                 (send v'
@@ -1063,7 +1068,8 @@
                   :normalize (not norm?)
                   :history (c/cache history)}
                  (atom {:queue [] :queued false :queued-send []
-                        :send-queued false :roots {} :t 0}))]
+                        :send-queued false :roots {} :t 0
+                        :normalized false}))]
     (when state'
       (add-watch state' :om/reconciler
         (fn [_ _ _ _] (schedule-render! ret))))
