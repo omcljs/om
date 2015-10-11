@@ -851,6 +851,28 @@
           c
           (recur (parent c)))))))
 
+(defn- normalize* [q data refs]
+  (loop [q (seq q) ret {}]
+    (if-not (nil? q)
+      (let [node (first q)]
+        (if (join? node)
+          (let [[k sel] (if (seq? node) (ffirst node) (first node))
+                class   (-> sel meta :component)
+                xs      (into [] (map #(normalize* sel % refs)) (get data k))
+                is      (into [] (map #(ident class %)) xs)]
+            (swap! refs update-in [(ffirst is)]
+              merge (zipmap (map second is) xs))
+            (recur (next q) (assoc ret k xs)))
+          (let [k (if (seq? node) (first node) node)]
+            (recur (next q) (assoc ret k (get data k))))))
+      ret)))
+
+(defn normalize
+  [class data]
+  (let [refs (atom {})
+        ret  (normalize* (get-query class) data refs)]
+    (merge ret @refs)))
+
 (defn- sift-refs [res]
   (let [{refs true rest false} (group-by #(vector? (first %)) res)]
     [(into {} refs) (into {} rest)]))
