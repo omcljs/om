@@ -114,7 +114,7 @@
 ;; Indexer
 
 (deftest test-indexer
-  (let [idxr (om/indexer identity)
+  (let [idxr (om/indexer)
         idxs (p/index-root idxr ComponentList)]
     (is (= (set (keys (:prop->classes idxs)))
            #{:app/title :components/list :foo/bar :baz/woz}))
