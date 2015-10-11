@@ -868,6 +868,8 @@
       ret)))
 
 (defn normalize
+  "Given a Om component class and some data, use the component's query to
+   transform the data into normal form."
   [class data]
   (let [refs (atom {})
         ret  (normalize* (get-query class) data refs)]
