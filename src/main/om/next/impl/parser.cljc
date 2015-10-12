@@ -41,19 +41,20 @@
                    (ex-info (str "Invalid expression " x)
                      {:type :error/invalid-expression}))))
 
-(defn key-meta [v k]
+(defn path-meta [v path]
   (let [v' (cond->> v
-             (vector? v) (into [] (map-indexed #(key-meta %2 %1))))]
+             (vector? v) (into [] (map-indexed #(path-meta %2 (conj path %1)))))]
     (cond-> v'
-      (satisfies? IWithMeta v') (vary-meta assoc :om-index k))))
+      (satisfies? IWithMeta v') (vary-meta assoc :om-path path))))
 
 (defn parser [{:keys [read mutate]}]
   (fn self
     ([env sel] (self env sel false))
     ([env sel #?@(:clj [remote?] :cljs [^boolean remote?])]
-     (let [env (cond-> (assoc env :parse self)
-                 (not (contains? env :path)) (assoc :path [])
-                 remote? (assoc :remote true))]
+     (let [{:keys [path] :as env}
+           (cond-> (assoc env :parse self)
+             (not (contains? env :path)) (assoc :path [])
+             remote? (assoc :remote true))]
        (letfn [(step [ret expr]
                  (let [{:keys [key dkey params sel] :as ast} (->ast expr)
                        env   (cond-> env
@@ -81,7 +82,7 @@
                          (let [value (:value res)]
                            (cond-> ret
                              @error (assoc key @error)
-                             (not (nil? value)) (assoc key (key-meta value key)))))))))]
+                             (not (nil? value)) (assoc key (path-meta value (conj path key))))))))))]
          (reduce step (if-not remote? {} []) sel))))))
 
 (defn dispatch [_ k _] k)

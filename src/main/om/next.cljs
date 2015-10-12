@@ -169,7 +169,7 @@
 (defn- compute-react-key [cl props]
   (if-let [rk (:react-key props)]
     rk
-    (if-let [idx (:om-index props)]
+    (if-let [idx (:om-path props)]
       (str (. cl -name) "_" idx)
       js/undefined)))
 
@@ -189,8 +189,7 @@
                      (keyfn props)
                      (compute-react-key class props))
               :omcljs$value props
-              :omcljs$index (or (:om-index props)
-                              (-> props meta :om-index))
+              :omcljs$path (-> props meta :om-path)
               :omcljs$reconciler *reconciler*
               :omcljs$rootClass *root-class*
               :omcljs$parent *parent*
@@ -262,10 +261,10 @@
   [x]
   (or (gobj/get x "type") (type x)))
 
-(defn- index
-  "Returns the component's Om index."
+(defn- path
+  "Returns the component's Om data path."
   [c]
-  (get-prop c "omcljs$index"))
+  (get-prop c "omcljs$path"))
 
 (defn shared [component]
   {:pre [(component? component)]}
@@ -450,23 +449,6 @@
         (recur p ret))
       ret)))
 
-(defn- data-path
-  ([c]
-   (let [f (fn [c] (and (iquery? c) (index c)))]
-     (data-path c f)))
-  ([c f]
-   {:pre [(component? c) (fn? f)]}
-   (loop [c c ret ()]
-     (let [idx (f c)
-           ret (cond
-                 idx (cons idx ret)
-                 (iquery? c) (cons '* ret)
-                 :else ret)
-           p   (parent c)]
-       (if-not (nil? p)
-         (recur p ret)
-         ret)))))
-
 (defn- focused? [x]
   (and (vector? x)
        (== 1 (count x))
@@ -476,25 +458,6 @@
   (if (seq? node)
     (ffirst node)
     (first node)))
-
-(defn- state-path* [focus data-path]
-  (loop [focus focus data-path (rest data-path) ret []]
-    (if (and (seq data-path) (focused? focus))
-      (let [node  (first focus)
-            [k v] (join-value node)
-            index (first data-path)]
-        (recur v (rest data-path)
-          (cond-> (conj ret k)
-            (not= '* index) (conj index))))
-      ret)))
-
-(defn- state-path [indexer component]
-  (let [idxs  @(:indexes indexer)
-        ;; NOTE: this looks like it would be wrong, since we arbitrarily choose
-        ;; a query template, but state-path will never be called if there is
-        ;; ambiguity in a component's query or data-path
-        focus (zip/root (first (get-in idxs [:class-path->query (class-path component)])))]
-    (state-path* focus (data-path component))))
 
 ;; =============================================================================
 ;; Reconciler API
@@ -766,49 +729,6 @@
         [:class-path->query (class-path component)]))
     (get-query component)))
 
-(defn- to-unique-path
-  "Return the most specific unique class-path for a component."
-  [r cp]
-  (let [cps (->> (range (dec (count cp)))
-              (reductions butlast cp)
-              reverse)]
-    (loop [last (first cps) cps (rest cps)]
-      (if (seq cps)
-        (let [cp (first cps)
-              qs (class-path->query r cp)]
-          (if (< 1 (count qs))
-            last
-            (recur cp (rest cps))))
-        last))))
-
-(defn- to-unique-parent
-  "Given a class-path return the parent with the matching class of the last
-   element of the class-path."
-  [cp c]
-  (let [t (last cp)]
-    (loop [c c]
-      (if (= t (type c))
-        c
-        (recur (parent c))))))
-
-(defn ^boolean valid-data-path? [c]
-  (== (count (class-path c))
-      (count (data-path c))))
-
-(defn- to-resolveable
-  "Given a component return the nearest parent (including the component itself)
-   for which there is a known data path."
-  [c]
-  (let [r  (get-reconciler c)
-        cp (to-unique-path r (class-path c))
-        c  (to-unique-parent cp c)]
-    (loop [c c]
-      (if (nil? (parent c))
-        c
-        (if (valid-data-path? c)
-          c
-          (recur (parent c)))))))
-
 (defn- normalize* [q data refs]
   (loop [q (seq q) ret {}]
     (if-not (nil? q)
@@ -947,10 +867,8 @@
 
         :else
         (let [cs (transduce
-                   (comp
-                     (map #(p/key->components (:indexer config) %))
-                     (mapcat #(into [] (map to-resolveable) %)))
-                   conj #{} q)
+                   (map #(p/key->components (:indexer config) %))
+                   #(into %1 %2) #{} q)
               {:keys [ui->props]} config
               env (to-env config)]
           (doseq [c ((:optimize config) cs)]
@@ -978,7 +896,7 @@
   [{:keys [state indexer parser] :as env} c]
   (let [st    @state
         fq    (full-query c)
-        props (get-in (parser env fq) (state-path* fq (data-path c)))]
+        props (get-in (parser env fq) (path c))]
     (if (ref? props)
       (let [{:keys [root id]} props]
         (get-in st [root id]))
@@ -987,7 +905,7 @@
 (defn- default-merge-ref
   [{:keys [indexer] :as config} tree ref props]
   (letfn [(merge-ref-step [tree c]
-            (update-in tree (state-path indexer c) merge props))]
+            (update-in tree (path c) merge props))]
     (reduce merge-ref-step tree
       (p/key->components indexer ref))))
 

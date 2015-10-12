@@ -87,7 +87,7 @@
                (fn [_] (om/transact! this '[(counters/delete) :counters/list]))}
           "Delete")))))
 
-(def counter (om/factory Counter))
+(def counter (om/factory Counter {:keyfn :id}))
 
 ;; -----------------------------------------------------------------------------
 ;; CountersAppTitle
@@ -122,10 +122,7 @@
           (dom/button
             #js {:onClick (fn [e] (om/transact! this '[(counters/create)]))}
             "Add Counter!"))
-        (map-indexed
-          (fn [i props]
-            (counter (assoc props :react-key (:id props) :om-index i)))
-          list)))))
+        (map counter list)))))
 
 ;; -----------------------------------------------------------------------------
 ;; Reconciler setup
@@ -166,14 +163,12 @@
              [:ref->components (om/ref :app/counters 1)])))
 
   ;; works
-  (def dp (om/data-path c))
+  (def dp (om/path c))
 
   (def cp (om/class-path c))
 
   (def q (get-in @(:indexes idxr) [:class-path->query cp]))
 
-  (om/state-path idxr c)
-
-  (om/data-path
+  (om/path
     (om/ref->any reconciler (om/ref :app/counters 0)))
   )
