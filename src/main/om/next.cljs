@@ -184,7 +184,8 @@
       (js/React.createElement class
         #js {:key (compute-react-key class props)
              :omcljs$value props
-             :omcljs$index (:om-index props)
+             :omcljs$index (or (:om-index props)
+                               (-> props meta :om-index))
              :omcljs$reconciler *reconciler*
              :omcljs$rootClass *root-class*
              :omcljs$parent *parent*
