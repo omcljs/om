@@ -546,10 +546,9 @@
                   "transacted '" tx ", " (pr-str id))))
         v   ((:parser cfg) env tx)
         v'  ((:parser cfg) env tx true)]
-    (when-not (empty? v)
-      (p/queue! r
-        (into (if ref [ref] [])
-          (remove symbol? (keys v)))))
+    (p/queue! r
+      (into (if ref [ref] [])
+        (remove symbol? (keys v))))
     (when-not (empty? v')
       (p/queue-send! r v')
       (schedule-send! r))))
