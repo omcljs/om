@@ -721,12 +721,19 @@
 (defn full-query
   "Returns the absolute query for a given component, not relative like
    om.next/get-query."
-  [component]
-  (replace
-    (first
-      (get-in @(-> component get-reconciler get-indexer)
-        [:class-path->query (class-path component)]))
-    (get-query component)))
+  ([component]
+   (replace
+     (first
+       (get-in @(-> component get-reconciler get-indexer)
+         [:class-path->query (class-path component)]))
+     (get-query component)))
+  ([component path]
+    (let [path' (into [] (remove number?) path)
+          qs    (get-in @(-> component get-reconciler get-indexer)
+                  [:class-path->query (class-path component)])]
+      (replace
+        (first (filter #(= path' (-> % zip/root focus->path)) qs))
+        (get-query component)))))
 
 (defn- normalize* [q data refs]
   (loop [q (seq q) ret {}]
@@ -894,8 +901,9 @@
 (defn- default-ui->props
   [{:keys [state indexer parser] :as env} c]
   (let [st    @state
-        fq    (full-query c)
-        props (get-in (parser env fq) (path c))]
+        path  (path c)
+        fq    (full-query c path)
+        props (get-in (parser env fq) path)]
     (if (ref? props)
       (let [{:keys [root id]} props]
         (get-in st [root id]))
