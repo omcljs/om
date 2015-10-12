@@ -176,24 +176,29 @@
 (defn factory
   "Create a factory constructor from a component class created with
    om.next/defui."
-  [class]
-  {:pre [(fn? class)]}
-  (fn [props & children]
-    (if *instrument*
-      (apply *instrument* props children)
-      (js/React.createElement class
-        #js {:key (compute-react-key class props)
-             :omcljs$value props
-             :omcljs$index (or (:om-index props)
-                               (-> props meta :om-index))
-             :omcljs$reconciler *reconciler*
-             :omcljs$rootClass *root-class*
-             :omcljs$parent *parent*
-             :omcljs$shared *shared*
-             :omcljs$instrument *instrument*
-             :omcljs$depth *depth*
-             :omcljs$t (if *reconciler* (p/basis-t *reconciler*) 0)}
-        children))))
+  ([class] (factory class nil))
+  ([class {:keys [validator keyfn] :as opts}]
+   {:pre [(fn? class)]}
+   (fn [props & children]
+     (when-not (nil? validator)
+       (assert (validator props)))
+     (if *instrument*
+       (apply *instrument* props children)
+       (js/React.createElement class
+         #js {:key (if-not (nil? keyfn)
+                     (keyfn props)
+                     (compute-react-key class props))
+              :omcljs$value props
+              :omcljs$index (or (:om-index props)
+                              (-> props meta :om-index))
+              :omcljs$reconciler *reconciler*
+              :omcljs$rootClass *root-class*
+              :omcljs$parent *parent*
+              :omcljs$shared *shared*
+              :omcljs$instrument *instrument*
+              :omcljs$depth *depth*
+              :omcljs$t (if *reconciler* (p/basis-t *reconciler*) 0)}
+         children)))))
 
 (defn ^boolean component?
   "Returns true if the argument is an Om component."
