@@ -493,10 +493,10 @@
             (not= '* index) (conj index))))
       ret)))
 
-(defn- state-path [indexer c]
+(defn- state-path [indexer component]
   (let [idxs  @(:indexes indexer)
-        focus (zip/root (first (get-in idxs [:class-path->query (class-path c)])))]
-    (state-path* focus (data-path c))))
+        focus (zip/root (first (get-in idxs [:class-path->query (class-path component)])))]
+    (state-path* focus (data-path component))))
 
 ;; =============================================================================
 ;; Reconciler API
@@ -830,7 +830,7 @@
   [class data]
   (let [refs (atom {})
         ret  (normalize* (get-query class) data refs)]
-    (merge ret @refs)))
+    (with-meta ret @refs)))
 
 (defn- sift-refs [res]
   (let [{refs true rest false} (group-by #(vector? (first %)) res)]
@@ -876,9 +876,11 @@
       (p/index-root (:indexer config) root-class)
       (when (and (:normalize config)
                  (not (:normalized @state)))
-        (reset! (:state config) (normalize root-class @(:state config)))
-        (swap! state assoc :normalized true)
-        (p/queue! this [::skip]))
+        (let [new-state (normalize root-class @(:state config))
+              refs      (meta new-state)]
+          (reset! (:state config) (merge new-state refs))
+          (swap! state assoc :normalized true)
+          (p/queue! this [::skip])))
       (let [renderf (fn [data]
                       (binding [*reconciler* this
                                 *root-class* root-class
