@@ -466,27 +466,16 @@
        (== 1 (count x))
        (map? (first x))))
 
-(defn- state-query [focus data-path]
-  (letfn [(state-query* [focus data-path]
-            (if (and (seq data-path) (focused? focus))
-              (let [node  (first focus)
-                    [k v] (if (seq? node)
-                            (ffirst node)
-                            (first node))
-                    index (first data-path)]
-                (if-not (= '* index)
-                  [(list {k (state-query* v (rest data-path))} {:index index})]
-                  [{k (state-query* v (rest data-path))}]))
-              focus))]
-    (state-query* focus (rest data-path))))
+(defn- join-value [node]
+  (if (seq? node)
+    (ffirst node)
+    (first node)))
 
 (defn- state-path* [focus data-path]
   (loop [focus focus data-path (rest data-path) ret []]
     (if (and (seq data-path) (focused? focus))
       (let [node  (first focus)
-            [k v] (if (seq? node)
-                    (ffirst node)
-                    (first node))
+            [k v] (join-value node)
             index (first data-path)]
         (recur v (rest data-path)
           (cond-> (conj ret k)
@@ -663,7 +652,7 @@
                   (swap! prop->classes
                     #(merge-with into % (zipmap props (repeat #{class}))))
                   (doseq [join joins]
-                    (let [[prop selector'] (if (map? join) (first join) (ffirst join))]
+                    (let [[prop selector'] (join-value join)]
                       (swap! prop->classes
                         #(merge-with into % {prop #{class}}))
                       (let [class' (-> selector' meta :component)]
@@ -819,7 +808,7 @@
     (if-not (nil? q)
       (let [node (first q)]
         (if (join? node)
-          (let [[k sel] (if (seq? node) (ffirst node) (first node))
+          (let [[k sel] (join-value node)
                 class   (-> sel meta :component)
                 xs      (into [] (map #(normalize* sel % refs)) (get data k))
                 is      (into [] (map #(ident class %)) xs)]

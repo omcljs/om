@@ -75,10 +75,6 @@
   (is (= (om/focus->path [:app/title {:counters/list [:db/id :counter/count]}])
          [])))
 
-(deftest test-state-query
-  (is (= (om/state-query [{:todos/list [:title]}] '(* 1))
-         '[({:todos/list [:title]} {:index 1})])))
-
 (deftest test-state-path
   (is (= (om/state-path* [{:todos/list [:title]}] '(* 1))
         '[:todos/list 1])))
@@ -145,12 +141,6 @@
     (is (= (seq (om/ref :foo 0)) [:foo 0]))
     (is (= (seq (conj (om/ref :foo 0) :bar)) [:foo 0 :bar]))
     (is (= (get-in {:foo {:bar {:baz 1}}} (om/ref :foo :bar :baz)) 1))))
-
-;; -----------------------------------------------------------------------------
-;; Path Helpers
-
-(deftest test-subpath
-  (is (= (om/subpath [1 :foo 2] :foo) '(2))))
 
 ;; -----------------------------------------------------------------------------
 ;; Parser
