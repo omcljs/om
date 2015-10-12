@@ -796,6 +796,10 @@
         c
         (recur (parent c))))))
 
+(defn ^boolean valid-data-path? [c]
+  (== (count (class-path c))
+      (count (data-path c))))
+
 (defn- to-resolveable
   "Given a component return the nearest parent (including the component itself)
    for which there is a known data path."
@@ -806,8 +810,7 @@
     (loop [c c]
       (if (nil? (parent c))
         c
-        (if (== (count (class-path c))
-                (count (data-path c)))
+        (if (valid-data-path? c)
           c
           (recur (parent c)))))))
 
