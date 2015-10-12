@@ -495,6 +495,9 @@
 
 (defn- state-path [indexer component]
   (let [idxs  @(:indexes indexer)
+        ;; NOTE: this looks like it would be wrong, since we arbitrarily choose
+        ;; a query template, but state-path will never be called if there is
+        ;; ambiguity in a component's query or data-path
         focus (zip/root (first (get-in idxs [:class-path->query (class-path component)])))]
     (state-path* focus (data-path component))))
 
