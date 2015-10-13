@@ -379,10 +379,27 @@
     (is (contains? p0 :foo))
     (is (contains? p0 :baz))))
 
+(deftest test-incremental-normalize
+  (let [p0   (om/normalize Person
+               {:name "Susan" :points 5 :friend {:name "Mary"}})
+        refs (meta p0)]
+    (is (= {:name "Susan" :points 5 :friend [:person/by-name "Mary"]}
+           p0))
+    (is (= refs {:person/by-name {"Mary" {:name "Mary"}}}))))
+
 (comment
   (require '[cljs.pprint :as pp])
 
   (pp/pprint (meta (om/normalize RootView data)))
+
+  (pp/pprint
+    (meta
+      (om/normalize Person
+        {:name "Susan" :points 5 :friend {:name "Mary"}})))
+
+  (pp/pprint
+    (om/normalize Person
+      {:name "Susan" :points 5 :friend {:name "Mary"}}))
 
   (om/get-query RootView)
 
