@@ -11,7 +11,7 @@
   :source-paths  ["src/main" "src/devcards"]
 
   :dependencies [[org.clojure/clojure "1.7.0" :scope "provided"]
-                 [org.clojure/clojurescript "1.7.122" :scope "provided"]
+                 [org.clojure/clojurescript "1.7.145" :scope "provided"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha" :scope "provided"]
                  [cljsjs/react "0.13.3-0"]
                  [com.cognitect/transit-clj "0.8.281" :scope "provided"]
