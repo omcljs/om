@@ -761,15 +761,20 @@
               (let [xs (into [] (map #(normalize* sel % refs)) v)
                     is (into [] (map #(ident class %)) xs)]
                 (swap! refs update-in [(ffirst is)]
-                  merge (zipmap (map second is) xs))
+                  (fn [ys]
+                    (merge-with merge ys
+                      (zipmap (map second is) xs))))
                 (recur (next q) (assoc ret k is)))
 
               (nil? v)
               (recur (next q) ret)
 
               :else (recur (next q) (assoc ret k v))))
-          (let [k (if (seq? node) (first node) node)]
-            (recur (next q) (assoc ret k (get data k))))))
+          (let [k (if (seq? node) (first node) node)
+                v (get data k)]
+            (if (nil? v)
+              (recur (next q) ret)
+              (recur (next q) (assoc ret k v))))))
       ret)))
 
 (defn normalize

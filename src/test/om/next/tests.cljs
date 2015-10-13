@@ -337,10 +337,10 @@
 
 (def data
   {:list/one [{:name "John" :points 0 :friend {:name "Bob"}}
-              {:name "Mary" :points 0}
+              {:name "Mary" :points 0 :foo :bar}
               {:name "Bob" :points 0 :friend {:name "John"}}]
    :list/two [{:name "Gwen" :points 0 :friends [{:name "Jeff"}]}
-              {:name "Mary" :points 0}
+              {:name "Mary" :points 0 :baz :woz}
               {:name "Jeff" :points 0 :friends [{:name "Gwen"}]}]})
 
 (defui Person
@@ -351,7 +351,8 @@
   (query [this]
     [:name :points
      {:friend (om/tag [:name] Person)}
-     {:friends (om/tag [:name] Person)}])
+     {:friends (om/tag [:name] Person)}
+     :foo :baz])
   Object
   (render [this]))
 
@@ -369,11 +370,14 @@
 
 (deftest test-normalize
   (let [norm (om/normalize RootView data)
-        refs (meta norm)]
+        refs (meta norm)
+        p0   (get-in refs [:person/by-name "Mary"])]
     (is (= 3 (count (get norm :list/one))))
     (is (= {:name "John" :points 0 :friend [:person/by-name "Bob"]}
            (get-in refs [:person/by-name "John"])))
-    (is (= 3 (count (get norm :list/two))))))
+    (is (= 3 (count (get norm :list/two))))
+    (is (contains? p0 :foo))
+    (is (contains? p0 :baz))))
 
 (comment
   (require '[cljs.pprint :as pp])
