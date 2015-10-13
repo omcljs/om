@@ -779,11 +779,16 @@
 
 (defn normalize
   "Given a Om component class and some data, use the component's query to
-   transform the data into normal form."
-  [class data]
-  (let [refs (atom {})
-        ret  (normalize* (get-query class) data refs)]
-    (with-meta ret @refs)))
+   transform the data into normal form. If merge-ref option is true, will
+   return refs in the result instead of as metadata."
+  ([class data]
+    (normalize class data false))
+  ([class data ^boolean merge-refs]
+   (let [refs (atom {})
+         ret  (normalize* (get-query class) data refs)]
+     (if merge-refs
+       (merge ret @refs)
+       (with-meta ret @refs)))))
 
 (defn- sift-refs [res]
   (let [{refs true rest false} (group-by #(vector? (first %)) res)]
