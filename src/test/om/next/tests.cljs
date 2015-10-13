@@ -389,19 +389,5 @@
 
 (comment
   (require '[cljs.pprint :as pp])
-
-  (pp/pprint (meta (om/normalize RootView data)))
-
-  (pp/pprint
-    (meta
-      (om/normalize Person
-        {:name "Susan" :points 5 :friend {:name "Mary"}})))
-
-  (pp/pprint
-    (om/normalize Person
-      {:name "Susan" :points 5 :friend {:name "Mary"}}))
-
-  (om/get-query RootView)
-
   (run-tests)
   )
