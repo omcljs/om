@@ -729,11 +729,15 @@
      (get-query component)))
   ([component path]
     (let [path' (into [] (remove number?) path)
+          cp    (class-path component)
           qs    (get-in @(-> component get-reconciler get-indexer)
-                  [:class-path->query (class-path component)])]
-      (replace
-        (first (filter #(= path' (-> % zip/root focus->path)) qs))
-        (get-query component)))))
+                  [:class-path->query cp])]
+      (if-not (empty? qs)
+        (replace (first (filter #(= path' (-> % zip/root focus->path)) qs))
+          (get-query component))
+        (throw
+          (ex-info (str "No queries exist for component path " cp)
+            {:type :om.next/no-queries}))))))
 
 (defn- normalize* [q data refs]
   (loop [q (seq q) ret {}]
