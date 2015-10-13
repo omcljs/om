@@ -163,6 +163,9 @@
 (defn iquery? [x]
   (satisfies? IQuery x))
 
+(defn tag [x class]
+  (vary-meta x assoc :component class))
+
 ;; =============================================================================
 ;; React Bridging
 

@@ -336,19 +336,21 @@
 ;; Normalization
 
 (def data
-  {:list/one [{:name "John" :points 0}
+  {:list/one [{:name "John" :points 0 :friends [{:name "Bob"}]}
               {:name "Mary" :points 0}
-              {:name "Bob" :points 0}]
-   :list/two [{:name "Gwen" :points 0}
+              {:name "Bob" :points 0 :friends [{:name "John"}]}]
+   :list/two [{:name "Gwen" :points 0 :friends [{:name "Jeff"}]}
               {:name "Mary" :points 0}
-              {:name "Jeff" :points 0}]})
+              {:name "Jeff" :points 0 :friends [{:name "Gwen"}]}]})
 
 (defui Person
   static om/Ident
   (ident [this {:keys [name]}]
     [:person/by-name name])
   static om/IQuery
-  (query [this] [:name :points])
+  (query [this]
+    [:name :points
+     {:friends (om/tag [:name] Person)}])
   Object
   (render [this]))
 
@@ -365,16 +367,11 @@
   (render [this]))
 
 (comment
-  (om/normalize RootView data)
+  (require '[cljs.pprint :as pp])
+
+  (pp/pprint (meta (om/normalize RootView data)))
 
   (om/get-query RootView)
 
   (run-tests)
-
-  (require '[cljs.pprint :as pp])
-
-  (p {:state todos-state} '[{:todos/list [:title :category]}])
-
-  (let [idxr (om/indexer identity)]
-    (pp/pprint (p/index-root idxr ComponentList)))
   )
