@@ -126,8 +126,12 @@
                 (into (conj (vec before) p (cons name impl)) after))
               ret))
           (add-defaults [dt]
-            (reduce add-defaults-step dt defaults))]
-    (->> dt (map reshape*) vec add-defaults)))
+            (reduce add-defaults-step dt defaults))
+          (add-object-protocol [dt]
+            (if-not (some '#{Object} dt)
+              (conj dt 'Object)
+              dt))]
+    (->> dt (map reshape*) vec add-object-protocol add-defaults)))
 
 (defn defui*
   ([name form] (defui* name form nil))
@@ -217,4 +221,9 @@
           {:foo 'bar})
         (render [_ {:keys [self artists]}]
           (om.dom/div nil "Hello!")))))
+
+  (pprint
+    (defui* 'Component
+     '(static om.next/IQuery
+        (query [this] '[:foo/bar :baz/woz]))))
   )

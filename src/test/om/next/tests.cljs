@@ -13,9 +13,7 @@
 (defui ^:once Component
   static om/IQuery
   (query [this]
-    '[:foo/bar :baz/woz])
-  Object
-  (render [this]))
+    '[:foo/bar :baz/woz]))
 
 (def component (om/factory Component))
 
@@ -25,9 +23,7 @@
     {:component (om/get-query Component)})
   static om/IQuery
   (query [this]
-    '[{:components/list ?component} :app/title])
-  Object
-  (render [this]))
+    '[{:components/list ?component} :app/title]))
 
 (def component-list (om/factory ComponentList))
 
