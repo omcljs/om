@@ -749,11 +749,25 @@
         (if (join? node)
           (let [[k sel] (join-value node)
                 class   (-> sel meta :component)
-                xs      (into [] (map #(normalize* sel % refs)) (get data k))
-                is      (into [] (map #(ident class %)) xs)]
-            (swap! refs update-in [(ffirst is)]
-              merge (zipmap (map second is) xs))
-            (recur (next q) (assoc ret k is)))
+                v       (get data k)]
+            (cond
+              (map? v)
+              (let [x (normalize* sel v refs)
+                    i (ident class v)]
+                (swap! refs update-in [(first i) (second i)] merge x)
+                (recur (next q) (assoc ret k i)))
+
+              (vector? v)
+              (let [xs (into [] (map #(normalize* sel % refs)) v)
+                    is (into [] (map #(ident class %)) xs)]
+                (swap! refs update-in [(ffirst is)]
+                  merge (zipmap (map second is) xs))
+                (recur (next q) (assoc ret k is)))
+
+              (nil? v)
+              (recur (next q) ret)
+
+              :else (recur (next q) (assoc ret k v))))
           (let [k (if (seq? node) (first node) node)]
             (recur (next q) (assoc ret k (get data k))))))
       ret)))

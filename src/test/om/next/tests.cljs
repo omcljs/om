@@ -336,9 +336,9 @@
 ;; Normalization
 
 (def data
-  {:list/one [{:name "John" :points 0 :friends [{:name "Bob"}]}
+  {:list/one [{:name "John" :points 0 :friend {:name "Bob"}}
               {:name "Mary" :points 0}
-              {:name "Bob" :points 0 :friends [{:name "John"}]}]
+              {:name "Bob" :points 0 :friend {:name "John"}}]
    :list/two [{:name "Gwen" :points 0 :friends [{:name "Jeff"}]}
               {:name "Mary" :points 0}
               {:name "Jeff" :points 0 :friends [{:name "Gwen"}]}]})
@@ -350,6 +350,7 @@
   static om/IQuery
   (query [this]
     [:name :points
+     {:friend (om/tag [:name] Person)}
      {:friends (om/tag [:name] Person)}])
   Object
   (render [this]))
@@ -365,6 +366,14 @@
       [{:list/one subquery} {:list/two subquery}]))
   Object
   (render [this]))
+
+(deftest test-normalize
+  (let [norm (om/normalize RootView data)
+        refs (meta norm)]
+    (is (= 3 (count (get norm :list/one))))
+    (is (= {:name "John" :points 0 :friend [:person/by-name "Bob"]}
+           (get-in refs [:person/by-name "John"])))
+    (is (= 3 (count (get norm :list/two))))))
 
 (comment
   (require '[cljs.pprint :as pp])
