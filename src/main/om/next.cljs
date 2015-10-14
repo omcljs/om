@@ -190,7 +190,8 @@
        (let [key (if-not (nil? keyfn)
                    (keyfn props)
                    (compute-react-key class props))
-             ref (cond-> (:ref props) keyword? str)]
+             ref (:ref props)
+             ref (cond-> ref (keyword? ref) str)]
          (js/React.createElement class
           #js {:key key
                :ref ref
@@ -464,6 +465,12 @@
   (if (seq? node)
     (ffirst node)
     (first node)))
+
+(defn subquery [x class ref]
+  (let [ref (cond-> ref (keyword? ref) str)]
+    (if (and (component? x) (mounted? x))
+     (get-query (react-ref x ref))
+     (get-query class))))
 
 ;; =============================================================================
 ;; Reconciler API
