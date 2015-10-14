@@ -187,20 +187,23 @@
        (assert (validator props)))
      (if *instrument*
        (apply *instrument* props children)
-       (js/React.createElement class
-         #js {:key (if-not (nil? keyfn)
-                     (keyfn props)
-                     (compute-react-key class props))
-              :omcljs$value props
-              :omcljs$path (-> props meta :om-path)
-              :omcljs$reconciler *reconciler*
-              :omcljs$rootClass *root-class*
-              :omcljs$parent *parent*
-              :omcljs$shared *shared*
-              :omcljs$instrument *instrument*
-              :omcljs$depth *depth*
-              :omcljs$t (if *reconciler* (p/basis-t *reconciler*) 0)}
-         children)))))
+       (let [key (if-not (nil? keyfn)
+                   (keyfn props)
+                   (compute-react-key class props))
+             ref (cond-> (:ref props) keyword? str)]
+         (js/React.createElement class
+          #js {:key key
+               :ref ref
+               :omcljs$value props
+               :omcljs$path (-> props meta :om-path)
+               :omcljs$reconciler *reconciler*
+               :omcljs$rootClass *root-class*
+               :omcljs$parent *parent*
+               :omcljs$shared *shared*
+               :omcljs$instrument *instrument*
+               :omcljs$depth *depth*
+               :omcljs$t (if *reconciler* (p/basis-t *reconciler*) 0)}
+          children))))))
 
 (defn ^boolean component?
   "Returns true if the argument is an Om component."
