@@ -142,7 +142,7 @@
            rname (if env
                    (:name (ana/resolve-var (dissoc env :locals) name))
                    name)
-           ctor  `(defn ~name []
+           ctor  `(defn ~(with-meta name {:jsdoc ["@constructor"]}) []
                     (this-as this#
                       (.apply js/React.Component this# (js-arguments))
                       (if-not (nil? (.-getInitialState this#))
