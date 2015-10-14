@@ -644,11 +644,9 @@
                         (build-index* class' selector'
                           (conj path prop) (conj classpath class')))))))]
         (build-index* class rootq [] [class])
-        (reset! indexes
+        (swap! indexes merge
           {:prop->classes     @prop->classes
            :class->paths      @class->paths
-           :class->components {}
-           :ref->components   {}
            :class-path->query @class-path->query}))))
 
   (index-component! [_ c]
@@ -692,7 +690,10 @@
 (defn indexer
   "Given a function (Component -> Ref), return an indexer."
   []
-  (Indexer. (atom {})))
+  (Indexer.
+    (atom
+      {:class->components {}
+       :ref->components   {}})))
 
 (defn ^boolean indexer?
   "Returns true if x is an indexer."
