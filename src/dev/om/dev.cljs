@@ -60,7 +60,7 @@
                counter {:id id :counter/count 0}]
            (-> state
              (assoc-in [:app/counters id] counter)
-             (update-in [:counters/list] conj (om/ref :app/counters id))
+             (update-in [:counters/list] conj [:app/counters id])
              (update-in [:app/current-id] inc))))))})
 
 ;; -----------------------------------------------------------------------------
@@ -72,7 +72,7 @@
     '[:id :counter/count])
   om/Ident
   (ident [this {:keys [id]}]
-    (om/ref :app/counters id))
+    [:app/counters id])
   Object
   (render [this]
     (let [{:keys [:counter/count] :as props} (om/props this)]
@@ -134,7 +134,9 @@
          {0 {:id 0 :counter/count 0}
           1 {:id 1 :counter/count 0}
           2 {:id 2 :counter/count 0}}
-         :counters/list (om/refs :app/counters 0 1 2)}))
+         :counters/list [[:app/counters 0]
+                         [:app/counters 1]
+                         [:app/counters 2]]}))
 
 (def reconciler
   (om/reconciler
@@ -160,7 +162,7 @@
 
   (def c
     (first (get-in @(:indexes idxr)
-             [:ref->components (om/ref :app/counters 1)])))
+             [:ref->components [:app/counters 1]])))
 
   ;; works
   (def dp (om/path c))
@@ -170,5 +172,5 @@
   (def q (get-in @(:indexes idxr) [:class-path->query cp]))
 
   (om/path
-    (om/ref->any reconciler (om/ref :app/counters 0)))
+    (om/ref->any reconciler [:app/counters 2]))
   )

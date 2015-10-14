@@ -8,7 +8,6 @@
             [clojure.walk :as walk]
             [om.next.protocols :as p]
             [om.next.impl.parser :as parser]
-            [om.next.impl.refs :as refs]
             [om.next.cache :as c]
             [clojure.zip :as zip])
   (:import [goog.debug Console]))
@@ -144,7 +143,6 @@
   (let [r   (get-reconciler c)
         cfg (:config r)
         st  (when-not (nil? r) @(:state cfg))
-        ref (ident c (props c))
         qps (get (::queries st) c)]
     (with-meta
       (bind-query
@@ -458,11 +456,6 @@
         (recur p ret))
       ret)))
 
-(defn- focused? [x]
-  (and (vector? x)
-       (== 1 (count x))
-       (map? (first x))))
-
 (defn- join-value [node]
   (if (seq? node)
     (ffirst node)
@@ -528,18 +521,7 @@
   (p/remove-root! reconciler target))
 
 ;; =============================================================================
-
-(defn ref [root id & more]
-  (refs/Ref. (into [root id] more)))
-
-(defn ^boolean ref? [x]
-  (instance? refs/Ref x))
-
-(defn refs [root & ids]
-  (into [] (map #(ref root %)) ids))
-
-;; =============================================================================
-;; Call Support
+;; Transactions
 
 (defprotocol ITxIntercept
   (tx-intercept [c tx]
@@ -808,18 +790,28 @@
 ;; =============================================================================
 ;; Reconciler
 
-(defn- queue-calls! [r res]
-  (p/queue! r (into [] (remove symbol?) (keys res))))
+(defn- queue-calls! [reconciler res]
+  (p/queue! reconciler (into [] (remove symbol?) (keys res))))
 
-(defn- merge-refs [tree {:keys [merge-ref] :as config} refs]
-  (letfn [(step [tree' [ref props]]
-            (merge-ref config tree' ref props))]
-    (reduce step tree refs)))
+(defn- merge-refs [tree config refs]
+  (let [{:keys [merge-ref indexer]} config]
+    (letfn [(step [tree' [ref props]]
+              (if (:normalize config)
+                (let [c      (ref->any indexer ref)
+                      props' (normalize c props)
+                      refs   (meta props')]
+                  ((:merge-tree config) (merge-ref config tree' ref props') refs))
+                (merge-ref config tree' ref props)))]
+      (reduce step tree refs))))
 
 (defn- merge-novelty!
-  [r res]
-  (let [config      (:config r)
-        [refs res'] (sift-refs res)]
+  [reconciler res]
+  (let [config      (:config reconciler)
+        root        (:root @(:state reconciler))
+        [refs res'] (sift-refs res)
+        res'        (if (:normalize config)
+                      (normalize root res' true)
+                      res')]
     (swap! (:state config)
       #(-> %
         (merge-refs config refs)
@@ -953,22 +945,14 @@
              (merge-novelty! this %)))))))
 
 (defn- default-ui->props
-  [{:keys [state indexer parser] :as env} c]
-  (let [st    @state
-        path  (path c)
-        fq    (full-query c path)
-        props (get-in (parser env fq) path)]
-    (if (ref? props)
-      (let [{:keys [root id]} props]
-        (get-in st [root id]))
-      props)))
+  [{:keys [parser] :as env} c]
+  (let [path (path c)
+        fq   (full-query c path)]
+    (get-in (parser env fq) path)))
 
 (defn- default-merge-ref
-  [{:keys [indexer] :as config} tree ref props]
-  (letfn [(merge-ref-step [tree c]
-            (update-in tree (path c) merge props))]
-    (reduce merge-ref-step tree
-      (p/key->components indexer ref))))
+  [_ tree ref props]
+  (update-in tree ref merge props))
 
 (defn reconciler
   "Construct a reconciler from a configuration map, the following options
@@ -989,7 +973,7 @@
     :or {ui->props   default-ui->props
          indexer     om.next/indexer
          merge-send  into
-         merge-tree  merge
+         merge-tree  #(merge-with merge %1 %2)
          merge-ref   default-merge-ref
          optimize    (fn [cs] (sort-by depth cs))
          history     100}
