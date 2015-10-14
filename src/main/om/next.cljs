@@ -466,11 +466,15 @@
     (ffirst node)
     (first node)))
 
-(defn subquery [x class ref]
-  (let [ref (cond-> ref (keyword? ref) str)]
+(defn subquery
+  "Given a class or mounted component x and a ref to an instantiated component
+   or class that defines a subquery, pick the most specific subquery. If the
+   component is mounted subquery-ref will be used, subquery-class otherwise."
+  [x subquery-ref subquery-class]
+  (let [ref (cond-> subquery-ref (keyword? subquery-ref) str)]
     (if (and (component? x) (mounted? x))
-     (get-query (react-ref x ref))
-     (get-query class))))
+      (get-query (react-ref x ref))
+      (get-query subquery-class))))
 
 ;; =============================================================================
 ;; Reconciler API
