@@ -622,11 +622,12 @@
   (-deref [_] @indexes)
 
   p/IIndexer
-  (index-root [_ class]
+  (index-root [_ x]
     (let [class->paths      (atom {})
           prop->classes     (atom {})
           class-path->query (atom {})
-          rootq             (get-query class)]
+          rootq             (get-query x)
+          class             (cond-> x (component? x) type)]
       (letfn [(build-index* [class selector path classpath]
                 (swap! class->paths update-in [class]
                   (fnil conj #{}) path)
