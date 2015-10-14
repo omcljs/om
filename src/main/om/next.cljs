@@ -507,10 +507,11 @@
 (declare remove-root!)
 
 (defn add-root!
-  "Given a a root component class and a target root DOM node, instantiate and
+  "Given a root component class and a target root DOM node, instantiate and
    render the root class using the reconciler's :state property. The reconciler
-   will continue to observe state changes to the :state and keep the components
-   in sync."
+   will continue to observe changes to :state and keep the target node in sync.
+   Note a reconciler may have only one root. If invoked on a reconciler with an
+   existing root, the new root will replace the old one."
   ([reconciler root-class target]
    (when-let [old-reconciler (get @roots target)]
      (remove-root! old-reconciler target))
@@ -521,8 +522,8 @@
    (p/add-root! reconciler root-class target options)))
 
 (defn remove-root!
-  "Remove a root target (a DOM elment) from a reconciler. The reconciler will no
-   longer attempt to reconcile application state with the specified root."
+  "Remove a root target (a DOM element) from a reconciler. The reconciler will
+   no longer attempt to reconcile application state with the specified root."
   [reconciler target]
   (p/remove-root! reconciler target))
 
@@ -855,6 +856,7 @@
                                 *shared*     (:shared config)]
                         (let [c (js/React.render (rctor data) target)]
                           (when (nil? @ret)
+                            (swap! state assoc :root c)
                             (reset! ret c)))))
             parsef  (fn []
                       (let [sel (get-query (or @ret root-class))]
@@ -871,17 +873,25 @@
                                     (merge-novelty! this %)
                                     (renderf %))))))
                           (renderf @(:state config)))))]
-        (swap! state update-in [:roots] assoc target
-          {:parsef parsef :root ret})
+        (swap! state merge
+          {:target target :render parsef
+           :remove (fn []
+                     (remove-watch (:state config) target)
+                     (swap! state
+                       #(-> %
+                         (dissoc :target) (dissoc :render) (dissoc :root)
+                         (dissoc :remove)))
+                     (js/React.unmountComponentAtNode target))})
+        (add-watch (:state config) target
+          (fn [_ _ _ _] (schedule-render! this)))
         (parsef)
-        @ret)))
+        ret)))
 
   (remove-root! [_ target]
-    (swap! state update-in [:roots] dissoc target))
+    ((:remove @state)))
 
   (reindex! [_ target]
-    (p/index-root (:indexer config)
-      @(get-in @state [:roots target :root])))
+    (p/index-root (:indexer config) (get @state :root)))
 
   (queue! [_ ks]
     (swap! state
@@ -911,9 +921,7 @@
     (let [st @state
           q  (:queue st)]
       (cond
-        (empty? q)
-        (doseq [[{:keys [parsef]} entry] (:roots st)]
-          (parsef))
+        (empty? q) ((:render st))
 
         (= [::skip] q) nil
 
@@ -999,11 +1007,9 @@
                   :normalize (not norm?)
                   :history (c/cache history)}
                  (atom {:queue [] :queued false :queued-send []
-                        :send-queued false :roots {} :t 0
-                        :normalized false}))]
-    (when state'
-      (add-watch state' :om/reconciler
-        (fn [_ _ _ _] (schedule-render! ret))))
+                        :send-queued false
+                        :target nil :root nil :render nil :remove nil
+                        :t 0 :normalized false}))]
     ret))
 
 (defn ^boolean reconciler?
