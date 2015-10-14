@@ -473,6 +473,8 @@
    or class that defines a subquery, pick the most specific subquery. If the
    component is mounted subquery-ref will be used, subquery-class otherwise."
   [x subquery-ref subquery-class]
+  {:pre [(or (keyword? subquery-ref) (string? subquery-ref))
+         (fn? subquery-class)]}
   (let [ref (cond-> subquery-ref (keyword? subquery-ref) str)]
     (if (and (component? x) (mounted? x))
       (get-query (react-ref x ref))
