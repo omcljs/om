@@ -390,6 +390,7 @@
           "changed query '" new-query ", " (pr-str id))))
     (swap! st update-in [:om.next/queries component] merge {:query new-query})
     (p/queue! r [component])
+    (p/reindex! r (root-key component))
     nil))
 
 (defn set-params!
@@ -408,6 +409,7 @@
           "changed query params " new-params", " (pr-str id))))
     (swap! st update-in [:om.next/queries component] merge {:params new-params})
     (p/queue! r [component])
+    (p/reindex! r (root-key component))
     nil))
 
 (defn mounted?
@@ -696,18 +698,8 @@
       {:class->components {}
        :ref->components   {}})))
 
-(defn ^boolean indexer?
-  "Returns true if x is an indexer."
-  [x]
-  (instance? Indexer x))
-
-(defn- build-index
-  [class]
-  (let [idxr (indexer)]
-    (p/index-root idxr class)))
-
 (defn get-indexer
-  "Get the indexer associated with the reconciler."
+  "PRIVATE: Get the indexer associated with the reconciler."
   [reconciler]
   {:pre [(reconciler? reconciler)]}
   (-> reconciler :config :indexer))
@@ -884,6 +876,10 @@
 
   (remove-root! [_ target]
     (swap! state update-in [:roots] dissoc target))
+
+  (reindex! [_ target]
+    (p/index-root (:indexer config)
+      @(get-in @state [:roots target :root])))
 
   (queue! [_ ks]
     (swap! state

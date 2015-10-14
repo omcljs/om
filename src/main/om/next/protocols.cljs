@@ -16,5 +16,6 @@
   (schedule-send! [reconciler])
   (queue! [reconciler ks])
   (queue-send! [reconciler expr])
+  (reindex! [reconciler target])
   (reconcile! [reconciler])
   (send! [reconciler]))
