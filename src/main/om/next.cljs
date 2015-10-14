@@ -24,7 +24,7 @@
 (def ^:private roots (atom {}))
 (def ^{:dynamic true} *raf* nil)
 (def ^{:dynamic true :private true} *reconciler* nil)
-(def ^{:dynamic true :private true} *root-class* nil)
+(def ^{:dynamic true :private true} *root-key* nil)
 (def ^{:dynamic true :private true} *parent* nil)
 (def ^{:dynamic true :private true} *shared* nil)
 (def ^{:dynamic true :private true} *instrument* nil)
@@ -198,7 +198,7 @@
                :omcljs$value props
                :omcljs$path (-> props meta :om-path)
                :omcljs$reconciler *reconciler*
-               :omcljs$rootClass *root-class*
+               :omcljs$rootKey *root-key*
                :omcljs$parent *parent*
                :omcljs$shared *shared*
                :omcljs$instrument *instrument*
@@ -242,9 +242,9 @@
             t1 (gobj/get cps "omcljs$t")]
         (max t0 t1)))))
 
-(defn- root-class
+(defn- root-key
   [component]
-  (get-prop component "omcljs$rootClass"))
+  (get-prop component "omcljs$rootKey"))
 
 (defn- parent
   "Returns the parent Om component."
@@ -857,7 +857,7 @@
           (p/queue! this [::skip])))
       (let [renderf (fn [data]
                       (binding [*reconciler* this
-                                *root-class* root-class
+                                *root-key*   target
                                 *shared*     (:shared config)]
                         (let [c (js/React.render (rctor data) target)]
                           (when (nil? @ret)
@@ -877,7 +877,8 @@
                                     (merge-novelty! this %)
                                     (renderf %))))))
                           (renderf @(:state config)))))]
-        (swap! state update-in [:roots] assoc target parsef)
+        (swap! state update-in [:roots] assoc target
+          {:parsef parsef :root ret})
         (parsef)
         @ret)))
 
@@ -913,7 +914,7 @@
           q  (:queue st)]
       (cond
         (empty? q)
-        (doseq [[_ parsef] (:roots st)]
+        (doseq [[{:keys [parsef]} entry] (:roots st)]
           (parsef))
 
         (= [::skip] q) nil
