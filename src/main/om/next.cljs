@@ -149,7 +149,7 @@
     (with-meta
       (bind-query
         (:query qps (query c)) (:params qps (params c)))
-      {:component c})))
+      {:component (type c)})))
 
 (defn get-query
   "Return a IQuery/IParams instance bound query. Works for component classes
