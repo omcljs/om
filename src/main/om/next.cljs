@@ -971,7 +971,7 @@
              remote expression and a callback which should be invoked with
              the resolved expression."
   [{:keys [state shared parser indexer
-           ui->props
+           ui->props normalize
            send merge-send
            merge-tree merge-ref
            optimize
@@ -994,7 +994,7 @@
                   :send send :merge-send merge-send
                   :merge-tree merge-tree :merge-ref merge-ref
                   :optimize optimize
-                  :normalize (not norm?)
+                  :normalize (or (not norm?) normalize)
                   :history (c/cache history)}
                  (atom {:queue [] :queued false :queued-send []
                         :send-queued false
