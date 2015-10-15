@@ -45,7 +45,9 @@
   (let [v' (cond->> v
              (vector? v) (into [] (map-indexed #(path-meta %2 (conj path %1)))))]
     (cond-> v'
-      (satisfies? IWithMeta v') (vary-meta assoc :om-path path))))
+      #?(:clj  (instance? clojure.lang.IObj v')
+         :cljs (satisfies? IWithMeta v'))
+      (vary-meta assoc :om-path path))))
 
 (defn parser [{:keys [read mutate]}]
   (fn self
