@@ -41,19 +41,21 @@
                    (ex-info (str "Invalid expression " x)
                      {:type :error/invalid-expression}))))
 
-(defn path-meta [v path]
-  (let [v' (cond->> v
-             (vector? v) (into [] (map-indexed #(path-meta %2 (conj path %1)))))]
-    (cond-> v'
-      #?(:clj  (instance? clojure.lang.IObj v')
-         :cljs (satisfies? IWithMeta v'))
+(defn path-meta [x path]
+  (let [x' (cond->> x
+             (map? x) (into {} (map (fn [[k v]] [k (path-meta v (conj path k))])))
+             (vector? x) (into [] (map-indexed #(path-meta %2 (conj path %1)))))]
+    (cond-> x'
+      #?(:clj  (instance? clojure.lang.IObj x')
+         :cljs (satisfies? IWithMeta x'))
       (vary-meta assoc :om-path path))))
 
-(defn parser [{:keys [read mutate]}]
+(defn parser [{:keys [read mutate] :as config}]
   (fn self
     ([env sel] (self env sel nil))
     ([env sel opts]
-     (let [remote? (:remote opts)
+     (let [remote? (boolean (:remote opts))
+           elide-paths? (boolean (:elide-paths config))
            {:keys [path] :as env}
            (cond-> (assoc env :parse self)
              (not (contains? env :path)) (assoc :path [])
@@ -85,7 +87,8 @@
                          (let [value (:value res)]
                            (cond-> ret
                              @error (assoc key @error)
-                             (not (nil? value)) (assoc key (path-meta value (conj path key))))))))))]
-         (reduce step (if-not remote? {} []) sel))))))
+                             (not (nil? value)) (assoc key value))))))))]
+         (cond-> (reduce step (if-not remote? {} []) sel)
+           (not (or remote? elide-paths?)) (path-meta path)))))))
 
 (defn dispatch [_ k _] k)
