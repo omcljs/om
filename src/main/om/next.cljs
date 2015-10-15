@@ -852,7 +852,7 @@
                       (binding [*reconciler* this
                                 *root-key*   target
                                 *shared*     (:shared config)]
-                        (let [c (js/React.render (rctor data) target)]
+                        (let [c (js/ReactDOM.render (rctor data) target)]
                           (when (nil? @ret)
                             (swap! state assoc :root c)
                             (reset! ret c)))))
@@ -879,7 +879,7 @@
                        #(-> %
                          (dissoc :target) (dissoc :render) (dissoc :root)
                          (dissoc :remove)))
-                     (js/React.unmountComponentAtNode target))})
+                     (js/ReactDOM.unmountComponentAtNode target))})
         (add-watch (:state config) target
           (fn [_ _ _ _] (schedule-render! this)))
         (parsef)

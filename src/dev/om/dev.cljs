@@ -116,8 +116,8 @@
           (om/props this)]
       (apply dom/div nil
         (app-title nil
-          (dom/h2 nil "Hello World!")
-          (dom/h3 nil "cool stuff"))
+          (dom/h2 #js {:key "a"} "Hello World!")
+          (dom/h3 #js {:key "b"} "cool stuff"))
         (dom/div nil
           (dom/button
             #js {:onClick (fn [e] (om/transact! this '[(counters/create)]))}

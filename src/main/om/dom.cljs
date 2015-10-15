@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [map meta time])
   (:require-macros [om.dom :as dom])
   (:require [cljsjs.react]
+            [cljsjs.react.dom]
             [goog.object :as gobject]))
 
 (dom/gen-react-dom-fns)
