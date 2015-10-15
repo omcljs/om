@@ -186,26 +186,26 @@
     (is (= (p {} [:baz/woz]) {}))
     (is (= (p {:state st} [:foo/bar]) {:foo/bar 1}))
     (is (= (p {:state st} [:foo/bar :baz/woz]) {:foo/bar 1}))
-    (is (= (p {} [:baz/woz] true) [:baz/woz]))
-    (is (= (p {:state st} [:foo/bar] true) []))
-    (is (= (p {:state st} [:foo/bar :baz/woz] true) [:baz/woz]))))
+    (is (= (p {} [:baz/woz] {:remote true}) [:baz/woz]))
+    (is (= (p {:state st} [:foo/bar] {:remote true}) []))
+    (is (= (p {:state st} [:foo/bar :baz/woz] {:remote true}) [:baz/woz]))))
 
 (deftest test-value-and-remote
   (let [st (atom {:woz/noz 1})]
     (is (= (p {:state st} [:woz/noz]) {:woz/noz 1}))
-    (is (= (p {:state st} [:woz/noz] true) [:woz/noz]))))
+    (is (= (p {:state st} [:woz/noz] {:remote true}) [:woz/noz]))))
 
 (deftest test-call
   (let [st (atom {:foo/bar 1})]
     (is (= (p {:state st} '[(do/it! {:id 0})]) '{do/it! [0]}))
-    (is (= (p {} '[(do/it! {:id 0})] true)
+    (is (= (p {} '[(do/it! {:id 0})] {:remote true})
            '[(do/it! {:id 0})]))))
 
 (deftest test-read-call
   (let [st (atom {:foo/bar 1})]
     (is (= (p {:state st} '[(:user/pic {:size :small})])
            {:user/pic "user50x50.png"}))
-    (is (= (p {:state st} '[(:user/pic {:size :small})] true)
+    (is (= (p {:state st} '[(:user/pic {:size :small})] {:remote true})
            '[(:user/pic {:size :small})]))))
 
 (defmethod mutate 'mutate!
@@ -216,7 +216,7 @@
 (deftest test-remote-does-not-mutate
   (let [st (atom {:count 0})
         _  (p {:state st} '[(mutate!)])
-        _  (p (:state st) '[(mutate!)] true)]
+        _  (p (:state st) '[(mutate!)] {:remote true})]
     (is (= @st {:count 1}))))
 
 (defmethod read :now/wow
@@ -232,16 +232,16 @@
   (let [st (atom {:foo/bar 1})]
     (is (= (p {:state st} [[:user/by-id 0]])
            {[:user/by-id 0] {:name/first "Bob" :name/last "Smith"}}))
-    (is (= (p {:state st} [[:user/by-id 0]] true)
+    (is (= (p {:state st} [[:user/by-id 0]] {:remote true})
            [[:user/by-id 0]]))
     (is (= (p {:state st} [{[:user/by-id 0] [:name/last]}])
            {[:user/by-id 0] {:name/last "Smith"}}))
-    (is (= (p {:state st} [{[:user/by-id 0] [:name/last]}] true)
+    (is (= (p {:state st} [{[:user/by-id 0] [:name/last]}] {:remote true})
            [{[:user/by-id 0] [:name/last]}]))))
 
 (deftest test-forced-remote
   (is (= (p {} '['(foo/bar)]) {}))
-  (is (= (p {} '['(foo/bar)] true) '[(foo/bar)])))
+  (is (= (p {} '['(foo/bar)] {:remote true}) '[(foo/bar)])))
 
 (defmethod mutate 'this/throws
   [_ _ _]
@@ -272,7 +272,7 @@
     (is (= (p {:state state} '[(action/no-value)]) {}))
     (is (= :changed @state)))
   (let [state (atom nil)]
-    (is (= (p {:state state} '[(action/no-value)] true) []))
+    (is (= (p {:state state} '[(action/no-value)] {:remote true}) []))
     (is (= nil @state))))
 
 ;; -----------------------------------------------------------------------------

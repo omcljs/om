@@ -51,9 +51,10 @@
 
 (defn parser [{:keys [read mutate]}]
   (fn self
-    ([env sel] (self env sel false))
-    ([env sel #?@(:clj [remote?] :cljs [^boolean remote?])]
-     (let [{:keys [path] :as env}
+    ([env sel] (self env sel nil))
+    ([env sel opts]
+     (let [remote? (:remote opts)
+           {:keys [path] :as env}
            (cond-> (assoc env :parse self)
              (not (contains? env :path)) (assoc :path [])
              remote? (assoc :remote true))]

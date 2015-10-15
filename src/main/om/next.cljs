@@ -543,7 +543,7 @@
                 (str (when ref (str (pr-str ref) " "))
                   "transacted '" tx ", " (pr-str id))))
         v   ((:parser cfg) env tx)
-        v'  ((:parser cfg) env tx true)]
+        v'  ((:parser cfg) env tx {:remote true})]
     (p/queue! r
       (into (if ref [ref] [])
         (remove symbol? (keys v))))
@@ -848,7 +848,7 @@
                         (if-not (nil? sel)
                           (let [env (to-env config)
                                 v   ((:parser config) env sel)
-                                v'  ((:parser config) env sel true)]
+                                v'  ((:parser config) env sel {:remote true})]
                             (when-not (empty? v)
                               (renderf v))
                             (when-not (empty? v')
