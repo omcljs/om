@@ -23,7 +23,6 @@
 (def ^:private roots (atom {}))
 (def ^{:dynamic true} *raf* nil)
 (def ^{:dynamic true :private true} *reconciler* nil)
-(def ^{:dynamic true :private true} *root-key* nil)
 (def ^{:dynamic true :private true} *parent* nil)
 (def ^{:dynamic true :private true} *shared* nil)
 (def ^{:dynamic true :private true} *instrument* nil)
@@ -196,7 +195,6 @@
                :omcljs$value props
                :omcljs$path (-> props meta :om-path)
                :omcljs$reconciler *reconciler*
-               :omcljs$rootKey *root-key*
                :omcljs$parent *parent*
                :omcljs$shared *shared*
                :omcljs$instrument *instrument*
@@ -239,10 +237,6 @@
       (let [t0 (gobj/get cst "omcljs$t")
             t1 (gobj/get cps "omcljs$t")]
         (max t0 t1)))))
-
-(defn- root-key
-  [component]
-  (get-prop component "omcljs$rootKey"))
 
 (defn- parent
   "Returns the parent Om component."
@@ -388,7 +382,7 @@
           "changed query '" new-query ", " (pr-str id))))
     (swap! st update-in [:om.next/queries component] merge {:query new-query})
     (p/queue! r [component])
-    (p/reindex! r (root-key component))
+    (p/reindex! r)
     nil))
 
 (defn set-params!
@@ -407,7 +401,7 @@
           "changed query params " new-params", " (pr-str id))))
     (swap! st update-in [:om.next/queries component] merge {:params new-params})
     (p/queue! r [component])
-    (p/reindex! r (root-key component))
+    (p/reindex! r)
     nil))
 
 (defn mounted?
@@ -844,7 +838,6 @@
           (p/queue! this [::skip])))
       (let [renderf (fn [data]
                       (binding [*reconciler* this
-                                *root-key*   target
                                 *shared*     (:shared config)]
                         (let [c (js/ReactDOM.render (rctor data) target)]
                           (when (nil? @ret)
@@ -882,7 +875,7 @@
   (remove-root! [_ target]
     ((:remove @state)))
 
-  (reindex! [_ target]
+  (reindex! [_]
     (p/index-root (:indexer config) (get @state :root)))
 
   (queue! [_ ks]

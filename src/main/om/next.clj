@@ -76,7 +76,6 @@
     (fn [[name [this :as args] & body]]
       `(~name ~args
          (binding [om.next/*reconciler* (om.next/get-reconciler ~this)
-                   om.next/*root-key*   (om.next/root-key ~this)
                    om.next/*depth*      (inc (om.next/depth ~this))
                    om.next/*shared*     (om.next/shared ~this)
                    om.next/*instrument* (om.next/instrument ~this)
