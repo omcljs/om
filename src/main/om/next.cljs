@@ -530,7 +530,7 @@
 
 (defn- to-env [x]
   (let [config (if (reconciler? x) (:config x) x)]
-    (select-keys config [:state :cache :shared :indexer :parser :ui->ref])))
+    (select-keys config [:state :shared :parser])))
 
 (defn transact* [r c ref tx]
   (let [cfg (:config r)
@@ -863,7 +863,7 @@
                                 (send v'
                                   #(do
                                     (merge-novelty! this %)
-                                    (renderf %))))))
+                                    (renderf ((:parser config) env sel)))))))
                           (renderf @(:state config)))))]
         (swap! state merge
           {:target target :render parsef :root root-class
