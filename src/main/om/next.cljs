@@ -1007,5 +1007,8 @@
   [x]
   (instance? Reconciler x))
 
+(defn app-state [reconciler]
+  (-> reconciler :config :state))
+
 (defn from-history [reconciler uuid]
   (.get (-> reconciler :config :history) uuid))
