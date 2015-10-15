@@ -604,31 +604,31 @@
 
   p/IIndexer
   (index-root [_ x]
-    (let [class->paths      (atom {})
-          prop->classes     (atom {})
+    (let [prop->classes     (atom {})
           class-path->query (atom {})
           rootq             (get-query x)
           class             (cond-> x (component? x) type)]
       (letfn [(build-index* [class selector path classpath]
-                (swap! class->paths update-in [class]
-                  (fnil conj #{}) path)
-                (swap! class-path->query update-in [classpath]
-                  (fnil conj #{})
-                  (query-template (focus-query rootq path) path))
+                (when class
+                  (swap! class-path->query update-in [classpath]
+                    (fnil conj #{})
+                    (query-template (focus-query rootq path) path)))
                 (let [{props false joins true} (group-by join? selector)]
-                  (swap! prop->classes
-                    #(merge-with into % (zipmap props (repeat #{class}))))
+                  (when class
+                    (swap! prop->classes
+                      #(merge-with into % (zipmap props (repeat #{class})))))
                   (doseq [join joins]
                     (let [[prop selector'] (join-value join)]
-                      (swap! prop->classes
-                        #(merge-with into % {prop #{class}}))
+                      (when class
+                        (swap! prop->classes
+                          #(merge-with into % {prop #{class}})))
                       (let [class' (-> selector' meta :component)]
                         (build-index* class' selector'
-                          (conj path prop) (conj classpath class')))))))]
+                          (conj path prop)
+                          (cond-> classpath class' (conj class'))))))))]
         (build-index* class rootq [] [class])
         (swap! indexes merge
           {:prop->classes     @prop->classes
-           :class->paths      @class->paths
            :class-path->query @class-path->query}))))
 
   (index-component! [_ c]
