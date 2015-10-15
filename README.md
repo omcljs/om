@@ -99,6 +99,7 @@ examples:
 
 ## Applications built with Om
 
+* [Project FiFo](https://blog.project-fifo.net/the-stack-we-choose-erlang-smartos-clojure/), a SmartOS cloud orchestration platform
 * [Recurse Center Community](https://github.com/hackerschool/community)
 * [Framed](http://www.framed.io/)
 * [Netrunner](https://github.com/mtgred/netrunner)
@@ -119,6 +120,8 @@ examples:
   downloads
 * [Mega Super Mario World](http://github.com/city41/mario-review), a detailed review of the classic video game and a SNES video editor
 * [Time for Coffee!](http://www.timeforcoffee.ch), a handy website to display the next departures at public transport stops in Switzerland
+* [Omingard](https://omingard.5apps.com), a Solitaire-like card game. Making-of: [My Way into Clojure](http://www.railslove.com/stories/my-way-into-clojure-building-a-card-game-with-om-part-1).
+* [Horizon Alpha](https://github.com/BertrandDechoux/horizon-alpha), a quick Hack and slash game using the Noob universe
 
 ## Using it
 
