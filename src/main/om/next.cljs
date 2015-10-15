@@ -419,15 +419,9 @@
 (defn dom-node
   "Returns the dom node associated with a component's React ref."
   ([component]
-   {:pre [(component? component)]}
-   (if (. component -getDOMNode)
-     (.getDOMNode component)
-     (.getDOMNode
-       (gobj/getValueByKeys component
-        "_reactInternalInstance" "_renderedComponent" "_instance"))))
+   (js/ReactDOM.findDOMNode component))
   ([component name]
-   {:pre [(component? component)]}
-   (some-> (.-refs component) (gobj/get name) (.getDOMNode))))
+   (some-> (.-refs component) (gobj/get name) (js/ReactDOM.findDOMNode))))
 
 (defn react-ref
   "Returns the component associated with a component's React ref."
