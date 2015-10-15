@@ -866,7 +866,7 @@
                                     (renderf %))))))
                           (renderf @(:state config)))))]
         (swap! state merge
-          {:target target :render parsef
+          {:target target :render parsef :root root-class
            :remove (fn []
                      (remove-watch (:state config) target)
                      (swap! state
