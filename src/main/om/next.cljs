@@ -1007,8 +1007,15 @@
   [x]
   (instance? Reconciler x))
 
-(defn app-state [reconciler]
+(defn app-state
+  "Return the reconciler's application state atom. Useful when the reconciler
+   was initialized via denormalized data."
+  [reconciler]
   (-> reconciler :config :state))
 
-(defn from-history [reconciler uuid]
+(defn from-history
+  "Given a reconciler and UUID return the application state snapshost
+   from history associated with the UUID. The size of the reconciler history
+   may be configured by the :history option when constructing the reconciler."
+  [reconciler uuid]
   (.get (-> reconciler :config :history) uuid))
