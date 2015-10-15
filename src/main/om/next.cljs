@@ -9,6 +9,7 @@
             [om.next.protocols :as p]
             [om.next.impl.parser :as parser]
             [om.next.cache :as c]
+            [om.dom :as dom]
             [clojure.zip :as zip])
   (:import [goog.debug Console]))
 
