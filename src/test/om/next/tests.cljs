@@ -106,11 +106,6 @@
         idxs (p/index-root idxr ComponentList)]
     (is (= (set (keys (:prop->classes idxs)))
            #{:app/title :components/list :foo/bar :baz/woz}))
-    (is (= (get-in idxs [:class->paths Component])
-           #{[:components/list]}))
-    ;; not using this index ATM
-    ;(is (= (get-in idxs [:class->selectors Component])
-    ;       #{[{:components/list [:foo/bar :baz/woz]}]}))
     ))
 
 (deftest test-reconciler-has-indexer
