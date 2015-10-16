@@ -1,0 +1,1 @@
+{:externs ["om/externs.js"]}

@@ -1,0 +1,4 @@
+/**
+ * @constructor
+ */
+React.Component = function() {};
