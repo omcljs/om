@@ -733,43 +733,49 @@
             {:type :om.next/no-queries}))))))
 
 (defn- normalize* [q data refs]
-  (loop [q (seq q) ret {}]
-    (if-not (nil? q)
-      (let [node (first q)]
-        (if (join? node)
-          (let [[k sel] (join-value node)
-                class   (-> sel meta :component)
-                ;; for advanced optimizations
-                class   (if (not (satisfies? Ident class))
-                          (js/Object.create (. class -prototype))
-                          class)
-                v       (get data k)]
-            (cond
-              (map? v)
-              (let [x (normalize* sel v refs)
-                    i (ident class v)]
-                (swap! refs update-in [(first i) (second i)] merge x)
-                (recur (next q) (assoc ret k i)))
+  (if (= '[*] q)
+    data
+    (loop [q (seq q) ret {}]
+      (if-not (nil? q)
+        (let [node (first q)]
+          (if (join? node)
+            (let [[k sel] (join-value node)
+                  class   (-> sel meta :component)
+                  ;; for advanced optimizations
+                  class   (if (not (satisfies? Ident class))
+                            (js/Object.create (. class -prototype))
+                            class)
+                  v       (get data k)]
+              (cond
+                ;; normalize one
+                (map? v)
+                (let [x (normalize* sel v refs)
+                      i (ident class v)]
+                  (swap! refs update-in [(first i) (second i)] merge x)
+                  (recur (next q) (assoc ret k i)))
 
-              (vector? v)
-              (let [xs (into [] (map #(normalize* sel % refs)) v)
-                    is (into [] (map #(ident class %)) xs)]
-                (swap! refs update-in [(ffirst is)]
-                  (fn [ys]
-                    (merge-with merge ys
-                      (zipmap (map second is) xs))))
-                (recur (next q) (assoc ret k is)))
+                ;; normalize many
+                (vector? v)
+                (let [xs (into [] (map #(normalize* sel % refs)) v)
+                      is (into [] (map #(ident class %)) xs)]
+                  (swap! refs update-in [(ffirst is)]
+                    (fn [ys]
+                      (merge-with merge ys
+                        (zipmap (map second is) xs))))
+                  (recur (next q) (assoc ret k is)))
 
-              (nil? v)
-              (recur (next q) ret)
+                ;; missing key
+                (nil? v)
+                (recur (next q) ret)
 
-              :else (recur (next q) (assoc ret k v))))
-          (let [k (if (seq? node) (first node) node)
-                v (get data k)]
-            (if (nil? v)
-              (recur (next q) ret)
-              (recur (next q) (assoc ret k v))))))
-      ret)))
+                ;; can't handle
+                :else (recur (next q) (assoc ret k v))))
+            (let [k (if (seq? node) (first node) node)
+                  v (get data k)]
+              (if (nil? v)
+                (recur (next q) ret)
+                (recur (next q) (assoc ret k v))))))
+        ret))))
 
 (defn normalize
   "Given a Om component class or instance and some data, use the component's
