@@ -153,9 +153,12 @@
   "Return a IQuery/IParams instance bound query. Works for component classes
    and component instances. See also om.next/full-query."
   [x]
-  (when (satisfies? IQuery x)
+  (if (satisfies? IQuery x)
     (if (component? x)
       (get-component-query x)
+      (with-meta (bind-query (query x) (params x)) {:component x}))
+    ;; in advanced, statics will get elided
+    (let [x (js/Object.create (. x -prototype))]
       (with-meta (bind-query (query x) (params x)) {:component x}))))
 
 (defn iquery? [x]
@@ -405,11 +408,10 @@
     (p/reindex! r)
     nil))
 
-(defn mounted?
+(defn ^boolean mounted?
   "Returns true if the component is mounted."
-  [component]
-  {:pre [(component? component)]}
-  (.isMounted component))
+  [x]
+  (and (component? x) ^boolean (.isMounted x)))
 
 (defn dom-node
   "Returns the dom node associated with a component's React ref."
@@ -737,6 +739,10 @@
         (if (join? node)
           (let [[k sel] (join-value node)
                 class   (-> sel meta :component)
+                ;; for advanced optimizations
+                class   (if (not (satisfies? Ident class))
+                          (js/Object.create (. class -prototype))
+                          class)
                 v       (get data k)]
             (cond
               (map? v)
