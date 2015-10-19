@@ -139,11 +139,22 @@
 
 (declare component? get-reconciler props)
 
-(defn get-component-query [c]
-  (let [r   (get-reconciler c)
-        cfg (:config r)
-        st  (when-not (nil? r) @(:state cfg))
-        qps (get (::queries st) c)]
+(defn- get-local-query-data [component]
+  (some-> (get-reconciler component)
+    :config :state deref ::queries (get component)))
+
+(defn get-unbound-query
+  "Return the unbound query for a component."
+  [component]
+  (:query (get-local-query-data component) (query component)))
+
+(defn get-params
+  "Return the query params for a component."
+  [component]
+  (:params (get-local-query-data component) (query component)))
+
+(defn- get-component-query [c]
+  (let [qps (get-local-query-data c)]
     (with-meta
       (bind-query
         (:query qps (query c)) (:params qps (params c)))
