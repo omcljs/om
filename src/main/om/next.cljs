@@ -503,12 +503,12 @@
    Note a reconciler may have only one root. If invoked on a reconciler with an
    existing root, the new root will replace the old one."
   ([reconciler root-class target]
-   (when-let [old-reconciler (get @roots target)]
-     (remove-root! old-reconciler target))
-   (swap! roots assoc target reconciler)
    (add-root! reconciler root-class target nil))
   ([reconciler root-class target options]
    {:pre [(reconciler? reconciler) (fn? root-class) (gdom/isElement target)]}
+   (when-let [old-reconciler (get @roots target)]
+     (remove-root! old-reconciler target))
+   (swap! roots assoc target reconciler)
    (p/add-root! reconciler root-class target options)))
 
 (defn remove-root!
@@ -886,7 +886,8 @@
         ret)))
 
   (remove-root! [_ target]
-    ((:remove @state)))
+    (when-let [remove (:remove @state)]
+      (remove)))
 
   (reindex! [_]
     (p/index-root (:indexer config) (get @state :root)))
