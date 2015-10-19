@@ -27,6 +27,20 @@
             (recur nil dt' statics)))
         {:dt dt' :statics statics}))))
 
+(def lifecycle-sigs
+  '{getInitialState [this]
+    componentWillReceiveProps [this next-props]
+    componentWillUpdate [this next-props next-state]
+    componentDidUpdate [this prev-props prev-state]
+    componentWillMount [this]
+    componentWilUnmount [this]
+    render [this]})
+
+(defn validate-sig [[name sig :as method]]
+  (let [sig' (get lifecycle-sigs name)]
+    (assert (= (count sig') (count sig))
+      (str "Invalid signature for " name " got " sig ", need " sig'))))
+
 (def reshape-map
   {:reshape
    {'getInitialState
@@ -117,7 +131,9 @@
   (letfn [(reshape* [x]
             (if (and (sequential? x)
                      (contains? reshape (first x)))
-              ((get reshape (first x)) x)
+              (let [reshapef (get reshape (first x))]
+                (validate-sig x)
+                (reshapef x))
               x))
           (add-defaults-step [ret [name impl]]
             (if-not (some #{name} (map first (filter seq? ret)))
