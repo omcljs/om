@@ -74,18 +74,29 @@
 (defn- replace [template new-query]
   (-> template (zip/replace new-query) zip/root))
 
+(declare focus-query)
+
+(defn- join-key [node]
+  (cond
+    (map? node) (ffirst node)
+    (seq? node) (join-key (first node))
+    :else       node))
+
+(defn- focused-join [node ks]
+  (cond
+    (map? node) {(ffirst node) (focus-query (-> node first second) ks)}
+    (seq? node) (list (focused-join (first node) ks) (second node))
+    :else       node))
+
 (defn- focus-query [query path]
   (if (empty? path)
     query
     (let [[k & ks] path]
       (letfn [(match [x]
-                (let [k' (if (map? x) (ffirst x) x)]
-                  (= k k')))
+                (= k (join-key x)))
               (value [x]
-                (if (map? x)
-                  {(ffirst x) (focus-query (-> x first second) ks)}
-                  x))]
-        (into [] (comp (filter match) (map value)) query)))))
+                (focused-join x ks))]
+        (into [] (comp (filter match) (map value) (take 1)) query)))))
 
 (defn- focus->path
   ([focus] (focus->path focus []))

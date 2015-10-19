@@ -71,6 +71,10 @@
   (is (= (om/focus->path [:app/title {:counters/list [:db/id :counter/count]}])
          [])))
 
+(deftest test-om-423
+  (is (= (om/focus-query '[:foo ({:people [:name :age]} {:length 3}) :bar] [:people])
+         '[({:people [:name :age]} {:length 3})])))
+
 ;; -----------------------------------------------------------------------------
 ;; Query Templating
 
