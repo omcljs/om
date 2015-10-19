@@ -151,7 +151,7 @@
 (defn get-params
   "Return the query params for a component."
   [component]
-  (:params (get-local-query-data component) (query component)))
+  (:params (get-local-query-data component) (params component)))
 
 (defn- get-component-query [c]
   (let [qps (get-local-query-data c)]
