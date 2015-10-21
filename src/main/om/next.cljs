@@ -192,6 +192,19 @@
 ;; =============================================================================
 ;; React Bridging
 
+(deftype ^:private OmProps [props basis-t])
+
+(defn- om-props [props basis-t]
+  (OmProps. props basis-t))
+
+(defn- om-props-basis [om-props]
+  (.-basis-t om-props))
+
+(def ^:private nil-props (om-props nil -1))
+
+(defn- unwrap [om-props]
+  (.-props om-props))
+
 (defn- compute-react-key [cl props]
   (if-let [rk (:react-key props)]
     rk
@@ -214,18 +227,20 @@
                    (keyfn props)
                    (compute-react-key class props))
              ref (:ref props)
-             ref (cond-> ref (keyword? ref) str)]
+             ref (cond-> ref (keyword? ref) str)
+             t   (if-not (nil? *reconciler*)
+                   (p/basis-t *reconciler*)
+                   0)]
          (js/React.createElement class
           #js {:key key
                :ref ref
-               :omcljs$value props
-               :omcljs$path (-> props meta :om-path)
+               :omcljs$value      (om-props props t)
+               :omcljs$path       (-> props meta :om-path)
                :omcljs$reconciler *reconciler*
-               :omcljs$parent *parent*
-               :omcljs$shared *shared*
+               :omcljs$parent     *parent*
+               :omcljs$shared     *shared*
                :omcljs$instrument *instrument*
-               :omcljs$depth *depth*
-               :omcljs$t (if *reconciler* (p/basis-t *reconciler*) 0)}
+               :omcljs$depth      *depth*}
           children))))))
 
 (defn ^boolean component?
@@ -242,6 +257,24 @@
   [c k]
   (gobj/get (.-props c) k))
 
+(defn- get-prev-props
+  [x]
+  (if (nil? x)
+    nil-props
+    (let [y (gobj/get x "omcljs$prev$value")]
+      (if (nil? y)
+        nil-props
+        y))))
+
+(defn- get-props
+  [x]
+  (if (nil? x)
+    nil-props
+    (let [y (gobj/get x "omcljs$value")]
+      (if (nil? y)
+        nil-props
+        y))))
+
 (defn- set-prop!
   "PRIVATE: Do not use"
   [c k v]
@@ -252,17 +285,27 @@
   {:pre [(component? c)]}
   (get-prop c "omcljs$reconciler"))
 
+(defn- prev-props*
+  ([x y]
+   (min-key om-props-basis x y))
+  ([x y z]
+   (max-key om-props-basis
+     (prev-props* x y) (prev-props* y z))))
+
+(defn- props*
+  ([x y]
+   (max-key om-props-basis x y))
+  ([x y z]
+   (max-key om-props-basis x (props* y z))))
+
 (defn- t
   "Get basis t value for when the component last read its props from
    the global state."
   [c]
-  (let [cst (.-state c)
-        cps (.-props c)]
-    (if (nil? cst)
-      (gobj/get cps "omcljs$t")
-      (let [t0 (gobj/get cst "omcljs$t")
-            t1 (gobj/get cps "omcljs$t")]
-        (max t0 t1)))))
+  (om-props-basis
+    (props*
+      (-> c .-props get-props)
+      (-> c .-state get-props))))
 
 (defn- parent
   "Returns the parent Om component."
@@ -301,8 +344,14 @@
 
 (defn- update-props! [c next-props]
   {:pre [(component? c)]}
-  (gobj/set (.-state c) "omcljs$t" (p/basis-t (get-reconciler c)))
-  (gobj/set (.-state c) "omcljs$value" next-props))
+  ;; We cannot write directly to props, React will complain
+  (doto (.-state c)
+    (gobj/set "omcljs$prev$value"
+      (props*
+        (-> c .-state get-props)
+        (-> c .-props get-props)))
+    (gobj/set "omcljs$value"
+      (om-props next-props (p/basis-t (get-reconciler c))))))
 
 (defn props
   "Return a components props."
@@ -312,15 +361,10 @@
   ;; complaints from React. We record the basis T of the reconciler to determine
   ;; if the props recorded into state are more recent - props will get updated
   ;; when React actually re-renders the component.
-  (let [cst (.-state component)
-        cps (.-props component)]
-    (if (nil? cst)
-      (gobj/get cps "omcljs$value")
-      (let [t0 (gobj/get cst "omcljs$t")
-            t1 (gobj/get cps "omcljs$t")]
-        (if (> t0 t1)
-          (gobj/get cst "omcljs$value")
-          (gobj/get cps "omcljs$value"))))))
+  (unwrap
+    (props*
+      (-> component .-props get-props)
+      (-> component .-state get-props))))
 
 (defn set-state!
   "Set the component local state of the component. Analogous to React's
