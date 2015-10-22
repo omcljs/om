@@ -721,9 +721,25 @@
                         (swap! prop->classes
                           #(merge-with into % {prop #{class}})))
                       (let [class' (-> selector' meta :component)]
-                        (build-index* class' selector'
-                          (conj path prop)
-                          (cond-> classpath class' (conj class'))))))))]
+                        (cond
+                          (vector? selector')
+                          (build-index* class' selector'
+                            (conj path prop)
+                            (cond-> classpath class' (conj class')))
+
+                          (map? selector')
+                          (doseq [[_ selector''] selector']
+                            (let [class'' (-> selector'' meta :component)]
+                              (build-index* class'' selector''
+                                (conj path prop)
+                                (cond-> (conj classpath class') class'' (conj class'')))))
+
+                          :else
+                          (throw
+                            (ex-info
+                              (str "Invalid selector " selector'
+                                   " must be map or vector")
+                              {:type :om.next/invalid-selector}))))))))]
         (build-index* class rootq [] [class])
         (swap! indexes merge
           {:prop->classes     @prop->classes
@@ -829,19 +845,29 @@
            (ex-info (str "No queries exist for component path " cp)
              {:type :om.next/no-queries})))))))
 
-(defn- normalize* [q data refs]
-  (if (= '[*] q)
-    data
-    (loop [q (seq q) ret {}]
+;; for advanced optimizations
+(defn to-class [class]
+  (if (not (satisfies? Ident class))
+    (js/Object.create (. class -prototype))
+    class))
+
+(defn- normalize* [selector data refs]
+  (cond
+    (= '[*] selector) data
+
+    ;; union case
+    (map? selector)
+    (let [class (to-class (-> selector meta :component))
+          ref   (ident class data)]
+      (normalize* (get selector (first ref)) data refs))
+
+    :else
+    (loop [q (seq selector) ret {}]
       (if-not (nil? q)
         (let [node (first q)]
           (if (join? node)
             (let [[k sel] (join-value node)
-                  class   (-> sel meta :component)
-                  ;; for advanced optimizations
-                  class   (if (not (satisfies? Ident class))
-                            (js/Object.create (. class -prototype))
-                            class)
+                  class   (to-class (-> sel meta :component))
                   v       (get data k)]
               (cond
                 ;; normalize one
@@ -855,10 +881,17 @@
                 (vector? v)
                 (let [xs (into [] (map #(normalize* sel % refs)) v)
                       is (into [] (map #(ident class %)) xs)]
-                  (swap! refs update-in [(ffirst is)]
-                    (fn [ys]
-                      (merge-with merge ys
-                        (zipmap (map second is) xs))))
+                  (if (vector? sel)
+                    (swap! refs update-in [(ffirst is)]
+                      (fn [ys]
+                        (merge-with merge ys
+                          (zipmap (map second is) xs))))
+                    (swap! refs
+                      (fn [refs']
+                        (reduce
+                          (fn [ret [i x]]
+                            (update-in ret i merge x))
+                          refs' (map vector is xs)))))
                   (recur (next q) (assoc ret k is)))
 
                 ;; missing key
