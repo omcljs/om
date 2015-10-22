@@ -298,6 +298,20 @@
   ([x y z]
    (max-key om-props-basis x (props* y z))))
 
+(defn -next-props [next-props component]
+  (unwrap
+    (props*
+      (get-props next-props)
+      (-> component .-props get-props)
+      (-> component .-state get-props))))
+
+(defn -prev-props [prev-props component]
+  (unwrap
+    (prev-props*
+      (get-props prev-props)
+      (-> component .-props get-props)
+      (-> component .-state get-prev-props))))
+
 (defn- t
   "Get basis t value for when the component last read its props from
    the global state."

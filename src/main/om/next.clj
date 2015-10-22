@@ -51,20 +51,12 @@
     'componentWillReceiveProps
     (fn [[name [this next-props :as args] & body]]
       `(~name ~args
-         (let [~next-props (om.next/unwrap
-                             (om.next/props*
-                               (om.next/get-props ~next-props)
-                               (-> ~this .-props om.next/get-props)
-                               (-> ~this .-state om.next/get-props)))]
+         (let [~next-props (om.next/-next-props ~next-props ~this)]
            ~@body)))
     'componentWillUpdate
     (fn [[name [this next-props next-state :as args] & body]]
       `(~name ~args
-         (let [~next-props (om.next/unwrap
-                             (om.next/props*
-                               (om.next/get-props ~next-props)
-                               (-> ~this .-props om.next/get-props)
-                               (-> ~this .-state om.next/get-props)))
+         (let [~next-props (om.next/-next-props ~next-props ~this)
                ~next-state (goog.object/get ~next-state "omcljs$pendingState")
                ret# (do ~@body)]
            (om.next/merge-pending-state! ~this)
@@ -72,10 +64,7 @@
     'componentDidUpdate
     (fn [[name [this prev-props prev-state :as args] & body]]
       `(~name ~args
-         (let [~prev-props (om.next/unwrap
-                             (om.next/prev-props* prev-props
-                               (-> ~this .-props om.next/get-props)
-                               (-> ~this .-state om.next/get-prev-props)))
+         (let [~prev-props (om.next/-prev-props ~prev-props ~this)
                ~prev-state (goog.object/get ~prev-state "omcjls$previousState")]
            ~@body)))
     'componentWillMount
