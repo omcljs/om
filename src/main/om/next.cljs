@@ -391,6 +391,8 @@
       (-> component .-props get-props)
       (-> component .-state get-props))))
 
+(declare schedule-render!)
+
 (defn set-state!
   "Set the component local state of the component. Analogous to React's
    setState."
@@ -400,7 +402,9 @@
     (-set-state! component new-state)
     (gobj/set (.-state component) "omcljs$pendingState" new-state))
   (if-let [r (get-reconciler component)]
-    (p/queue! r [component])
+    (do
+      (p/queue! r [component])
+      (schedule-render! r))
     (.forceUpdate component)))
 
 (defn get-state

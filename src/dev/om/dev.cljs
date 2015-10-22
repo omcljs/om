@@ -74,6 +74,8 @@
   (ident [this {:keys [id]}]
     [:app/counters id])
   Object
+  (getInitialState [this]
+    {:state-count 0})
   (componentWillUpdate [this next-props next-state]
     (println "component will update" (om/props this) next-props))
   (componentDidUpdate [this prev-props prev-state]
@@ -81,10 +83,18 @@
   (render [this]
     (let [{:keys [:counter/count] :as props} (om/props this)]
       (dom/div nil
-        (dom/p nil (str "Count: " count))
+        (dom/p nil
+          (str "Count: " count
+               " State Count: " (om/get-state this :state-count)))
         (dom/button
-          #js {:onClick (fn [_] (om/transact! this '[(counter/increment)]))}
-          "Click Me!")
+          #js {:onClick
+               (fn [_] (om/transact! this '[(counter/increment)]))}
+          "Update Props, Click Me!")
+        (dom/button
+          #js {:style #js {:marginLeft "10px"}
+               :onClick
+               (fn [_] (om/update-state! this update-in [:state-count] inc))}
+          "Update State, Click Me!")
         (dom/button
           #js {:style #js {:marginLeft "10px"}
                :onClick
