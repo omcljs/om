@@ -810,22 +810,24 @@
   "Returns the absolute query for a given component, not relative like
    om.next/get-query."
   ([component]
-   (replace
-     (first
-       (get-in @(-> component get-reconciler get-indexer)
-         [:class-path->query (class-path component)]))
-     (get-query component)))
+   (when (satisfies? IQuery component)
+     (replace
+       (first
+         (get-in @(-> component get-reconciler get-indexer)
+           [:class-path->query (class-path component)]))
+       (get-query component))))
   ([component path]
-    (let [path' (into [] (remove number?) path)
-          cp    (class-path component)
-          qs    (get-in @(-> component get-reconciler get-indexer)
-                  [:class-path->query cp])]
-      (if-not (empty? qs)
-        (replace (first (filter #(= path' (-> % zip/root focus->path)) qs))
-          (get-query component))
-        (throw
-          (ex-info (str "No queries exist for component path " cp)
-            {:type :om.next/no-queries}))))))
+   (when (satisfies? IQuery component)
+     (let [path' (into [] (remove number?) path)
+           cp    (class-path component)
+           qs    (get-in @(-> component get-reconciler get-indexer)
+                   [:class-path->query cp])]
+       (if-not (empty? qs)
+         (replace (first (filter #(= path' (-> % zip/root focus->path)) qs))
+           (get-query component))
+         (throw
+           (ex-info (str "No queries exist for component path " cp)
+             {:type :om.next/no-queries})))))))
 
 (defn- normalize* [q data refs]
   (if (= '[*] q)
@@ -1029,7 +1031,9 @@
             (let [next-props (ui->props env c)]
               (when (and (should-update? c next-props (get-state c))
                          (mounted? c))
-                (update-component! c next-props))))))
+                (if-not (nil? next-props)
+                  (update-component! c next-props)
+                  (.forceUpdate c)))))))
       (swap! state assoc :queue [])
       (swap! state update-in [:queued] not)))
 
@@ -1050,7 +1054,8 @@
   [{:keys [parser] :as env} c]
   (let [path (path c)
         fq   (full-query c path)]
-    (get-in (parser env fq) path)))
+    (when-not (nil? fq)
+      (get-in (parser env fq) path))))
 
 (defn- default-merge-ref
   [_ tree ref props]
