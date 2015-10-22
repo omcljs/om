@@ -257,23 +257,23 @@
   [c k]
   (gobj/get (.-props c) k))
 
-(defn- get-prev-props
-  [x]
+(defn- get-props*
+  [x k]
   (if (nil? x)
     nil-props
-    (let [y (gobj/get x "omcljs$prev$value")]
+    (let [y (gobj/get x k)]
       (if (nil? y)
         nil-props
         y))))
 
-(defn- get-props
-  [x]
-  (if (nil? x)
-    nil-props
-    (let [y (gobj/get x "omcljs$value")]
-      (if (nil? y)
-        nil-props
-        y))))
+(defn- get-prev-props [x]
+  (get-props* x "omcljs$prev$value"))
+
+(defn- get-next-props [x]
+  (get-props* x "omcljs$next$value"))
+
+(defn- get-props [x]
+  (get-props* x "omcljs$value"))
 
 (defn- set-prop!
   "PRIVATE: Do not use"
@@ -285,32 +285,47 @@
   {:pre [(component? c)]}
   (get-prop c "omcljs$reconciler"))
 
-(defn- prev-props*
-  ([x y]
-   (min-key om-props-basis x y))
-  ([x y z]
-   (max-key om-props-basis
-     (prev-props* x y) (prev-props* y z))))
-
 (defn- props*
   ([x y]
    (max-key om-props-basis x y))
   ([x y z]
    (max-key om-props-basis x (props* y z))))
 
+(defn- prev-props*
+  ([x y]
+   (min-key om-props-basis x y))
+  ([x y z]
+   (min-key om-props-basis
+     (props* x y) (props* y z))))
+
+(defn -prev-props [prev-props component]
+  (let [cst   (.-state component)
+        props (.-props component)]
+    (unwrap
+      (prev-props*
+        (props* (get-props prev-props) (get-prev-props cst))
+        (props* (get-props cst) (get-props props))))))
+
 (defn -next-props [next-props component]
   (unwrap
     (props*
       (get-props next-props)
       (-> component .-props get-props)
-      (-> component .-state get-props))))
+      (-> component .-state get-next-props))))
 
-(defn -prev-props [prev-props component]
-  (unwrap
-    (prev-props*
-      (get-props prev-props)
-      (-> component .-props get-props)
-      (-> component .-state get-prev-props))))
+(defn- merge-pending-props! [c]
+  {:pre [(component? c)]}
+  (let [cst     (. c -state)
+        props   (.-props c)
+        pending (gobj/get cst "omcljs$next$value")
+        prev    (props* (get-props cst) (get-props props))]
+    (gobj/set cst "omcljs$prev$value" prev)
+    (when-not (nil? pending)
+      (gobj/remove cst "omcljs$next$value")
+      (gobj/set cst "omcljs$value" pending))))
+
+(defn- clear-prev-props! [c]
+  (gobj/remove (.-state c) "omcljs$prev$value"))
 
 (defn- t
   "Get basis t value for when the component last read its props from
@@ -360,11 +375,7 @@
   {:pre [(component? c)]}
   ;; We cannot write directly to props, React will complain
   (doto (.-state c)
-    (gobj/set "omcljs$prev$value"
-      (props*
-        (-> c .-state get-props)
-        (-> c .-props get-props)))
-    (gobj/set "omcljs$value"
+    (gobj/set "omcljs$next$value"
       (om-props next-props (p/basis-t (get-reconciler c))))))
 
 (defn props

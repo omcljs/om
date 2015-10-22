@@ -59,6 +59,7 @@
          (let [~next-props (om.next/-next-props ~next-props ~this)
                ~next-state (goog.object/get ~next-state "omcljs$pendingState")
                ret# (do ~@body)]
+           (om.next/merge-pending-props! ~this)
            (om.next/merge-pending-state! ~this)
            ret#)))
     'componentDidUpdate
@@ -66,7 +67,8 @@
       `(~name ~args
          (let [~prev-props (om.next/-prev-props ~prev-props ~this)
                ~prev-state (goog.object/get ~prev-state "omcjls$previousState")]
-           ~@body)))
+           ~@body
+           (om.next/clear-prev-props! ~this))))
     'componentWillMount
     (fn [[name [this :as args] & body]]
       `(~name ~args
@@ -109,8 +111,12 @@
                 (not= (goog.object/get (. this# ~'-state) "omcljs$state")
                       (goog.object/get next-state# "omcljs$state")))))
      ~'componentWillUpdate
-     ([this# prev-props# prev-state#]
+     ([this# next-props# next-state#]
+       (om.next/merge-pending-props! this#)
        (om.next/merge-pending-state! this#))
+     ~'componentDidUpdate
+     ([this# prev-props# prev-state#]
+       (om.next/clear-prev-props! this#))
      ~'componentWillMount
      ([this#]
        (let [indexer# (get-in (om.next/get-reconciler this#) [:config :indexer])]

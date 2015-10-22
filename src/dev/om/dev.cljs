@@ -75,9 +75,9 @@
     [:app/counters id])
   Object
   (componentWillUpdate [this next-props next-state]
-    #_(println (om/props this) next-props))
+    (println "component will update" (om/props this) next-props))
   (componentDidUpdate [this prev-props prev-state]
-    (println (om/props this) prev-props))
+    #_(println "component did update" (om/props this) prev-props))
   (render [this]
     (let [{:keys [:counter/count] :as props} (om/props this)]
       (dom/div nil
