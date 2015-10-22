@@ -101,7 +101,6 @@
 (defn- focus->path
   ([focus] (focus->path focus []))
   ([focus path]
-   {:pre [(vector? focus)]}
    (if (and (some map? focus)
             (== 1 (count focus)))
      (let [[k focus'] (ffirst focus)]
@@ -711,35 +710,24 @@
                   (swap! class-path->query update-in [classpath]
                     (fnil conj #{})
                     (query-template (focus-query rootq path) path)))
-                (let [{props false joins true} (group-by join? selector)]
-                  (when class
-                    (swap! prop->classes
-                      #(merge-with into % (zipmap props (repeat #{class})))))
-                  (doseq [join joins]
-                    (let [[prop selector'] (join-value join)]
-                      (when class
-                        (swap! prop->classes
-                          #(merge-with into % {prop #{class}})))
-                      (let [class' (-> selector' meta :component)]
-                        (cond
-                          (vector? selector')
+                (if (vector? selector)
+                  (let [{props false joins true} (group-by join? selector)]
+                    (when class
+                      (swap! prop->classes
+                        #(merge-with into % (zipmap props (repeat #{class})))))
+                    (doseq [join joins]
+                      (let [[prop selector'] (join-value join)]
+                        (when class
+                          (swap! prop->classes
+                            #(merge-with into % {prop #{class}})))
+                        (let [class' (-> selector' meta :component)]
                           (build-index* class' selector'
                             (conj path prop)
-                            (cond-> classpath class' (conj class')))
-
-                          (map? selector')
-                          (doseq [[_ selector''] selector']
-                            (let [class'' (-> selector'' meta :component)]
-                              (build-index* class'' selector''
-                                (conj path prop)
-                                (cond-> (conj classpath class') class'' (conj class'')))))
-
-                          :else
-                          (throw
-                            (ex-info
-                              (str "Invalid selector " selector'
-                                   " must be map or vector")
-                              {:type :om.next/invalid-selector}))))))))]
+                            (cond-> classpath class' (conj class')))))))
+                  (doseq [[_ selector'] selector]
+                    (let [class' (-> selector' meta :component)]
+                      (build-index* class' selector' path
+                        (cond-> (conj classpath class') class' (conj class')))))))]
         (build-index* class rootq [] [class])
         (swap! indexes merge
           {:prop->classes     @prop->classes
