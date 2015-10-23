@@ -179,8 +179,10 @@
       (get-component-query x)
       (with-meta (bind-query (query x) (params x)) {:component x}))
     ;; in advanced, statics will get elided
-    (let [x (js/Object.create (. x -prototype))]
-      (with-meta (bind-query (query x) (params x)) {:component x}))))
+    (when (goog/isFunction x)
+      (let [x (js/Object.create (. x -prototype))]
+        (when (satisfies? IQuery x)
+          (with-meta (bind-query (query x) (params x)) {:component x}))))))
 
 (defn iquery? [x]
   (satisfies? IQuery x))
