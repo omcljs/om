@@ -70,7 +70,7 @@
              remote? (assoc :remote true))]
        (letfn [(step [ret expr]
                  (let [{:keys [key dkey params sel] :as ast} (expr->ast expr)
-                       env   (cond-> env
+                       env   (cond-> (assoc env :ast ast)
                                (not (nil? sel)) (assoc :selector sel))
                        type  (:type ast)
                        call? (= :call type)
