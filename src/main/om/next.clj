@@ -33,7 +33,7 @@
     componentWillUpdate [this next-props next-state]
     componentDidUpdate [this prev-props prev-state]
     componentWillMount [this]
-    componentWilUnmount [this]
+    componentWillUnmount [this]
     render [this]})
 
 (defn validate-sig [[name sig :as method]]

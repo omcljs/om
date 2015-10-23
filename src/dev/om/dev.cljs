@@ -76,6 +76,8 @@
   Object
   (getInitialState [this]
     {:state-count 0})
+  (componentWillUnmount [this]
+    (println "Buh-bye!"))
   (componentWillUpdate [this next-props next-state]
     (println "component will update" (om/props this) next-props))
   (componentDidUpdate [this prev-props prev-state]
