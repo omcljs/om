@@ -371,3 +371,60 @@
   (require '[cljs.pprint :as pp])
   (run-tests)
   )
+
+;; -----------------------------------------------------------------------------
+;; Message Forwarding
+
+(defui Post
+  static om/IQuery
+  (query [this]
+    [:id :type :title :author :content]))
+
+(defui Photo
+  static om/IQuery
+  (query [this]
+    [:id :type :title :image :caption]))
+
+(defui Graphic
+  static om/IQuery
+  (query [this]
+    [:id :type :title :image]))
+
+(defui DashboardItem
+  static om/Ident
+  (ident [this {:keys [id type]}]
+    [type id])
+  static om/IQuery
+  (query [this]
+    (zipmap
+      [:dashboard/post :dashboard/photo :dashboard/graphic]
+      (map #(conj % :favorites)
+        [(om/get-query Post)
+         (om/get-query Photo)
+         (om/get-query Graphic)]))))
+
+(defui Dashboard
+  static om/IQuery
+  (query [this]
+    [{:dashboard/items (om/get-query DashboardItem)}]))
+
+(defmulti read1 om/dispatch)
+
+(defmethod read1 :default
+  [_ _ _])
+
+(defmethod read1 :favorites
+  [_ _ _]
+  {:remote true})
+
+(defmethod read1 :dashboard/items
+  [{:keys [parse selector] :as env} _ _]
+  {:remote })
+
+(comment
+  (om/get-query Dashboard)
+
+  (def parser (om/parser {:read read1}))
+
+  (parser {} (om/get-query Dashboard) {:remote true})
+  )
