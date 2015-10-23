@@ -121,7 +121,7 @@
 ;; -----------------------------------------------------------------------------
 ;; Parser
 
-(deftest test-ast
+(deftest test-expr->ast
   (is (= (parser/expr->ast :foo)
          {:type :prop :key :foo :dkey :foo}))
   (is (= (parser/expr->ast [:foo 0])
@@ -138,6 +138,29 @@
          {:type :prop :key [:foo 0] :dkey :foo :sel [:bar :baz] :params {:id 0 :woz 1}}))
   (is (= (parser/expr->ast '(do/it {:woz 1}))
          {:type :call :key 'do/it :dkey 'do/it :params {:woz 1}})))
+
+(deftest test-ast->expr
+  (is (= (parser/ast->expr {:type :prop :key :foo :dkey :foo})
+         :foo))
+  (is (= (parser/ast->expr {:type :prop :key [:foo 0] :dkey :foo :params {:id 0}})
+         [:foo 0]))
+  (is (= (parser/ast->expr {:type :prop :key :foo :dkey :foo :sel [:bar]})
+         {:foo [:bar]}))
+  (is (= (parser/ast->expr {:type :prop :key [:foo 0] :dkey :foo :params {:id 0} :sel [:bar]})
+         {[:foo 0] [:bar]}))
+  #_(is (= (parser/ast->expr {:type :prop :key :foo :dkey :foo :params {:bar 1}})
+         '(:foo {:bar 1})))
+  #_(is (= (parser/ast->expr {:type :prop :key :foo :dkey :foo :sel [:bar :baz] :params {:woz 1}})
+         '({:foo [:bar :baz]} {:woz 1})))
+  #_(is (= (parser/ast->expr {:type :prop :key [:foo 0] :dkey :foo :sel [:bar :baz] :params {:id 0 :woz 1}})
+         '({[:foo 0] [:bar :baz]} {:woz 1})))
+  (is (= (parser/ast->expr {:type :call :key 'do/it :dkey 'do/it :params {:woz 1}})
+         '(do/it {:woz 1}))))
+
+(comment
+  (parser/ast->expr
+    {:type :call :key 'do/it :dkey 'do/it :params {:woz 1}})
+  )
 
 (defmulti read (fn [env k params] k))
 
@@ -418,7 +441,7 @@
   {:remote true})
 
 (defmethod read1 :dashboard/items
-  [{:keys [parse selector] :as env} _ _])
+  [{:keys [parse ast] :as env} _ _])
 
 (comment
   (om/get-query Dashboard)

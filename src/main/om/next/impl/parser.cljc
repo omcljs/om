@@ -41,6 +41,13 @@
                    (ex-info (str "Invalid expression " x)
                      {:type :error/invalid-expression}))))
 
+(defn ast->expr [{:keys [key sel type params] :as ast}]
+  (case type
+    :call (list (ast->expr (assoc ast :type :prop)) params)
+    :prop (if-not (nil? sel)
+            {key sel}
+            key)))
+
 (defn path-meta [x path]
   (let [x' (cond->> x
              (map? x) (into {} (map (fn [[k v]] [k (path-meta v (conj path k))])))
