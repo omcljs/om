@@ -1103,11 +1103,11 @@
    :parser  - the parser to be used
    :send    - required only if the parser will return a non-empty value when
               run against the supplied :remotes. send is a function of two
-              arguments, the map of remote expressions key by remote and a
-              callback which should be invoked with the result from each send
-              target. Note this means the callback can be invoked multiple
-              times to support parallel fetching and incremental loading if
-              desired.
+              arguments, the map of remote expressions keyed by remote target
+              and a callback which should be invoked with the result from each
+              remote target. Note this means the callback can be invoked
+              multiple times to support parallel fetching and incremental
+              loading if desired.
    :remotes - a vector of keywords representing remote services which can
               evaluate query expressions. Defaults to [:remote]"
   [{:keys [state shared parser indexer
