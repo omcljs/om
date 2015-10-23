@@ -79,9 +79,11 @@
                                :prop   (read env dkey params)
                                :remote nil)]
                    (if remote?
-                     (cond-> ret
-                       (true? (:remote res)) (conj expr)
-                       (= :remote type)     (conj (second expr)))
+                     (let [ast (:remote res)]
+                       (cond-> ret
+                         (true? ast)      (conj expr)
+                         (map? ast)       (conj (ast->expr ast))
+                         (= :remote type) (conj (second expr))))
                      (if-not (or call? (not= :remote type) (contains? res :value))
                        ret
                        (let [error (atom nil)]
