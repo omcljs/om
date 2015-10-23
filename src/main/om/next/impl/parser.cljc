@@ -28,7 +28,7 @@
   {:type   :prop
    :dkey   k
    :key    ref
-   :params {:id id}})
+   :params {:om.next/refid id}})
 
 (defn expr->ast [x]
   (cond
@@ -41,12 +41,13 @@
                    (ex-info (str "Invalid expression " x)
                      {:type :error/invalid-expression}))))
 
-(defn ast->expr [{:keys [key sel type params] :as ast}]
-  (case type
-    :call (list (ast->expr (assoc ast :type :prop)) params)
-    :prop (if-not (nil? sel)
-            {key sel}
-            key)))
+(defn ast->expr [{:keys [key sel params] :as ast}]
+  (let [params (dissoc params :om.next/refid)]
+    (if-not (empty? params)
+      (list (ast->expr (dissoc ast :params)) params)
+      (if-not (nil? sel)
+        {key sel}
+        key))))
 
 (defn path-meta [x path]
   (let [x' (cond->> x
