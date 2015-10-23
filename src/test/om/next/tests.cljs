@@ -122,21 +122,21 @@
 ;; Parser
 
 (deftest test-ast
-  (is (= (parser/->ast :foo)
+  (is (= (parser/expr->ast :foo)
          {:type :prop :key :foo :dkey :foo}))
-  (is (= (parser/->ast [:foo 0])
+  (is (= (parser/expr->ast [:foo 0])
          {:type :prop :key [:foo 0] :dkey :foo :params {:id 0}}))
-  (is (= (parser/->ast {:foo [:bar]})
+  (is (= (parser/expr->ast {:foo [:bar]})
          {:type :prop :key :foo :dkey :foo :sel [:bar]}))
-  (is (= (parser/->ast {[:foo 0] [:bar]})
+  (is (= (parser/expr->ast {[:foo 0] [:bar]})
           {:type :prop :key [:foo 0] :dkey :foo :params {:id 0} :sel [:bar]}))
-  (is (= (parser/->ast '(:foo {:bar 1}))
+  (is (= (parser/expr->ast '(:foo {:bar 1}))
          {:type :prop :key :foo :dkey :foo :params {:bar 1}}))
-  (is (= (parser/->ast '({:foo [:bar :baz]} {:woz 1}))
+  (is (= (parser/expr->ast '({:foo [:bar :baz]} {:woz 1}))
          {:type :prop :key :foo :dkey :foo :sel [:bar :baz] :params {:woz 1}}))
-  (is (= (parser/->ast '({[:foo 0] [:bar :baz]} {:woz 1}))
+  (is (= (parser/expr->ast '({[:foo 0] [:bar :baz]} {:woz 1}))
          {:type :prop :key [:foo 0] :dkey :foo :sel [:bar :baz] :params {:id 0 :woz 1}}))
-  (is (= (parser/->ast '(do/it {:woz 1}))
+  (is (= (parser/expr->ast '(do/it {:woz 1}))
          {:type :call :key 'do/it :dkey 'do/it :params {:woz 1}})))
 
 (defmulti read (fn [env k params] k))
@@ -418,8 +418,7 @@
   {:remote true})
 
 (defmethod read1 :dashboard/items
-  [{:keys [parse selector] :as env} _ _]
-  {:remote })
+  [{:keys [parse selector] :as env} _ _])
 
 (comment
   (om/get-query Dashboard)

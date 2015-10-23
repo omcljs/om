@@ -1,6 +1,6 @@
 (ns om.next.impl.parser)
 
-(declare ->ast)
+(declare expr->ast)
 
 (defn symbol->ast [k]
   {:dkey k
@@ -14,13 +14,13 @@
 (defn call->ast [[f args]]
   (if (= 'quote f)
     {:type :remote}
-    (let [ast (update-in (->ast f) [:params] merge (or args {}))]
+    (let [ast (update-in (expr->ast f) [:params] merge (or args {}))]
      (cond-> ast
        (symbol? (:dkey ast)) (assoc :type :call)))))
 
 (defn join->ast [join]
   (let [[k v] (first join)
-        ast   (->ast k)
+        ast   (expr->ast k)
         ref?  (vector? (:key ast))]
     (assoc ast :type :prop :sel v)))
 
@@ -30,7 +30,7 @@
    :key    ref
    :params {:id id}})
 
-(defn ->ast [x]
+(defn expr->ast [x]
   (cond
     (symbol? x)  (symbol->ast x)
     (keyword? x) (keyword->ast x)
@@ -61,7 +61,7 @@
              (not (contains? env :path)) (assoc :path [])
              remote? (assoc :remote true))]
        (letfn [(step [ret expr]
-                 (let [{:keys [key dkey params sel] :as ast} (->ast expr)
+                 (let [{:keys [key dkey params sel] :as ast} (expr->ast expr)
                        env   (cond-> env
                                (not (nil? sel)) (assoc :selector sel))
                        type  (:type ast)
