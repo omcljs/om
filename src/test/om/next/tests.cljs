@@ -431,17 +431,14 @@
 (defmethod read1 :default
   [_ _ _])
 
-(defmethod read1 :favorites
-  [_ _ _]
-  {:remote true})
-
 (defmethod read1 :dashboard/items
-  [{:keys [parse ast] :as env} _ _])
+  [{:keys [parse ast] :as env} _ _]
+  {:remote (update-in ast [:sel]
+             #(into {} (map (fn [[k v]] [k [:favorites]])) %))})
 
-(comment
-  (om/get-query Dashboard)
-
-  (def parser (om/parser {:read read1}))
-
-  (parser {} (om/get-query Dashboard) {:remote true})
-  )
+(deftest test-recursive-remote
+  (let [parser (om/parser {:read read1})]
+    (is (= (parser {} (om/get-query Dashboard) {:remote true})
+          [{:dashboard/items {:dashboard/post    [:favorites],
+                              :dashboard/photo   [:favorites],
+                              :dashboard/graphic [:favorites]}}]))))
