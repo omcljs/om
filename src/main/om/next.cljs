@@ -959,7 +959,8 @@
   (add-root! [this root-class target options]
     (let [ret   (atom nil)
           rctor (factory root-class)]
-      (p/index-root (:indexer config) root-class)
+      (when (satisfies? IQuery root-class)
+        (p/index-root (:indexer config) root-class))
       (when (and (:normalize config)
                  (not (:normalized @state)))
         (let [new-state (normalize root-class @(:state config))
@@ -1008,7 +1009,9 @@
       (remove)))
 
   (reindex! [_]
-    (p/index-root (:indexer config) (get @state :root)))
+    (let [root (get @state :root)]
+      (when (satisfies? IQuery root)
+        (p/index-root (:indexer config) root))))
 
   (queue! [_ ks]
     (swap! state
