@@ -586,8 +586,8 @@
         :else
         (js/requestAnimationFrame f)))))
 
-(defn schedule-send! [reconciler]
-  (when (p/schedule-send! reconciler)
+(defn schedule-sends! [reconciler]
+  (when (p/schedule-sends! reconciler)
     (js/setTimeout #(p/send! reconciler) 300)))
 
 (declare remove-root!)
@@ -625,30 +625,38 @@
   (let [config (if (reconciler? x) (:config x) x)]
     (select-keys config [:state :shared :parser])))
 
+(defn gather-sends
+  [{:keys [parser] :as env} tx remotes]
+  (into {}
+    (comp
+      (map #(vector % (parser env tx %)))
+      (filter (fn [[_ v]] (pos? (count v)))))
+    remotes))
+
 (defn transact* [r c ref tx]
-  (let [cfg (:config r)
-        ref (if (and c (not ref))
-              (ident c (props c))
-              ref)
-        env (merge
-              (to-env cfg)
-              {:reconciler r :component c}
-              (when ref
-                {:ref ref}))
-        id  (random-uuid)
-        _   (.add (:history cfg) id @(:state cfg))
-        _   (when-not (nil? *logger*)
-              (glog/info *logger*
-                (str (when ref (str (pr-str ref) " "))
-                  "transacted '" tx ", " (pr-str id))))
-        v   ((:parser cfg) env tx)
-        v'  ((:parser cfg) env tx :remote)]
+  (let [cfg  (:config r)
+        ref  (if (and c (not ref))
+               (ident c (props c))
+               ref)
+        env  (merge
+               (to-env cfg)
+               {:reconciler r :component c}
+               (when ref
+                 {:ref ref}))
+        id   (random-uuid)
+        _    (.add (:history cfg) id @(:state cfg))
+        _    (when-not (nil? *logger*)
+               (glog/info *logger*
+                 (str (when ref (str (pr-str ref) " "))
+                   "transacted '" tx ", " (pr-str id))))
+        v    ((:parser cfg) env tx)
+        snds (gather-sends env tx (:remotes cfg))]
     (p/queue! r
       (into (if ref [ref] [])
         (remove symbol? (keys v))))
-    (when-not (empty? v')
-      (p/queue-send! r v')
-      (schedule-send! r))))
+    (when-not (empty? snds)
+      (p/queue-sends! r snds)
+      (schedule-sends! r))))
 
 (defn transact!
   "Given a reconciler or component run a transaction. tx is a parse expression
@@ -980,14 +988,14 @@
             parsef  (fn []
                       (let [sel (get-query (or @ret root-class))]
                         (if-not (nil? sel)
-                          (let [env (to-env config)
-                                v   ((:parser config) env sel)
-                                v'  ((:parser config) env sel :remote)]
+                          (let [env  (to-env config)
+                                v    ((:parser config) env sel)
+                                snds (gather-sends env sel (:remotes config))]
                             (when-not (empty? v)
                               (renderf v))
-                            (when-not (empty? v')
+                            (when-not (empty? snds)
                               (when-let [send (:send config)]
-                                (send v'
+                                (send snds
                                   #(do
                                     (merge-novelty! this %)
                                     (renderf ((:parser config) env sel)))))))
@@ -1022,19 +1030,19 @@
           (update-in [:t] inc) ;; TODO: probably should revisit doing this here
           (update-in [:queue] into ks)))))
 
-  (queue-send! [_ expr]
-    (swap! state update-in [:queued-send]
-      (:merge-send config) expr))
+  (queue-sends! [_ sends]
+    (swap! state update-in [:queued-sends]
+      (:merge-sends config) sends))
 
   (schedule-render! [_]
     (if-not (:queued @state)
       (swap! state update-in [:queued] not)
       false))
 
-  (schedule-send! [_]
-    (if-not (:send-queued @state)
+  (schedule-sends! [_]
+    (if-not (:sends-queued @state)
       (do
-        (swap! state assoc [:send-queued] true)
+        (swap! state assoc [:sends-queued] true)
         true)
       false))
 
@@ -1064,14 +1072,14 @@
       (swap! state update-in [:queued] not)))
 
   (send! [this]
-    (let [expr (:queued-send @state)]
-      (when expr
+    (let [sends (:queued-sends @state)]
+      (when-not (empty? sends)
         (swap! state
           (fn [state]
             (-> state
-              (assoc :queued-send [])
-              (assoc :send-queued false))))
-        ((:send config) expr
+              (assoc :queued-sends {})
+              (assoc :sends-queued false))))
+        ((:send config) sends
           #(do
              (queue-calls! this %)
              (merge-novelty! this %)))))))
@@ -1091,21 +1099,27 @@
   "Construct a reconciler from a configuration map, the following options
    are required:
 
-   :state  - the application state, must be IAtom.
-   :parser - the parser to be used
-   :send   - required only if the parser will return a non-empty value when
-             run in remote mode. send is a function of two arguments, the
-             remote expression and a callback which should be invoked with
-             the resolved expression."
+   :state   - the application state, must be IAtom.
+   :parser  - the parser to be used
+   :send    - required only if the parser will return a non-empty value when
+              run against the supplied :remotes. send is a function of two
+              arguments, the map of remote expressions key by remote and a
+              callback which should be invoked with the result from each send
+              target. Note this means the callback can be invoked multiple
+              times to support parallel fetching and incremental loading if
+              desired.
+   :remotes - a vector of keywords representing remote services which can
+              evaluate query expressions. Defaults to [:remote]"
   [{:keys [state shared parser indexer
            ui->props normalize
-           send merge-send
+           send merge-sends remotes
            merge-tree merge-ref
            optimize
            history]
     :or {ui->props   default-ui->props
          indexer     om.next/indexer
-         merge-send  into
+         merge-sends #(merge-with into %1 %2)
+         remotes     [:remote]
          merge-tree  #(merge-with merge %1 %2)
          merge-ref   default-merge-ref
          optimize    (fn [cs] (sort-by depth cs))
@@ -1118,13 +1132,13 @@
         ret    (Reconciler.
                  {:state state' :shared shared :parser parser :indexer idxr
                   :ui->props ui->props
-                  :send send :merge-send merge-send
+                  :send send :merge-sends merge-sends :remotes remotes
                   :merge-tree merge-tree :merge-ref merge-ref
                   :optimize optimize
                   :normalize (or (not norm?) normalize)
                   :history (c/cache history)}
-                 (atom {:queue [] :queued false :queued-send []
-                        :send-queued false
+                 (atom {:queue [] :queued false :queued-sends {}
+                        :sends-queued false :send-targets [:remote]
                         :target nil :root nil :render nil :remove nil
                         :t 0 :normalized false}))]
     ret))

@@ -73,7 +73,7 @@
     ([env sel target]
      (let [elide-paths? (boolean (:elide-paths config))
            {:keys [path] :as env}
-           (cond-> (assoc env :parse self :target target)
+           (cond-> (assoc env :parser self :target target)
              (not (contains? env :path)) (assoc :path []))]
        (letfn [(step [ret expr]
                  (let [{:keys [key dkey params sel] :as ast} (expr->ast expr)
