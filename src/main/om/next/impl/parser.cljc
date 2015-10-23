@@ -11,12 +11,12 @@
    :dkey k
    :key  k})
 
-(defn call->ast [[f args]]
+(defn call->ast [[f args :as call]]
   (if (= 'quote f)
-    {:type :remote}
+    (assoc (expr->ast args) :target (or (-> call meta :target) :remote))
     (let [ast (update-in (expr->ast f) [:params] merge (or args {}))]
-     (cond-> ast
-       (symbol? (:dkey ast)) (assoc :type :call)))))
+      (cond-> ast
+        (symbol? (:dkey ast)) (assoc :type :call)))))
 
 (defn join->ast [join]
   (let [[k v] (first join)
@@ -41,10 +41,19 @@
                    (ex-info (str "Invalid expression " x)
                      {:type :error/invalid-expression}))))
 
-(defn ast->expr [{:keys [key sel params] :as ast}]
-  (let [params (dissoc params :om.next/refid)]
-    (if-not (empty? params)
-      (list (ast->expr (dissoc ast :params)) params)
+(defn ast->expr [{:keys [key sel] :as ast}]
+  (let [ref?    (vector? key)
+        ast'    (cond-> ast
+                  ref? (update-in [:params] dissoc :om.next/refid))
+        params  (:params ast')
+        empty?  (zero? (count params))
+        ast''   (cond-> ast'
+                  (and ref? empty?) (dissoc :params))
+        params' (:params ast'')]
+    (if-not (nil? params')
+      (if (zero? (count params'))
+        (list (ast->expr (dissoc ast'' :params)))
+        (list (ast->expr (dissoc ast'' :params)) params'))
       (if-not (nil? sel)
         {key sel}
         key))))
@@ -61,30 +70,28 @@
 (defn parser [{:keys [read mutate] :as config}]
   (fn self
     ([env sel] (self env sel nil))
-    ([env sel opts]
-     (let [remote? (boolean (:remote opts))
-           elide-paths? (boolean (:elide-paths config))
+    ([env sel target]
+     (let [elide-paths? (boolean (:elide-paths config))
            {:keys [path] :as env}
-           (cond-> (assoc env :parse self)
-             (not (contains? env :path)) (assoc :path [])
-             remote? (assoc :remote true))]
+           (cond-> (assoc env :parse self :target target)
+             (not (contains? env :path)) (assoc :path []))]
        (letfn [(step [ret expr]
                  (let [{:keys [key dkey params sel] :as ast} (expr->ast expr)
                        env   (cond-> (assoc env :ast ast)
                                (not (nil? sel)) (assoc :selector sel))
                        type  (:type ast)
                        call? (= :call type)
-                       res   (case type
-                               :call   (mutate env dkey params)
-                               :prop   (read env dkey params)
-                               :remote nil)]
-                   (if remote?
-                     (let [ast (:remote res)]
+                       res   (when (nil? (:target ast))
+                               (case type
+                                 :call (mutate env dkey params)
+                                 :prop (read env dkey params)))]
+                   (if-not (nil? target)
+                     (let [ast' (get res target)]
                        (cond-> ret
-                         (true? ast)      (conj expr)
-                         (map? ast)       (conj (ast->expr ast))
-                         (= :remote type) (conj (second expr))))
-                     (if-not (or call? (not= :remote type) (contains? res :value))
+                         (true? ast') (conj expr)
+                         (map? ast') (conj (ast->expr ast'))
+                         (= target (:target ast)) (conj (ast->expr ast))))
+                     (if-not (or call? (nil? (:target ast)) (contains? res :value))
                        ret
                        (let [error (atom nil)]
                          (when (and call? (not (nil? (:action res))))
@@ -98,7 +105,7 @@
                            (cond-> ret
                              @error (assoc key @error)
                              (not (nil? value)) (assoc key value))))))))]
-         (cond-> (reduce step (if-not remote? {} []) sel)
-           (not (or remote? elide-paths?)) (path-meta path)))))))
+         (cond-> (reduce step (if (nil? target) {} []) sel)
+           (not (or (not (nil? target)) elide-paths?)) (path-meta path)))))))
 
 (defn dispatch [_ k _] k)

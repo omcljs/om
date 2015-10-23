@@ -137,7 +137,9 @@
   (is (= (parser/expr->ast '({[:foo 0] [:bar :baz]} {:woz 1}))
          {:type :prop :key [:foo 0] :dkey :foo :sel [:bar :baz] :params {:om.next/refid 0 :woz 1}}))
   (is (= (parser/expr->ast '(do/it {:woz 1}))
-         {:type :call :key 'do/it :dkey 'do/it :params {:woz 1}})))
+         {:type :call :key 'do/it :dkey 'do/it :params {:woz 1}}))
+  (is (= (parser/expr->ast '(do/it))
+         {:type :call :key 'do/it :dkey 'do/it :params {}})))
 
 (deftest test-ast->expr
   (is (= (parser/ast->expr {:type :prop :key :foo :dkey :foo})
@@ -155,7 +157,9 @@
   (is (= (parser/ast->expr {:type :prop :key [:foo 0] :dkey :foo :sel [:bar :baz] :params {:om.next/refid 0 :woz 1}})
          '({[:foo 0] [:bar :baz]} {:woz 1})))
   (is (= (parser/ast->expr {:type :call :key 'do/it :dkey 'do/it :params {:woz 1}})
-         '(do/it {:woz 1}))))
+         '(do/it {:woz 1})))
+  (is (= (parser/ast->expr {:type :call :key 'do/it :dkey 'do/it :params {}})
+         '(do/it))))
 
 (defmulti read (fn [env k params] k))
 
@@ -203,26 +207,26 @@
     (is (= (p {} [:baz/woz]) {}))
     (is (= (p {:state st} [:foo/bar]) {:foo/bar 1}))
     (is (= (p {:state st} [:foo/bar :baz/woz]) {:foo/bar 1}))
-    (is (= (p {} [:baz/woz] {:remote true}) [:baz/woz]))
-    (is (= (p {:state st} [:foo/bar] {:remote true}) []))
-    (is (= (p {:state st} [:foo/bar :baz/woz] {:remote true}) [:baz/woz]))))
+    (is (= (p {} [:baz/woz] :remote) [:baz/woz]))
+    (is (= (p {:state st} [:foo/bar] :remote) []))
+    (is (= (p {:state st} [:foo/bar :baz/woz] :remote) [:baz/woz]))))
 
 (deftest test-value-and-remote
   (let [st (atom {:woz/noz 1})]
     (is (= (p {:state st} [:woz/noz]) {:woz/noz 1}))
-    (is (= (p {:state st} [:woz/noz] {:remote true}) [:woz/noz]))))
+    (is (= (p {:state st} [:woz/noz] :remote) [:woz/noz]))))
 
 (deftest test-call
   (let [st (atom {:foo/bar 1})]
     (is (= (p {:state st} '[(do/it! {:id 0})]) '{do/it! [0]}))
-    (is (= (p {} '[(do/it! {:id 0})] {:remote true})
+    (is (= (p {} '[(do/it! {:id 0})] :remote)
            '[(do/it! {:id 0})]))))
 
 (deftest test-read-call
   (let [st (atom {:foo/bar 1})]
     (is (= (p {:state st} '[(:user/pic {:size :small})])
            {:user/pic "user50x50.png"}))
-    (is (= (p {:state st} '[(:user/pic {:size :small})] {:remote true})
+    (is (= (p {:state st} '[(:user/pic {:size :small})] :remote)
            '[(:user/pic {:size :small})]))))
 
 (defmethod mutate 'mutate!
@@ -233,7 +237,7 @@
 (deftest test-remote-does-not-mutate
   (let [st (atom {:count 0})
         _  (p {:state st} '[(mutate!)])
-        _  (p (:state st) '[(mutate!)] {:remote true})]
+        _  (p (:state st) '[(mutate!)] :remote)]
     (is (= @st {:count 1}))))
 
 (defmethod read :now/wow
@@ -249,16 +253,16 @@
   (let [st (atom {:foo/bar 1})]
     (is (= (p {:state st} [[:user/by-id 0]])
            {[:user/by-id 0] {:name/first "Bob" :name/last "Smith"}}))
-    (is (= (p {:state st} [[:user/by-id 0]] {:remote true})
+    (is (= (p {:state st} [[:user/by-id 0]] :remote)
            [[:user/by-id 0]]))
     (is (= (p {:state st} [{[:user/by-id 0] [:name/last]}])
            {[:user/by-id 0] {:name/last "Smith"}}))
-    (is (= (p {:state st} [{[:user/by-id 0] [:name/last]}] {:remote true})
+    (is (= (p {:state st} [{[:user/by-id 0] [:name/last]}] :remote)
            [{[:user/by-id 0] [:name/last]}]))))
 
 (deftest test-forced-remote
   (is (= (p {} '['(foo/bar)]) {}))
-  (is (= (p {} '['(foo/bar)] {:remote true}) '[(foo/bar)])))
+  (is (= (p {} '['(foo/bar)] :remote) '[(foo/bar)])))
 
 (defmethod mutate 'this/throws
   [_ _ _]
@@ -289,7 +293,7 @@
     (is (= (p {:state state} '[(action/no-value)]) {}))
     (is (= :changed @state)))
   (let [state (atom nil)]
-    (is (= (p {:state state} '[(action/no-value)] {:remote true}) []))
+    (is (= (p {:state state} '[(action/no-value)] :remote) []))
     (is (= nil @state))))
 
 ;; -----------------------------------------------------------------------------
@@ -438,7 +442,8 @@
 
 (deftest test-recursive-remote
   (let [parser (om/parser {:read read1})]
-    (is (= (parser {} (om/get-query Dashboard) {:remote true})
-          [{:dashboard/items {:dashboard/post    [:favorites],
-                              :dashboard/photo   [:favorites],
-                              :dashboard/graphic [:favorites]}}]))))
+    (is (= (parser {} (om/get-query Dashboard) :remote)
+           [{:dashboard/items
+             {:dashboard/post    [:favorites],
+              :dashboard/photo   [:favorites],
+              :dashboard/graphic [:favorites]}}]))))
