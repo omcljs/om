@@ -75,6 +75,12 @@
   (is (= (om/focus-query '[:foo ({:people [:name :age]} {:length 3}) :bar] [:people])
          '[({:people [:name :age]} {:length 3})])))
 
+(deftest test-focus-query-union
+  (is (= (om/focus-query [{:selected/item {:item/one [:title]
+                                           :item/two [:author]}}]
+                         [:selected/item :item/two])
+         [{:selected/item {:item/two [:author] :om.next/union true}}])))
+
 ;; -----------------------------------------------------------------------------
 ;; Query Templating
 
@@ -101,6 +107,20 @@
                [:app/title {:todos/list [:db/id :todo/title :todo/completed]}]
                [])
            (om/replace [:app/title])))))
+
+(deftest test-query-template-union
+  (is (= (-> (om/query-template
+               [{:selected/item {:item/one [:title]
+                                 :item/two [:author]}}]
+               [:selected/item :item/two])
+           zip/root)
+         [{:selected/item [:author]}])
+      (= (-> (om/query-template
+               [{:selected/item {:item/one [:title]
+                                 :item/two [:author]}}]
+               [:selected/item :item/two])
+           (om/replace [:caption]))
+        [{:selected/item [:caption]}])))
 
 ;; -----------------------------------------------------------------------------
 ;; Indexer

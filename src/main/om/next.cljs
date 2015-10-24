@@ -55,20 +55,33 @@
         (with-meta ret (meta node))))
     root))
 
+(defn- move-to-key [loc k]
+  (loop [loc (zip/down loc)]
+    (let [node (zip/node loc)]
+      (if (= k (first node))
+        (-> loc zip/down zip/right)
+        (recur (zip/right loc))))))
+
+(defn ^boolean union? [node]
+  (and (map? node) (< 1 (count node))))
+
 (defn- query-template [query path]
   (letfn [(query-template* [loc path]
             (if (empty? path)
               loc
               (let [node (zip/node loc)]
-                (if (vector? node)
+                (if (vector? node) ;; SUBQUERY
                   (recur (zip/down loc) path)
-                  (let [[k & ks] path
-                        k' (node->key node)]
-                    (if (keyword-identical? k k')
-                      (if (map? node)
-                        (recur (-> loc zip/down zip/down zip/right) ks)
-                        (recur (-> loc zip/down zip/down zip/down zip/right) ks))
-                      (recur (zip/right loc) path)))))))]
+                  (let [[k & ks] path]
+                    (if (union? node)
+                      (let [node (zip/node (move-to-key loc k))]
+                        (recur (zip/replace loc node) ks)) ;; UNION
+                      (let [k' (node->key node)]
+                        (if (keyword-identical? k k')
+                          (if (map? node)
+                            (recur (move-to-key loc k) ks) ;; JOIN
+                            (recur (-> loc zip/down zip/down zip/down zip/right) ks)) ;; CALL
+                          (recur (zip/right loc) path)))))))))]
     (query-template* (query-zip query) path)))
 
 (defn- replace [template new-query]
@@ -96,7 +109,9 @@
                 (= k (join-key x)))
               (value [x]
                 (focused-join x ks))]
-        (into [] (comp (filter match) (map value) (take 1)) query)))))
+        (if (map? query) ;; UNION
+          {k (focus-query (get query k) ks) ::union true}
+          (into [] (comp (filter match) (map value) (take 1)) query))))))
 
 (defn- focus->path
   ([focus] (focus->path focus []))
@@ -741,10 +756,10 @@
                             (conj path prop)
                             (cond-> classpath class' (conj class')))))))
                   ;; Map case, union in query
-                  (doseq [[_ selector'] selector]
+                  (doseq [[k selector'] selector]
                     (let [class' (-> selector' meta :component)]
-                      (build-index* class' selector' path
-                        (cond-> (conj classpath class') class' (conj class')))))))]
+                      (build-index* class' selector' (conj path k)
+                        (cond-> classpath class' (conj class')))))))]
         (build-index* class rootq [] [class])
         (swap! indexes merge
           {:prop->classes     @prop->classes
