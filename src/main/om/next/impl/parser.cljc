@@ -83,8 +83,16 @@
                        call? (= :call type)
                        res   (when (nil? (:target ast))
                                (case type
-                                 :call (mutate env dkey params)
-                                 :prop (read env dkey params)))]
+                                 :call (if-not (nil? mutate)
+                                         (mutate env dkey params)
+                                         (throw
+                                           (js/Error.
+                                             "Parse mutation attempted but no :mutate function supplied")))
+                                 :prop (if-not (nil? read)
+                                         (read env dkey params)
+                                         (throw
+                                           (js/Error.
+                                             "Parse read attempted but no :read function supplied")))))]
                    (if-not (nil? target)
                      (let [ast' (get res target)]
                        (cond-> ret
