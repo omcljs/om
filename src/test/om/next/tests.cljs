@@ -322,9 +322,9 @@
   {:value (get-in @state [:categories (get data k)])})
 
 (defmethod read :todos/list
-  [{:keys [state selector parse] :as env} _]
+  [{:keys [state selector parser] :as env} _]
   (let [st @state
-        pf #(parse (assoc env :data %) selector)]
+        pf #(parser (assoc env :data %) selector)]
     {:value (into [] (comp (map (:todos st)) (map pf))
               (:todos/list st))}))
 
@@ -393,6 +393,15 @@
   (require '[cljs.pprint :as pp])
   (run-tests)
   )
+
+;; -----------------------------------------------------------------------------
+;; Denormalization
+
+(deftest test-denormalization
+  (let [orig {:name "Susan" :points 5 :friend {:name "Mary"} :friends []}
+        p0   (om/normalize Person orig)
+        refs (meta p0)]
+    (is (= orig (om/denormalize (om/get-query Person) p0 refs)))))
 
 ;; -----------------------------------------------------------------------------
 ;; Message Forwarding
