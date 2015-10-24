@@ -740,6 +740,7 @@
                           (build-index* class' selector'
                             (conj path prop)
                             (cond-> classpath class' (conj class')))))))
+                  ;; Map case, union in query
                   (doseq [[_ selector'] selector]
                     (let [class' (-> selector' meta :component)]
                       (build-index* class' selector' path
