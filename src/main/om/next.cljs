@@ -392,6 +392,12 @@
       (-> component .-props get-props)
       (-> component .-state get-props))))
 
+(defn get-ident
+  "Given a component return its ident"
+  [component]
+  {:pre [(component? component)]}
+  (ident component (props component)))
+
 (declare schedule-render!)
 
 (defn set-state!
