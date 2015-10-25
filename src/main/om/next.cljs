@@ -1183,7 +1183,7 @@
                   :normalize (or (not norm?) normalize)
                   :history (c/cache history)}
                  (atom {:queue [] :queued false :queued-sends {}
-                        :sends-queued false :send-targets [:remote]
+                        :sends-queued false
                         :target nil :root nil :render nil :remove nil
                         :t 0 :normalized false}))]
     ret))
