@@ -935,7 +935,8 @@
     (normalize x data false))
   ([x data ^boolean merge-refs]
    (let [refs (atom {})
-         ret  (normalize* (get-query x) data refs)]
+         x    (if (vector? x) x (get-query x))
+         ret  (normalize* x data refs)]
      (if merge-refs
        (merge ret @refs)
        (with-meta ret @refs)))))
