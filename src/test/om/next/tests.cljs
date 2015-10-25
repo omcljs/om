@@ -456,12 +456,31 @@
   (let [st @state]
     {:value (om/denormalize selector (get st key) st)}))
 
+(defn add-friend [state id friend]
+  (if (not= id friend)
+    (letfn [(add* [friends ref]
+              (cond-> friends
+                (not (some #{ref} friends)) (conj ref)))]
+      (-> state
+        (update-in [:person/by-id id :friends]
+          add* [:person/by-id friend])
+        (update-in [:person/by-id friend :friends]
+          add* [:person/by-id id])))
+    state))
+
 (deftest test-denormalize-collection
-  (let [app-state (atom (om/normalize People1 people-data true))
-        parser    (om/parser {:read read2})]
+  (let [norm-data  (om/normalize People1 people-data true)
+        app-state  (atom norm-data)
+        parser     (om/parser {:read read2})
+        norm-data' (add-friend (om/normalize People1 people-data true) 0 1)
+        app-state' (atom norm-data')]
     (is (= (parser {:state app-state} (om/get-query People1))
-          {:people [{:id 0, :name "Bob", :friends []}
-                    {:id 1, :name "Laura", :friends []}
+           {:people [{:id 0, :name "Bob", :friends []}
+                     {:id 1, :name "Laura", :friends []}
+                     {:id 2, :name "Mary", :friends []}]}))
+    (is (= (parser {:state app-state'} (om/get-query People1))
+          {:people [{:id 0, :name "Bob", :friends [{:id 1, :name "Laura"}]}
+                    {:id 1, :name "Laura", :friends [{:id 0, :name "Bob"}]}
                     {:id 2, :name "Mary", :friends []}]}))))
 
 ;; -----------------------------------------------------------------------------

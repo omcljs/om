@@ -951,23 +951,26 @@
        (== 2 (count x))
        (keyword? (nth x 0))))
 
+;; TODO: easy to optimize
+
 (defn denormalize
   "Given a selector, normalized data, and the normalized application state
    return the denormalized data."
   [selector data refs]
   (if (vector? data)
     (into [] (map #(denormalize selector (get-in refs %) refs)) data)
-    (loop [joins (seq (filter join? selector)) data data]
-      (if-not (nil? joins)
-        (let [join      (first joins)
-              [key sel] (join-value join)
-              v         (get data key)]
-          (if-not (ref? v)
-            (recur (next joins)
-              (assoc data key (denormalize sel v refs)))
-            (recur (next joins)
-              (assoc data key (denormalize sel (get-in refs v) refs)))))
-        data))))
+    (let [{props false joins true} (group-by join? selector)]
+      (loop [joins (seq joins) ret {}]
+        (if-not (nil? joins)
+          (let [join      (first joins)
+                [key sel] (join-value join)
+                v         (get data key)]
+            (if-not (ref? v)
+              (recur (next joins)
+                (assoc ret key (denormalize sel v refs)))
+              (recur (next joins)
+                (assoc ret key (denormalize sel (get-in refs v) refs)))))
+          (merge (select-keys data props) ret))))))
 
 ;; =============================================================================
 ;; Reconciler
