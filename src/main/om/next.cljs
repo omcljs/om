@@ -955,17 +955,19 @@
   "Given a selector, normalized data, and the normalized application state
    return the denormalized data."
   [selector data refs]
-  (loop [joins (seq (filter join? selector)) data data]
-    (if-not (nil? joins)
-      (let [join      (first joins)
-            [key sel] (join-value join)
-            v         (get data key)]
-        (if-not (ref? v)
-          (let [v' (into [] (map #(denormalize sel (get-in refs %) refs)) v)]
-            (recur (next joins) (assoc data key v')))
-          (recur (next joins)
-            (assoc data key (denormalize sel (get-in refs v) refs)))))
-      data)))
+  (if (vector? data)
+    (into [] (map #(denormalize selector (get-in refs %) refs)) data)
+    (loop [joins (seq (filter join? selector)) data data]
+      (if-not (nil? joins)
+        (let [join      (first joins)
+              [key sel] (join-value join)
+              v         (get data key)]
+          (if-not (ref? v)
+            (recur (next joins)
+              (assoc data key (denormalize sel v refs)))
+            (recur (next joins)
+              (assoc data key (denormalize sel (get-in refs v) refs)))))
+        data))))
 
 ;; =============================================================================
 ;; Reconciler

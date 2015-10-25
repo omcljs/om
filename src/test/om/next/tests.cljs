@@ -423,6 +423,47 @@
         refs (meta p0)]
     (is (= orig (om/denormalize (om/get-query Person) p0 refs)))))
 
+(def people-data
+  {:people [{:id 0 :name "Bob" :friends []}
+            {:id 1 :name "Laura" :friends []}
+            {:id 2 :name "Mary" :friends []}]})
+
+(defui Friend1
+  static om/Ident
+  (ident [this props]
+    [:person/by-id (:id props)])
+  static om/IQuery
+  (query [this]
+    [:id :name]))
+
+(defui Person1
+  static om/Ident
+  (ident [this props]
+    [:person/by-id (:id props)])
+  static om/IQuery
+  (query [this]
+    [:id :name {:friends (om/get-query Friend1)}]))
+
+(defui People1
+  static om/IQuery
+  (query [this]
+    [{:people (om/get-query Person1)}]))
+
+(defmulti read2 om/dispatch)
+
+(defmethod read2 :people
+  [{:keys [state selector] :as env} key _]
+  (let [st @state]
+    {:value (om/denormalize selector (get st key) st)}))
+
+(deftest test-denormalize-collection
+  (let [app-state (atom (om/normalize People1 people-data true))
+        parser    (om/parser {:read read2})]
+    (is (= (parser {:state app-state} (om/get-query People1))
+          {:people [{:id 0, :name "Bob", :friends []}
+                    {:id 1, :name "Laura", :friends []}
+                    {:id 2, :name "Mary", :friends []}]}))))
+
 ;; -----------------------------------------------------------------------------
 ;; Message Forwarding
 
