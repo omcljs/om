@@ -179,10 +179,12 @@
   (:params (get-local-query-data component) (params component)))
 
 (defn- get-component-query [c]
-  (let [qps (get-local-query-data c)]
+  (let [qps (get-local-query-data c)
+        q   (:query qps (query c))
+        c'  (-> q meta :component)]
+    (assert (nil? c') (str "Query violation, " c , " reuses " c' " query"))
     (with-meta
-      (bind-query
-        (:query qps (query c)) (:params qps (params c)))
+      (bind-query q (:params qps (params c)))
       {:component (type c)})))
 
 (defn get-query
@@ -192,12 +194,18 @@
   (if (satisfies? IQuery x)
     (if (component? x)
       (get-component-query x)
-      (with-meta (bind-query (query x) (params x)) {:component x}))
+      (let [q (query x)
+            c (-> q meta :component)]
+        (assert (nil? c) (str "Query violation, " x , " reuses " c " query"))
+        (with-meta (bind-query q (params x)) {:component x})))
     ;; in advanced, statics will get elided
     (when (goog/isFunction x)
       (let [x (js/Object.create (. x -prototype))]
         (when (satisfies? IQuery x)
-          (with-meta (bind-query (query x) (params x)) {:component x}))))))
+          (let [q (query x)
+                c (-> q meta :component)]
+            (assert (nil? c) (str "Query violation, " x , " reuses " c " query"))
+            (with-meta (bind-query q (params x)) {:component x})))))))
 
 (defn iquery? [x]
   (satisfies? IQuery x))
