@@ -3,7 +3,7 @@
   (:require-macros [om.dom :as dom])
   (:require [cljsjs.react]
             [cljsjs.react.dom]
-            [goog.object :as gobject]))
+            [goog.object :as gobj]))
 
 (dom/gen-react-dom-fns)
 
@@ -33,7 +33,7 @@
          (this-as this
            ;; NOTE: if switch to macro we remove a closure allocation
            (let [props #js {}]
-             (gobject/extend props (.-props this)
+             (gobj/extend props (.-props this)
                #js {:value (aget (.-state this) "value")
                     :onChange (aget this "onChange")
                     :children (aget (.-props this) "children")})
@@ -54,3 +54,10 @@
   "Equivalent to React.renderToString"
   [c]
   (js/React.renderToString c))
+
+(defn node
+  "Returns the dom node associated with a component's React ref."
+  ([component]
+   (js/ReactDOM.findDOMNode component))
+  ([component name]
+   (some-> (.-refs component) (gobj/get name) (js/ReactDOM.findDOMNode))))

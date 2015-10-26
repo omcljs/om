@@ -538,13 +538,6 @@
   [x]
   (and (component? x) ^boolean (.isMounted x)))
 
-(defn dom-node
-  "Returns the dom node associated with a component's React ref."
-  ([component]
-   (js/ReactDOM.findDOMNode component))
-  ([component name]
-   (some-> (.-refs component) (gobj/get name) (js/ReactDOM.findDOMNode))))
-
 (defn react-ref
   "Returns the component associated with a component's React ref."
   [component name]
@@ -1044,7 +1037,7 @@
       (let [renderf (fn [data]
                       (binding [*reconciler* this
                                 *shared*     (:shared config)]
-                        (let [c (js/ReactDOM.render (rctor data) target)]
+                        (let [c ((:root-render config) (rctor data) target)]
                           (when (nil? @ret)
                             (swap! state assoc :root c)
                             (reset! ret c)))))
@@ -1071,7 +1064,7 @@
                        #(-> %
                          (dissoc :target) (dissoc :render) (dissoc :root)
                          (dissoc :remove)))
-                     (js/ReactDOM.unmountComponentAtNode target))})
+                     ((:root-unmount config) target))})
         (add-watch (:state config) target
           (fn [_ _ _ _] (schedule-render! this)))
         (parsef)
@@ -1178,15 +1171,18 @@
            send merge-sends remotes
            merge-tree merge-ref
            optimize
-           history]
-    :or {ui->props   default-ui->props
-         indexer     om.next/indexer
-         merge-sends #(merge-with into %1 %2)
-         remotes     [:remote]
-         merge-tree  #(merge-with merge %1 %2)
-         merge-ref   default-merge-ref
-         optimize    (fn [cs] (sort-by depth cs))
-         history     100}
+           history
+           root-render root-unmount]
+    :or {ui->props    default-ui->props
+         indexer      om.next/indexer
+         merge-sends  #(merge-with into %1 %2)
+         remotes      [:remote]
+         merge-tree   #(merge-with merge %1 %2)
+         merge-ref    default-merge-ref
+         optimize     (fn [cs] (sort-by depth cs))
+         history      100
+         root-render  #(js/ReactDOM.render %1 %2)
+         root-unmount #(js/ReactDOM.unmountComponentAtNode %)}
     :as config}]
   {:pre [(map? config)]}
   (let [idxr   (indexer)
@@ -1199,7 +1195,8 @@
                   :merge-tree merge-tree :merge-ref merge-ref
                   :optimize optimize
                   :normalize (or (not norm?) normalize)
-                  :history (c/cache history)}
+                  :history (c/cache history)
+                  :root-render root-render :root-unmount root-unmount}
                  (atom {:queue [] :queued false :queued-sends {}
                         :sends-queued false
                         :target nil :root nil :render nil :remove nil
