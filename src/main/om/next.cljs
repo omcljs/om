@@ -702,13 +702,17 @@
    {:pre [(vector? tx)]}
    (if (reconciler? x)
      (transact* x nil nil tx)
-     (loop [p (parent x) tx tx]
-       (if (nil? p)
-         (transact* (get-reconciler x) x nil tx)
-         (let [tx (if (satisfies? ITxIntercept p)
-                    (tx-intercept p tx)
-                    tx)]
-           (recur (parent p) tx))))))
+     (do
+       (assert (satisfies? IQuery x)
+         (str "transact! invoked by component " x
+              " that does not implement IQuery"))
+       (loop [p (parent x) tx tx]
+         (if (nil? p)
+           (transact* (get-reconciler x) x nil tx)
+           (let [tx (if (satisfies? ITxIntercept p)
+                      (tx-intercept p tx)
+                      tx)]
+             (recur (parent p) tx)))))))
   ([r ref tx]
    (transact* r nil ref tx)))
 
