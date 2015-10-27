@@ -3,13 +3,11 @@
   (:require-macros [om.next :refer [defui]])
   (:require [goog.string :as gstring]
             [goog.object :as gobj]
-            [goog.dom :as gdom]
             [goog.log :as glog]
             [clojure.walk :as walk]
             [om.next.protocols :as p]
             [om.next.impl.parser :as parser]
             [om.next.cache :as c]
-            [om.dom :as dom]
             [clojure.zip :as zip])
   (:import [goog.debug Console]))
 
@@ -623,7 +621,7 @@
   ([reconciler root-class target]
    (add-root! reconciler root-class target nil))
   ([reconciler root-class target options]
-   {:pre [(reconciler? reconciler) (fn? root-class) (gdom/isElement target)]}
+   {:pre [(reconciler? reconciler) (fn? root-class)]}
    (when-let [old-reconciler (get @roots target)]
      (remove-root! old-reconciler target))
    (swap! roots assoc target reconciler)
