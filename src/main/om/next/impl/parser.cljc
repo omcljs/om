@@ -107,8 +107,8 @@
                                         (reset! error e)))))
                          (let [value (:value res)]
                            (cond-> ret
-                             @error (assoc key @error)
-                             (not (nil? value)) (assoc key value))))))))]
+                             (not (nil? value)) (assoc key value)
+                             @error (assoc key @error))))))))]
          (cond-> (reduce step (if (nil? target) {} []) sel)
            (not (or (not (nil? target)) elide-paths?)) (path-meta path)))))))
 
