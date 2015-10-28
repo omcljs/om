@@ -421,8 +421,10 @@
   "Add computed properties to props."
   [props computed-map]
   (if (vector? props)
-    (vary-meta props assoc :om.next/computed computed-map)
-    (assoc props :om.next/computed computed-map)))
+    (cond-> props
+      (not (empty? computed-map)) (vary-meta assoc :om.next/computed computed-map))
+    (cond-> props
+      (not (empty? computed-map)) (assoc :om.next/computed computed-map))))
 
 (defn get-computed
   "Return the computed properties on props."
@@ -1145,7 +1147,8 @@
               {:keys [ui->props]} config
               env (to-env config)]
           (doseq [c ((:optimize config) cs)]
-            (let [next-props (ui->props env c)]
+            (let [computed   (get-computed (props c))
+                  next-props (computed (ui->props env c) computed)]
               (when (and (should-update? c next-props (get-state c))
                          (mounted? c))
                 (if-not (nil? next-props)
