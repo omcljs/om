@@ -112,12 +112,16 @@
           (into [] (comp (filter match) (map value) (take 1)) query))))))
 
 (defn- focus->path
-  ([focus] (focus->path focus []))
-  ([focus path]
-   (if (and (some map? focus)
+  ([focus]
+   (focus->path focus '* []))
+  ([focus bound]
+   (focus->path focus bound []))
+  ([focus bound path]
+   (if (and (or (= bound '*) (not= path bound))
+            (some map? focus)
             (== 1 (count focus)))
      (let [[k focus'] (ffirst focus)]
-       (recur focus' (conj path k)))
+       (recur focus' (conj path k) bound))
      path)))
 
 ;; =============================================================================
@@ -862,8 +866,14 @@
            qs    (get-in @(-> component get-reconciler get-indexer)
                    [:class-path->query cp])]
        (if-not (empty? qs)
-         (replace (first (filter #(= path' (-> % zip/root focus->path)) qs))
-           (get-query component))
+         ;; handle case where child appears multiple times at same class-path
+         ;; but with different queries
+         (let [q (first (filter #(= path' (-> % zip/root (focus->path path'))) qs))]
+           (if-not (nil? q)
+             (replace q (get-query component))
+             (throw
+               (ex-info (str "No queries exist for component path " cp " or data path " path')
+                 {:type :om.next/no-queries}))))
          (throw
            (ex-info (str "No queries exist for component path " cp)
              {:type :om.next/no-queries})))))))
