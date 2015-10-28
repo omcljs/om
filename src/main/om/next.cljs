@@ -417,6 +417,25 @@
       (-> component .-props get-props)
       (-> component .-state get-props))))
 
+(defn computed
+  "Add computed properties to props."
+  [props computed-map]
+  (if (vector? props)
+    (vary-meta props assoc :om.next/computed computed-map)
+    (assoc props :om.next/computed computed-map)))
+
+(defn get-computed
+  "Return the computed properties on props."
+  ([props]
+    (get-computed props []))
+  ([props k-or-ks]
+   (let [ks (into [:om.next/computed]
+              (cond-> k-or-ks
+                (not (sequential? k-or-ks)) vector))]
+     (if (vector? props)
+       (-> props meta (get-in ks))
+       (get-in props ks)))))
+
 (defn get-ident
   "Given a component return its ident"
   [component]
