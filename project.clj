@@ -21,6 +21,8 @@
 
   :plugins [[lein-cljsbuild "1.1.0"]]
 
+  :jar-exclusions [#".DS_Store" #"dev" #"devcards" #"test"]
+
   :clean-targets ^{:protect false} ["resources/out"]
 
   :cljsbuild {
