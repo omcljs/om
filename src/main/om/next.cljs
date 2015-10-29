@@ -1148,7 +1148,7 @@
               env (to-env config)]
           (doseq [c ((:optimize config) cs)]
             (let [computed   (get-computed (props c))
-                  next-props (computed (ui->props env c) computed)]
+                  next-props (om.next/computed (ui->props env c) computed)]
               (when (and (should-update? c next-props (get-state c))
                          (mounted? c))
                 (if-not (nil? next-props)
