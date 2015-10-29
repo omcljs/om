@@ -1095,7 +1095,9 @@
                          (dissoc :remove)))
                      ((:root-unmount config) target))})
         (add-watch (:state config) target
-          (fn [_ _ _ _] (schedule-render! this)))
+          (fn [_ _ _ _]
+            (swap! state update-in [:t] inc)
+            (schedule-render! this)))
         (parsef)
         ret)))
 
@@ -1109,11 +1111,7 @@
         (p/index-root (:indexer config) root))))
 
   (queue! [_ ks]
-    (swap! state
-      (fn [state]
-        (-> state
-          (update-in [:t] inc) ;; TODO: probably should revisit doing this here
-          (update-in [:queue] into ks)))))
+    (swap! state update-in [:queue] into ks))
 
   (queue-sends! [_ sends]
     (swap! state update-in [:queued-sends]
