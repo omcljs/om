@@ -1145,13 +1145,13 @@
               {:keys [ui->props]} config
               env (to-env config)]
           (doseq [c ((:optimize config) cs)]
-            (let [computed   (get-computed (props c))
-                  next-props (om.next/computed (ui->props env c) computed)]
-              (when (and (should-update? c next-props (get-state c))
-                         (mounted? c))
-                (if-not (nil? next-props)
-                  (update-component! c next-props)
-                  (.forceUpdate c)))))))
+            (when (mounted? c)
+              (let [computed   (get-computed (props c))
+                    next-props (om.next/computed (ui->props env c) computed)]
+                (when (should-update? c next-props (get-state c))
+                  (if-not (nil? next-props)
+                    (update-component! c next-props)
+                    (.forceUpdate c))))))))
       (swap! state assoc :queue [])
       (swap! state update-in [:queued] not)))
 
