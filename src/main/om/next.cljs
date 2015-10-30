@@ -427,13 +427,14 @@
       (not (empty? computed-map)) (assoc :om.next/computed computed-map))))
 
 (defn get-computed
-  "Return the computed properties on props."
-  ([props]
-    (get-computed props []))
-  ([props k-or-ks]
-   (let [ks (into [:om.next/computed]
-              (cond-> k-or-ks
-                (not (sequential? k-or-ks)) vector))]
+  "Return the computed properties on a component or its props."
+  ([x]
+   (get-computed x []))
+  ([x k-or-ks]
+   (let [props (cond-> x (component? x) props)
+         ks    (into [:om.next/computed]
+                 (cond-> k-or-ks
+                   (not (sequential? k-or-ks)) vector))]
      (if (vector? props)
        (-> props meta (get-in ks))
        (get-in props ks)))))
