@@ -1179,7 +1179,14 @@
   (let [path (path c)
         fq   (full-query c path)]
     (when-not (nil? fq)
-      (get-in (parser env fq) path))))
+      (let [s  (system-time)
+            ui (parser env fq)
+            e  (system-time)]
+        (when-not (nil? *logger*)
+          (let [dt (- e s)]
+            (when (< 16 dt)
+              (glog/warning *logger* (str c " query took " dt " msecs")))))
+        (get-in ui path)))))
 
 (defn- default-merge-ref
   [_ tree ref props]
