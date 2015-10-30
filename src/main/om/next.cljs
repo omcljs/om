@@ -1141,6 +1141,7 @@
     (let [st @state
           q  (:queue st)]
       (cond
+        ;; TODO: need to move root re-render logic outside of batching logic
         (empty? q) ((:render st))
 
         (= [::skip] q) nil
