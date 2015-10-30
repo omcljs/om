@@ -121,7 +121,7 @@
             (some map? focus)
             (== 1 (count focus)))
      (let [[k focus'] (ffirst focus)]
-       (recur focus' (conj path k) bound))
+       (recur focus' bound (conj path k)))
      path)))
 
 ;; =============================================================================
