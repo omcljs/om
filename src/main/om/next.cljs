@@ -592,7 +592,13 @@
       (if (iquery? p)
         (recur p (cons (type p) ret))
         (recur p ret))
-      ret)))
+      (let [seen (atom #{})]
+        (take-while
+          (fn [x]
+            (when-not (contains? @seen x)
+              (swap! seen conj x)
+              x))
+          ret)))))
 
 (defn- join-value [node]
   (if (seq? node)
