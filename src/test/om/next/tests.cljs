@@ -390,8 +390,8 @@
   Object
   (render [this]))
 
-(deftest test-normalize
-  (let [norm (om/normalize RootView data)
+(deftest test-tree->db
+  (let [norm (om/tree->db RootView data)
         refs (meta norm)
         p0   (get-in refs [:person/by-name "Mary"])]
     (is (= 3 (count (get norm :list/one))))
@@ -401,8 +401,8 @@
     (is (contains? p0 :foo))
     (is (contains? p0 :baz))))
 
-(deftest test-incremental-normalize
-  (let [p0   (om/normalize Person
+(deftest test-incremental-tree->db
+  (let [p0   (om/tree->db Person
                {:name "Susan" :points 5 :friend {:name "Mary"}})
         refs (meta p0)]
     (is (= {:name "Susan" :points 5 :friend [:person/by-name "Mary"]}
@@ -417,11 +417,11 @@
 ;; -----------------------------------------------------------------------------
 ;; Denormalization
 
-(deftest test-denormalization
+(deftest test-db->tree
   (let [orig {:name "Susan" :points 5 :friend {:name "Mary"} :friends []}
-        p0   (om/normalize Person orig)
+        p0   (om/tree->db Person orig)
         refs (meta p0)]
-    (is (= orig (om/denormalize (om/get-query Person) p0 refs)))))
+    (is (= orig (om/db->tree (om/get-query Person) p0 refs)))))
 
 (def people-data
   {:people [{:id 0 :name "Bob" :friends []}
@@ -454,7 +454,7 @@
 (defmethod read2 :people
   [{:keys [state selector] :as env} key _]
   (let [st @state]
-    {:value (om/denormalize selector (get st key) st)}))
+    {:value (om/db->tree selector (get st key) st)}))
 
 (defn add-friend [state id friend]
   (if (not= id friend)
@@ -468,11 +468,11 @@
           add* [:person/by-id id])))
     state))
 
-(deftest test-denormalize-collection
-  (let [norm-data  (om/normalize People1 people-data true)
+(deftest test-db->tree-collection
+  (let [norm-data  (om/tree->db People1 people-data true)
         app-state  (atom norm-data)
         parser     (om/parser {:read read2})
-        norm-data' (add-friend (om/normalize People1 people-data true) 0 1)
+        norm-data' (add-friend (om/tree->db People1 people-data true) 0 1)
         app-state' (atom norm-data')]
     (is (= (parser {:state app-state} (om/get-query People1))
            {:people [{:id 0, :name "Bob", :friends []}
