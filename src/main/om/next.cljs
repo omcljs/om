@@ -1216,7 +1216,7 @@
    :remotes      - a vector of keywords representing remote services which can
                    evaluate query expressions. Defaults to [:remote]
    :root-render  - the root render function. Defaults to ReactDOM.render
-   :root-unmount - the root unmount function. Defuaults to
+   :root-unmount - the root unmount function. Defaults to
                    ReactDOM.unmountComponentAtNode"
   [{:keys [state shared parser indexer
            ui->props normalize
