@@ -48,12 +48,12 @@
 (defn render
   "Equivalent to React.render"
   [component el]
-  (js/React.render component el))
+  (js/ReactDOM.render component el))
 
 (defn render-to-str
   "Equivalent to React.renderToString"
   [c]
-  (js/React.renderToString c))
+  (js/ReactDOMServer.renderToString c))
 
 (defn node
   "Returns the dom node associated with a component's React ref."

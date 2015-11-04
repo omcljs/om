@@ -1208,7 +1208,7 @@
           (tear-down state watch-key)
           (swap! refresh-set disj rootf)
           (swap! roots dissoc target)
-          (js/React.unmountComponentAtNode target)))
+          (js/ReactDOM.unmountComponentAtNode target)))
       (rootf))))
 
 (defn detach-root
