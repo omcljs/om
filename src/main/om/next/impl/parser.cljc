@@ -67,6 +67,10 @@
          :cljs (satisfies? IWithMeta x'))
       (vary-meta assoc :om-path path))))
 
+(defn rethrow? [x]
+  (and (instance? #?(:clj clojure.lang.ExceptionInfo :cljs ExceptionInfo) x)
+       (= :om.next/abort (-> x ex-data :type))))
+
 (defn parser [{:keys [read mutate] :as config}]
   (fn self
     ([env sel] (self env sel nil))
@@ -101,10 +105,10 @@
                          (when (and call? (not (nil? (:action res))))
                            (try
                              ((:action res))
-                             #?(:clj  (catch Throwable e
-                                        (reset! error e))
-                                :cljs (catch :default e
-                                        (reset! error e)))))
+                             (catch #?(:clj Throwable :cljs :default) e
+                               (if (rethrow? e)
+                                 (throw e)
+                                 (reset! error e)))))
                          (let [value (:value res)]
                            (cond-> ret
                              (not (nil? value)) (assoc key value)
