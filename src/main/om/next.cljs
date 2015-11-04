@@ -1197,6 +1197,12 @@
   [_ tree ref props]
   (update-in tree ref merge props))
 
+(defn- default-merge-tree
+  [a b]
+  (if (map? a)
+    (merge a b)
+    b))
+
 (defn reconciler
   "Construct a reconciler from a configuration map, the following options
    are required:
@@ -1230,7 +1236,7 @@
          indexer      om.next/indexer
          merge-sends  #(merge-with into %1 %2)
          remotes      [:remote]
-         merge-tree   #(merge-with merge %1 %2)
+         merge-tree   default-merge-tree
          merge-ref    default-merge-ref
          optimize     (fn [cs] (sort-by depth cs))
          history      100
