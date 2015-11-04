@@ -528,8 +528,8 @@
         st  (:state cfg)
         id  (random-uuid)
         _   (.add (:history cfg) id @st)]
-    (when-not (nil? *logger*)
-      (glog/info *logger*
+    (when-let [l (:logger cfg)]
+      (glog/info l
         (str (when-let [ref (ident component (props component))]
                (str (pr-str ref) " "))
           "changed query '" new-query ", " (pr-str id))))
@@ -547,8 +547,8 @@
         st  (:state cfg)
         id  (random-uuid)
         _   (.add (:history cfg) id @st)]
-    (when-not (nil? *logger*)
-      (glog/info *logger*
+    (when-let [l (:logger cfg)]
+      (glog/info l
         (str (when-let [ref (ident component (props component))]
                (str (pr-str ref) " "))
           "changed query params " new-params", " (pr-str id))))
@@ -675,7 +675,7 @@
 
 (defn- to-env [x]
   (let [config (if (reconciler? x) (:config x) x)]
-    (select-keys config [:state :shared :parser])))
+    (select-keys config [:state :shared :parser :logger])))
 
 (defn gather-sends
   [{:keys [parser] :as env} tx remotes]
@@ -697,8 +697,8 @@
                  {:ref ref}))
         id   (random-uuid)
         _    (.add (:history cfg) id @(:state cfg))
-        _    (when-not (nil? *logger*)
-               (glog/info *logger*
+        _    (when-let [l (:logger cfg)]
+               (glog/info l
                  (str (when ref (str (pr-str ref) " "))
                    "transacted '" tx ", " (pr-str id))))
         v    ((:parser cfg) env tx)
@@ -1187,10 +1187,10 @@
       (let [s  (system-time)
             ui (parser env fq)
             e  (system-time)]
-        (when-not (nil? *logger*)
+        (when-let [l (:logger env)]
           (let [dt (- e s)]
             (when (< 16 dt)
-              (glog/warning *logger* (str c " query took " dt " msecs")))))
+              (glog/warning l (str c " query took " dt " msecs")))))
         (get-in ui path)))))
 
 (defn- default-merge-ref
@@ -1217,7 +1217,8 @@
                    evaluate query expressions. Defaults to [:remote]
    :root-render  - the root render function. Defaults to ReactDOM.render
    :root-unmount - the root unmount function. Defaults to
-                   ReactDOM.unmountComponentAtNode"
+                   ReactDOM.unmountComponentAtNode
+   :logger       - supply a goog.log compatible logger"
   [{:keys [state shared parser indexer
            ui->props normalize
            send merge-sends remotes
@@ -1240,6 +1241,9 @@
   (let [idxr   (indexer)
         norm?  (satisfies? IAtom state)
         state' (if norm? state (atom state))
+        logger (if (contains? config :logger)
+                 (:logger config)
+                 *logger*)
         ret    (Reconciler.
                  {:state state' :shared shared :parser parser :indexer idxr
                   :ui->props ui->props
@@ -1248,7 +1252,8 @@
                   :optimize optimize
                   :normalize (or (not norm?) normalize)
                   :history (c/cache history)
-                  :root-render root-render :root-unmount root-unmount}
+                  :root-render root-render :root-unmount root-unmount
+                  :logger logger}
                  (atom {:queue [] :queued false :queued-sends {}
                         :sends-queued false
                         :target nil :root nil :render nil :remove nil

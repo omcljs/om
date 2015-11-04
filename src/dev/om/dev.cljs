@@ -74,7 +74,7 @@
   (ident [this {:keys [id]}]
     [:app/counters id])
   Object
-  (getInitialState [this]
+  (initLocalState [this]
     {:state-count 0})
   (componentWillUnmount [this]
     (println "Buh-bye!"))

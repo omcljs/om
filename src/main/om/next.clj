@@ -28,7 +28,7 @@
         {:dt dt' :statics statics}))))
 
 (def lifecycle-sigs
-  '{getInitialState [this]
+  '{initLocalState [this]
     componentWillReceiveProps [this next-props]
     componentWillUpdate [this next-props next-state]
     componentDidUpdate [this prev-props prev-state]
@@ -43,7 +43,7 @@
 
 (def reshape-map
   {:reshape
-   {'getInitialState
+   {'initLocalState
     (fn [[name [this :as args] & body]]
       `(~name ~args
          (let [ret# (do ~@body)]
@@ -166,8 +166,8 @@
            ctor  `(defn ~(with-meta name {:jsdoc ["@constructor"]}) []
                     (this-as this#
                       (.apply js/React.Component this# (js-arguments))
-                      (if-not (nil? (.-getInitialState this#))
-                        (set! (.-state this#) (.getInitialState this#))
+                      (if-not (nil? (.-initLocalState this#))
+                        (set! (.-state this#) (.initLocalState this#))
                         (set! (.-state this#) (cljs.core/js-obj)))
                       this#))
            ctor  (if (-> name meta :once)
@@ -238,7 +238,7 @@
   (pprint
     (defui* 'Artist
       '(Object
-        (getInitialState [this]
+        (initLocalState [this]
           {:foo 'bar})
         (render [_ {:keys [self artists]}]
           (om.dom/div nil "Hello!")))))
