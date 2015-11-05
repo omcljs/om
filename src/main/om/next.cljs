@@ -666,6 +666,8 @@
   (p/remove-root! reconciler target))
 
 (defn mock-root
+  "Create an Om Next root without an actual DOM target. Useful in devcards
+   testing context."
   [reconciler root-class]
   {:pre [(reconciler? reconciler) (fn? root-class)]}
   (p/add-root! reconciler root-class nil nil))
