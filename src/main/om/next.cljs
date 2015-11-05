@@ -427,7 +427,8 @@
       (-> component .-state get-props))))
 
 (defn computed
-  "Add computed properties to props."
+  "Add computed properties to props. Note will replace any pre-existing
+   computed properties."
   [props computed-map]
   (if (vector? props)
     (cond-> props
