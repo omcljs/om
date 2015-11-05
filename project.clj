@@ -16,12 +16,11 @@
                  [cljsjs/react "0.14.0-0"]
                  [cljsjs/react-dom "0.14.0-0"]
                  [figwheel-sidecar "0.4.0" :scope "provided"]
-                 ;[devcards "0.2.0-SNAPSHOT" :scope "provided"]
-                 ]
+                 [devcards "0.2.0-8" :scope "provided"]]
 
   :plugins [[lein-cljsbuild "1.1.0"]]
 
-  :jar-exclusions [#".DS_Store" #"dev" #"devcards" #"test"]
+  :jar-exclusions [#".DS_Store" #"dev" #"devcards" #"test" #"index.html"]
 
   :clean-targets ^{:protect false} ["resources/out"]
 
