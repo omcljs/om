@@ -1228,30 +1228,35 @@
     b))
 
 (defn reconciler
-  "Construct a reconciler from a configuration map, the following options
-   are required:
+  "Construct a reconciler from a configuration map.
 
-   :state        - the application state, must be IAtom.
-   :shared       - a map global shared properties of the component tree.
-   :shared-fn    - a map to compute global shared properties from the root props.
-                   the result is merged with :shared.
-   :normalize    - whether the state should be normalized. If true it is assumed
-                   all novelty introduced into the system will also need
-                   normalization.
-   :parser       - the parser to be used
-   :send         - required only if the parser will return a non-empty value when
-                   run against the supplied :remotes. send is a function of two
-                   arguments, the map of remote expressions keyed by remote target
-                   and a callback which should be invoked with the result from each
-                   remote target. Note this means the callback can be invoked
-                   multiple times to support parallel fetching and incremental
-                   loading if desired.
-   :remotes      - a vector of keywords representing remote services which can
-                   evaluate query expressions. Defaults to [:remote]
-   :root-render  - the root render function. Defaults to ReactDOM.render
-   :root-unmount - the root unmount function. Defaults to
-                   ReactDOM.unmountComponentAtNode
-   :logger       - supply a goog.log compatible logger"
+   Required parameters:
+     :state        - the application state. If IAtom value is not supplied the
+                     data will be normalized into the default database format
+                     using the root query. This can be disabled by explicitly
+                     setting the optional :normalize parameter to false.
+     :parser       - the parser to be used
+
+   Optional parameters:
+     :shared       - a map of global shared properties for the component tree.
+     :shared-fn    - a function to compute global shared properties from the root props.
+                     the result is merged with :shared.
+     :send         - required only if the parser will return a non-empty value when
+                     run against the supplied :remotes. send is a function of two
+                     arguments, the map of remote expressions keyed by remote target
+                     and a callback which should be invoked with the result from each
+                     remote target. Note this means the callback can be invoked
+                     multiple times to support parallel fetching and incremental
+                     loading if desired.
+     :normalize    - whether the state should be normalized. If true it is assumed
+                     all novelty introduced into the system will also need
+                     normalization.
+     :remotes      - a vector of keywords representing remote services which can
+                     evaluate query expressions. Defaults to [:remote]
+     :root-render  - the root render function. Defaults to ReactDOM.render
+     :root-unmount - the root unmount function. Defaults to
+                     ReactDOM.unmountComponentAtNode
+     :logger       - supply a goog.log compatible logger"
   [{:keys [state shared shared-fn
            parser indexer
            ui->props normalize
