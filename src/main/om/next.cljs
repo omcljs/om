@@ -665,6 +665,11 @@
   [reconciler target]
   (p/remove-root! reconciler target))
 
+(defn mock-root
+  [reconciler root-class]
+  {:pre [(reconciler? reconciler) (fn? root-class)]}
+  (p/add-root! reconciler root-class nil nil))
+
 ;; =============================================================================
 ;; Transactions
 
@@ -1063,7 +1068,8 @@
 
   (add-root! [this root-class target options]
     (let [ret   (atom nil)
-          rctor (factory root-class)]
+          rctor (factory root-class)
+          guid  (random-uuid)]
       (when (satisfies? IQuery root-class)
         (p/index-root (:indexer config) root-class))
       (when (and (:normalize config)
@@ -1076,7 +1082,10 @@
       (let [renderf (fn [data]
                       (binding [*reconciler* this
                                 *shared*     (:shared config)]
-                        (let [c ((:root-render config) (rctor data) target)]
+                        (let [c (cond
+                                  (not (nil? target)) ((:root-render config) (rctor data) target)
+                                  (nil? @ret) (rctor data)
+                                  :else (doto @ret (.forceUpdate data)))]
                           (when (nil? @ret)
                             (swap! state assoc :root c)
                             (reset! ret c)))))
@@ -1098,18 +1107,19 @@
         (swap! state merge
           {:target target :render parsef :root root-class
            :remove (fn []
-                     (remove-watch (:state config) target)
+                     (remove-watch (:state config) (or target guid))
                      (swap! state
                        #(-> %
                          (dissoc :target) (dissoc :render) (dissoc :root)
                          (dissoc :remove)))
-                     ((:root-unmount config) target))})
-        (add-watch (:state config) target
+                     (when-not (nil? target)
+                       ((:root-unmount config) target)))})
+        (add-watch (:state config) (or target guid)
           (fn [_ _ _ _]
             (swap! state update-in [:t] inc)
             (schedule-render! this)))
         (parsef)
-        ret)))
+        @ret)))
 
   (remove-root! [_ target]
     (when-let [remove (:remove @state)]
