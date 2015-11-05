@@ -125,6 +125,7 @@
   (componentDidUpdate [this prev-props prev-state]
     #_(println "component did update" (om/props this) prev-props))
   (render [this]
+    (println "Shared Counter" (om/shared this))
     (let [{:keys [:counter/count] :as props} (om/props this)]
       (dom/div nil
         (dom/p nil
@@ -170,6 +171,7 @@
     '[:app/title {:counters/list ?counter}])
   Object
   (render [this]
+    (println "Shared CountersApp" (om/shared this))
     (let [{:keys [:app/title :counters/list] :as props}
           (om/props this)]
       (apply dom/div nil
@@ -198,8 +200,9 @@
 
 (def counters-reconciler
   (om/reconciler
-    {:state  counters-app-state
-     :parser (om/parser {:read counters-read :mutate counters-mutate})}))
+    {:state     counters-app-state
+     :parser    (om/parser {:read counters-read :mutate counters-mutate})
+     :shared-fn (fn [_] {:foo :bar})}))
 
 (defcard test-counters
   "Test that we can mock a reconciler backed Om Next component into devcards"
@@ -207,3 +210,4 @@
 
 (defcard test-counters-atom
   (om/app-state counters-reconciler))
+

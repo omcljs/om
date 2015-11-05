@@ -258,8 +258,8 @@
                    (p/basis-t *reconciler*)
                    0)]
          (js/React.createElement class
-          #js {:key key
-               :ref ref
+          #js {:key               key
+               :ref               ref
                :omcljs$value      (om-props props t)
                :omcljs$path       (-> props meta :om-path)
                :omcljs$reconciler *reconciler*
@@ -389,9 +389,18 @@
   [c]
   (get-prop c "omcljs$path"))
 
-(defn shared [component]
-  {:pre [(component? component)]}
-  (get-prop component "omcljs$shared"))
+(defn shared
+  "Return the global shared properties of the Om Next root. See :shared and
+   :shared-fn reconciler options."
+  ([component]
+   (shared component []))
+  ([component k-or-ks]
+   {:pre [(component? component)]}
+   (let [shared (gobj/get (. component -props) "omcljs$shared")
+         ks     (cond-> k-or-ks
+                  (not (sequential? k-or-ks)) vector)]
+     (cond-> shared
+       (not (empty? ks)) (get-in shared ks)))))
 
 (defn instrument [component]
   {:pre [(component? component)]}
@@ -1083,7 +1092,10 @@
           (p/queue! this [::skip])))
       (let [renderf (fn [data]
                       (binding [*reconciler* this
-                                *shared*     (:shared config)]
+                                *shared*     (merge
+                                               (:shared config)
+                                               (when (contains? config :shared-fn)
+                                                 ((:shared-fn config) data)))]
                         (let [c (cond
                                   (not (nil? target)) ((:root-render config) (rctor data) target)
                                   (nil? @ret) (rctor data)
@@ -1220,6 +1232,9 @@
    are required:
 
    :state        - the application state, must be IAtom.
+   :shared       - a map global shared properties of the component tree.
+   :shared-fn    - a map to compute global shared properties from the root props.
+                   the result is merged with :shared.
    :normalize    - whether the state should be normalized. If true it is assumed
                    all novelty introduced into the system will also need
                    normalization.
@@ -1237,7 +1252,8 @@
    :root-unmount - the root unmount function. Defaults to
                    ReactDOM.unmountComponentAtNode
    :logger       - supply a goog.log compatible logger"
-  [{:keys [state shared parser indexer
+  [{:keys [state shared shared-fn
+           parser indexer
            ui->props normalize
            send merge-sends remotes
            merge-tree merge-ref
@@ -1263,7 +1279,8 @@
                  (:logger config)
                  *logger*)
         ret    (Reconciler.
-                 {:state state' :shared shared :parser parser :indexer idxr
+                 {:state state' :shared shared :shared-fn shared-fn
+                  :parser parser :indexer idxr
                   :ui->props ui->props
                   :send send :merge-sends merge-sends :remotes remotes
                   :merge-tree merge-tree :merge-ref merge-ref
@@ -1295,3 +1312,4 @@
    may be configured by the :history option when constructing the reconciler."
   [reconciler uuid]
   (.get (-> reconciler :config :history) uuid))
+
