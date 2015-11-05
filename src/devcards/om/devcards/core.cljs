@@ -203,3 +203,6 @@
 (defcard test-counters
   "Test that we can mock a reconciler backed Om Next component into devcards"
   (om/mock-root counters-reconciler CountersApp))
+
+(defcard test-counters-atom
+  (om/app-state counters-reconciler))
