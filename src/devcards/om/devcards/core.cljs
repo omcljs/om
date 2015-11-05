@@ -1,6 +1,7 @@
 (ns om.devcards.core
   (:require-macros [devcards.core :refer [defcard deftest]])
   (:require [cljs.test :refer-macros [is async]]
+            [om.devcards.tutorials]
             [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]))
 
