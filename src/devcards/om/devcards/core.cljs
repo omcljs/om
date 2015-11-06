@@ -211,3 +211,21 @@
 (defcard test-counters-atom
   (om/app-state counters-reconciler))
 
+;; -----------------------------------------------------------------------------
+;; Children
+
+(defui Children
+  Object
+  (render [this]
+    (dom/div nil
+      (map identity
+        #js [(dom/div nil "Foo")
+             (dom/div nil "Bar")
+             (map identity
+               #js [(dom/div nil "Bar")
+                    (dom/div nil "Woz")])]))))
+
+(def children (om/factory Children))
+
+(defcard test-lazy-children
+  (children))

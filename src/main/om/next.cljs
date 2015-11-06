@@ -238,6 +238,9 @@
       (str (. cl -name) "_" idx)
       js/undefined)))
 
+(defn force-children [xs]
+  (into [] (map #(cond-> % (seq? %) force-children)) xs))
+
 (defn factory
   "Create a factory constructor from a component class created with
    om.next/defui."
@@ -267,7 +270,7 @@
                :omcljs$shared     *shared*
                :omcljs$instrument *instrument*
                :omcljs$depth      *depth*}
-          children))))))
+           (force-children children)))))))
 
 (defn ^boolean component?
   "Returns true if the argument is an Om component."
