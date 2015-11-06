@@ -1,4 +1,4 @@
-(defproject org.omcljs/om "1.0.0-alpha16-SNAPSHOT"
+(defproject org.omcljs/om "1.0.0-alpha17-SNAPSHOT"
   :description "ClojureScript interface to Facebook's React"
   :url "http://github.com/swannodette/om"
   :license {:name "Eclipse"
@@ -16,7 +16,8 @@
                  [cljsjs/react "0.14.0-0"]
                  [cljsjs/react-dom "0.14.0-0"]
                  [figwheel-sidecar "0.5.0-SNAPSHOT" :scope "test"]
-                 [devcards "0.2.0-8" :scope "provided"]]
+                 [devcards "0.2.0-8" :scope "provided"]
+                 ]
 
   :plugins [[lein-cljsbuild "1.1.0"]]
 
