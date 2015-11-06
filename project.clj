@@ -1,4 +1,4 @@
-(defproject org.omcljs/om "1.0.0-alpha17"
+(defproject org.omcljs/om "1.0.0-alpha18-SNAPSHOT"
   :description "ClojureScript interface to Facebook's React"
   :url "http://github.com/swannodette/om"
   :license {:name "Eclipse"
