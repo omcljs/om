@@ -8,6 +8,7 @@
             [om.next.protocols :as p]
             [om.next.impl.parser :as parser]
             [om.next.cache :as c]
+            [om.util :as util]
             [clojure.zip :as zip])
   (:import [goog.debug Console]))
 
@@ -238,9 +239,6 @@
       (str (. cl -name) "_" idx)
       js/undefined)))
 
-(defn force-children [xs]
-  (into [] (map #(cond-> % (seq? %) force-children)) xs))
-
 (defn factory
   "Create a factory constructor from a component class created with
    om.next/defui."
@@ -270,7 +268,7 @@
                :omcljs$shared     *shared*
                :omcljs$instrument *instrument*
                :omcljs$depth      *depth*}
-           (force-children children)))))))
+           (util/force-children children)))))))
 
 (defn ^boolean component?
   "Returns true if the argument is an Om component."

@@ -3,6 +3,7 @@
   (:require-macros [om.dom :as dom])
   (:require [cljsjs.react]
             [cljsjs.react.dom]
+            [om.util :as util]
             [goog.object :as gobj]))
 
 (dom/gen-react-dom-fns)
