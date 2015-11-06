@@ -1,4 +1,4 @@
-(defproject org.omcljs/om "1.0.0-alpha17-SNAPSHOT"
+(defproject org.omcljs/om "1.0.0-alpha17"
   :description "ClojureScript interface to Facebook's React"
   :url "http://github.com/swannodette/om"
   :license {:name "Eclipse"
@@ -21,7 +21,8 @@
 
   :plugins [[lein-cljsbuild "1.1.0"]]
 
-  :jar-exclusions [#".DS_Store" #"dev" #"devcards" #"test" #"index.html"]
+  :jar-exclusions [#".DS_Store" #"dev" #"devcards" #"test" #"index.html"
+                   #"main" #"public"]
 
   :clean-targets ^{:protect false} ["resources/out"]
 
