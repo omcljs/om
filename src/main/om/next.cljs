@@ -1100,8 +1100,10 @@
                         (let [c (cond
                                   (not (nil? target)) ((:root-render config) (rctor data) target)
                                   (nil? @ret) (rctor data)
-                                  :else (doto @ret (.forceUpdate data)))]
-                          (when (nil? @ret)
+                                  :else (when-let [c' @ret]
+                                          (when (mounted? c')
+                                            (.forceUpdate c' data))))]
+                          (when (and (nil? @ret) (not (nil? c)))
                             (swap! state assoc :root c)
                             (reset! ret c)))))
             parsef  (fn []
