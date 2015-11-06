@@ -1095,7 +1095,7 @@
                       (binding [*reconciler* this
                                 *shared*     (merge
                                                (:shared config)
-                                               (when (contains? config :shared-fn)
+                                               (when (:shared-fn config)
                                                  ((:shared-fn config) data)))]
                         (let [c (cond
                                   (not (nil? target)) ((:root-render config) (rctor data) target)
