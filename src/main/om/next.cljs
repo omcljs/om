@@ -1037,9 +1037,6 @@
 ;; =============================================================================
 ;; Reconciler
 
-(defn- queue-calls! [reconciler res]
-  (p/queue! reconciler (into [] (remove symbol?) (keys res))))
-
 (defn- merge-refs [tree config refs]
   (let [{:keys [merge-ref indexer]} config]
     (letfn [(step [tree' [ref props]]
@@ -1052,24 +1049,31 @@
       (reduce step tree refs))))
 
 (defn- merge-novelty!
-  [reconciler res]
+  [reconciler state res]
   (let [config      (:config reconciler)
         root        (:root @(:state reconciler))
         [refs res'] (sift-refs res)
         res'        (if (:normalize config)
                       (tree->db root res' true)
                       res')]
-    (swap! (:state config)
-      #(-> %
-        (merge-refs config refs)
-        ((:merge-tree config) res')))))
+    (-> state
+      (merge-refs config refs)
+      ((:merge-tree config) res'))))
+
+(defn default-merge [reconciler state res]
+  {:keys (into [] (remove symbol?) (keys res))
+   :next (merge-novelty! reconciler state res)})
 
 (defn merge!
   "Merge a state delta into the application state. Affected components managed
    by the reconciler will re-render."
   [reconciler delta]
-  (queue-calls! reconciler delta)
-  (merge-novelty! reconciler delta))
+  (let [config (:config reconciler)
+        state  (:state config)
+        merge  (:merge config)
+        {:keys [keys next]} (merge reconciler @state delta)]
+    (p/queue! reconciler keys)
+    (reset! state next)))
 
 (defrecord Reconciler [config state]
   IDeref
@@ -1118,7 +1122,7 @@
                               (when-let [send (:send config)]
                                 (send snds
                                   #(do
-                                    (merge-novelty! this %)
+                                    (merge! this %)
                                     (renderf ((:parser config) env sel)))))))
                           (renderf @(:state config)))))]
         (swap! state merge
@@ -1201,10 +1205,7 @@
             (-> state
               (assoc :queued-sends {})
               (assoc :sends-queued false))))
-        ((:send config) sends
-          #(do
-             (queue-calls! this %)
-             (merge-novelty! this %)))))))
+        ((:send config) sends #(merge! this %))))))
 
 (defn- default-ui->props
   [{:keys [parser] :as env} c]
@@ -1264,7 +1265,7 @@
            parser indexer
            ui->props normalize
            send merge-sends remotes
-           merge-tree merge-ref
+           merge merge-tree merge-ref
            optimize
            history
            root-render root-unmount]
@@ -1272,6 +1273,7 @@
          indexer      om.next/indexer
          merge-sends  #(merge-with into %1 %2)
          remotes      [:remote]
+         merge        default-merge
          merge-tree   default-merge-tree
          merge-ref    default-merge-ref
          optimize     (fn [cs] (sort-by depth cs))
@@ -1291,7 +1293,7 @@
                   :parser parser :indexer idxr
                   :ui->props ui->props
                   :send send :merge-sends merge-sends :remotes remotes
-                  :merge-tree merge-tree :merge-ref merge-ref
+                  :merge merge :merge-tree merge-tree :merge-ref merge-ref
                   :optimize optimize
                   :normalize (or (not norm?) normalize)
                   :history (c/cache history)
