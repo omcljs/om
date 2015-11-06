@@ -11,11 +11,11 @@
   :source-paths  ["src/main" "src/devcards"]
 
   :dependencies [[org.clojure/clojure "1.7.0" :scope "provided"]
-                 [org.clojure/clojurescript "1.7.145" :scope "provided"]
+                 [org.clojure/clojurescript "1.7.170" :scope "provided"]
                  [org.clojure/core.async "0.2.371" :scope "provided"]
                  [cljsjs/react "0.14.0-0"]
                  [cljsjs/react-dom "0.14.0-0"]
-                 [figwheel-sidecar "0.4.0" :scope "provided"]
+                 [figwheel-sidecar "0.5.0-SNAPSHOT" :scope "provided"]
                  [devcards "0.2.0-8" :scope "provided"]]
 
   :plugins [[lein-cljsbuild "1.1.0"]]
