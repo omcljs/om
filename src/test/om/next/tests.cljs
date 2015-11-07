@@ -541,14 +541,21 @@
 ;; Recursive Components
 
 (def tree-data
-  {:tree {:node-value 1
-          :children [{:node-value 2
-                      :children [{:node-value 3
+  {:tree {:id 0
+          :node-value 1
+          :children [{:id 1
+                      :node-value 2
+                      :children [{:id 2
+                                  :node-value 3
                                   :children []}]}
-                     {:node-value 4
+                     {:id 3
+                      :node-value 4
                       :children []}]}})
 
 (defui Node
+  static om/Ident
+  (ident [this {:keys [id]}]
+    [:node/by-id id])
   static om/IQuery
   (query [this]
     '[:node-value {:children ...}]))
@@ -577,3 +584,7 @@
 (deftest test-recursion-syntax
   (let [tree-parser (om/parser {:read tree-read})]
     (is (= tree-data (tree-parser {:state (atom tree-data)} (om/get-query Tree))))))
+
+(comment
+  (om/tree->db Tree tree-data)
+  )
