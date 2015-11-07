@@ -80,9 +80,12 @@
            (cond-> (assoc env :parser self :target target)
              (not (contains? env :path)) (assoc :path []))]
        (letfn [(step [ret expr]
-                 (let [{:keys [key dkey params sel] :as ast} (expr->ast expr)
-                       env   (cond-> (assoc env :ast ast)
-                               (not (nil? sel)) (assoc :selector sel))
+                 (let [{sel' :sel :keys [key dkey params] :as ast} (expr->ast expr)
+                       env   (as-> (assoc env :ast ast) env
+                               (if (= '... sel')
+                                 (assoc env :selector sel)
+                                 (cond-> env
+                                   (not (nil? sel')) (assoc :selector sel'))))
                        type  (:type ast)
                        call? (= :call type)
                        res   (when (nil? (:target ast))
