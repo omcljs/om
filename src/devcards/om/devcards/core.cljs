@@ -334,6 +334,14 @@
      (swap! state update-in [:node/by-id id :node-value]
        (fn [n] (max 0 (dec n)))))})
 
+(defn increment! [c id]
+  (fn [e]
+    (om/transact! c `[(tree/increment {:id ~id})])))
+
+(defn decrement! [c id]
+  (fn [e]
+    (om/transact! c `[(tree/decrement {:id ~id})])))
+
 (defui NormNode
   static om/Ident
   (ident [this {:keys [id]}]
@@ -347,16 +355,8 @@
       (dom/li nil
         (dom/div nil
           (dom/label nil (str "Node value:" node-value))
-          (dom/button
-            #js {:onClick
-                 (fn [e]
-                   (om/transact! this `[(tree/increment {:id ~id})]))}
-            "+")
-          (dom/button
-            #js {:onClick
-                 (fn [e]
-                   (om/transact! this `[(tree/decrement {:id ~id})]))}
-            "-"))
+          (dom/button #js {:onClick (increment! this id)} "+")
+          (dom/button #js {:onClick (decrement! this id)} "-"))
         (dom/ul nil
           (map norm-node children))))))
 
