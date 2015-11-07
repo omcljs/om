@@ -341,24 +341,18 @@
 
 (defmulti norm-tree-read om/dispatch)
 
-(defmethod norm-tree-read :default
-  [{:keys [data] :as env} k _]
-  {:value (get data k)})
-
-(defmethod norm-tree-read :children
-  [{:keys [data parser selector] :as env} _ _]
-  {:value (let [f #(parser (assoc env :data %) selector)]
-            (into [] (map f (:children data))))})
-
 (defmethod norm-tree-read :tree
-  [{:keys [state parser selector] :as env} k _]
+  [{:keys [state selector] :as env} _ _]
   (let [st @state]
-    {:value (parser (assoc env :data (:tree st)) selector)}))
+    {:value (om/db->tree selector (:tree st) st)}))
+
+(def norm-tree-parser
+  (om/parser {:read norm-tree-read}))
 
 (def norm-tree-reconciler
   (om/reconciler
     {:state  norm-tree-data
-     :parser (om/parser {:read norm-tree-read})}))
+     :parser norm-tree-parser}))
 
 (defcard test-simple-recursive-syntax-with-mutation
   "Test that simple recursive syntax works with mutations and component
