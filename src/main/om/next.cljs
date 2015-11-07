@@ -948,6 +948,9 @@
         (let [node (first q)]
           (if (join? node)
             (let [[k sel] (join-value node)
+                  sel     (if (= '... sel)
+                            selector
+                            sel)
                   class   (to-class (-> sel meta :component))
                   v       (get data k)]
               (cond
@@ -963,10 +966,11 @@
                 (let [xs (into [] (map #(normalize* sel % refs)) v)
                       is (into [] (map #(ident class %)) xs)]
                   (if (vector? sel)
-                    (swap! refs update-in [(ffirst is)]
-                      (fn [ys]
-                        (merge-with merge ys
-                          (zipmap (map second is) xs))))
+                    (when-not (empty? is)
+                      (swap! refs update-in [(ffirst is)]
+                        (fn [ys]
+                          (merge-with merge ys
+                            (zipmap (map second is) xs)))))
                     (swap! refs
                       (fn [refs']
                         (reduce
@@ -1029,6 +1033,9 @@
         (if-not (nil? joins)
           (let [join      (first joins)
                 [key sel] (join-value join)
+                sel       (if (= '... sel)
+                            selector
+                            sel)
                 v         (get data key)]
             (if-not (ref? v)
               (recur (next joins)

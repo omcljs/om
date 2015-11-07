@@ -587,6 +587,11 @@
            (tree-parser {:state (atom tree-data)}
              (om/get-query Tree))))))
 
-(comment
-  (om/tree->db Tree tree-data)
-  )
+(deftest test-normalize-recursive
+  (let [db (om/tree->db Tree tree-data true)]
+    (is (= [:node/by-id 0] (:tree db)))
+    (is (contains? db :node/by-id))
+    (is (= tree-data
+          (om/db->tree (om/get-query Tree)
+            (om/tree->db Tree tree-data)
+            (om/tree->db Tree tree-data true))))))
