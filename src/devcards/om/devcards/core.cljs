@@ -312,6 +312,28 @@
 
 (declare norm-node)
 
+(defmulti norm-tree-read om/dispatch)
+
+(defmethod norm-tree-read :tree
+  [{:keys [state selector] :as env} _ _]
+  (let [st @state]
+    {:value (om/db->tree selector (:tree st) st)}))
+
+(defmulti norm-tree-mutate om/dispatch)
+
+(defmethod norm-tree-mutate 'tree/increment
+  [{:keys [state]} _ {:keys [id]}]
+  {:action
+   (fn []
+     (swap! state update-in [:node/by-id id :node-value] inc))})
+
+(defmethod norm-tree-mutate 'tree/decrement
+  [{:keys [state]} _ {:keys [id]}]
+  {:action
+   (fn []
+     (swap! state update-in [:node/by-id id :node-value]
+       (fn [n] (max 0 (dec n)))))})
+
 (defui NormNode
   static om/Ident
   (ident [this {:keys [id]}]
@@ -321,9 +343,20 @@
     '[:id :node-value {:children ...}])
   Object
   (render [this]
-    (let [{:keys [node-value children]} (om/props this)]
+    (let [{:keys [id node-value children]} (om/props this)]
       (dom/li nil
-        (dom/div nil (str "Node value:" node-value))
+        (dom/div nil
+          (dom/label nil (str "Node value:" node-value))
+          (dom/button
+            #js {:onClick
+                 (fn [e]
+                   (om/transact! this `[(tree/increment {:id ~id})]))}
+            "+")
+          (dom/button
+            #js {:onClick
+                 (fn [e]
+                   (om/transact! this `[(tree/decrement {:id ~id})]))}
+            "-"))
         (dom/ul nil
           (map norm-node children))))))
 
@@ -339,15 +372,9 @@
       (dom/ul nil
         (norm-node tree)))))
 
-(defmulti norm-tree-read om/dispatch)
-
-(defmethod norm-tree-read :tree
-  [{:keys [state selector] :as env} _ _]
-  (let [st @state]
-    {:value (om/db->tree selector (:tree st) st)}))
-
 (def norm-tree-parser
-  (om/parser {:read norm-tree-read}))
+  (om/parser {:read   norm-tree-read
+              :mutate norm-tree-mutate}))
 
 (def norm-tree-reconciler
   (om/reconciler
