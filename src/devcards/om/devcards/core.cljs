@@ -235,7 +235,7 @@
 ;; -----------------------------------------------------------------------------
 ;; Simple Recursive Query Syntax
 
-(def tree-data
+(def simple-tree-data
   {:tree {:node-value 1
           :children [{:node-value 2
                       :children [{:node-value 3
@@ -243,9 +243,9 @@
                      {:node-value 4
                       :children []}]}})
 
-(declare node)
+(declare simple-node)
 
-(defui Node
+(defui SimpleNode
   static om/IQuery
   (query [this]
     '[:node-value {:children ...}])
@@ -255,45 +255,45 @@
       (dom/li nil
         (dom/div nil (str "Node value:" node-value))
         (dom/ul nil
-          (map node children))))))
+          (map simple-node children))))))
 
-(def node (om/factory Node))
+(def simple-node (om/factory SimpleNode))
 
-(defui Tree
+(defui SimpleTree
   static om/IQuery
   (query [this]
-    [{:tree (om/get-query Node)}])
+    [{:tree (om/get-query SimpleNode)}])
   Object
   (render [this]
     (let [{:keys [tree]} (om/props this)]
       (dom/ul nil
-        (node tree)))))
+        (simple-node tree)))))
 
-(defmulti tree-read om/dispatch)
+(defmulti simple-tree-read om/dispatch)
 
-(defmethod tree-read :node-value
+(defmethod simple-tree-read :node-value
   [{:keys [data] :as env} _ _]
   {:value (:node-value data)})
 
-(defmethod tree-read :children
+(defmethod simple-tree-read :children
   [{:keys [data parser selector] :as env} _ _]
   {:value (let [f #(parser (assoc env :data %) selector)]
             (into [] (map f (:children data))))})
 
-(defmethod tree-read :tree
+(defmethod simple-tree-read :tree
   [{:keys [state parser selector] :as env} k _]
   (let [st @state]
     {:value (parser (assoc env :data (:tree st)) selector)}))
 
-(def tree-reconciler
+(def simple-tree-reconciler
   (om/reconciler
-    {:state     (atom tree-data)
+    {:state     (atom simple-tree-data)
      :normalize false
-     :parser    (om/parser {:read tree-read})}))
+     :parser    (om/parser {:read simple-tree-read})}))
 
-(defcard test-recursive-syntax
+(defcard test-simple-recursive-syntax
   "Test that `'[:node-value {:children ...}]` syntax works."
-  (om/mock-root tree-reconciler Tree))
+  (om/mock-root simple-tree-reconciler SimpleTree))
 
 ;; -----------------------------------------------------------------------------
 ;; Layered Recursive Query Syntax
