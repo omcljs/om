@@ -19,7 +19,7 @@
                  [devcards "0.2.0-8" :scope "provided"]
                  ]
 
-  :plugins [[lein-cljsbuild "1.1.0"]]
+  :plugins [[lein-cljsbuild "1.1.1"]]
 
   :jar-exclusions [#".DS_Store" #"dev" #"devcards" #"test" #"index.html"
                    #"main" #"public"]
