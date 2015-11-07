@@ -595,3 +595,9 @@
            (om/db->tree (om/get-query Tree)
              (om/tree->db Tree tree-data)
              (om/tree->db Tree tree-data true))))))
+
+(deftest test-normalize-ref
+  (let [db   (om/tree->db Tree tree-data true)
+        tree (om/db->tree (-> (om/get-query Tree) ffirst second)
+               (:tree db) db)]
+    (is (= tree (:tree tree-data)))))

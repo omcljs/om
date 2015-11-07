@@ -1026,23 +1026,24 @@
    application state in the default database format, return the tree where all
    ident links have been replaced with their original node values."
   [selector data refs]
-  (if (vector? data)
-    (into [] (map #(db->tree selector (get-in refs %) refs)) data)
-    (let [{props false joins true} (group-by join? selector)]
-      (loop [joins (seq joins) ret {}]
-        (if-not (nil? joins)
-          (let [join      (first joins)
-                [key sel] (join-value join)
-                sel       (if (= '... sel)
-                            selector
-                            sel)
-                v         (get data key)]
-            (if-not (ref? v)
-              (recur (next joins)
-                (assoc ret key (db->tree sel v refs)))
-              (recur (next joins)
-                (assoc ret key (db->tree sel (get-in refs v) refs)))))
-          (merge (select-keys data props) ret))))))
+  (let [data (cond->> data (ref? data) (get-in refs))]
+    (if (vector? data)
+      (into [] (map #(db->tree selector (get-in refs %) refs)) data)
+      (let [{props false joins true} (group-by join? selector)]
+        (loop [joins (seq joins) ret {}]
+          (if-not (nil? joins)
+            (let [join      (first joins)
+                  [key sel] (join-value join)
+                  sel       (if (= '... sel)
+                              selector
+                              sel)
+                  v (get data key)]
+              (if-not (ref? v)
+                (recur (next joins)
+                  (assoc ret key (db->tree sel v refs)))
+                (recur (next joins)
+                  (assoc ret key (db->tree sel (get-in refs v) refs)))))
+            (merge (select-keys data props) ret)))))))
 
 ;; =============================================================================
 ;; Reconciler
