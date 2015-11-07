@@ -794,7 +794,8 @@
                   (swap! class-path->query update-in [classpath]
                     (fnil conj #{})
                     (query-template (focus-query rootq path) path)))
-                (if (vector? selector)
+                (cond
+                  (vector? selector)
                   (let [{props false joins true} (group-by join? selector)]
                     (when class
                       (swap! prop->classes
@@ -808,7 +809,8 @@
                           (build-index* class' selector'
                             (conj path prop)
                             (cond-> classpath class' (conj class')))))))
-                  ;; Map case, union in query
+
+                  (map? selector)
                   (doseq [[k selector'] selector]
                     (let [class' (-> selector' meta :component)]
                       (build-index* class' selector' (conj path k)

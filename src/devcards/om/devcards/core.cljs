@@ -228,4 +228,72 @@
 (def children (om/factory Children))
 
 (defcard test-lazy-children
+  "Test that lazy sequences as elements works. This permits React.js style
+   splicing."
   (children))
+
+;; -----------------------------------------------------------------------------
+;; Simple Recursive Query Syntax
+
+(def tree-data
+  {:tree {:node-value 1
+          :children [{:node-value 2
+                      :children [{:node-value 3
+                                  :children []}]}
+                     {:node-value 4
+                      :children []}]}})
+
+(declare node)
+
+(defui Node
+  static om/IQuery
+  (query [this]
+    '[:node-value {:children ...}])
+  Object
+  (render [this]
+    (let [{:keys [node-value children]} (om/props this)]
+      (dom/li nil
+        (dom/div nil (str "Node value:" node-value))
+        (dom/ul nil
+          (map node children))))))
+
+(def node (om/factory Node))
+
+(defui Tree
+  static om/IQuery
+  (query [this]
+    [{:tree (om/get-query Node)}])
+  Object
+  (render [this]
+    (let [{:keys [tree]} (om/props this)]
+      (dom/ul nil
+        (node tree)))))
+
+(defmulti tree-read om/dispatch)
+
+(defmethod tree-read :node-value
+  [{:keys [data] :as env} _ _]
+  {:value (:node-value data)})
+
+(defmethod tree-read :children
+  [{:keys [data parser selector] :as env} _ _]
+  {:value (let [f #(parser (assoc env :data %) selector)]
+            (into [] (map f (:children data))))})
+
+(defmethod tree-read :tree
+  [{:keys [state parser selector] :as env} k _]
+  (let [st @state]
+    {:value (parser (assoc env :data (:tree st)) selector)}))
+
+(def tree-reconciler
+  (om/reconciler
+    {:state     (atom tree-data)
+     :normalize false
+     :parser    (om/parser {:read tree-read})}))
+
+(defcard test-recursive-syntax
+  "Test that `'[:node-value {:children ...}]` syntax works."
+  (om/mock-root tree-reconciler Tree))
+
+;; -----------------------------------------------------------------------------
+;; Layered Recursive Query Syntax
