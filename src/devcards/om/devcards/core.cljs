@@ -296,4 +296,74 @@
   (om/mock-root simple-tree-reconciler SimpleTree))
 
 ;; -----------------------------------------------------------------------------
+;; Recursive Query Syntax with Mutations
+
+(def norm-tree-data
+  {:tree {:id 0
+          :node-value 1
+          :children [{:id 1
+                      :node-value 2
+                      :children [{:id 2
+                                  :node-value 3
+                                  :children []}]}
+                     {:id 3
+                      :node-value 4
+                      :children []}]}})
+
+(declare norm-node)
+
+(defui NormNode
+  static om/Ident
+  (ident [this {:keys [id]}]
+    [:node/by-id id])
+  static om/IQuery
+  (query [this]
+    '[:id :node-value {:children ...}])
+  Object
+  (render [this]
+    (let [{:keys [node-value children]} (om/props this)]
+      (dom/li nil
+        (dom/div nil (str "Node value:" node-value))
+        (dom/ul nil
+          (map norm-node children))))))
+
+(def norm-node (om/factory NormNode))
+
+(defui NormTree
+  static om/IQuery
+  (query [this]
+    [{:tree (om/get-query NormNode)}])
+  Object
+  (render [this]
+    (let [{:keys [tree]} (om/props this)]
+      (dom/ul nil
+        (norm-node tree)))))
+
+(defmulti norm-tree-read om/dispatch)
+
+(defmethod norm-tree-read :default
+  [{:keys [data] :as env} k _]
+  {:value (get data k)})
+
+(defmethod norm-tree-read :children
+  [{:keys [data parser selector] :as env} _ _]
+  {:value (let [f #(parser (assoc env :data %) selector)]
+            (into [] (map f (:children data))))})
+
+(defmethod norm-tree-read :tree
+  [{:keys [state parser selector] :as env} k _]
+  (let [st @state]
+    {:value (parser (assoc env :data (:tree st)) selector)}))
+
+(def norm-tree-reconciler
+  (om/reconciler
+    {:state  norm-tree-data
+     :parser (om/parser {:read norm-tree-read})}))
+
+(defcard test-simple-recursive-syntax-with-mutation
+  "Test that simple recursive syntax works with mutations and component
+   local state."
+  (om/mock-root norm-tree-reconciler NormTree))
+
+;; -----------------------------------------------------------------------------
 ;; Layered Recursive Query Syntax
