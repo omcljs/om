@@ -583,7 +583,9 @@
 
 (deftest test-recursion-syntax
   (let [tree-parser (om/parser {:read tree-read})]
-    (is (= tree-data (tree-parser {:state (atom tree-data)} (om/get-query Tree))))))
+    (is (= tree-data
+           (tree-parser {:state (atom tree-data)}
+             (om/get-query Tree))))))
 
 (comment
   (om/tree->db Tree tree-data)
