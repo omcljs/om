@@ -558,7 +558,7 @@
     [:node/by-id id])
   static om/IQuery
   (query [this]
-    '[:node-value {:children ...}]))
+    '[:id :node-value {:children ...}]))
 
 (defui Tree
   static om/IQuery
@@ -567,9 +567,9 @@
 
 (defmulti tree-read om/dispatch)
 
-(defmethod tree-read :node-value
-  [{:keys [data] :as env} _ _]
-  {:value (:node-value data)})
+(defmethod tree-read :default
+  [{:keys [data] :as env} k _]
+  {:value (get data k)})
 
 (defmethod tree-read :children
   [{:keys [data parser selector] :as env} _ _]
