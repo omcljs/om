@@ -813,6 +813,7 @@
                             (build-index* class' selector'
                               (conj path prop) classpath)))))
 
+                    ;; Union query case
                     (map? selector)
                     (doseq [[prop selector'] selector]
                       (let [class' (-> selector' meta :component)]
