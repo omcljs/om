@@ -1040,7 +1040,7 @@
                   sel       (if (= '... sel)
                               selector
                               sel)
-                  v (get data key)]
+                  v         (get data key)]
               (if-not (ref? v)
                 (recur (next joins)
                   (assoc ret key (db->tree sel v refs)))
