@@ -920,7 +920,6 @@
          ;; handle case where child appears multiple times at same class-path
          ;; but with different queries
          (let [q (first (filter #(= path' (-> % zip/root (focus->path path'))) qs))]
-           (println path')
            (if-not (nil? q)
              (replace q (get-query component))
              (throw
