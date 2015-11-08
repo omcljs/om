@@ -1,6 +1,7 @@
 (ns om.devcards.core
   (:require-macros [devcards.core :refer [defcard deftest]])
   (:require [cljs.test :refer-macros [is async]]
+            [cljs.pprint :as pprint]
             [om.devcards.tutorials]
             [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]))
@@ -385,6 +386,10 @@
   "Test that simple recursive syntax works with mutations and component
    local state."
   (om/mock-root norm-tree-reconciler NormTree))
+
+(comment
+  (pprint/pprint @(-> norm-tree-reconciler :config :indexer))
+  )
 
 ;; -----------------------------------------------------------------------------
 ;; Layered Recursive Query Syntax

@@ -71,6 +71,11 @@
   (is (= (om/focus->path [:app/title {:counters/list [:db/id :counter/count]}])
          [])))
 
+(comment
+  (om/focus-query '[{:tree [:id :node-value {:children ...}]}]
+    [:tree :children])
+  )
+
 (deftest test-om-423
   (is (= (om/focus-query '[:foo ({:people [:name :age]} {:length 3}) :bar] [:people])
          '[({:people [:name :age]} {:length 3})])))

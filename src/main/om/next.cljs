@@ -112,6 +112,8 @@
           {k (focus-query (get query k) ks) ::union true}
           (into [] (comp (filter match) (map value) (take 1)) query))))))
 
+;; this function assumes focus is actually in fact
+;; already focused!
 (defn- focus->path
   ([focus]
    (focus->path focus '* []))
