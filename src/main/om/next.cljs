@@ -792,33 +792,38 @@
           rootq             (get-query x)
           class             (cond-> x (component? x) type)]
       (letfn [(build-index* [class selector path classpath]
-                (let [classpath (cond-> classpath
-                                  (not (nil? class)) (conj class))]
+                (let [recursive? (some #{class} classpath)
+                      classpath  (cond-> classpath
+                                   (not (nil? class)) (conj class))]
                   (when class
                     (swap! class-path->query update-in [classpath]
                       (fnil conj #{})
                       (query-template (focus-query rootq path) path)))
-                  (cond
-                    (vector? selector)
-                    (let [{props false joins true} (group-by join? selector)]
-                      (when class
-                        (swap! prop->classes
-                          #(merge-with into % (zipmap props (repeat #{class})))))
-                      (doseq [join joins]
-                        (let [[prop selector'] (join-value join)]
-                          (when class
-                            (swap! prop->classes
-                              #(merge-with into % {prop #{class}})))
-                          (let [class' (-> selector' meta :component)]
-                            (build-index* class' selector'
-                              (conj path prop) classpath)))))
+                  (when-not recursive?
+                    (cond
+                      (vector? selector)
+                      (let [{props false joins true} (group-by join? selector)]
+                        (when class
+                          (swap! prop->classes
+                            #(merge-with into % (zipmap props (repeat #{class})))))
+                        (doseq [join joins]
+                          (let [[prop selector'] (join-value join)
+                                selector'        (if (= '... selector')
+                                                   selector
+                                                   selector')]
+                            (when class
+                              (swap! prop->classes
+                                #(merge-with into % {prop #{class}})))
+                            (let [class' (-> selector' meta :component)]
+                              (build-index* class' selector'
+                                (conj path prop) classpath)))))
 
-                    ;; Union query case
-                    (map? selector)
-                    (doseq [[prop selector'] selector]
-                      (let [class' (-> selector' meta :component)]
-                        (build-index* class' selector'
-                          (conj path prop) classpath))))))]
+                      ;; Union query case
+                      (map? selector)
+                      (doseq [[prop selector'] selector]
+                        (let [class' (-> selector' meta :component)]
+                          (build-index* class' selector'
+                            (conj path prop) classpath)))))))]
         (build-index* class rootq [] [])
         (swap! indexes merge
           {:prop->classes     @prop->classes
