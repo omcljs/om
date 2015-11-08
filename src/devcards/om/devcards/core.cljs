@@ -76,14 +76,14 @@
 
 (defmethod counters-mutate 'counter/increment
   [{:keys [state ref]} _ _]
-  {:value []
+  {:value {:keys []}
    :action
    (fn []
      (swap! state update-in (conj ref :counter/count) inc))})
 
 (defmethod counters-mutate 'counters/delete
   [{:keys [state ref]} _ _]
-  {:value [:counters/list]
+  {:value {:keys [:counters/list]}
    :action
    (fn []
      (swap! state
@@ -94,7 +94,7 @@
 
 (defmethod counters-mutate 'counters/create
   [{:keys [state]} _ _]
-  {:value [:counters/list]
+  {:value {:keys [:counters/list]}
    :action
    (fn []
      (swap! state

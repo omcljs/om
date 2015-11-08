@@ -221,7 +221,7 @@
 
 (defmethod mutate 'do/it!
   [{:keys [state]} k {:keys [id]}]
-  {:value [id]
+  {:value {:keys [id]}
    :action #()
    :remote true})
 
@@ -243,7 +243,7 @@
 
 (deftest test-call
   (let [st (atom {:foo/bar 1})]
-    (is (= (p {:state st} '[(do/it! {:id 0})]) '{do/it! [0]}))
+    (is (= (p {:state st} '[(do/it! {:id 0})]) '{do/it! {:keys [0]}}))
     (is (= (p {} '[(do/it! {:id 0})] :remote)
            '[(do/it! {:id 0})]))))
 
@@ -256,7 +256,7 @@
 
 (defmethod mutate 'mutate!
   [{:keys [state]} k params]
-  {:value  []
+  {:value  {:keys []}
    :action #(swap! state update-in [:count] inc)} )
 
 (deftest test-remote-does-not-mutate
