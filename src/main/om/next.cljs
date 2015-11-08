@@ -814,10 +814,10 @@
                               (conj path prop) classpath)))))
 
                     (map? selector)
-                    (doseq [[k selector'] selector]
+                    (doseq [[prop selector'] selector]
                       (let [class' (-> selector' meta :component)]
                         (build-index* class' selector'
-                          (conj path k) classpath))))))]
+                          (conj path prop) classpath))))))]
         (build-index* class rootq [] [])
         (swap! indexes merge
           {:prop->classes     @prop->classes
