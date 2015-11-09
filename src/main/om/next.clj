@@ -192,6 +192,11 @@
 (defmacro defui [name & forms]
   (defui* name forms &env))
 
+(defmacro ui
+  [& forms]
+  (let [t (with-meta (gensym "ui_") {:anonymous true})]
+    `(do (defui ~t ~@forms) ~t)))
+
 (comment
   (collect-statics
     '(static IFoo
