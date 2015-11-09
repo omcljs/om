@@ -25,10 +25,9 @@
     (assoc ast :type :prop :sel v)))
 
 (defn ref->ast [[k id :as ref]]
-  {:type   :prop
-   :dkey   k
-   :key    ref
-   :params {:root/id id}})
+  {:type :prop
+   :dkey k
+   :key  ref})
 
 (defn expr->ast [x]
   (cond
@@ -41,22 +40,14 @@
                    (ex-info (str "Invalid expression " x)
                      {:type :error/invalid-expression}))))
 
-(defn ast->expr [{:keys [key sel] :as ast}]
-  (let [ref?    (vector? key)
-        ast'    (cond-> ast
-                  ref? (update-in [:params] dissoc :root/id))
-        params  (:params ast')
-        empty?  (zero? (count params))
-        ast''   (cond-> ast'
-                  (and ref? empty?) (dissoc :params))
-        params' (:params ast'')]
-    (if-not (nil? params')
-      (if (zero? (count params'))
-        (list (ast->expr (dissoc ast'' :params)))
-        (list (ast->expr (dissoc ast'' :params)) params'))
-      (if-not (nil? sel)
-        {key sel}
-        key))))
+(defn ast->expr [{:keys [key sel params] :as ast}]
+  (if-not (nil? params)
+    (if-not (empty? params)
+      (list (ast->expr (dissoc ast :params)) params)
+      (list (ast->expr (dissoc ast :params))))
+    (if-not (nil? sel)
+      {key sel}
+      key)))
 
 (defn path-meta [x path]
   (let [x' (cond->> x
@@ -77,7 +68,7 @@
     ([env sel target]
      (let [elide-paths? (boolean (:elide-paths config))
            {:keys [ident path] :as env}
-           (cond-> (assoc env :parser self :target target)
+           (cond-> (assoc env :parser self :target target :query/root :om.next/root)
              (not (contains? env :path)) (assoc :path []))]
        (letfn [(step [ret expr]
                  (let [{sel' :sel :keys [key dkey params] :as ast} (expr->ast expr)
