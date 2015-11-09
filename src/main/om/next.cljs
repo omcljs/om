@@ -794,7 +794,9 @@
       (letfn [(build-index* [class selector path classpath]
                 (let [recursive? (some #{class} classpath)
                       classpath  (cond-> classpath
-                                   (not (nil? class)) (conj class))]
+                                   (and (not (nil? class))
+                                        (not recursive?))
+                                   (conj class))]
                   (when class
                     (swap! class-path->query update-in [classpath]
                       (fnil conj #{})
