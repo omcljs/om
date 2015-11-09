@@ -28,7 +28,7 @@
   {:type   :prop
    :dkey   k
    :key    ref
-   :params {:om.next/refid id}})
+   :params {:root/id id}})
 
 (defn expr->ast [x]
   (cond
@@ -44,7 +44,7 @@
 (defn ast->expr [{:keys [key sel] :as ast}]
   (let [ref?    (vector? key)
         ast'    (cond-> ast
-                  ref? (update-in [:params] dissoc :om.next/refid))
+                  ref? (update-in [:params] dissoc :root/id))
         params  (:params ast')
         empty?  (zero? (count params))
         ast''   (cond-> ast'
