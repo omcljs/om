@@ -754,13 +754,13 @@
        (assert (satisfies? IQuery x)
          (str "transact! invoked by component " x
               " that does not implement IQuery"))
-       (loop [p (parent x) tx tx]
+       (loop [p (parent x) x x tx tx]
          (if (nil? p)
            (transact* (get-reconciler x) x nil tx)
-           (let [tx (if (satisfies? ITxIntercept p)
-                      (tx-intercept p tx)
-                      tx)]
-             (recur (parent p) tx)))))))
+           (let [[x' tx] (if (satisfies? ITxIntercept p)
+                          [p (tx-intercept p tx)]
+                          [x tx])]
+             (recur (parent p) x' tx)))))))
   ([r ref tx]
    (transact* r nil ref tx)))
 
