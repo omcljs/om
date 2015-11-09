@@ -612,3 +612,19 @@
         tree (om/db->tree (-> (om/get-query Tree) ffirst second)
                (:tree db) db)]
     (is (= tree (:tree tree-data)))))
+
+;; -----------------------------------------------------------------------------
+;; Path Optimization
+
+(defn read-ident
+  [{:keys [state]} ident query]
+  (om/db->tree query ident @state))
+
+(def tree-parser2
+  (om/parser {:read tree-read :read-ident read-ident}))
+
+(deftest test-read-ident
+  (let [state (atom (om/tree->db Tree tree-data true))
+        env   {:state state :ident [:node/by-id 1]}]
+    (is (= (tree-parser2 env (om/get-query Node))
+           {:id 1, :node-value 2, :children [{:id 2, :node-value 3, :children []}]}))))

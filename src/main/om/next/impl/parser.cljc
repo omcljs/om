@@ -71,12 +71,12 @@
   (and (instance? #?(:clj clojure.lang.ExceptionInfo :cljs ExceptionInfo) x)
        (= :om.next/abort (-> x ex-data :type))))
 
-(defn parser [{:keys [read mutate] :as config}]
+(defn parser [{:keys [read read-ident mutate] :as config}]
   (fn self
     ([env sel] (self env sel nil))
     ([env sel target]
      (let [elide-paths? (boolean (:elide-paths config))
-           {:keys [path] :as env}
+           {:keys [ident path] :as env}
            (cond-> (assoc env :parser self :target target)
              (not (contains? env :path)) (assoc :path []))]
        (letfn [(step [ret expr]
@@ -116,7 +116,12 @@
                            (cond-> ret
                              (not (nil? value)) (assoc key value)
                              @error (assoc key @error))))))))]
-         (cond-> (reduce step (if (nil? target) {} []) sel)
-           (not (or (not (nil? target)) elide-paths?)) (path-meta path)))))))
+         (let [ret (when-not (nil? ident) ;; FAST PATH, rendering reads ONLY
+                     (read-ident env ident sel))
+               ret (if (nil? ret)
+                     (reduce step (if (nil? target) {} []) sel)
+                     ret)]
+           (cond-> ret
+             (not (or (not (nil? target)) elide-paths?)) (path-meta path))))))))
 
 (defn dispatch [_ k _] k)
