@@ -1238,8 +1238,7 @@
 (defn- default-ui->props
   [{:keys [parser] :as env} c]
   (let [ui (when (satisfies? Ident c)
-             (parser (assoc env :ident (ident c (props c)))
-               (get-query c)))]
+             #_(parser env [{(ident c (props c)) (get-query c)}]))]
     (if-not (nil? ui)
       ui
       (let [path (path c)

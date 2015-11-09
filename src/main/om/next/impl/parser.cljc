@@ -62,12 +62,12 @@
   (and (instance? #?(:clj clojure.lang.ExceptionInfo :cljs ExceptionInfo) x)
        (= :om.next/abort (-> x ex-data :type))))
 
-(defn parser [{:keys [read read-ident mutate] :as config}]
+(defn parser [{:keys [read mutate] :as config}]
   (fn self
     ([env sel] (self env sel nil))
     ([env sel target]
      (let [elide-paths? (boolean (:elide-paths config))
-           {:keys [ident path] :as env}
+           {:keys [path] :as env}
            (cond-> (assoc env :parser self :target target :query/root :om.next/root)
              (not (contains? env :path)) (assoc :path []))]
        (letfn [(step [ret expr]
@@ -76,7 +76,10 @@
                                (if (= '... sel')
                                  (assoc env :selector sel)
                                  (cond-> env
-                                   (not (nil? sel')) (assoc :selector sel'))))
+                                   (not (nil? sel')) (assoc :selector sel')))
+                               (if (vector? key)
+                                 (assoc env :query/root key)
+                                 env))
                        type  (:type ast)
                        call? (= :call type)
                        res   (when (nil? (:target ast))
@@ -107,13 +110,7 @@
                            (cond-> ret
                              (not (nil? value)) (assoc key value)
                              @error (assoc key @error))))))))]
-         (let [ret (when (not (or (nil? ident) (nil? read-ident)))
-                     ;; FAST PATH, rendering reads ONLY
-                     (read-ident env ident sel))
-               ret (if (and (nil? ret) (nil? ident))
-                     (reduce step (if (nil? target) {} []) sel)
-                     ret)]
-           (cond-> ret
-             (not (or (not (nil? target)) elide-paths?)) (path-meta path))))))))
+         (cond-> (reduce step (if (nil? target) {} []) sel)
+           (not (or (not (nil? target)) elide-paths?)) (path-meta path)))))))
 
 (defn dispatch [_ k _] k)

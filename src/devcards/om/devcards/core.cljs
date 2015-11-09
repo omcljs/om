@@ -321,9 +321,9 @@
   (let [st @state]
     {:value (om/db->tree selector (:tree st) st)}))
 
-(defn norm-tree-read-ident
-  [{:keys [state]} ident selector]
-  (om/db->tree selector ident @state))
+(defmethod norm-tree-read :node/by-id
+  [{:keys [state selector query/root]} _ _]
+  (om/db->tree selector root @state))
 
 (defmulti norm-tree-mutate om/dispatch)
 
@@ -379,9 +379,8 @@
         (norm-node tree)))))
 
 (def norm-tree-parser
-  (om/parser {:read       norm-tree-read
-              :read-ident norm-tree-read-ident
-              :mutate     norm-tree-mutate}))
+  (om/parser {:read   norm-tree-read
+              :mutate norm-tree-mutate}))
 
 (def norm-tree-reconciler
   (om/reconciler
