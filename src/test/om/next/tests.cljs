@@ -86,6 +86,12 @@
                          [:selected/item :item/two])
          [{:selected/item {:item/two [:author] :om.next/union true}}])))
 
+(deftest test-om-466
+  (is (= (om/focus-query
+           '[:foo/bar ({:dashboard/posts [:id :favorites]} {:foo "bar"})]
+           [:dashboard/posts])
+         '[({:dashboard/posts [:id :favorites]} {:foo "bar"})])))
+
 ;; -----------------------------------------------------------------------------
 ;; Query Templating
 

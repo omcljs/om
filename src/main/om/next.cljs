@@ -94,6 +94,15 @@
     (seq? node) (join-key (first node))
     :else       node))
 
+(defn- join-value [node]
+  (if (seq? node)
+    (ffirst node)
+    (first node)))
+
+(defn- join? [x]
+  (let [x (if (seq? x) (first x) x)]
+    (map? x)))
+
 (defn- focused-join [node ks]
   (cond
     (map? node) {(ffirst node) (focus-query (-> node first second) ks)}
@@ -123,9 +132,9 @@
    (if (and (or (= bound '*)
                 (and (not= path bound)
                      (< (count path) (count bound))))
-            (some map? focus)
+            (some join? focus)
             (== 1 (count focus)))
-     (let [[k focus'] (ffirst focus)
+     (let [[k focus'] (join-value (first focus))
            focus'     (if (= '... focus')
                         focus
                         focus')]
@@ -619,11 +628,6 @@
               x))
           ret)))))
 
-(defn- join-value [node]
-  (if (seq? node)
-    (ffirst node)
-    (first node)))
-
 (defn subquery
   "Given a class or mounted component x and a ref to an instantiated component
    or class that defines a subquery, pick the most specific subquery. If the
@@ -781,10 +785,6 @@
 
 ;; =============================================================================
 ;; Indexer
-
-(defn- join? [x]
-  (let [x (if (seq? x) (first x) x)]
-    (map? x)))
 
 (defrecord Indexer [indexes]
   IDeref

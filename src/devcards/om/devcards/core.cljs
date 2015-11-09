@@ -3,6 +3,7 @@
   (:require [cljs.test :refer-macros [is async]]
             [cljs.pprint :as pprint]
             [om.devcards.tutorials]
+            [om.devcards.bugs]
             [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]))
 
