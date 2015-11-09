@@ -120,10 +120,15 @@
   ([focus bound]
    (focus->path focus bound []))
   ([focus bound path]
-   (if (and (or (= bound '*) (not= path bound))
+   (if (and (or (= bound '*)
+                (and (not= path bound)
+                     (< (count path) (count bound))))
             (some map? focus)
             (== 1 (count focus)))
-     (let [[k focus'] (ffirst focus)]
+     (let [[k focus'] (ffirst focus)
+           focus'     (if (= '... focus')
+                        focus
+                        focus')]
        (recur focus' bound (conj path k)))
      path)))
 
