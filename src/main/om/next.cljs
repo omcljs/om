@@ -94,7 +94,7 @@
     (seq? node) (join-key (first node))
     :else       node))
 
-(defn- join-value [node]
+(defn- join-entry [node]
   (if (seq? node)
     (ffirst node)
     (first node)))
@@ -134,7 +134,7 @@
                      (< (count path) (count bound))))
             (some join? focus)
             (== 1 (count focus)))
-     (let [[k focus'] (join-value (first focus))
+     (let [[k focus'] (join-entry (first focus))
            focus'     (if (= '... focus')
                         focus
                         focus')]
@@ -814,7 +814,7 @@
                           (swap! prop->classes
                             #(merge-with into % (zipmap props (repeat #{class})))))
                         (doseq [join joins]
-                          (let [[prop selector'] (join-value join)
+                          (let [[prop selector'] (join-entry join)
                                 selector'        (if (= '... selector')
                                                    selector
                                                    selector')]
@@ -963,7 +963,7 @@
       (if-not (nil? q)
         (let [node (first q)]
           (if (join? node)
-            (let [[k sel] (join-value node)
+            (let [[k sel] (join-entry node)
                   sel     (if (= '... sel)
                             selector
                             sel)
@@ -1050,7 +1050,7 @@
         (loop [joins (seq joins) ret {}]
           (if-not (nil? joins)
             (let [join      (first joins)
-                  [key sel] (join-value join)
+                  [key sel] (join-entry join)
                   sel       (if (= '... sel)
                               selector
                               sel)
