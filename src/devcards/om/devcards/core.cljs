@@ -384,8 +384,9 @@
 
 (def norm-tree-reconciler
   (om/reconciler
-    {:state  norm-tree-data
-     :parser norm-tree-parser}))
+    {:state   norm-tree-data
+     :parser  norm-tree-parser
+     :pathopt true}))
 
 (defcard test-simple-recursive-syntax-with-mutation
   "Test that simple recursive syntax works with mutations and component

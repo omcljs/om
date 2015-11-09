@@ -704,7 +704,7 @@
 
 (defn- to-env [x]
   (let [config (if (reconciler? x) (:config x) x)]
-    (select-keys config [:state :shared :parser :logger])))
+    (select-keys config [:state :shared :parser :logger :pathopt])))
 
 (defn gather-sends
   [{:keys [parser] :as env} tx remotes]
@@ -1236,9 +1236,10 @@
         ((:send config) sends #(merge! this %))))))
 
 (defn- default-ui->props
-  [{:keys [parser] :as env} c]
-  (let [ui (when (satisfies? Ident c)
-             #_(parser env [{(ident c (props c)) (get-query c)}]))]
+  [{:keys [parser ^boolean pathopt] :as env} c]
+  (let [ui (when (and pathopt (satisfies? Ident c))
+             (let [id (ident c (props c))]
+               (get (parser env [{id (get-query c)}]) id)))]
     (if-not (nil? ui)
       ui
       (let [path (path c)
@@ -1300,7 +1301,8 @@
            merge merge-tree merge-ref
            optimize
            history
-           root-render root-unmount]
+           root-render root-unmount
+           pathopt]
     :or {ui->props    default-ui->props
          indexer      om.next/indexer
          merge-sends  #(merge-with into %1 %2)
@@ -1311,7 +1313,8 @@
          optimize     (fn [cs] (sort-by depth cs))
          history      100
          root-render  #(js/ReactDOM.render %1 %2)
-         root-unmount #(js/ReactDOM.unmountComponentAtNode %)}
+         root-unmount #(js/ReactDOM.unmountComponentAtNode %)
+         pathopt   false}
     :as config}]
   {:pre [(map? config)]}
   (let [idxr   (indexer)
@@ -1330,7 +1333,7 @@
                   :normalize (or (not norm?) normalize)
                   :history (c/cache history)
                   :root-render root-render :root-unmount root-unmount
-                  :logger logger}
+                  :logger logger :pathopt pathopt}
                  (atom {:queue [] :queued false :queued-sends {}
                         :sends-queued false
                         :target nil :root nil :render nil :remove nil
