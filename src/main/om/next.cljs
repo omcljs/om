@@ -1237,17 +1237,22 @@
 
 (defn- default-ui->props
   [{:keys [parser] :as env} c]
-  (let [path (path c)
-        fq   (full-query c path)]
-    (when-not (nil? fq)
-      (let [s  (system-time)
-            ui (parser env fq)
-            e  (system-time)]
-        (when-let [l (:logger env)]
-          (let [dt (- e s)]
-            (when (< 16 dt)
-              (glog/warning l (str c " query took " dt " msecs")))))
-        (get-in ui path)))))
+  (let [ui (when (satisfies? Ident c)
+             (parser (assoc env :ident (ident c (props c)))
+               (get-query c)))]
+    (if-not (nil? ui)
+      ui
+      (let [path (path c)
+            fq   (full-query c path)]
+        (when-not (nil? fq)
+          (let [s  (system-time)
+                ui (parser env fq)
+                e  (system-time)]
+            (when-let [l (:logger env)]
+              (let [dt (- e s)]
+                (when (< 16 dt)
+                  (glog/warning l (str c " query took " dt " msecs")))))
+            (get-in ui path)))))))
 
 (defn- default-merge-ref
   [_ tree ref props]
