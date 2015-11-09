@@ -116,11 +116,9 @@
                            (cond-> ret
                              (not (nil? value)) (assoc key value)
                              @error (assoc key @error))))))))]
-         (let [ret (when-not (nil? ident) ;; FAST PATH, rendering reads ONLY
-                     (read-ident env ident sel))
-               ret (if (nil? ret)
-                     (reduce step (if (nil? target) {} []) sel)
-                     ret)]
+         (let [ret (if-not (nil? ident) ;; FAST PATH, rendering reads ONLY
+                     (read-ident env ident sel)
+                     (reduce step (if (nil? target) {} []) sel))]
            (cond-> ret
              (not (or (not (nil? target)) elide-paths?)) (path-meta path))))))))
 
