@@ -1025,7 +1025,7 @@
      (if merge-refs
        (let [refs' @refs]
          (assoc (merge ret refs')
-           :om.next/tables (into #{} (keys refs'))))
+           ::tables (into #{} (keys refs'))))
        (with-meta ret @refs)))))
 
 (defn- sift-refs [res]
@@ -1114,7 +1114,8 @@
         {:keys [keys next tempids]} (merge reconciler @state delta)]
     (p/queue! reconciler keys)
     (reset! state
-      ((:migrate config) next (get-query (:root state)) tempids))))
+      ((:migrate config) reconciler
+        next (get-query (:root state)) tempids))))
 
 (defrecord Reconciler [config state]
   IDeref
@@ -1277,6 +1278,16 @@
     (merge a b)
     b))
 
+(defn- default-migrate [reconciler pure selector tempids]
+  (letfn [(dissoc-in [pure [table id]]
+            (assoc pure table (dissoc (get pure table) id)))
+          (step [pure [old new]]
+            (-> pure
+              (dissoc-in old)
+              (assoc-in new (merge (get-in pure old) (get-in pure new)))))]
+    (let [pure' (reduce step pure tempids)]
+      (tree->db selector (db->tree selector pure' pure' tempids) true))))
+
 (defn reconciler
   "Construct a reconciler from a configuration map.
 
@@ -1328,7 +1339,7 @@
          root-render  #(js/ReactDOM.render %1 %2)
          root-unmount #(js/ReactDOM.unmountComponentAtNode %)
          pathopt      false
-         migrate      (fn [pure _ _] pure)}
+         migrate      (fn [_ pure _ _] pure)}
     :as config}]
   {:pre [(map? config)]}
   (let [idxr   (indexer)
