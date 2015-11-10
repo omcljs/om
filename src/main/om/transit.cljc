@@ -1,7 +1,7 @@
 (ns om.transit
   #?(:clj (:refer-clojure :exclude [ref]))
   (:require [cognitect.transit :as t]
-    #?(:cljs [com.cognitect.transit :as ct])
+   #?(:cljs [com.cognitect.transit :as ct])
             [om.tempid :as tempid #?@(:cljs [:refer [TempId]])])
   #?(:clj (:import [com.cognitect.transit TransitFactory WriteHandler]
                    [om.tempid TempId])))
@@ -10,14 +10,14 @@
    (deftype TempIdHandler []
      Object
      (tag [_ _] "om/id")
-     (rep [_ r] (ct/tagged "array" #js [(nth r 0) (nth r 1)]))
+     (rep [_ r] (. r -id))
      (stringRep [_ _] nil)))
 
 #?(:clj
    (deftype TempIdHandler []
      WriteHandler
      (tag [_ _] "om/id")
-     (rep [_ r] (TransitFactory/taggedValue "array" [(nth r 0) (nth r 1)]))
+     (rep [_ r] (. ^TempId r -id))
      (stringRep [_ _] nil)
      (getVerboseHandler [_] nil)))
 
@@ -44,8 +44,8 @@
      ([opts]
       (t/reader :json
         (assoc-in opts
-          [:handlers "om/ref"]
-          (fn [v] (TempId. v)))))))
+          [:handlers "om/id"]
+          (fn [id] (tempid/tempid id)))))))
 
 #?(:clj
    (defn reader
@@ -54,17 +54,17 @@
      ([in opts]
       (t/reader in :json
         (assoc-in opts
-          [:handlers "om/ref"]
-          (fn [v] (TempId. v)))))))
+          [:handlers "om/id"]
+          (fn [id] (TempId. id)))))))
 
 (comment
   ;; cljs
-  (t/write (writer) (TempId. (java.util.UUID/randomUUID)))
+  (t/read (reader) (t/write (writer) (tempid/tempid)))
 
   ;; clj
   (import '[java.io ByteArrayOutputStream])
   (def baos (ByteArrayOutputStream. 4096))
   (def w (writer baos))
-  (t/write w (Ref. [:root 0]))
+  (t/write w (TempId. (java.util.UUID/randomUUID)))
   (.toString baos)
   )

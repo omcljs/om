@@ -27,6 +27,17 @@
          (write-all writer "#om/id[?" id "]")
          (write-all writer "#om/id[" id "]")))))
 
+#?(:cljs
+   (defn tempid
+     ([]
+       (tempid (random-uuid)))
+     ([id]
+       (if-let [tid (contains? @tempids id)]
+         tid
+         (let [new-tid (TempId. id false)]
+           (swap! tempids assoc id new-tid)
+           new-tid)))))
+
 ;; =============================================================================
 ;; Clojure
 
