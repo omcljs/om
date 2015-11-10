@@ -642,3 +642,26 @@
     (is (nil? (get-in db' [:node/by-id 2])))
     (is (= (dissoc (get-in db  [:node/by-id 2]) :id)
            (dissoc (get-in db' [:node/by-id 6]) :id)))))
+
+(def tid (om/tempid))
+
+(def temp-tree-data
+  {:tree {:id 0
+          :node-value 1
+          :children [{:id 1
+                      :node-value 2
+                      :children [{:id 2
+                                  :node-value 3
+                                  :children []}]}
+                     {:id tid
+                      :node-value 4
+                      :children []}]}})
+
+(deftest test-real-tempid-migration
+  (let [db  (assoc-in (om/tree->db Tree tree-data true)
+              [:node/by-id 6] {:id 6})
+        db' (om/default-migrate db (om/get-query Tree)
+              {[:node/by-id tid] [:node/by-id 6]})]
+    (is (nil? (get-in db' [:node/by-id tid])))
+    (is (= (dissoc (get-in db  [:node/by-id tid]) :id)
+          (dissoc (get-in db' [:node/by-id 6]) :id)))))
