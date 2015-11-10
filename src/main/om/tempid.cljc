@@ -1,5 +1,5 @@
-(ns om.next.tempid
-  (:import [java.io Writer]))
+(ns om.tempid
+  #?(:clj (:import [java.io Writer])))
 
 #?(:cljs
    (defonce tempids
