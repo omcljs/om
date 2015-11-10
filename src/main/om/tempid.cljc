@@ -19,8 +19,10 @@
          (throw (js/Error. "TempId already frozen"))))
      IEquiv
      (-equiv [this other]
-       (and (instance? TempId other)
-         (= (. this -id) (. other -id))))
+       (if-not frozen
+         (and (instance? TempId other)
+              (= (. this -id) (. other -id)))
+         (= (. this -id) other)))
      IPrintWithWriter
      (-pr-writer [_ writer _]
        (if-not frozen
@@ -32,7 +34,7 @@
      ([]
        (tempid (random-uuid)))
      ([id]
-       (if-let [tid (contains? @tempids id)]
+       (if-let [tid (get @tempids id)]
          tid
          (let [new-tid (TempId. id false)]
            (swap! tempids assoc id new-tid)
