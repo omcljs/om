@@ -1,8 +1,12 @@
-(ns om.next.tempid)
+(ns om.next.tempid
+  (:import [java.io Writer]))
 
 #?(:cljs
    (defonce tempids
      (atom {:system {}})))
+
+;; =============================================================================
+;; ClojureScript
 
 #?(:cljs
    (deftype TempId [^:mutable id ^:mutable frozen]
@@ -18,13 +22,24 @@
        (and (instance? TempId other)
          (= (. this -id) (. other -id))))
      IPrintWithWriter
-     (-pr-writer [this writer opts]
+     (-pr-writer [_ writer _]
        (if-not frozen
          (write-all writer "#om/id[?" id "]")
          (write-all writer "#om/id[" id "]")))))
 
-(defn tempid []
-  (let [uuid (random-uuid)
-        ret  (TempId. uuid false)]
-    (swap! tempids update-in [:system] assoc uuid ret)
-    ret))
+;; =============================================================================
+;; Clojure
+
+#?(:clj
+   (defrecord TempId [id]
+     Object
+     (toString [this]
+       (pr-str this))))
+
+#?(:clj
+   (defmethod print-method TempId [^TempId x ^Writer writer]
+     (.write writer (str "#om/id[?" (.id x) "]"))))
+
+#?(:clj
+   (defn tempid [uuid]
+     (TempId. uuid)))
