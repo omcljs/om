@@ -18,8 +18,7 @@
                  [com.cognitect/transit-clj "0.8.281" :scope "provided"]
                  [com.cognitect/transit-cljs "0.8.225" :scope "provided"]
                  [figwheel-sidecar "0.5.0-SNAPSHOT" :scope "test"]
-                 [devcards "0.2.0-8" :scope "provided"]
-                 ]
+                 [devcards "0.2.0-8" :scope "test"]]
 
   :plugins [[lein-cljsbuild "1.1.1"]]
 
