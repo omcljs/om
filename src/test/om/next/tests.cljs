@@ -664,4 +664,4 @@
               {[:node/by-id tid] [:node/by-id 6]})]
     (is (nil? (get-in db' [:node/by-id tid])))
     (is (= (dissoc (get-in db  [:node/by-id tid]) :id)
-          (dissoc (get-in db' [:node/by-id 6]) :id)))))
+           (dissoc (get-in db' [:node/by-id 6]) :id)))))
