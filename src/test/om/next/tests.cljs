@@ -633,3 +633,12 @@
         id1  (tempid uuid)]
     (is (= id0 id1))
     (is (= (hash id0) (hash id1)))))
+
+(deftest test-tempid-migration
+  (let [db  (assoc-in (om/tree->db Tree tree-data true)
+              [:node/by-id 6] {:id 6})
+        db' (om/default-migrate db (om/get-query Tree)
+              {[:node/by-id 2] [:node/by-id 6]})]
+    (is (nil? (get-in db' [:node/by-id 2])))
+    (is (= (dissoc (get-in db  [:node/by-id 2]) :id)
+           (dissoc (get-in db' [:node/by-id 6]) :id)))))
