@@ -1,44 +1,33 @@
 (ns om.tempid
   #?(:clj (:import [java.io Writer])))
 
-#?(:cljs
-   (defonce tempids
-     (atom {:system {}})))
-
 ;; =============================================================================
 ;; ClojureScript
 
 #?(:cljs
-   (deftype TempId [^:mutable id ^:mutable frozen]
+   (deftype TempId [^:mutable id ^:mutable __hash]
      Object
      (toString [this]
        (pr-str this))
-     (freezeID [this real-id]
-       (if-not frozen
-         (set! id real-id)
-         (throw (js/Error. "TempId already frozen"))))
      IEquiv
      (-equiv [this other]
-       (if-not frozen
-         (and (instance? TempId other)
-              (= (. this -id) (. other -id)))
-         (= (. this -id) other)))
+       (and (instance? TempId other)
+            (= (. this -id) (. other -id))))
+     IHash
+     (-hash [this]
+       (when (nil? __hash)
+         (set! __hash (hash id)))
+       __hash)
      IPrintWithWriter
      (-pr-writer [_ writer _]
-       (if-not frozen
-         (write-all writer "#om/id[?" id "]")
-         (write-all writer "#om/id[" id "]")))))
+       (write-all writer "#om/id[\"" id "\"]"))))
 
 #?(:cljs
    (defn tempid
      ([]
-       (tempid (random-uuid)))
+      (tempid (random-uuid)))
      ([id]
-       (if-let [tid (get @tempids id)]
-         tid
-         (let [new-tid (TempId. id false)]
-           (swap! tempids assoc id new-tid)
-           new-tid)))))
+      (TempId. id nil))))
 
 ;; =============================================================================
 ;; Clojure
@@ -51,7 +40,7 @@
 
 #?(:clj
    (defmethod print-method TempId [^TempId x ^Writer writer]
-     (.write writer (str "#om/id[?" (.id x) "]"))))
+     (.write writer (str "#om/id[\"" (.id x) "\"]"))))
 
 #?(:clj
    (defn tempid [uuid]
