@@ -21,7 +21,7 @@
      (-pr-writer [this writer opts]
        (write-all writer "#om/id[" id "]"))))
 
-(defn temp-id []
+(defn tempid []
   (let [uuid (random-uuid)
         ret  (TempId. uuid false)]
     (swap! tempids update-in [:system] assoc uuid ret)
