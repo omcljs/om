@@ -29,7 +29,9 @@
    :dkey k
    :key  ref})
 
-(defn expr->ast [x]
+(defn expr->ast
+  "Given a query expression convert it into an AST."
+  [x]
   (cond
     (symbol? x)  (symbol->ast x)
     (keyword? x) (keyword->ast x)
@@ -40,7 +42,9 @@
                    (ex-info (str "Invalid expression " x)
                      {:type :error/invalid-expression}))))
 
-(defn ast->expr [{:keys [key sel params] :as ast}]
+(defn ast->expr
+  "Given a query expression AST convert it back into a query expression."
+  [{:keys [key sel params] :as ast}]
   (if-not (nil? params)
     (if-not (empty? params)
       (list (ast->expr (dissoc ast :params)) params)
