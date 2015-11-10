@@ -1049,11 +1049,13 @@
     (db->tree selector data refs identity))
   ([selector data refs map-ident]
    {:pre [(map? refs)]}
-   ;; support taking ident for data param
+    ;; support taking ident for data param
    (let [data (cond-> data (ref? data) (->> map-ident (get-in refs)))]
      (if (vector? data)
        ;; join
-       (into [] (map #(db->tree selector (get-in refs (map-ident %)) refs)) data)
+       (into []
+         (map #(db->tree selector (get-in refs (map-ident %)) refs map-ident))
+         data)
        ;; map case
        (let [{props false joins true} (group-by join? selector)]
          (loop [joins (seq joins) ret {}]
@@ -1066,9 +1068,12 @@
                    v         (get data key)]
                (if-not (ref? v)
                  (recur (next joins)
-                   (assoc ret key (db->tree sel v refs)))
+                   (assoc ret
+                     key (db->tree sel v refs map-ident)))
                  (recur (next joins)
-                   (assoc ret key (db->tree sel (get-in refs (map-ident v)) refs)))))
+                   (assoc ret
+                     key (db->tree sel
+                           (get-in refs (map-ident v)) refs map-ident)))))
              (merge (select-keys data props) ret))))))))
 
 ;; =============================================================================
@@ -1279,7 +1284,7 @@
     (merge a b)
     b))
 
-(defn- default-migrate [reconciler pure selector tempids]
+(defn- default-migrate [pure selector tempids]
   (letfn [(dissoc-in [pure [table id]]
             (assoc pure table (dissoc (get pure table) id)))
           (step [pure [old new]]
@@ -1287,7 +1292,9 @@
               (dissoc-in old)
               (assoc-in new (merge (get-in pure old) (get-in pure new)))))]
     (let [pure' (reduce step pure tempids)]
-      (tree->db selector (db->tree selector pure' pure' tempids) true))))
+      (tree->db selector
+        (db->tree selector pure' pure'
+          (fn [ident] (get tempids ident ident))) true))))
 
 (defn reconciler
   "Construct a reconciler from a configuration map.
@@ -1340,7 +1347,7 @@
          root-render  #(js/ReactDOM.render %1 %2)
          root-unmount #(js/ReactDOM.unmountComponentAtNode %)
          pathopt      false
-         migrate      (fn [_ pure _ _] pure)}
+         migrate      (fn [pure _ _] pure)}
     :as config}]
   {:pre [(map? config)]}
   (let [idxr   (indexer)
