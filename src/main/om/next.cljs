@@ -1023,7 +1023,9 @@
          x    (if (vector? x) x (get-query x))
          ret  (normalize* x data refs)]
      (if merge-refs
-       (merge ret @refs)
+       (let [refs' @refs]
+         (assoc (merge ret refs')
+           :om.next/tables (into #{} (keys refs'))))
        (with-meta ret @refs)))))
 
 (defn- sift-refs [res]

@@ -421,11 +421,6 @@
            p0))
     (is (= refs {:person/by-name {"Mary" {:name "Mary"}}}))))
 
-(comment
-  (require '[cljs.pprint :as pp])
-  (run-tests)
-  )
-
 ;; -----------------------------------------------------------------------------
 ;; Denormalization
 
