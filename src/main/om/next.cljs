@@ -1091,8 +1091,11 @@
       ((:merge-tree config) res'))))
 
 (defn default-merge [reconciler state res]
-  {:keys (into [] (remove symbol?) (keys res))
-   :next (merge-novelty! reconciler state res)})
+  {:keys    (into [] (remove symbol?) (keys res))
+   :next    (merge-novelty! reconciler state res)
+   :tempids (->> (filter (comp symbol? first) res)
+              (map (comp :tempids second))
+              (reduce merge {}))})
 
 (defn merge!
   "Merge a state delta into the application state. Affected components managed
@@ -1101,8 +1104,10 @@
   (let [config (:config reconciler)
         state  (:state config)
         merge  (:merge config)
-        {:keys [keys next]} (merge reconciler @state delta)]
+        {:keys [keys next tempids]} (merge reconciler @state delta)]
     (p/queue! reconciler keys)
+    (doseq [[k new-id] tempids]
+      (.freezeID (get @tempid/tempids k) new-id))
     (reset! state next)))
 
 (defrecord Reconciler [config state]
