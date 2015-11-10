@@ -8,6 +8,8 @@
             [om.next.protocols :as p]
             [om.next.impl.parser :as parser]
             [om.next.cache :as c]
+            [om.tempid :as tempid]
+            [om.transit :as transit]
             [om.util :as util]
             [clojure.zip :as zip])
   (:import [goog.debug Console]))
@@ -1358,3 +1360,14 @@
   [reconciler uuid]
   (.get (-> reconciler :config :history) uuid))
 
+(defn tempid
+  ([] (tempid/tempid))
+  ([id] (tempid/tempid id)))
+
+(defn reader
+  ([] (transit/reader))
+  ([opts] (transit/reader opts)))
+
+(defn writer
+  ([] (transit/writer))
+  ([opts] (transit/writer opts)))
