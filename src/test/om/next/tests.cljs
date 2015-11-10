@@ -5,7 +5,8 @@
             [om.next :as om :refer-macros [defui]]
             [om.next.protocols :as p]
             [om.next.impl.parser :as parser]
-            [om.dom :as dom]))
+            [om.dom :as dom]
+            [om.tempid :as tempid :refer [tempid]]))
 
 ;; -----------------------------------------------------------------------------
 ;; Components
@@ -616,15 +617,24 @@
 ;; -----------------------------------------------------------------------------
 ;; Path Optimization
 
-(defn read-ident
-  [{:keys [state]} ident query]
-  (om/db->tree query ident @state))
-
-(def tree-parser2
-  (om/parser {:read tree-read :read-ident read-ident}))
+(defmethod tree-read :node/by-id
+  [{:keys [state selector query/root]} _ _]
+  {:value (om/db->tree selector root @state)})
 
 (deftest test-read-ident
-  (let [state (atom (om/tree->db Tree tree-data true))
-        env   {:state state :ident [:node/by-id 1]}]
-    (is (= (tree-parser2 env (om/get-query Node))
+  (let [state  (atom (om/tree->db Tree tree-data true))
+        parser (om/parser {:read tree-read})
+        env    {:state state}
+        ident  [:node/by-id 1]]
+    (is (= (get (parser env [{ident (om/get-query Node)}]) ident)
            {:id 1, :node-value 2, :children [{:id 2, :node-value 3, :children []}]}))))
+
+;; -----------------------------------------------------------------------------
+;; tempids
+
+(deftest test-temp-id-equality
+  (let [uuid (random-uuid)
+        id0  (tempid uuid)
+        id1  (tempid uuid)]
+    (is (= id0 id1))
+    (is (= (hash id0) (hash id1)))))
