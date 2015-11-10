@@ -1106,9 +1106,8 @@
         merge  (:merge config)
         {:keys [keys next tempids]} (merge reconciler @state delta)]
     (p/queue! reconciler keys)
-    (doseq [[k new-id] tempids]
-      (.freezeID (get @tempid/tempids k) new-id))
-    (reset! state next)))
+    (reset! state
+      ((:migrate config) next (get-query (:root state)) tempids))))
 
 (defrecord Reconciler [config state]
   IDeref
@@ -1309,7 +1308,7 @@
            optimize
            history
            root-render root-unmount
-           pathopt]
+           pathopt migrate]
     :or {ui->props    default-ui->props
          indexer      om.next/indexer
          merge-sends  #(merge-with into %1 %2)
@@ -1321,7 +1320,8 @@
          history      100
          root-render  #(js/ReactDOM.render %1 %2)
          root-unmount #(js/ReactDOM.unmountComponentAtNode %)
-         pathopt      false}
+         pathopt      false
+         migrate      (fn [pure _ _] pure)}
     :as config}]
   {:pre [(map? config)]}
   (let [idxr   (indexer)
@@ -1340,7 +1340,7 @@
                   :normalize (or (not norm?) normalize)
                   :history (c/cache history)
                   :root-render root-render :root-unmount root-unmount
-                  :logger logger :pathopt pathopt}
+                  :logger logger :pathopt pathopt :migrate migrate}
                  (atom {:queue [] :queued false :queued-sends {}
                         :sends-queued false
                         :target nil :root nil :render nil :remove nil
