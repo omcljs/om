@@ -19,7 +19,9 @@
          (= (. this -id) (. other -id))))
      IPrintWithWriter
      (-pr-writer [this writer opts]
-       (write-all writer "#om/id[" id "]"))))
+       (if-not frozen
+         (write-all writer "#om/id[?" id "]")
+         (write-all writer "#om/id[" id "]")))))
 
 (defn tempid []
   (let [uuid (random-uuid)
