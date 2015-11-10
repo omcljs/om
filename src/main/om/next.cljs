@@ -1314,7 +1314,7 @@
          history      100
          root-render  #(js/ReactDOM.render %1 %2)
          root-unmount #(js/ReactDOM.unmountComponentAtNode %)
-         pathopt   false}
+         pathopt      false}
     :as config}]
   {:pre [(map? config)]}
   (let [idxr   (indexer)
