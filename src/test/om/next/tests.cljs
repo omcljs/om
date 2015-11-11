@@ -691,6 +691,11 @@
 
 (comment
   (let [p (om/parser {:read precise-read})]
+    (om/process-roots
+      (p {:state (atom {})}
+        [{:fake/key [{:real/key [:id]}]}] :remote)))
+
+  (let [p (om/parser {:read precise-read})]
     (-> (p {:state (atom {})}
           [{:fake/key [{:real/key [:id]}]}] :remote)
       ffirst

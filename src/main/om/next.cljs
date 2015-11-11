@@ -1091,20 +1091,24 @@
       (reduce step res paths))))
 
 (defn process-roots [selector]
-  (letfn [(process-roots* [selector ret]
+  (letfn [(process-roots* [selector ret path]
             (loop [ks (seq selector)]
               (if-not (nil? ks)
                 (let [k (first ks)]
                   (if (true? (-> k meta :query/root))
-                    (swap! ret update-in [:selector] conj k)
+                    (swap! ret
+                      #(let [jk (join-key k)]
+                        (-> %
+                          (update-in [:selector] conj k)
+                          (assoc-in [:paths jk] (conj path jk)))))
                     (do
                       (when (join? k)
-                        (process-roots* (join-value k) ret))
+                        (let [[jk jv] (join-entry k)]
+                          (process-roots* jv ret (conj path jk))))
                       (recur (next ks))))))))]
-    (let [ret (atom {:selector nil :paths nil})]
-      (process-roots* selector ret)
-      (assoc (dissoc @ret :paths)
-        :rewrite (rewrite (:paths @ret))))))
+    (let [ret (atom {:selector [] :paths {}})]
+      (process-roots* selector ret [])
+      (assoc @ret :rewrite (rewrite (:paths @ret))))))
 
 (defn- merge-refs [tree config refs]
   (let [{:keys [merge-ref indexer]} config]
