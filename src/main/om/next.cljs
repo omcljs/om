@@ -1047,28 +1047,28 @@
 ;; TODO: easy to optimize
 
 (defn db->tree
-  "Given a selector, some data in the default database format, and the entire
+  "Given a query, some data in the default database format, and the entire
    application state in the default database format, return the tree where all
    ident links have been replaced with their original node values."
-  ([selector data refs]
-    (db->tree selector data refs identity))
-  ([selector data refs map-ident]
+  ([query data refs]
+    (db->tree query data refs identity))
+  ([query data refs map-ident]
    {:pre [(map? refs)]}
     ;; support taking ident for data param
    (let [data (cond-> data (ref? data) (->> map-ident (get-in refs)))]
      (if (vector? data)
        ;; join
        (into []
-         (map #(db->tree selector (get-in refs (map-ident %)) refs map-ident))
+         (map #(db->tree query (get-in refs (map-ident %)) refs map-ident))
          data)
        ;; map case
-       (let [{props false joins true} (group-by join? selector)]
+       (let [{props false joins true} (group-by join? query)]
          (loop [joins (seq joins) ret {}]
            (if-not (nil? joins)
              (let [join      (first joins)
                    [key sel] (join-entry join)
                    sel       (if (= '... sel)
-                               selector
+                               query
                                sel)
                    v         (get data key)]
                (if-not (ref? v)
@@ -1092,24 +1092,30 @@
                 (assoc-in orig-path (get res k))))]
       (reduce step res paths))))
 
-(defn process-roots [selector]
-  (letfn [(process-roots* [selector ret path]
-            (loop [ks (seq selector)]
+(defn process-roots
+  "A send helper for rewriting the query to remove client local keys that
+   don't need server side processing. Give a query this function will
+   return a map with two keys, :query and :rewrite. :query is the
+   actual query you should send. Upon receiving the response you should invoke
+   :rewrite on the response before invoking the send callback."
+  [query]
+  (letfn [(process-roots* [query ret path]
+            (loop [ks (seq query)]
               (if-not (nil? ks)
                 (let [k (first ks)]
                   (if (true? (-> k meta :query/root))
                     (swap! ret
                       #(let [jk (join-key k)]
                         (-> %
-                          (update-in [:selector] conj k)
+                          (update-in [:query] conj k)
                           (assoc-in [:paths jk] (conj path jk)))))
                     (do
                       (when (join? k)
                         (let [[jk jv] (join-entry k)]
                           (process-roots* jv ret (conj path jk))))
                       (recur (next ks))))))))]
-    (let [ret (atom {:selector [] :paths {}})]
-      (process-roots* selector ret [])
+    (let [ret (atom {:query [] :paths {}})]
+      (process-roots* query ret [])
       (assoc @ret :rewrite (rewrite (:paths @ret))))))
 
 (defn- merge-refs [tree config refs]
@@ -1317,7 +1323,7 @@
     (merge a b)
     b))
 
-(defn- default-migrate [pure selector tempids]
+(defn- default-migrate [pure query tempids]
   (letfn [(dissoc-in [pure [table id]]
             (assoc pure table (dissoc (get pure table) id)))
           (step [pure [old new]]
@@ -1325,8 +1331,8 @@
               (dissoc-in old)
               (assoc-in new (merge (get-in pure old) (get-in pure new)))))]
     (let [pure' (reduce step pure tempids)]
-      (tree->db selector
-        (db->tree selector pure' pure'
+      (tree->db query
+        (db->tree query pure' pure'
           (fn [ident] (get tempids ident ident))) true))))
 
 (defn reconciler
