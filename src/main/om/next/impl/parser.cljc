@@ -13,11 +13,11 @@
    expressions follows:
 
    QueryRoot    := EdnVector(QueryExpr*)
-   QueryExpr    := EdnKeyword | RefExpr | ParamExpr | JoinExpr
-   RefExpr      := EdnVector2(Keyword, EdnValue)
+   QueryExpr    := EdnKeyword | IdentExpr | ParamExpr | JoinExpr
+   IdentExpr    := EdnVector2(Keyword, EdnValue)
    ParamExpr    := EdnList2(QueryExpr | EdnSymbol, ParamMapExpr)
    ParamMapExpr := EdnMap(Keyword, EdnValue)
-   JoinExpr     := EdnMap(Keyword | RefExpr, QueryRoot | RecurExpr)
+   JoinExpr     := EdnMap(Keyword | IdentExpr, QueryRoot | RecurExpr)
    RecurExpr    := '...
 
    Note most apis in Om Next expect a QueryRoot not a QueryExpr.
@@ -28,7 +28,7 @@
    The following keys can appear in the AST representation:
 
    {:type         (:prop | :call)
-    :key          (EdnKeyword | EdnSymbol | RefExpr)
+    :key          (EdnKeyword | EdnSymbol | IdentExpr)
     :dispatch-key (EdnKeyword | EdnSymbol)
     :query        (QueryRoot | RecurExpr)
     :params       (ParamMapExpr)}
