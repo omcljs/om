@@ -665,3 +665,31 @@
     (is (nil? (get-in db' [:node/by-id tid])))
     (is (= (dissoc (get-in db  [:node/by-id tid]) :id)
            (dissoc (get-in db' [:node/by-id 6]) :id)))))
+
+;; -----------------------------------------------------------------------------
+;; Precise Remoting
+
+(defmulti precise-read om/dispatch)
+
+(defmethod precise-read :default
+  [_ _ _]
+  {:value :not-found})
+
+(defmethod precise-read :fake/key
+  [{:keys [parser ast] :as env} _ _]
+  {:remote (update-in ast [:sel]
+             #(parser env % :remote))})
+
+(defmethod precise-read :real/key
+  [{:keys [ast] :as env} _ _]
+  {:remote (assoc ast :query/root true)})
+
+(comment
+  (let [p (om/parser {:read precise-read})]
+    (-> (p {:state (atom {})}
+          [{:fake/key [{:real/key [:id]}]}] :remote)
+      ffirst
+      second
+      first
+      meta))
+  )

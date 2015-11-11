@@ -42,16 +42,24 @@
                    (ex-info (str "Invalid expression " x)
                      {:type :error/invalid-expression}))))
 
+(defn wrap-expr [root? expr]
+  (if root?
+    (with-meta
+      (cond-> expr (keyword? expr) list)
+      {:query/root true})
+    expr))
+
 (defn ast->expr
   "Given a query expression AST convert it back into a query expression."
-  [{:keys [key sel params] :as ast}]
-  (if-not (nil? params)
-    (if-not (empty? params)
-      (list (ast->expr (dissoc ast :params)) params)
-      (list (ast->expr (dissoc ast :params))))
-    (if-not (nil? sel)
-      {key sel}
-      key)))
+  [{:keys [key sel params query/root] :as ast}]
+  (wrap-expr root
+    (if-not (nil? params)
+      (if-not (empty? params)
+        (list (ast->expr (dissoc ast :params)) params)
+        (list (ast->expr (dissoc ast :params))))
+      (if-not (nil? sel)
+        {key sel}
+        key))))
 
 (defn path-meta [x path]
   (let [x' (cond->> x
