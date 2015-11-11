@@ -1442,7 +1442,7 @@
   ([opts] (transit/reader opts)))
 
 (defn writer
-  "Create a Om Next transit reader. This writer can handler the tempid type.
+  "Create a Om Next transit writer. This writer can handler the tempid type.
    Can pass transit writer customization opts map."
   ([] (transit/writer))
   ([opts] (transit/writer opts)))
