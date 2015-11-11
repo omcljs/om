@@ -9,7 +9,7 @@
    state transfer. It's important to note the Om Next query expression syntax is
    *not* a strict superset of Datomic Pull.
 
-   A query expression is composed of EDN values. The grammar looks for query
+   A query expression is composed of EDN values. The grammar for query
    expressions follows:
 
    QueryRoot    := EdnVector(QueryExpr*)
@@ -20,7 +20,7 @@
    JoinExpr     := EdnMap(Keyword | RefExpr, QueryRoot | RecurExpr)
    RecurExpr    := '...
 
-   Note most apis in Om Next expect a QueryRoot not QueryExpr.
+   Note most apis in Om Next expect a QueryRoot not a QueryExpr.
 
    QUERY EXPRESSION AST FORMAT
 
