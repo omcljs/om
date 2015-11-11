@@ -1,4 +1,29 @@
-(ns om.next.impl.parser)
+(ns
+  ^{:doc "
+   Generic query expression parsing and AST manipulation.
+
+   QUERY EXPRESSIONS
+
+   Query expressions are a variation on Datomic Pull Syntax
+   http://docs.datomic.com/pull.html more suitable for generic client/server
+   state transfer. It's important to note the Om Next query expression syntax is
+   *not* a strict superset of Datomic Pull.
+
+   A query expression is composed of EDN values. The grammar looks for query
+   expressions follows:
+
+   QueryRoot    := EdnVector(QueryExpr*)
+   QueryExpr    := EdnKeyword | RefExpr | ParamExpr | JoinExpr
+   RefExpr      := EdnVector2(Keyword, EdnValue)
+   ParamExpr    := EdnList2(QueryExpr, ParamMapExpr)
+   ParamMapExpr := EdnMap(Keyword, EdnValue)
+   JoinExpr     := EdnMap(Keyword | RefExpr, QueryRoot | RecurExpr)
+   RecurExpr    := '...
+
+   Note most apis in Om Next expect a QueryRoot not QueryExpr.
+
+   QUERY EXPRESSION AST FORMAT"}
+  om.next.impl.parser)
 
 (declare expr->ast)
 
