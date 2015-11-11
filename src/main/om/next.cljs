@@ -101,6 +101,9 @@
     (ffirst node)
     (first node)))
 
+(defn- join-value [join]
+  (second (join-entry join)))
+
 (defn- join? [x]
   (let [x (if (seq? x) (first x) x)]
     (map? x)))
@@ -1078,6 +1081,30 @@
 
 ;; =============================================================================
 ;; Reconciler
+
+(defn rewrite [paths]
+  (fn [res]
+    (letfn [(step [res [k orig-path]]
+              (-> res
+                (dissoc k)
+                (update-in orig-path assoc (get res k))))]
+      (reduce step res paths))))
+
+(defn process-roots [selector]
+  (letfn [(process-roots* [selector ret]
+            (loop [ks (seq selector)]
+              (if-not (nil? ks)
+                (let [k (first ks)]
+                  (if (true? (-> k meta :query/root))
+                    (swap! ret update-in [:selector] conj k)
+                    (do
+                      (when (join? k)
+                        (process-roots* (join-value k) ret))
+                      (recur (next ks))))))))]
+    (let [ret (atom {:selector nil :paths nil})]
+      (process-roots* selector ret)
+      (assoc (dissoc @ret :paths)
+        :rewrite (rewrite (:paths @ret))))))
 
 (defn- merge-refs [tree config refs]
   (let [{:keys [merge-ref indexer]} config]
