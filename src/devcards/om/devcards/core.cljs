@@ -70,9 +70,9 @@
       {:remote true})))
 
 (defmethod counters-read :counters/list
-  [{:keys [state selector]} _]
+  [{:keys [state query]} _]
   (let [st @state
-        xf (map #(select-keys (get-in st %) selector))]
+        xf (map #(select-keys (get-in st %) query))]
     {:value (into [] xf (:counters/list st))}))
 
 (defmethod counters-mutate 'counter/increment
@@ -278,14 +278,14 @@
   {:value (:node-value data)})
 
 (defmethod simple-tree-read :children
-  [{:keys [data parser selector] :as env} _ _]
-  {:value (let [f #(parser (assoc env :data %) selector)]
+  [{:keys [data parser query] :as env} _ _]
+  {:value (let [f #(parser (assoc env :data %) query)]
             (into [] (map f (:children data))))})
 
 (defmethod simple-tree-read :tree
-  [{:keys [state parser selector] :as env} k _]
+  [{:keys [state parser query] :as env} k _]
   (let [st @state]
-    {:value (parser (assoc env :data (:tree st)) selector)}))
+    {:value (parser (assoc env :data (:tree st)) query)}))
 
 (def simple-tree-reconciler
   (om/reconciler
@@ -317,13 +317,13 @@
 (defmulti norm-tree-read om/dispatch)
 
 (defmethod norm-tree-read :tree
-  [{:keys [state selector] :as env} _ _]
+  [{:keys [state query] :as env} _ _]
   (let [st @state]
-    {:value (om/db->tree selector (:tree st) st)}))
+    {:value (om/db->tree query (:tree st) st)}))
 
 (defmethod norm-tree-read :node/by-id
-  [{:keys [state selector query/root]} _ _]
-  (om/db->tree selector root @state))
+  [{:keys [state query query/root]} _ _]
+  (om/db->tree query root @state))
 
 (defmulti norm-tree-mutate om/dispatch)
 

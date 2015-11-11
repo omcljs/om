@@ -54,7 +54,7 @@
   (is (= (om/get-query ComponentList)
          '[{:components/list [:foo/bar :baz/woz]} :app/title])))
 
-(deftest test-focus-selector
+(deftest test-focus-query
   (is (= (om/focus-query [:foo/bar] [])
          [:foo/bar]))
   (is (= (om/focus-query
@@ -159,15 +159,15 @@
   (is (= (parser/expr->ast [:foo 0])
          {:type :prop :key [:foo 0] :dispatch-key :foo}))
   (is (= (parser/expr->ast {:foo [:bar]})
-         {:type :prop :key :foo :dispatch-key :foo :sel [:bar]}))
+         {:type :prop :key :foo :dispatch-key :foo :query [:bar]}))
   (is (= (parser/expr->ast {[:foo 0] [:bar]})
-          {:type :prop :key [:foo 0] :dispatch-key :foo :sel [:bar]}))
+          {:type :prop :key [:foo 0] :dispatch-key :foo :query [:bar]}))
   (is (= (parser/expr->ast '(:foo {:bar 1}))
          {:type :prop :key :foo :dispatch-key :foo :params {:bar 1}}))
   (is (= (parser/expr->ast '({:foo [:bar :baz]} {:woz 1}))
-         {:type :prop :key :foo :dispatch-key :foo :sel [:bar :baz] :params {:woz 1}}))
+         {:type :prop :key :foo :dispatch-key :foo :query [:bar :baz] :params {:woz 1}}))
   (is (= (parser/expr->ast '({[:foo 0] [:bar :baz]} {:woz 1}))
-         {:type :prop :key [:foo 0] :dispatch-key :foo :sel [:bar :baz] :params {:woz 1}}))
+         {:type :prop :key [:foo 0] :dispatch-key :foo :query [:bar :baz] :params {:woz 1}}))
   (is (= (parser/expr->ast '(do/it {:woz 1}))
          {:type :call :key 'do/it :dispatch-key 'do/it :params {:woz 1}}))
   (is (= (parser/expr->ast '(do/it))
@@ -178,15 +178,15 @@
          :foo))
   (is (= (parser/ast->expr {:type :prop :key [:foo 0] :dispatch-key :foo})
          [:foo 0]))
-  (is (= (parser/ast->expr {:type :prop :key :foo :dispatch-key :foo :sel [:bar]})
+  (is (= (parser/ast->expr {:type :prop :key :foo :dispatch-key :foo :query [:bar]})
          {:foo [:bar]}))
-  (is (= (parser/ast->expr {:type :prop :key [:foo 0] :dispatch-key :foo :sel [:bar]})
+  (is (= (parser/ast->expr {:type :prop :key [:foo 0] :dispatch-key :foo :query [:bar]})
          {[:foo 0] [:bar]}))
   (is (= (parser/ast->expr {:type :prop :key :foo :dispatch-key :foo :params {:bar 1}})
          '(:foo {:bar 1})))
-  (is (= (parser/ast->expr {:type :prop :key :foo :dispatch-key :foo :sel [:bar :baz] :params {:woz 1}})
+  (is (= (parser/ast->expr {:type :prop :key :foo :dispatch-key :foo :query [:bar :baz] :params {:woz 1}})
          '({:foo [:bar :baz]} {:woz 1})))
-  (is (= (parser/ast->expr {:type :prop :key [:foo 0] :dispatch-key :foo :sel [:bar :baz] :params {:woz 1}})
+  (is (= (parser/ast->expr {:type :prop :key [:foo 0] :dispatch-key :foo :query [:bar :baz] :params {:woz 1}})
          '({[:foo 0] [:bar :baz]} {:woz 1})))
   (is (= (parser/ast->expr {:type :call :key 'do/it :dispatch-key 'do/it :params {:woz 1}})
          '(do/it {:woz 1})))
@@ -219,9 +219,9 @@
     {:value (str "user" size-str ".png") :remote true}))
 
 (defmethod read :user/by-id
-  [{:keys [selector] :as env} k {:keys [id] :as params}]
+  [{:keys [query] :as env} k {:keys [id] :as params}]
   {:value (cond-> {:name/first "Bob" :name/last "Smith"}
-            selector (select-keys selector))
+            query (select-keys query))
    :remote true})
 
 (defmulti mutate (fn [env k params] k))
@@ -273,13 +273,13 @@
     (is (= @st {:count 1}))))
 
 (defmethod read :now/wow
-  [{:keys [state selector]} k params]
-  {:value {:selector selector :params params}})
+  [{:keys [state query]} k params]
+  {:value {:query query :params params}})
 
 (deftest test-parameterized-join
   (let [st (atom {:foo/bar 1})]
     (is (= (p {:state st} '[({:now/wow [:a :b]} {:slice [10 20]})])
-           '{:now/wow {:selector [:a :b] :params {:slice [10 20]}}}))))
+           '{:now/wow {:query [:a :b] :params {:slice [10 20]}}}))))
 
 (deftest test-refs
   (let [st (atom {:foo/bar 1})]
@@ -354,9 +354,9 @@
   {:value (get-in @state [:categories (get data k)])})
 
 (defmethod read :todos/list
-  [{:keys [state selector parser] :as env} _]
+  [{:keys [state query parser] :as env} _]
   (let [st @state
-        pf #(parser (assoc env :data %) selector)]
+        pf #(parser (assoc env :data %) query)]
     {:value (into [] (comp (map (:todos st)) (map pf))
               (:todos/list st))}))
 
@@ -459,9 +459,9 @@
 (defmulti read2 om/dispatch)
 
 (defmethod read2 :people
-  [{:keys [state selector] :as env} key _]
+  [{:keys [state query] :as env} key _]
   (let [st @state]
-    {:value (om/db->tree selector (get st key) st)}))
+    {:value (om/db->tree query (get st key) st)}))
 
 (defn add-friend [state id friend]
   (if (not= id friend)
@@ -533,7 +533,7 @@
 
 (defmethod read1 :dashboard/items
   [{:keys [parse ast] :as env} _ _]
-  {:remote (update-in ast [:sel]
+  {:remote (update-in ast [:query]
              #(into {} (map (fn [[k v]] [k [:favorites]])) %))})
 
 (deftest test-recursive-remote
@@ -579,14 +579,14 @@
   {:value (get data k)})
 
 (defmethod tree-read :children
-  [{:keys [data parser selector] :as env} _ _]
-  {:value (let [f #(parser (assoc env :data %) selector)]
+  [{:keys [data parser query] :as env} _ _]
+  {:value (let [f #(parser (assoc env :data %) query)]
             (into [] (map f (:children data))))})
 
 (defmethod tree-read :tree
-  [{:keys [state parser selector] :as env} k _]
+  [{:keys [state parser query] :as env} k _]
   (let [st @state]
-    {:value (parser (assoc env :data (:tree st)) selector)}))
+    {:value (parser (assoc env :data (:tree st)) query)}))
 
 (deftest test-recursion-syntax
   (let [tree-parser (om/parser {:read tree-read})]
@@ -613,8 +613,8 @@
 ;; Path Optimization
 
 (defmethod tree-read :node/by-id
-  [{:keys [state selector query/root]} _ _]
-  {:value (om/db->tree selector root @state)})
+  [{:keys [state query query/root]} _ _]
+  {:value (om/db->tree query root @state)})
 
 (deftest test-read-ident
   (let [state  (atom (om/tree->db Tree tree-data true))
@@ -677,7 +677,7 @@
 
 (defmethod precise-read :fake/key
   [{:keys [parser ast] :as env} _ _]
-  {:remote (update-in ast [:sel]
+  {:remote (update-in ast [:query]
              #(parser env % :remote))})
 
 (defmethod precise-read :real/key

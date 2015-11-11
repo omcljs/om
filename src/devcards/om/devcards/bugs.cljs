@@ -45,9 +45,9 @@
 (defmulti read om/dispatch)
 
 (defmethod read :dashboard/posts
-  [{:keys [state selector]} k _]
+  [{:keys [state query]} k _]
   (let [st @state]
-    {:value (om/db->tree selector (get st k) st)}))
+    {:value (om/db->tree query (get st k) st)}))
 
 (defmulti mutate om/dispatch)
 

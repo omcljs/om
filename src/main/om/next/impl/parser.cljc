@@ -47,7 +47,9 @@
   (let [[k v] (first join)
         ast   (expr->ast k)
         ref?  (vector? (:key ast))]
-    (assoc ast :type :prop :sel v)))
+    (assoc ast
+      :type  :prop
+      :query v)))
 
 (defn ref->ast [[k id :as ref]]
   {:type :prop
@@ -76,14 +78,14 @@
 
 (defn ast->expr
   "Given a query expression AST convert it back into a query expression."
-  [{:keys [key sel params query/root] :as ast}]
+  [{:keys [key query params query/root] :as ast}]
   (wrap-expr root
     (if-not (nil? params)
       (if-not (empty? params)
         (list (ast->expr (dissoc ast :params)) params)
         (list (ast->expr (dissoc ast :params))))
-      (if-not (nil? sel)
-        {key sel}
+      (if-not (nil? query)
+        {key query}
         key))))
 
 (defn path-meta [x path]
@@ -99,21 +101,22 @@
   (and (instance? #?(:clj clojure.lang.ExceptionInfo :cljs ExceptionInfo) x)
        (= :om.next/abort (-> x ex-data :type))))
 
-(defn parser [{:keys [read mutate] :as config}]
+(defn parser
+  [{:keys [read mutate] :as config}]
   (fn self
-    ([env sel] (self env sel nil))
-    ([env sel target]
+    ([env query] (self env query nil))
+    ([env query target]
      (let [elide-paths? (boolean (:elide-paths config))
            {:keys [path] :as env}
            (cond-> (assoc env :parser self :target target :query/root :om.next/root)
              (not (contains? env :path)) (assoc :path []))]
        (letfn [(step [ret expr]
-                 (let [{sel' :sel :keys [key dispatch-key params] :as ast} (expr->ast expr)
+                 (let [{query' :query :keys [key dispatch-key params] :as ast} (expr->ast expr)
                        env   (as-> (assoc env :ast ast) env
-                               (if (= '... sel')
-                                 (assoc env :selector sel)
+                               (if (= '... query')
+                                 (assoc env :query query)
                                  (cond-> env
-                                   (not (nil? sel')) (assoc :selector sel')))
+                                   (not (nil? query')) (assoc :query query')))
                                (if (vector? key)
                                  (assoc env :query/root key)
                                  env))
@@ -147,7 +150,7 @@
                            (cond-> ret
                              (not (nil? value)) (assoc key value)
                              @error (assoc key @error))))))))]
-         (cond-> (reduce step (if (nil? target) {} []) sel)
+         (cond-> (reduce step (if (nil? target) {} []) query)
            (not (or (not (nil? target)) elide-paths?)) (path-meta path)))))))
 
 (defn dispatch [_ k _] k)
