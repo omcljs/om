@@ -1431,13 +1431,18 @@
   (.get (-> reconciler :config :history) uuid))
 
 (defn tempid
+  "Return a temporary id."
   ([] (tempid/tempid))
   ([id] (tempid/tempid id)))
 
 (defn reader
+  "Create a Om Next transit reader. This reader can handler the tempid type.
+   Can pass transit reader customization opts map."
   ([] (transit/reader))
   ([opts] (transit/reader opts)))
 
 (defn writer
+  "Create a Om Next transit reader. This writer can handler the tempid type.
+   Can pass transit writer customization opts map."
   ([] (transit/writer))
   ([opts] (transit/writer opts)))
