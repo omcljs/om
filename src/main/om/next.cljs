@@ -1159,7 +1159,7 @@
     (p/queue! reconciler keys)
     (reset! state
       (if-let [migrate (:migrate config)]
-        (migrate next (get-query (-> reconciler :state :root)) tempids)
+        (migrate next (get-query (:root @(:state reconciler))) tempids)
         next))))
 
 (defrecord Reconciler [config state]
