@@ -28,20 +28,20 @@
 (declare expr->ast)
 
 (defn symbol->ast [k]
-  {:dkey k
-   :key  k})
+  {:dispatch-key k
+   :key k})
 
 (defn keyword->ast [k]
   {:type :prop
-   :dkey k
-   :key  k})
+   :dispatch-key k
+   :key k})
 
 (defn call->ast [[f args :as call]]
   (if (= 'quote f)
     (assoc (expr->ast args) :target (or (-> call meta :target) :remote))
     (let [ast (update-in (expr->ast f) [:params] merge (or args {}))]
       (cond-> ast
-        (symbol? (:dkey ast)) (assoc :type :call)))))
+        (symbol? (:dispatch-key ast)) (assoc :type :call)))))
 
 (defn join->ast [join]
   (let [[k v] (first join)
@@ -51,8 +51,8 @@
 
 (defn ref->ast [[k id :as ref]]
   {:type :prop
-   :dkey k
-   :key  ref})
+   :dispatch-key k
+   :key ref})
 
 (defn expr->ast
   "Given a query expression convert it into an AST."
@@ -108,7 +108,7 @@
            (cond-> (assoc env :parser self :target target :query/root :om.next/root)
              (not (contains? env :path)) (assoc :path []))]
        (letfn [(step [ret expr]
-                 (let [{sel' :sel :keys [key dkey params] :as ast} (expr->ast expr)
+                 (let [{sel' :sel :keys [key dispatch-key params] :as ast} (expr->ast expr)
                        env   (as-> (assoc env :ast ast) env
                                (if (= '... sel')
                                  (assoc env :selector sel)
@@ -123,10 +123,10 @@
                                (case type
                                  :call (do
                                          (assert mutate "Parse mutation attempted but no :mutate function supplied")
-                                         (mutate env dkey params))
+                                         (mutate env dispatch-key params))
                                  :prop (do
                                          (assert read "Parse read attempted but no :read function supplied")
-                                         (read env dkey params))))]
+                                         (read env dispatch-key params))))]
                    (if-not (nil? target)
                      (let [ast' (get res target)]
                        (cond-> ret
