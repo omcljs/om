@@ -15,14 +15,26 @@
    QueryRoot    := EdnVector(QueryExpr*)
    QueryExpr    := EdnKeyword | RefExpr | ParamExpr | JoinExpr
    RefExpr      := EdnVector2(Keyword, EdnValue)
-   ParamExpr    := EdnList2(QueryExpr, ParamMapExpr)
+   ParamExpr    := EdnList2(QueryExpr | EdnSymbol, ParamMapExpr)
    ParamMapExpr := EdnMap(Keyword, EdnValue)
    JoinExpr     := EdnMap(Keyword | RefExpr, QueryRoot | RecurExpr)
    RecurExpr    := '...
 
    Note most apis in Om Next expect a QueryRoot not QueryExpr.
 
-   QUERY EXPRESSION AST FORMAT"}
+   QUERY EXPRESSION AST FORMAT
+
+   Given a QueryExpr you can get the AST via om.next.impl.parser/expr->ast.
+   The following keys can appear in the AST representation:
+
+   {:type         (:prop | :call)
+    :key          (EdnKeyword | EdnSymbol | RefExpr)
+    :dispatch-key (EdnKeyword | EdnSymbol)
+    :query        (QueryRoot | RecurExpr)
+    :params       (ParamMapExpr)}
+
+   :query and :params may or may not appear. :type :call is only for
+   mutations."}
   om.next.impl.parser)
 
 (declare expr->ast)
@@ -48,7 +60,7 @@
         ast   (expr->ast k)
         ref?  (vector? (:key ast))]
     (assoc ast
-      :type  :prop
+      :type :prop
       :query v)))
 
 (defn ref->ast [[k id :as ref]]
@@ -102,6 +114,8 @@
        (= :om.next/abort (-> x ex-data :type))))
 
 (defn parser
+  "Given a :read and/or :mutate function return a parser. Refer to om.next/parser
+   for top level documentation."
   [{:keys [read mutate] :as config}]
   (fn self
     ([env query] (self env query nil))
