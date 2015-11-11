@@ -294,7 +294,9 @@
 (defn ^boolean component?
   "Returns true if the argument is an Om component."
   [x]
-  (. x -om$isComponent))
+  (if-not (nil? x)
+    (. x -om$isComponent)
+    false))
 
 (defn- state [c]
   {:pre [(component? c)]}
