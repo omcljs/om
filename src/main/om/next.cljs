@@ -1087,7 +1087,7 @@
     (letfn [(step [res [k orig-path]]
               (-> res
                 (dissoc k)
-                (update-in orig-path assoc (get res k))))]
+                (assoc-in orig-path (get res k))))]
       (reduce step res paths))))
 
 (defn process-roots [selector]

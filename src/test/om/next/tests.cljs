@@ -684,6 +684,11 @@
   [{:keys [ast] :as env} _ _]
   {:remote (assoc ast :query/root true)})
 
+(deftest test-rewrite
+  (is (= ((om/rewrite {:real/key [:fake/key :real/key]})
+           {:real/key 1})
+         {:fake/key {:real/key 1}})))
+
 (comment
   (let [p (om/parser {:read precise-read})]
     (-> (p {:state (atom {})}
