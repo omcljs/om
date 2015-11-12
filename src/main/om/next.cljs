@@ -965,6 +965,8 @@
           ref   (ident class data)]
       (normalize* (get query (first ref)) data refs))
 
+    (vector? data) data ;; already normalized
+
     :else
     (loop [q (seq query) ret data]
       (if-not (nil? q)

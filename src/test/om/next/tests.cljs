@@ -717,3 +717,20 @@
 (deftest test-db->tree-does-not-remove-keys
   (let [db (om/tree->db Tree remove-tree-data true)]
     (is (= (get-in db [:node/by-id 1 :random-key]) :cool!))))
+
+(defui Page
+  static om/Ident
+  (ident [this {:keys [id]}]
+    [:pages id])
+  static om/IQuery
+  (query [this]
+    [:id :name]))
+
+(def partial-norm-data
+  {:pages {0 {:id 0 :name "Foo"}
+           1 {:id 1 :name "bar"}}
+   :current-page [:pages 0]})
+
+(deftest test-partially-normalized-data
+  (is (= (om/tree->db (om/get-query Page) partial-norm-data)
+         partial-norm-data)))
