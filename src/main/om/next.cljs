@@ -1161,7 +1161,8 @@
     (p/queue! reconciler keys)
     (reset! state
       (if-let [migrate (:migrate config)]
-        (migrate next (get-query (:root @(:state reconciler))) tempids)
+        (migrate next (get-query (:root @(:state reconciler)))
+          tempids (:id-key config))
         next))))
 
 (defrecord Reconciler [config state]
@@ -1325,17 +1326,21 @@
     (merge a b)
     b))
 
-(defn- default-migrate [pure query tempids]
+(defn- default-migrate [pure query tempids id-key]
   (letfn [(dissoc-in [pure [table id]]
             (assoc pure table (dissoc (get pure table) id)))
-          (step [pure [old new]]
+          (step [pure [old [_ id :as new]]]
             (-> pure
               (dissoc-in old)
-              (assoc-in new (merge (get-in pure old) (get-in pure new)))))]
-    (let [pure' (reduce step pure tempids)]
-      (tree->db query
-        (db->tree query pure' pure'
-          (fn [ident] (get tempids ident ident))) true))))
+              (assoc-in new
+                (cond-> (merge (get-in pure old) (get-in pure new))
+                  (not (nil? id-key)) (assoc id-key id)))))]
+    (if-not (empty? tempids)
+      (let [pure' (reduce step pure tempids)]
+        (tree->db query
+          (db->tree query pure' pure'
+            (fn [ident] (get tempids ident ident))) true))
+      pure)))
 
 (defn reconciler
   "Construct a reconciler from a configuration map.
@@ -1375,7 +1380,8 @@
            optimize
            history
            root-render root-unmount
-           pathopt migrate]
+           pathopt
+           migrate id-key]
     :or {ui->props    default-ui->props
          indexer      om.next/indexer
          merge-sends  #(merge-with into %1 %2)
@@ -1388,7 +1394,7 @@
          root-render  #(js/ReactDOM.render %1 %2)
          root-unmount #(js/ReactDOM.unmountComponentAtNode %)
          pathopt      false
-         migrate      (fn [pure _ _] pure)}
+         migrate      default-migrate}
     :as config}]
   {:pre [(map? config)]}
   (let [idxr   (indexer)
@@ -1407,7 +1413,8 @@
                   :normalize (or (not norm?) normalize)
                   :history (c/cache history)
                   :root-render root-render :root-unmount root-unmount
-                  :logger logger :pathopt pathopt :migrate migrate}
+                  :logger logger :pathopt pathopt
+                  :migrate migrate :id-key id-key}
                  (atom {:queue [] :queued false :queued-sends {}
                         :sends-queued false
                         :target nil :root nil :render nil :remove nil

@@ -638,7 +638,7 @@
   (let [db  (assoc-in (om/tree->db Tree tree-data true)
               [:node/by-id 6] {:id 6})
         db' (om/default-migrate db (om/get-query Tree)
-              {[:node/by-id 2] [:node/by-id 6]})]
+              {[:node/by-id 2] [:node/by-id 6]} :id)]
     (is (nil? (get-in db' [:node/by-id 2])))
     (is (= (dissoc (get-in db  [:node/by-id 2]) :id)
            (dissoc (get-in db' [:node/by-id 6]) :id)))))
@@ -661,7 +661,7 @@
   (let [db  (assoc-in (om/tree->db Tree tree-data true)
               [:node/by-id 6] {:id 6})
         db' (om/default-migrate db (om/get-query Tree)
-              {[:node/by-id tid] [:node/by-id 6]})]
+              {[:node/by-id tid] [:node/by-id 6]} :id)]
     (is (nil? (get-in db' [:node/by-id tid])))
     (is (= (dissoc (get-in db  [:node/by-id tid]) :id)
            (dissoc (get-in db' [:node/by-id 6]) :id)))))
