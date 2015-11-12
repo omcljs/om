@@ -697,3 +697,23 @@
                   [{:fake/key [{:real/key [:id]}]}] :remote)))
              {:real/key 1}))
          {:fake/key {:real/key 1}})))
+
+;; -----------------------------------------------------------------------------
+;; User Bugs
+
+(def remove-tree-data
+  {:tree {:id 0
+          :node-value 1
+          :children [{:id 1
+                      :random-key :cool!
+                      :node-value 2
+                      :children [{:id 2
+                                  :node-value 3
+                                  :children []}]}
+                     {:id 3
+                      :node-value 4
+                      :children []}]}})
+
+(deftest test-db->tree-does-not-remove-keys
+  (let [db (om/tree->db Tree remove-tree-data true)]
+    (is (= (get-in db [:node/by-id 1 :random-key]) :cool!))))

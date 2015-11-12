@@ -966,7 +966,7 @@
       (normalize* (get query (first ref)) data refs))
 
     :else
-    (loop [q (seq query) ret {}]
+    (loop [q (seq query) ret data]
       (if-not (nil? q)
         (let [node (first q)]
           (if (join? node)
