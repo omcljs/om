@@ -981,28 +981,33 @@
               (cond
                 ;; normalize one
                 (map? v)
-                (let [x (normalize* sel v refs)
-                      i (ident class v)]
-                  (swap! refs update-in [(first i) (second i)] merge x)
-                  (recur (next q) (assoc ret k i)))
+                (let [x (normalize* sel v refs)]
+                  (if-not (nil? class)
+                    (let [i (ident class v)]
+                      (swap! refs update-in [(first i) (second i)] merge x)
+                      (recur (next q) (assoc ret k i)))
+                    (recur (next q) (assoc ret k x))))
 
                 ;; normalize many
                 (vector? v)
-                (let [xs (into [] (map #(normalize* sel % refs)) v)
-                      is (into [] (map #(ident class %)) xs)]
-                  (if (vector? sel)
-                    (when-not (empty? is)
-                      (swap! refs update-in [(ffirst is)]
-                        (fn [ys]
-                          (merge-with merge ys
-                            (zipmap (map second is) xs)))))
-                    (swap! refs
-                      (fn [refs']
-                        (reduce
-                          (fn [ret [i x]]
-                            (update-in ret i merge x))
-                          refs' (map vector is xs)))))
-                  (recur (next q) (assoc ret k is)))
+                (let [xs (into [] (map #(normalize* sel % refs)) v)]
+                  (if-not (nil? class)
+                    (let [is (into [] (map #(ident class %)) xs)]
+                      (if (vector? sel)
+                        (when-not (empty? is)
+                          (swap! refs update-in [(ffirst is)]
+                            (fn [ys]
+                              (merge-with merge ys
+                                (zipmap (map second is) xs)))))
+                        ;; union case
+                        (swap! refs
+                          (fn [refs']
+                            (reduce
+                              (fn [ret [i x]]
+                                (update-in ret i merge x))
+                              refs' (map vector is xs)))))
+                      (recur (next q) (assoc ret k is)))
+                    (recur (next q) (assoc ret k xs))))
 
                 ;; missing key
                 (nil? v)

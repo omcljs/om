@@ -754,6 +754,9 @@
                 :content "Hello World!"
                 :id 1}]})
 
-(comment
-  (om/tree->db SomeTimelineComponent posts-data true)
-  )
+(def test-normalize-nested-query-no-class
+  (is (= (om/tree->db SomeTimelineComponent posts-data true)
+         {:app/posts [[:post/by-id 1]],
+          :post/by-id {1 {:user {:username "Bob Smith"},
+                          :content "Hello World!", :id 1}},
+          :om.next/tables #{:post/by-id}})))
