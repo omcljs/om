@@ -548,8 +548,6 @@
    {:pre [(component? component)]}
    (.setState component #js {:omcljs$state new-state} nil)))
 
-;; TODO: will need to reindex
-
 (defn set-query!
   "Change the query of a component. Will schedule a re-render."
   [component new-query]
