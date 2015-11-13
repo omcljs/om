@@ -62,6 +62,10 @@
            [:baz/woz])
          [{:baz/woz [:goz/noz]}]))
   (is (= (om/focus-query
+           [:foo/bar :baz/woz]
+           [:baz/woz])
+        [:baz/woz]))
+  (is (= (om/focus-query
            [:foo/bar {:baz/woz [:goz/noz {:bop/wop [:nop/sop]} :cuz/wuz]}]
            [:baz/woz :bop/wop])
         [{:baz/woz [{:bop/wop [:nop/sop]}]}])))

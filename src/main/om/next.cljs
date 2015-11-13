@@ -745,6 +745,23 @@
       (p/queue-sends! r snds)
       (schedule-sends! r))))
 
+(declare ref->components full-query)
+
+(defn transform-reads [r tx]
+  (letfn [(add-focused-query [k tx' c]
+            (->> (focus-query (get-query c) [k])
+              (full-query c)
+              (conj tx')))]
+    (loop [ks (seq tx) ret []]
+      (if-not (nil? ks)
+        (let [k (first ks)]
+          (if (keyword? k)
+            (recur (next ks)
+              (reduce #(add-focused-query k %1 %2)
+                ret (ref->components r k)))
+            (recur (next ks) (conj ret k))))
+        ret))))
+
 (defn transact!
   "Given a reconciler or component run a transaction. tx is a parse expression
    that should include mutations followed by any necessary read. The reads will
@@ -926,14 +943,16 @@
    om.next/get-query."
   ([component]
    (when (satisfies? IQuery component)
-     (replace
-       (first
-         (get-in @(-> component get-reconciler get-indexer)
-           [:class-path->query (class-path component)]))
-       (get-query component))))
-  ([component path]
+     (if (nil? (path component))
+       (replace
+         (first
+           (get-in @(-> component get-reconciler get-indexer)
+             [:class-path->query (class-path component)]))
+         (get-query component))
+       (full-query component (get-query component)))))
+  ([component query]
    (when (satisfies? IQuery component)
-     (let [path' (into [] (remove number?) path)
+     (let [path' (into [] (remove number?) (path component))
            cp    (class-path component)
            qs    (get-in @(-> component get-reconciler get-indexer)
                    [:class-path->query cp])]
@@ -942,7 +961,7 @@
          ;; but with different queries
          (let [q (first (filter #(= path' (-> % zip/root (focus->path path'))) qs))]
            (if-not (nil? q)
-             (replace q (get-query component))
+             (replace q query)
              (throw
                (ex-info (str "No queries exist for component path " cp " or data path " path')
                  {:type :om.next/no-queries}))))
@@ -1314,8 +1333,7 @@
                (get (parser env [{id (get-query c)}]) id)))]
     (if-not (nil? ui)
       ui
-      (let [path (path c)
-            fq   (full-query c path)]
+      (let [fq (full-query c)]
         (when-not (nil? fq)
           (let [s  (system-time)
                 ui (parser env fq)
@@ -1324,7 +1342,7 @@
               (let [dt (- e s)]
                 (when (< 16 dt)
                   (glog/warning l (str c " query took " dt " msecs")))))
-            (get-in ui path)))))))
+            (get-in ui (path c))))))))
 
 (defn- default-merge-ref
   [_ tree ref props]
