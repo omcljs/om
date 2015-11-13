@@ -152,9 +152,10 @@
 (defprotocol Ident
   (ident [this props] "Return the ref for this component"))
 
-(extend-type default
-  Ident
-  (ident [this props] this))
+(defn ^boolean ident?
+  "Returns true if x satisfies? Ident"
+  [x]
+  (satisfies? Ident x))
 
 (defprotocol IQueryParams
   (params [this] "Return the query parameters"))
@@ -473,12 +474,6 @@
        (-> props meta (get-in ks))
        (get-in props ks)))))
 
-(defn get-ident
-  "Given a component return its ident"
-  [component]
-  {:pre [(component? component)]}
-  (ident component (props component)))
-
 (declare schedule-render!)
 
 (defn set-state!
@@ -564,7 +559,8 @@
         _   (.add (:history cfg) id @st)]
     (when-let [l (:logger cfg)]
       (glog/info l
-        (str (when-let [ref (ident component (props component))]
+        (str (when-let [ref (when (ident? component)
+                              (ident component (props component)))]
                (str (pr-str ref) " "))
           "changed query '" new-query ", " (pr-str id))))
     (swap! st update-in [:om.next/queries component] merge {:query new-query})
@@ -583,7 +579,8 @@
         _   (.add (:history cfg) id @st)]
     (when-let [l (:logger cfg)]
       (glog/info l
-        (str (when-let [ref (ident component (props component))]
+        (str (when-let [ref (when (ident? component)
+                              (ident component (props component)))]
                (str (pr-str ref) " "))
           "changed query params " new-params", " (pr-str id))))
     (swap! st update-in [:om.next/queries component] merge {:params new-params})
@@ -723,7 +720,7 @@
 
 (defn transact* [r c ref tx]
   (let [cfg  (:config r)
-        ref  (if (and c (not ref))
+        ref  (if (and c (ident? c) (not ref))
                (ident c (props c))
                ref)
         env  (merge
@@ -849,8 +846,9 @@
         (let [indexes (update-in indexes
                         [:class->components (type c)]
                         (fnil conj #{}) c)
-              ref     (ident c (props c))]
-          (if-not (component? ref)
+              ref     (when (ident? c)
+                        (ident c (props c)))]
+          (if-not (nil? ref)
             (cond-> indexes
               ref (update-in [:ref->components ref] (fnil conj #{}) c))
             indexes)))))
@@ -861,8 +859,9 @@
         (let [indexes (update-in indexes
                         [:class->components (type c)]
                         disj c)
-              ref     (ident c (props c))]
-          (if-not (component? ref)
+              ref     (when (ident? c)
+                        (ident c (props c)))]
+          (if-not (nil? ref)
             (cond-> indexes
               ref (update-in [:ref->components ref] disj c))
             indexes)))))
@@ -951,9 +950,10 @@
 
 ;; for advanced optimizations
 (defn to-class [class]
-  (if (not (satisfies? Ident class))
-    (js/Object.create (. class -prototype))
-    class))
+  (when-not (nil? class)
+    (if (not (satisfies? Ident class))
+      (js/Object.create (. class -prototype))
+      class)))
 
 (defn- normalize* [query data refs]
   (cond
@@ -962,8 +962,11 @@
     ;; union case
     (map? query)
     (let [class (to-class (-> query meta :component))
-          ref   (ident class data)]
-      (normalize* (get query (first ref)) data refs))
+          ref   (when (ident? class)
+                  (ident class data))]
+      (if-not (nil? ref)
+        (normalize* (get query (first ref)) data refs)
+        (throw (js/Error. "Union components must implement Ident"))))
 
     (vector? data) data ;; already normalized
 
@@ -982,7 +985,7 @@
                 ;; normalize one
                 (map? v)
                 (let [x (normalize* sel v refs)]
-                  (if-not (nil? class)
+                  (if-not (or (nil? class) (not (ident? class)))
                     (let [i (ident class v)]
                       (swap! refs update-in [(first i) (second i)] merge x)
                       (recur (next q) (assoc ret k i)))
@@ -991,7 +994,7 @@
                 ;; normalize many
                 (vector? v)
                 (let [xs (into [] (map #(normalize* sel % refs)) v)]
-                  (if-not (nil? class)
+                  (if-not (or (nil? class) (not (ident? class)))
                     (let [is (into [] (map #(ident class %)) xs)]
                       (if (vector? sel)
                         (when-not (empty? is)
@@ -1304,7 +1307,7 @@
 
 (defn- default-ui->props
   [{:keys [parser ^boolean pathopt] :as env} c]
-  (let [ui (when (and pathopt (satisfies? Ident c))
+  (let [ui (when (and pathopt (ident? c))
              (let [id (ident c (props c))]
                (get (parser env [{id (get-query c)}]) id)))]
     (if-not (nil? ui)

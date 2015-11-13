@@ -754,7 +754,7 @@
                 :content "Hello World!"
                 :id 1}]})
 
-(def test-normalize-nested-query-no-class
+(deftest test-normalize-nested-query-no-class
   (is (= (om/tree->db SomeTimelineComponent posts-data true)
          {:app/posts [[:post/by-id 1]],
           :post/by-id {1 {:user {:username "Bob Smith"},
