@@ -1487,7 +1487,7 @@
   ([opts] (transit/writer opts)))
 
 (defn force
-  "Given a query expression return an equivalent  query expression that can be
+  "Given a query expression return an equivalent query expression that can be
    spliced into a transaction that will force a read of that key from the
    specified remote target."
   ([expr]
