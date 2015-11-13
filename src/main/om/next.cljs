@@ -1,5 +1,5 @@
 (ns om.next
-  (:refer-clojure :exclude [var? key replace])
+  (:refer-clojure :exclude [var? key replace force])
   (:require-macros [om.next :refer [defui]])
   (:require [goog.string :as gstring]
             [goog.object :as gobj]
@@ -1485,3 +1485,12 @@
    Can pass transit writer customization opts map."
   ([] (transit/writer))
   ([opts] (transit/writer opts)))
+
+(defn force
+  "Given a query expression return an equivalent  query expression that can be
+   spliced into a transaction that will force a read of that key from the
+   specified remote target."
+  ([expr]
+    (force expr :remote))
+  ([expr target]
+    (with-meta (list 'quote expr) {:target target})))
