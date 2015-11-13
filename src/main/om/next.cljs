@@ -748,19 +748,19 @@
 (declare ref->components full-query)
 
 (defn transform-reads [r tx]
-  (letfn [(add-focused-query [k tx' c]
+  (letfn [(add-focused-query [k tx c]
             (->> (focus-query (get-query c) [k])
               (full-query c)
-              (conj tx')))]
-    (loop [ks (seq tx) ret []]
+              (conj tx)))]
+    (loop [ks (seq tx) tx' []]
       (if-not (nil? ks)
         (let [k (first ks)]
           (if (keyword? k)
             (recur (next ks)
               (reduce #(add-focused-query k %1 %2)
-                ret (ref->components r k)))
-            (recur (next ks) (conj ret k))))
-        ret))))
+                tx' (ref->components r k)))
+            (recur (next ks) (conj tx' k))))
+        tx'))))
 
 (defn transact!
   "Given a reconciler or component run a transaction. tx is a parse expression
@@ -783,7 +783,8 @@
               " that does not implement IQuery"))
        (loop [p (parent x) x x tx tx]
          (if (nil? p)
-           (transact* (get-reconciler x) x nil tx)
+           (let [r (get-reconciler x)]
+             (transact* r x nil (transform-reads r tx)))
            (let [[x' tx] (if (satisfies? ITxIntercept p)
                           [p (tx-intercept p tx)]
                           [x tx])]
