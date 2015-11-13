@@ -149,7 +149,7 @@
                        (cond-> ret
                          (true? ast') (conj expr)
                          (map? ast') (conj (ast->expr ast'))
-                         (= target (:target ast)) (conj (ast->expr ast))))
+                         (= target (:target ast')) (conj (ast->expr ast'))))
                      (if-not (or call? (nil? (:target ast)) (contains? res :value))
                        ret
                        (let [error (atom nil)]
