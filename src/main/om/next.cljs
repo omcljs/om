@@ -548,6 +548,16 @@
    {:pre [(component? component)]}
    (.setState component #js {:omcljs$state new-state} nil)))
 
+(declare full-query to-env schedule-sends!)
+
+(defn gather-sends
+  [{:keys [parser] :as env} q remotes]
+  (into {}
+    (comp
+      (map #(vector % (parser env q %)))
+      (filter (fn [[_ v]] (pos? (count v)))))
+    remotes))
+
 (defn set-query!
   "Change the query of a component. Takes a map containing :params and/or
    :query. :params should be a map of new bindings and :query should be a query
@@ -574,6 +584,11 @@
       (merge (when query {:query query}) (when params {:params params})))
     (p/queue! r [component])
     (p/reindex! r)
+    (let [sends (gather-sends (to-env cfg)
+                  (full-query component) (:remotes cfg))]
+      (when-not (empty? sends)
+        (p/queue-sends! r sends)
+        (schedule-sends! r)))
     nil))
 
 (defn ^boolean mounted?
@@ -704,14 +719,6 @@
   (let [config (if (reconciler? x) (:config x) x)]
     (select-keys config [:state :shared :parser :logger :pathopt])))
 
-(defn gather-sends
-  [{:keys [parser] :as env} tx remotes]
-  (into {}
-    (comp
-      (map #(vector % (parser env tx %)))
-      (filter (fn [[_ v]] (pos? (count v)))))
-    remotes))
-
 (defn transact* [r c ref tx]
   (let [cfg  (:config r)
         ref  (if (and c (ident? c) (not ref))
@@ -737,7 +744,7 @@
       (p/queue-sends! r snds)
       (schedule-sends! r))))
 
-(declare ref->components full-query)
+(declare ref->components)
 
 (defn transform-reads [r tx]
   (letfn [(add-focused-query [k tx c]
