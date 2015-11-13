@@ -646,6 +646,12 @@
       (get-query (react-ref x ref))
       (get-query subquery-class))))
 
+(defn get-ident
+  "Given a component return its ident"
+  [component]
+  {:pre [(component? component)]}
+  (ident component (props component)))
+
 ;; =============================================================================
 ;; Reconciler API
 
