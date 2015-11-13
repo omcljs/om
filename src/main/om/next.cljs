@@ -549,9 +549,14 @@
    (.setState component #js {:omcljs$state new-state} nil)))
 
 (defn set-query!
-  "Change the query of a component. Will schedule a re-render."
-  [component new-query]
-  {:pre [(component? component)]}
+  "Change the query of a component. Takes a map containing :params and/or
+   :query. :params should be a map of new bindings and :query should be a query
+   expression. Will schedule a re-render as well as remote re-sends if
+   necessary."
+  [component {:keys [params query]}]
+  {:pre [(component? component)
+         (or (not (nil? params))
+             (not (nil? query)))]}
   (let [r   (get-reconciler component)
         cfg (:config r)
         st  (:state cfg)
@@ -562,28 +567,11 @@
         (str (when-let [ref (when (ident? component)
                               (ident component (props component)))]
                (str (pr-str ref) " "))
-          "changed query '" new-query ", " (pr-str id))))
-    (swap! st update-in [:om.next/queries component] merge {:query new-query})
-    (p/queue! r [component])
-    (p/reindex! r)
-    nil))
-
-(defn set-params!
-  "Change the query parameters of a component. Will schedule a re-render."
-  [component new-params]
-  {:pre [(component? component)]}
-  (let [r   (get-reconciler component)
-        cfg (:config r)
-        st  (:state cfg)
-        id  (random-uuid)
-        _   (.add (:history cfg) id @st)]
-    (when-let [l (:logger cfg)]
-      (glog/info l
-        (str (when-let [ref (when (ident? component)
-                              (ident component (props component)))]
-               (str (pr-str ref) " "))
-          "changed query params " new-params", " (pr-str id))))
-    (swap! st update-in [:om.next/queries component] merge {:params new-params})
+          (when query  "changed query '" query ", ")
+          (when params "changed params " params " ")
+          (pr-str id))))
+    (swap! st update-in [:om.next/queries component] merge
+      (merge (when query {:query query}) (when params {:params params})))
     (p/queue! r [component])
     (p/reindex! r)
     nil))
