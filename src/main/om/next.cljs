@@ -755,7 +755,7 @@
   (letfn [(add-focused-query [k tx c]
             (->> (focus-query (get-query c) [k])
               (full-query c)
-              (conj tx)))]
+              (into tx)))]
     (loop [ks (seq tx) tx' []]
       (if-not (nil? ks)
         (let [k (first ks)]
