@@ -424,7 +424,7 @@
          ks     (cond-> k-or-ks
                   (not (sequential? k-or-ks)) vector)]
      (cond-> shared
-       (not (empty? ks)) (get-in shared ks)))))
+       (not (empty? ks)) (get-in ks)))))
 
 (defn instrument [component]
   {:pre [(component? component)]}
