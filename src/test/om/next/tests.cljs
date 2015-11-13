@@ -734,3 +734,26 @@
 (deftest test-partially-normalized-data
   (is (= (om/tree->db (om/get-query Page) partial-norm-data)
          partial-norm-data)))
+
+(defui SomePost
+  static om/Ident
+  (ident [this {:keys [id]}]
+    [:post/by-id id])
+  static om/IQuery
+  (query [this]
+    '[:id {:user [:username]} :content]))
+
+(defui SomeTimelineComponent
+  static om/IQuery
+  (query [this]
+    (let [subquery (om/get-query SomePost)]
+      `[{:app/posts ~subquery}])))
+
+(def posts-data
+  {:app/posts [{:user {:username "Bob Smith"}
+                :content "Hello World!"
+                :id 1}]})
+
+(comment
+  (om/tree->db SomeTimelineComponent posts-data true)
+  )
