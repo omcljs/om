@@ -455,24 +455,26 @@
   "Add computed properties to props. Note will replace any pre-existing
    computed properties."
   [props computed-map]
-  (if (vector? props)
-    (cond-> props
-      (not (empty? computed-map)) (vary-meta assoc :om.next/computed computed-map))
-    (cond-> props
-      (not (empty? computed-map)) (assoc :om.next/computed computed-map))))
+  (when-not (nil? props)
+    (if (vector? props)
+      (cond-> props
+        (not (empty? computed-map)) (vary-meta assoc :om.next/computed computed-map))
+      (cond-> props
+        (not (empty? computed-map)) (assoc :om.next/computed computed-map)))))
 
 (defn get-computed
   "Return the computed properties on a component or its props."
   ([x]
    (get-computed x []))
   ([x k-or-ks]
-   (let [props (cond-> x (component? x) props)
-         ks    (into [:om.next/computed]
-                 (cond-> k-or-ks
-                   (not (sequential? k-or-ks)) vector))]
-     (if (vector? props)
-       (-> props meta (get-in ks))
-       (get-in props ks)))))
+   (when-not (nil? x)
+     (let [props (cond-> x (component? x) props)
+           ks    (into [:om.next/computed]
+                   (cond-> k-or-ks
+                     (not (sequential? k-or-ks)) vector))]
+       (if (vector? props)
+         (-> props meta (get-in ks))
+         (get-in props ks))))))
 
 (declare schedule-render!)
 
@@ -1307,7 +1309,7 @@
 
 (defn- default-ui->props
   [{:keys [parser ^boolean pathopt] :as env} c]
-  (let [ui (when (and pathopt (ident? c))
+  (let [ui (when (and pathopt (ident? c) (iquery? c))
              (let [id (ident c (props c))]
                (get (parser env [{id (get-query c)}]) id)))]
     (if-not (nil? ui)
