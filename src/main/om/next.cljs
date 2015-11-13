@@ -1239,17 +1239,10 @@
             parsef  (fn []
                       (let [sel (get-query (or @ret root-class))]
                         (if-not (nil? sel)
-                          (let [env  (to-env config)
-                                v    ((:parser config) env sel)
-                                snds (gather-sends env sel (:remotes config))]
+                          (let [env (to-env config)
+                                v   ((:parser config) env sel)]
                             (when-not (empty? v)
-                              (renderf v))
-                            (when-not (empty? snds)
-                              (when-let [send (:send config)]
-                                (send snds
-                                  #(do
-                                    (merge! this %)
-                                    (renderf ((:parser config) env sel)))))))
+                              (renderf v)))
                           (renderf @(:state config)))))]
         (swap! state merge
           {:target target :render parsef :root root-class
@@ -1266,6 +1259,15 @@
             (swap! state update-in [:t] inc)
             (schedule-render! this)))
         (parsef)
+        (when-let [sel (get-query (or @ret root-class))]
+          (let [env  (to-env config)
+                snds (gather-sends env sel (:remotes config))]
+            (when-not (empty? snds)
+              (when-let [send (:send config)]
+                (send snds
+                  #(do
+                    (merge! this %)
+                    (renderf ((:parser config) env sel))))))))
         @ret)))
 
   (remove-root! [_ target]
