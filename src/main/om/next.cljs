@@ -257,7 +257,7 @@
 (defn- compute-react-key [cl props]
   (if-let [rk (:react-key props)]
     rk
-    (if-let [idx (:om-path props)]
+    (if-let [idx (-> props meta :om-path)]
       (str (. cl -name) "_" idx)
       js/undefined)))
 
