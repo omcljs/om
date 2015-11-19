@@ -115,7 +115,7 @@
     :else       node))
 
 (defn focus-query
-  "Given a query focus it along the specified path.
+  "Given a query, focus it along the specified path.
 
   Examples:
     (om.next/focus-query [:foo :bar :baz] [:foo])
