@@ -12,6 +12,8 @@
                 :asset-path "/devcards/out"
                 :output-to "resources/public/devcards/main.js"
                 :output-dir "resources/public/devcards/out"
+                :parallel-build true
+                :compiler-stats true
                 :verbose true}}]})
 
 (ra/cljs-repl)

@@ -2,4 +2,6 @@
 (require '[cljs.repl.node :as node])
 
 (cljs.repl/repl* (node/repl-env)
-  {:verbose true})
+  {:verbose true
+   :parallel-build true
+   :compiler-stats true})

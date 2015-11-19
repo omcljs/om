@@ -4,6 +4,7 @@
             [cljs.pprint :as pprint]
             [om.devcards.tutorials]
             [om.devcards.bugs]
+            [om.devcards.autocomplete]
             [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]))
 
@@ -390,7 +391,7 @@
 
 (defcard test-simple-recursive-syntax-with-mutation
   "Test that simple recursive syntax works with mutations and component
-   local state."
+   local state. Cool"
   (om/mock-root norm-tree-reconciler NormTree))
 
 (comment
