@@ -675,7 +675,7 @@
 
 (defn schedule-sends! [reconciler]
   (when (p/schedule-sends! reconciler)
-    (js/setTimeout #(p/send! reconciler) 300)))
+    (js/setTimeout #(p/send! reconciler) 0)))
 
 (declare remove-root!)
 
