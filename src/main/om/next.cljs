@@ -114,7 +114,16 @@
     (seq? node) (list (focused-join (first node) ks) (second node))
     :else       node))
 
-(defn- focus-query [query path]
+(defn focus-query
+  "Given a query focus it along the specified path.
+
+  Examples:
+    (om.next/focus-query [:foo :bar :baz] [:foo])
+    => [:foo]
+
+    (om.next/focus-query [{:foo [:bar :baz]} :woz] [:foo :bar])
+    => [{:foo [:bar]}]"
+  [query path]
   (if (empty? path)
     query
     (let [[k & ks] path]
