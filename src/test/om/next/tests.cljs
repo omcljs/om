@@ -764,3 +764,63 @@
           :post/by-id {1 {:user {:username "Bob Smith"},
                           :content "Hello World!", :id 1}},
           :om.next/tables #{:post/by-id}})))
+
+;; -----------------------------------------------------------------------------
+;; Union Migration
+
+(def union-init-data
+  {:dashboard/items
+   [{:id 0
+     :type :post
+     :title "Ohai"}]})
+
+(defui UnionPost
+  static om/IQuery
+  (query [this]
+    [:id :type :title]))
+
+(defui UnionDashboardItem
+  static om/Ident
+  (ident [this {:keys [id type]}]
+    [type id])
+
+  static om/IQuery
+  (query [this]
+    {:post (om/get-query UnionPost)}))
+
+(defui UnionDashboard
+  static om/IQuery
+  (query [this]
+    [{:dashboard/items (om/get-query UnionDashboardItem)}]))
+
+(defmulti union-read om/dispatch)
+
+(defmethod union-read :dashboard/items
+  [{:keys [state query]} k _]
+  (let [st @state]
+    {:value (om/db->tree query (get-in st k) st)}))
+
+(defmulti union-mutate om/dispatch)
+
+(defmethod union-mutate 'item/add
+  [{:keys [state]} k {:keys [id type] :as params}]
+  (let [ident [type id]]
+    {:action
+     (fn []
+       (swap! state
+         (fn [st]
+           (-> st
+             (assoc-in ident params)
+             (update :dashboard/items conj ident)))))}))
+
+(comment
+
+  (let [st (atom (om/tree->db UnionDashboard union-init-data true))
+        parser (om/parser {:read union-read :mutate union-mutate})]
+    (parser {:state st} '[(item/add {:id -1 :type :post :content "..."})])
+    (let [db @st
+          db' (om/default-migrate db (om/get-query UnionDashboard)
+                {[:post -1] [:post 1]} :id)]
+      db'))
+
+  )
