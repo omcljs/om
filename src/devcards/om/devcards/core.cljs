@@ -5,6 +5,7 @@
             [om.devcards.tutorials]
             [om.devcards.bugs]
             [om.devcards.autocomplete]
+            [om.devcards.shared-fn-test]
             [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]))
 
