@@ -995,7 +995,8 @@
           ref   (when (ident? class)
                   (ident class data))]
       (if-not (nil? ref)
-        (normalize* (get query (first ref)) data refs)
+        (vary-meta (normalize* (get query (first ref)) data refs)
+          assoc :om/tag (first ref))
         (throw (js/Error. "Union components must implement Ident"))))
 
     (vector? data) data ;; already normalized
