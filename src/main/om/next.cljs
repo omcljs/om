@@ -1099,9 +1099,11 @@
    (let [data (cond-> data (ref? data) (->> map-ident (get-in refs)))]
      (if (vector? data)
        ;; join
-       (into []
-         (map #(db->tree query (get-in refs (map-ident %)) refs map-ident))
-         data)
+       (let [step (fn [ident]
+                    (let [ident' (get-in refs (map-ident ident))
+                          query' (cond-> query (map? query) (get (first ident)))] ;; UNION
+                      (db->tree query' ident' refs map-ident)))]
+         (into [] (map step) data))
        ;; map case
        (let [{props false joins true} (group-by join? query)]
          (loop [joins (seq joins) ret {}]
