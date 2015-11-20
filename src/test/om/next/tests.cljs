@@ -823,4 +823,11 @@
                 {[:post -1] [:post 1]} :id)]
       db'))
 
+  ;; seems like the root issue
+  (let [st (atom (om/tree->db UnionDashboard union-init-data true))
+        parser (om/parser {:read union-read :mutate union-mutate})]
+    (parser {:state st} '[(item/add {:id -1 :type :post :content "..."})])
+    (let [db @st]
+      (om/db->tree (om/get-query UnionDashboard) db db)))
+
   )
