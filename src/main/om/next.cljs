@@ -1313,6 +1313,8 @@
         ;; TODO: need to move root re-render logic outside of batching logic
         (empty? q) ((:render st))
 
+        (some (comp zero? depth) q) ((:render st))
+
         (= [::skip] q) nil
 
         :else
