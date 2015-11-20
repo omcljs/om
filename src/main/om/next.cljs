@@ -405,7 +405,8 @@
   "PRIVATE: Returns the render depth (a integer) of the component relative to
   the mount root."
   [component]
-  (get-prop component "omcljs$depth"))
+  (when (component? component)
+    (get-prop component "omcljs$depth")))
 
 (defn react-key
   "Returns the components React key."
@@ -745,10 +746,11 @@
                  (str (when ref (str (pr-str ref) " "))
                    "transacted '" tx ", " (pr-str id))))
         v    ((:parser cfg) env tx)
-        snds (gather-sends env tx (:remotes cfg))]
-    (p/queue! r
-      (into (if ref [ref] [])
-        (remove symbol? (keys v))))
+        snds (gather-sends env tx (:remotes cfg))
+        q    (cond-> []
+               (not (nil? c)) (conj c)
+               (not (nil? ref)) (conj ref))]
+    (p/queue! r (into q (remove symbol?) (keys v)))
     (when-not (empty? snds)
       (p/queue-sends! r snds)
       (schedule-sends! r))))
