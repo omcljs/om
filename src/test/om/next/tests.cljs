@@ -296,7 +296,7 @@
     (is (= (p {:state st} [{[:user/by-id 0] [:name/last]}] :remote)
            [{[:user/by-id 0] [:name/last]}]))))
 
-(deftest test-forced-remote
+#_(deftest test-forced-remote
   (is (= (p {} '['(foo/bar)]) {}))
   (is (= (p {} '['(foo/bar)] :remote) '[(foo/bar)])))
 
@@ -828,6 +828,7 @@
         parser (om/parser {:read union-read :mutate union-mutate})]
     (parser {:state st} '[(item/add {:id -1 :type :post :content "..."})])
     (let [db @st]
-      (om/db->tree (om/get-query UnionDashboard) db db)))
+      (om/db->tree (om/get-query UnionDashboard) db db
+        (fn [ident] (get {[:post -1] [:post 1]} ident ident)))))
 
   )
