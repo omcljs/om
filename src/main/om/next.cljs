@@ -1144,12 +1144,12 @@
    actual query you should send. Upon receiving the response you should invoke
    :rewrite on the response before invoking the send callback."
   [query]
-  (letfn [(process-roots* [query ret path]
+  (letfn [(process-roots* [query state path]
             (loop [ks (seq query)]
               (if-not (nil? ks)
                 (let [k (first ks)]
                   (if (true? (-> k meta :query/root))
-                    (swap! ret
+                    (swap! state
                       #(let [jk (join-key k)]
                         (-> %
                           (update-in [:query] conj k)
@@ -1157,11 +1157,14 @@
                     (do
                       (when (join? k)
                         (let [[jk jv] (join-entry k)]
-                          (process-roots* jv ret (conj path jk))))
+                          (process-roots* jv state (conj path jk))))
                       (recur (next ks))))))))]
-    (let [ret (atom {:query [] :paths {}})]
-      (process-roots* query ret [])
-      (assoc @ret :rewrite (rewrite (:paths @ret))))))
+    (let [state (atom {:query [] :paths {}})
+          _     (process-roots* query state [])
+          st    @state]
+      (if-not (empty? (:query st))
+        (assoc st :rewrite (rewrite (:paths st)))
+        {:query query :rewrite identity}))))
 
 (defn- merge-refs [tree config refs]
   (let [{:keys [merge-ref indexer]} config]
