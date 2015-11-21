@@ -40,10 +40,14 @@
   (dom/ul #js {:key "result-list"}
     (map #(dom/li nil %) results)))
 
-(defn search-field [query]
+(defn search-field [ac query]
   (dom/input
     #js {:key "search-field"
-         :value query}))
+         :value query
+         :onKeyDown
+         (fn [e]
+           (om/set-query! ac
+             {:params {:query (.. e -target -value)}}))}))
 
 (defui AutoCompleter
   static om/IQueryParams
@@ -58,7 +62,7 @@
       (dom/div nil
         (dom/h2 nil "Autocompleter")
         (cond->
-          [(search-field (:search-query (om/get-params this)))]
+          [(search-field this (:search-query (om/get-params this)))]
           results (conj (result-list results)))))))
 
 (defn send [{:keys [search]} cb]
