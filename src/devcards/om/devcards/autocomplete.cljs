@@ -4,6 +4,7 @@
   (:require [goog.events :as events]
             [goog.events.EventType]
             [cljs.core.async :as async :refer [<! >! put! chan]]
+            [clojure.string :as string]
             [om.next :as om :refer-macros [defui]]
             [om.dom :as dom])
   (:import [goog Uri]
@@ -27,9 +28,11 @@
 (defmulti read om/dispatch)
 
 (defmethod read :search/results
-  [{:keys [state ast] :as env} _ _]
-  {:value  (get @state :search/results [])
-   :search ast})
+  [{:keys [state ast] :as env} k {:keys [query]}]
+  (merge
+    {:value (get @state k [])}
+    (when-not (string/blank? query)
+     {:search ast})))
 
 ;; -----------------------------------------------------------------------------
 ;; App
@@ -57,6 +60,7 @@
   Object
   (render [this]
     (let [{:keys [search/results]} (om/props this)]
+      (println "RENDER" results)
       (dom/div nil
         (dom/h2 nil "Autocompleter")
         (cond->
@@ -72,7 +76,7 @@
 
 (def reconciler
   (om/reconciler
-    {:state   {}
+    {:state   {:search/results []}
      :parser  (om/parser {:read read})
      :send    (send-to-chan send-chan)
      :remotes [:remote :search]}))
