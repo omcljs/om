@@ -93,13 +93,3 @@
 (defcard test-autocomplete
   "Demonstrate simple autocompleter"
   (om/mock-root reconciler AutoCompleter))
-
-(comment
-
-  (go (println (<! (jsonp (str base-url "do")))))
-
-  (def parser (om/parser {:read read}))
-
-  (parser {} (om/get-query AutoCompleter) :search)
-
-  )
