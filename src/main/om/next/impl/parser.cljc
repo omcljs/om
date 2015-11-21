@@ -27,12 +27,12 @@
    Given a QueryExpr you can get the AST via om.next.impl.parser/expr->ast.
    The following keys can appear in the AST representation:
 
-   {:type         (:prop | :join | :call)
+   {:type         (:prop | :join | :call | :root)
     :key          (EdnKeyword | EdnSymbol | IdentExpr)
     :dispatch-key (EdnKeyword | EdnSymbol)
     :query        (QueryRoot | RecurExpr)
-    :query        AST
-    :params       ParamMapExpr}
+    :params       ParamMapExpr
+    :children     EdnVector(AST)}
 
    :query and :params may or may not appear. :type :call is only for
    mutations."}
@@ -56,13 +56,19 @@
       (cond-> ast
         (symbol? (:dispatch-key ast)) (assoc :type :call)))))
 
+(defn query->ast
+  "Convert a query to its AST representation."
+  [query]
+  {:type :root
+   :children (into [] (map expr->ast) query)})
+
 (defn join->ast [join]
   (let [[k v] (first join)
         ast   (expr->ast k)]
     (merge ast
-      {:type :join
-       :query v
-       :query-ast (expr->ast v)})))
+      {:type :join :query v}
+      (when-not (= '... v)
+        {:children (into [] (map expr->ast) v)}))))
 
 (defn ref->ast [[k id :as ref]]
   {:type :prop
@@ -91,15 +97,22 @@
 
 (defn ast->expr
   "Given a query expression AST convert it back into a query expression."
-  [{:keys [key query params query-root] :as ast}]
-  (wrap-expr query-root
-    (if-not (nil? params)
-      (if-not (empty? params)
-        (list (ast->expr (dissoc ast :params)) params)
-        (list (ast->expr (dissoc ast :params))))
-      (if-not (nil? query)
-        {key query}
-        key))))
+  ([ast]
+    (ast->expr ast false))
+  ([{:keys [type] :as ast} unparse-children?]
+   (if (= :root type)
+     (into [] (map ast->expr) (:children ast))
+     (let [{:keys [key query query-root params]} ast]
+       (wrap-expr query-root
+         (if-not (nil? params)
+           (if-not (empty? params)
+             (list (ast->expr (dissoc ast :params)) params)
+             (list (ast->expr (dissoc ast :params))))
+           (if-not (nil? query)
+             (if (true? unparse-children?)
+               {key (ast->expr (:children ast) unparse-children?)}
+               {key query})
+             key)))))))
 
 (defn path-meta [x path]
   (let [x' (cond->> x
