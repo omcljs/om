@@ -693,6 +693,11 @@
            {:real/key 1})
          {:fake/key {:real/key 1}})))
 
+(deftest test-query-root
+  (let [ast (assoc (parser/expr->ast {:real/key [:id]})
+              :query/root true)]
+    (is (= (meta (parser/ast->expr ast)) {:query/root true}))))
+
 (deftest test-process-roots
   (is (= (let [p (om/parser {:read precise-read})]
            ((:rewrite
