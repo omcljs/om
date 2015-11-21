@@ -60,7 +60,6 @@
   Object
   (render [this]
     (let [{:keys [search/results]} (om/props this)]
-      (println "RENDER" results)
       (dom/div nil
         (dom/h2 nil "Autocompleter")
         (cond->
