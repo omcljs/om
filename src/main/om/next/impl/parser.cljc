@@ -27,7 +27,7 @@
    Given a QueryExpr you can get the AST via om.next.impl.parser/expr->ast.
    The following keys can appear in the AST representation:
 
-   {:type         (:prop | :call)
+   {:type         (:prop | :join | :call)
     :key          (EdnKeyword | EdnSymbol | IdentExpr)
     :dispatch-key (EdnKeyword | EdnSymbol)
     :query        (QueryRoot | RecurExpr)
@@ -60,7 +60,7 @@
         ast   (expr->ast k)
         ref?  (vector? (:key ast))]
     (assoc ast
-      :type :prop
+      :type :join
       :query v)))
 
 (defn ref->ast [[k id :as ref]]
@@ -133,12 +133,14 @@
                        call? (= :call type)
                        res   (when (nil? (:target ast))
                                (case type
-                                 :call (do
-                                         (assert mutate "Parse mutation attempted but no :mutate function supplied")
-                                         (mutate env dispatch-key params))
-                                 :prop (do
-                                         (assert read "Parse read attempted but no :read function supplied")
-                                         (read env dispatch-key params))))]
+                                 :call
+                                 (do
+                                   (assert mutate "Parse mutation attempted but no :mutate function supplied")
+                                   (mutate env dispatch-key params))
+                                 (:prop :join)
+                                 (do
+                                   (assert read "Parse read attempted but no :read function supplied")
+                                   (read env dispatch-key params))))]
                    (if-not (nil? target)
                      (let [ast' (get res target)]
                        (cond-> ret
