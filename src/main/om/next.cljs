@@ -817,6 +817,15 @@
    as the dispatch-fn."
   [_ key _] key)
 
+(defn expr->ast
+  "Given a query expression convert it into an AST."
+  [query-expr]
+  (parser/expr->ast query-expr))
+
+(defn ast->expr [query-ast]
+  "Given an AST convert it back into a query expression."
+  (parser/ast->expr query-ast))
+
 ;; =============================================================================
 ;; Indexer
 

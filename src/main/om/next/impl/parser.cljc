@@ -31,7 +31,8 @@
     :key          (EdnKeyword | EdnSymbol | IdentExpr)
     :dispatch-key (EdnKeyword | EdnSymbol)
     :query        (QueryRoot | RecurExpr)
-    :params       (ParamMapExpr)}
+    :query        AST
+    :params       ParamMapExpr}
 
    :query and :params may or may not appear. :type :call is only for
    mutations."}
@@ -57,11 +58,11 @@
 
 (defn join->ast [join]
   (let [[k v] (first join)
-        ast   (expr->ast k)
-        ref?  (vector? (:key ast))]
-    (assoc ast
-      :type :join
-      :query v)))
+        ast   (expr->ast k)]
+    (merge ast
+      {:type :join
+       :query v
+       :query-ast (expr->ast v)})))
 
 (defn ref->ast [[k id :as ref]]
   {:type :prop

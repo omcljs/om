@@ -163,15 +163,19 @@
   (is (= (parser/expr->ast [:foo 0])
          {:type :prop :key [:foo 0] :dispatch-key :foo}))
   (is (= (parser/expr->ast {:foo [:bar]})
-         {:type :join :key :foo :dispatch-key :foo :query [:bar]}))
+         {:type :join, :dispatch-key :foo, :key :foo, :query [:bar],
+          :query-ast {:type :prop, :dispatch-key :bar, :key [:bar]}}))
   (is (= (parser/expr->ast {[:foo 0] [:bar]})
-          {:type :join :key [:foo 0] :dispatch-key :foo :query [:bar]}))
+         {:type :join, :dispatch-key :foo, :key [:foo 0], :query [:bar],
+          :query-ast {:type :prop, :dispatch-key :bar, :key [:bar]}}))
   (is (= (parser/expr->ast '(:foo {:bar 1}))
          {:type :prop :key :foo :dispatch-key :foo :params {:bar 1}}))
   (is (= (parser/expr->ast '({:foo [:bar :baz]} {:woz 1}))
-         {:type :join :key :foo :dispatch-key :foo :query [:bar :baz] :params {:woz 1}}))
+         {:type :join, :dispatch-key :foo, :key :foo, :query [:bar :baz],
+          :query-ast {:type :prop, :dispatch-key :bar, :key [:bar :baz]}, :params {:woz 1}}))
   (is (= (parser/expr->ast '({[:foo 0] [:bar :baz]} {:woz 1}))
-         {:type :join :key [:foo 0] :dispatch-key :foo :query [:bar :baz] :params {:woz 1}}))
+         {:type :join, :dispatch-key :foo, :key [:foo 0], :query [:bar :baz],
+          :query-ast {:type :prop, :dispatch-key :bar, :key [:bar :baz]}, :params {:woz 1}}))
   (is (= (parser/expr->ast '(do/it {:woz 1}))
          {:type :call :key 'do/it :dispatch-key 'do/it :params {:woz 1}}))
   (is (= (parser/expr->ast '(do/it))
