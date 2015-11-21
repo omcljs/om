@@ -65,7 +65,7 @@
         (dom/h2 nil "Autocompleter")
         (cond->
           [(search-field this (:search-query (om/get-params this)))]
-          results (conj (result-list results)))))))
+          (not (empty? results)) (conj (result-list results)))))))
 
 (defn send-loop [c]
   (go
