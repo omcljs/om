@@ -617,8 +617,8 @@
 ;; Path Optimization
 
 (defmethod tree-read :node/by-id
-  [{:keys [state query query/root]} _ _]
-  {:value (om/db->tree query root @state)})
+  [{:keys [state query query-root]} _ _]
+  {:value (om/db->tree query query-root @state)})
 
 (deftest test-read-ident
   (let [state  (atom (om/tree->db Tree tree-data true))
@@ -686,7 +686,7 @@
 
 (defmethod precise-read :real/key
   [{:keys [ast] :as env} _ _]
-  {:remote (assoc ast :query/root true)})
+  {:remote (assoc ast :query-root true)})
 
 (deftest test-rewrite
   (is (= ((om/rewrite {:real/key [:fake/key :real/key]})
@@ -695,8 +695,8 @@
 
 (deftest test-query-root
   (let [ast (assoc (parser/expr->ast {:real/key [:id]})
-              :query/root true)]
-    (is (= (meta (parser/ast->expr ast)) {:query/root true}))))
+              :query-root true)]
+    (is (= (meta (parser/ast->expr ast)) {:query-root true}))))
 
 (deftest test-process-roots
   (let [p (om/parser {:read precise-read})

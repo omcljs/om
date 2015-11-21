@@ -1151,7 +1151,7 @@
             (loop [ks (seq query)]
               (if-not (nil? ks)
                 (let [k (first ks)]
-                  (if (true? (-> k meta :query/root))
+                  (if (true? (-> k meta :query-root))
                     (swap! state
                       #(let [jk (join-key k)]
                         (-> %

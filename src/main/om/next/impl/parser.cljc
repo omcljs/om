@@ -85,13 +85,13 @@
   (if root?
     (with-meta
       (cond-> expr (keyword? expr) list)
-      {:query/root true})
+      {:query-root true})
     expr))
 
 (defn ast->expr
   "Given a query expression AST convert it back into a query expression."
-  [{:keys [key query params query/root] :as ast}]
-  (wrap-expr root
+  [{:keys [key query params query-root] :as ast}]
+  (wrap-expr query-root
     (if-not (nil? params)
       (if-not (empty? params)
         (list (ast->expr (dissoc ast :params)) params)
@@ -122,18 +122,13 @@
     ([env query target]
      (let [elide-paths? (boolean (:elide-paths config))
            {:keys [path] :as env}
-           (cond-> (assoc env :parser self :target target :query/root :om.next/root)
+           (cond-> (assoc env :parser self :target target :query-root :om.next/root)
              (not (contains? env :path)) (assoc :path []))]
        (letfn [(step [ret expr]
                  (let [{query' :query :keys [key dispatch-key params] :as ast} (expr->ast expr)
-                       env   (as-> (assoc env :ast ast) env
-                               (if (= '... query')
-                                 (assoc env :query query)
-                                 (cond-> env
-                                   (not (nil? query')) (assoc :query query')))
-                               (if (vector? key)
-                                 (assoc env :query/root key)
-                                 env))
+                       env   (cond-> (merge env {:ast ast :query query'})
+                               (= '... query') (assoc :query query)
+                               (vector? key)   (assoc :query-root key))
                        type  (:type ast)
                        call? (= :call type)
                        res   (when (nil? (:target ast))
