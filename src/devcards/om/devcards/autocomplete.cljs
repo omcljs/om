@@ -19,6 +19,19 @@
      (.send gjsonp nil #(put! c %))
      c)))
 
+;; -----------------------------------------------------------------------------
+;; Parsing
+
+(defmulti read om/dispatch)
+
+(defmethod read :search/results
+  [{:keys [ast] :as env} k params]
+  (println ast)
+  {:search ast})
+
+;; -----------------------------------------------------------------------------
+;; App
+
 (defn result-list [results]
   (dom/ul
     (map #(dom/li nil %) results)))
@@ -30,10 +43,10 @@
 (defui AutoCompleter
   static om/IQueryParams
   (params [_]
-    {:search-query ""})
+    {:query ""})
   static om/IQuery
   (query [_]
-    '[(:search/results ?search-query)])
+    '[(:search/results {:query ?query})])
   Object
   (render [this]
     (let [{:keys [search/results]} (om/props this)]
@@ -41,8 +54,10 @@
         [(search-field (:search-query (om/get-params this)))]
         results (conj (result-list results))))))
 
-(defn send [{:keys [remote]} cb]
-  )
+(defn send [{:keys [remote search]} cb]
+  (go
+    (let [[_ res] (<! (jsonp (str base-url "do")))]
+      (cb res))))
 
 (def reconciler
   (om/reconciler
@@ -51,3 +66,13 @@
 
 (defcard test-autocomplete
   "Demonstrate simple autocompleter")
+
+(comment
+
+  (go (println (<! (jsonp (str base-url "do")))))
+
+  (def parser (om/parser {:read read}))
+
+  (parser {} (om/get-query AutoCompleter) :search)
+
+  )
