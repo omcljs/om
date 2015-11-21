@@ -699,6 +699,11 @@
     (is (= (meta (parser/ast->expr ast)) {:query/root true}))))
 
 (deftest test-process-roots
+  (let [p (om/parser {:read precise-read})
+        m (om/process-roots
+            (p {:state (atom {})}
+              [{:fake/key [{:real/key [:id]}]}] :remote))]
+    (is (= [{:real/key [:id]}] (:query m))))
   (is (= (let [p (om/parser {:read precise-read})]
            ((:rewrite
               (om/process-roots
