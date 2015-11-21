@@ -846,7 +846,10 @@
                       (let [{props false joins true} (group-by join? query)]
                         (when class
                           (swap! prop->classes
-                            #(merge-with into % (zipmap props (repeat #{class})))))
+                            #(merge-with into %
+                              (zipmap
+                                (map (comp :key parser/expr->ast) props)
+                                (repeat #{class})))))
                         (doseq [join joins]
                           (let [[prop query'] (join-entry join)
                                 query'        (if (= '... query')
