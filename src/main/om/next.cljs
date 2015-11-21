@@ -1269,7 +1269,7 @@
             (swap! state update-in [:t] inc)
             (schedule-render! this)))
         (parsef)
-        (when-let [sel (get-query (or @ret root-class))]
+        (when-let [sel (get-query (or (and target @ret) root-class))]
           (let [env  (to-env config)
                 snds (gather-sends env sel (:remotes config))]
             (when-not (empty? snds)
