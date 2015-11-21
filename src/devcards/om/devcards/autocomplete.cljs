@@ -71,8 +71,7 @@
 
 (defn send-to-chan [c]
   (fn [{:keys [search]} cb]
-    (println search)
-    (put! c [(get-in search [0 1]) cb])))
+    (put! c [(-> search (nth 0) (nth 1)) cb])))
 
 (def reconciler
   (om/reconciler
@@ -84,7 +83,9 @@
 (defn send-loop [c]
   (go
     (loop [[{:keys [query]} cb] (<! c)]
-      (cb {:search/results (aget (<! (jsonp (str base-url query))) 0)})
+      (let [raw     (<! (jsonp (str base-url query)))
+            results (aget raw 1)]
+        (cb {:search/results results}))
       (recur (<! c)))))
 
 (send-loop send-chan)
