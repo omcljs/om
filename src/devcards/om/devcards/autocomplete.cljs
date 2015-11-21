@@ -31,8 +31,9 @@
   [{:keys [state ast] :as env} k {:keys [query]}]
   (merge
     {:value (get @state k [])}
-    (when-not (string/blank? query)
-     {:search ast})))
+    (when-not (and (string/blank? query)
+                   (<= 2 (count query)))
+      {:search ast})))
 
 ;; -----------------------------------------------------------------------------
 ;; App
@@ -66,19 +67,6 @@
           [(search-field this (:search-query (om/get-params this)))]
           results (conj (result-list results)))))))
 
-(def send-chan (chan))
-
-(defn send-to-chan [c]
-  (fn [{:keys [search]} cb]
-    (put! c [(-> search (nth 0) (nth 1)) cb])))
-
-(def reconciler
-  (om/reconciler
-    {:state   {:search/results []}
-     :parser  (om/parser {:read read})
-     :send    (send-to-chan send-chan)
-     :remotes [:remote :search]}))
-
 (defn send-loop [c]
   (go
     (loop [[{:keys [query]} cb] (<! c)]
@@ -86,6 +74,19 @@
             results (aget raw 1)]
         (cb {:search/results results}))
       (recur (<! c)))))
+
+(defn send-to-chan [c]
+  (fn [{:keys [search]} cb]
+    (put! c [(-> search (nth 0) (nth 1)) cb])))
+
+(def send-chan (chan))
+
+(def reconciler
+  (om/reconciler
+    {:state   {:search/results []}
+     :parser  (om/parser {:read read})
+     :send    (send-to-chan send-chan)
+     :remotes [:remote :search]}))
 
 (send-loop send-chan)
 
