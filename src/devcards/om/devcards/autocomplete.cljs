@@ -1,9 +1,7 @@
 (ns om.devcards.autocomplete
   (:require-macros [devcards.core :refer [defcard deftest]]
                    [cljs.core.async.macros :refer [go]])
-  (:require [goog.events :as events]
-            [goog.events.EventType]
-            [cljs.core.async :as async :refer [<! >! put! chan]]
+  (:require [cljs.core.async :as async :refer [<! >! put! chan]]
             [clojure.string :as string]
             [om.next :as om :refer-macros [defui]]
             [om.dom :as dom])
