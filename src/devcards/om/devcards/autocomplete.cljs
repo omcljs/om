@@ -44,7 +44,7 @@
   (dom/input
     #js {:key "search-field"
          :value query
-         :onKeyDown
+         :onKeyUp
          (fn [e]
            (om/set-query! ac
              {:params {:query (.. e -target -value)}}))}))
