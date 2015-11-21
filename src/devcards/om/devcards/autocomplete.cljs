@@ -28,10 +28,8 @@
 
 (defmethod read :search/results
   [{:keys [state ast] :as env} _ _]
-  (let [st @state]
-    (when-not (contains? st :search/results)
-      {:value  []
-       :search ast})))
+  {:value  (get @state :search/results [])
+   :search ast})
 
 ;; -----------------------------------------------------------------------------
 ;; App
@@ -65,18 +63,27 @@
           [(search-field this (:search-query (om/get-params this)))]
           results (conj (result-list results)))))))
 
-(defn send [{:keys [search]} cb]
-  (println search)
-  #_(go
-    (let [[_ res] (<! (jsonp (str base-url "do")))]
-      (cb res))))
+(def send-chan (chan))
+
+(defn send-to-chan [c]
+  (fn [{:keys [search]} cb]
+    (println search)
+    (put! c [(get-in search [0 1]) cb])))
 
 (def reconciler
   (om/reconciler
     {:state   {}
      :parser  (om/parser {:read read})
-     :send    send
+     :send    (send-to-chan send-chan)
      :remotes [:remote :search]}))
+
+(defn send-loop [c]
+  (go
+    (loop [[{:keys [query]} cb] (<! c)]
+      (cb {:search/results (aget (<! (jsonp (str base-url query))) 0)})
+      (recur (<! c)))))
+
+(send-loop send-chan)
 
 (defcard test-autocomplete
   "Demonstrate simple autocompleter"
