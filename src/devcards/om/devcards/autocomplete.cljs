@@ -67,17 +67,19 @@
           [(search-field this (:search-query (om/get-params this)))]
           (not (empty? results)) (conj (result-list results)))))))
 
-(defn send-loop [c]
+(defn search-loop [c]
   (go
-    (loop [[{:keys [query]} cb] (<! c)]
-      (let [raw     (<! (jsonp (str base-url query)))
-            results (aget raw 1)]
+    (loop [[query cb] (<! c)]
+      (let [[_ results] (<! (jsonp (str base-url query)))]
         (cb {:search/results results}))
       (recur (<! c)))))
 
 (defn send-to-chan [c]
   (fn [{:keys [search]} cb]
-    (put! c [(-> search (nth 0) (nth 1)) cb])))
+    (when search
+      (let [{[search] :children} (om/query->ast search)
+            query (get-in search [:params :query])]
+        (put! c [query cb])))))
 
 (def send-chan (chan))
 
@@ -88,7 +90,7 @@
      :send    (send-to-chan send-chan)
      :remotes [:remote :search]}))
 
-(send-loop send-chan)
+(search-loop send-chan)
 
 (defcard test-autocomplete
   "Demonstrate simple autocompleter"
