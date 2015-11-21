@@ -9,6 +9,8 @@
   (:import [goog Uri]
            [goog.net Jsonp]))
 
+(enable-console-print!)
+
 (def base-url
   "http://en.wikipedia.org/w/api.php?action=opensearch&format=json&search=")
 
@@ -25,20 +27,23 @@
 (defmulti read om/dispatch)
 
 (defmethod read :search/results
-  [{:keys [ast] :as env} k params]
-  (println ast)
-  {:search ast})
+  [{:keys [state ast] :as env} _ _]
+  (let [st @state]
+    (when-not (contains? st :search/results)
+      {:value  []
+       :search ast})))
 
 ;; -----------------------------------------------------------------------------
 ;; App
 
 (defn result-list [results]
-  (dom/ul
+  (dom/ul #js {:key "result-list"}
     (map #(dom/li nil %) results)))
 
 (defn search-field [query]
   (dom/input
-    #js {:value query}))
+    #js {:key "search-field"
+         :value query}))
 
 (defui AutoCompleter
   static om/IQueryParams
@@ -50,22 +55,28 @@
   Object
   (render [this]
     (let [{:keys [search/results]} (om/props this)]
-      (cond->
-        [(search-field (:search-query (om/get-params this)))]
-        results (conj (result-list results))))))
+      (dom/div nil
+        (dom/h2 nil "Autocompleter")
+        (cond->
+          [(search-field (:search-query (om/get-params this)))]
+          results (conj (result-list results)))))))
 
-(defn send [{:keys [remote search]} cb]
-  (go
+(defn send [{:keys [search]} cb]
+  (println search)
+  #_(go
     (let [[_ res] (<! (jsonp (str base-url "do")))]
       (cb res))))
 
 (def reconciler
   (om/reconciler
-    {:state {}
-     :send  send}))
+    {:state   {}
+     :parser  (om/parser {:read read})
+     :send    send
+     :remotes [:remote :search]}))
 
 (defcard test-autocomplete
-  "Demonstrate simple autocompleter")
+  "Demonstrate simple autocompleter"
+  (om/mock-root reconciler AutoCompleter))
 
 (comment
 
