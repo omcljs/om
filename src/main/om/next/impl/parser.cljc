@@ -13,12 +13,13 @@
    expressions follows:
 
    QueryRoot    := EdnVector(QueryExpr*)
-   QueryExpr    := EdnKeyword | IdentExpr | ParamExpr | JoinExpr
+   QueryExpr    := EdnKeyword | IdentExpr | ParamExpr | JoinExpr | UnionExpr
    IdentExpr    := EdnVector2(Keyword, EdnValue)
    ParamExpr    := EdnList2(QueryExpr | EdnSymbol, ParamMapExpr)
    ParamMapExpr := EdnMap(Keyword, EdnValue)
-   JoinExpr     := EdnMap(Keyword | IdentExpr, QueryRoot | RecurExpr)
+   JoinExpr     := EdnMap((Keyword | IdentExpr), (QueryRoot | RecurExpr))
    RecurExpr    := '...
+   UnionExpr    := EdnMap(Keyword, QueryRoot)
 
    Note most apis in Om Next expect a QueryRoot not a QueryExpr.
 
