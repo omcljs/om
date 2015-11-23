@@ -17,7 +17,7 @@
    IdentExpr    := EdnVector2(Keyword, EdnValue)
    ParamExpr    := EdnList2(QueryExpr | EdnSymbol, ParamMapExpr)
    ParamMapExpr := EdnMap(Keyword, EdnValue)
-   JoinExpr     := EdnMap((Keyword | IdentExpr), (QueryRoot | RecurExpr))
+   JoinExpr     := EdnMap((Keyword | IdentExpr), (QueryRoot | UnionExpr | RecurExpr))
    RecurExpr    := '...
    UnionExpr    := EdnMap(Keyword, QueryRoot)
 
