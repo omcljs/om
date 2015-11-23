@@ -307,7 +307,9 @@
   {:action #(throw (js/Error.))})
 
 (deftest test-throw
-  (is (instance? js/Error (get (p {} '[(this/throws)]) 'this/throws))))
+  (is
+    (instance? js/Error
+      (get-in (p {} '[(this/throws)]) ['this/throws :om.next/error]))))
 
 ;; -----------------------------------------------------------------------------
 ;; Edge cases

@@ -174,7 +174,7 @@
                          (let [value (:value res)]
                            (cond-> ret
                              (not (nil? value)) (assoc key value)
-                             @error (assoc key @error))))))))]
+                             @error (assoc key {:om.next/error @error}))))))))]
          (cond-> (reduce step (if (nil? target) {} []) query)
            (not (or (not (nil? target)) elide-paths?)) (path-meta path)))))))
 
