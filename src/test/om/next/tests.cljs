@@ -235,7 +235,7 @@
 (defmethod mutate 'do/it!
   [{:keys [state]} k {:keys [id]}]
   {:value {:keys [id]}
-   :action #()
+   :action (fn [])
    :remote true})
 
 (def p (om/parser {:read read :mutate mutate}))
@@ -330,7 +330,8 @@
 
 (deftest test-action-no-value
   (let [state (atom nil)]
-    (is (= (p {:state state} '[(action/no-value)]) {}))
+    (is (= (p {:state state} '[(action/no-value)])
+           '{action/no-value {:result :changed}}))
     (is (= :changed @state)))
   (let [state (atom nil)]
     (is (= (p {:state state} '[(action/no-value)] :remote) []))

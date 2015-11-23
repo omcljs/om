@@ -163,10 +163,11 @@
                          (map? ast') (conj (ast->expr ast'))))
                      (if-not (or call? (nil? (:target ast)) (contains? res :value))
                        ret
-                       (let [error (atom nil)]
+                       (let [error   (atom nil)
+                             mut-ret (atom nil)]
                          (when (and call? (not (nil? (:action res))))
                            (try
-                             ((:action res))
+                             (reset! mut-ret ((:action res)))
                              (catch #?(:clj Throwable :cljs :default) e
                                (if (rethrow? e)
                                  (throw e)
@@ -174,6 +175,7 @@
                          (let [value (:value res)]
                            (cond-> ret
                              (not (nil? value)) (assoc key value)
+                             @mut-ret (assoc-in [key :result] @mut-ret)
                              @error (assoc key {:om.next/error @error}))))))))]
          (cond-> (reduce step (if (nil? target) {} []) query)
            (not (or (not (nil? target)) elide-paths?)) (path-meta path)))))))
