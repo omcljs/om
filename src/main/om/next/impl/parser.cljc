@@ -142,6 +142,7 @@
        (letfn [(step [ret expr]
                  (let [{query' :query :keys [key dispatch-key params] :as ast} (expr->ast expr)
                        env   (cond-> (merge env {:ast ast :query query'})
+                               (nil? query')   (dissoc :query)
                                (= '... query') (assoc :query query)
                                (vector? key)   (assoc :query-root key))
                        type  (:type ast)
