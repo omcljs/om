@@ -784,7 +784,9 @@
        '[(do/this!) (do/that!)
          :read/this :read/that])"
   ([x tx]
-   {:pre [(vector? tx)]}
+   {:pre [(or (component? x)
+              (reconciler? x))
+          (vector? tx)]}
    (if (reconciler? x)
      (transact* x nil nil tx)
      (do
