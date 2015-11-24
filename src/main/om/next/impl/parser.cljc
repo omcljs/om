@@ -17,7 +17,7 @@
    IdentExpr    := EdnVector2(Keyword, EdnValue)
    ParamExpr    := EdnList2(QueryExpr | EdnSymbol, ParamMapExpr)
    ParamMapExpr := EdnMap(Keyword, EdnValue)
-   JoinExpr     := EdnMap((Keyword | IdentExpr), (QueryRoot | RecurExpr))
+   JoinExpr     := EdnMap((Keyword | IdentExpr), (QueryRoot | UnionExpr | RecurExpr))
    RecurExpr    := '...
    UnionExpr    := EdnMap(Keyword, QueryRoot)
 
@@ -142,6 +142,7 @@
        (letfn [(step [ret expr]
                  (let [{query' :query :keys [key dispatch-key params] :as ast} (expr->ast expr)
                        env   (cond-> (merge env {:ast ast :query query'})
+                               (nil? query')   (dissoc :query)
                                (= '... query') (assoc :query query)
                                (vector? key)   (assoc :query-root key))
                        type  (:type ast)
