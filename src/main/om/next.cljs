@@ -1262,6 +1262,8 @@
                             (reset! ret c)))))
             parsef  (fn []
                       (let [sel (get-query (or @ret root-class))]
+                        (assert (or (nil? sel) (vector? sel))
+                          "Application root query must be a vector")
                         (if-not (nil? sel)
                           (let [env (to-env config)
                                 v   ((:parser config) env sel)]
