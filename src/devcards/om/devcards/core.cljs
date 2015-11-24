@@ -398,6 +398,3 @@
 (comment
   (pprint/pprint @(-> norm-tree-reconciler :config :indexer))
   )
-
-;; -----------------------------------------------------------------------------
-;; Layered Recursive Query Syntax
