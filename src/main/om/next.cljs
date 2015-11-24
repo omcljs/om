@@ -1159,20 +1159,21 @@
    :rewrite on the response before invoking the send callback."
   [query]
   (letfn [(process-roots* [query state path]
-            (loop [ks (seq query)]
-              (if-not (nil? ks)
-                (let [k (first ks)]
-                  (if (true? (-> k meta :query-root))
-                    (swap! state
-                      #(let [jk (join-key k)]
-                        (-> %
-                          (update-in [:query] conj k)
-                          (assoc-in [:paths jk] (conj path jk)))))
-                    (do
-                      (when (join? k)
-                        (let [[jk jv] (join-entry k)]
-                          (process-roots* jv state (conj path jk))))
-                      (recur (next ks))))))))]
+            (when (vector? query)
+              (loop [ks (seq query)]
+                (if-not (nil? ks)
+                  (let [k (first ks)]
+                    (if (true? (-> k meta :query-root))
+                      (swap! state
+                        #(let [jk (join-key k)]
+                          (-> %
+                            (update-in [:query] conj k)
+                            (assoc-in [:paths jk] (conj path jk)))))
+                      (do
+                        (when (join? k)
+                          (let [[jk jv] (join-entry k)]
+                            (process-roots* jv state (conj path jk))))
+                        (recur (next ks)))))))))]
     (let [state (atom {:query [] :paths {}})
           _     (process-roots* query state [])
           st    @state]

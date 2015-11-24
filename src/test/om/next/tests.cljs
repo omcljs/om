@@ -717,6 +717,13 @@
              {:real/key 1}))
          {:fake/key {:real/key 1}})))
 
+(deftest test-process-roots-recursive
+  (let [p (om/parser {:read precise-read})
+        m (om/process-roots
+            (p {:state (atom {})}
+              '[{:fake/key [{:real/key ...}]}] :remote))]
+    (is (= [{:real/key '...}] (:query m)))))
+
 ;; -----------------------------------------------------------------------------
 ;; User Bugs
 
