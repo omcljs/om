@@ -1001,7 +1001,7 @@
       (js/Object.create (. class -prototype))
       class)))
 
-(defn- normalize* [query data refs]
+(defn- normalize* [query data refs errs]
   (cond
     (= '[*] query) data
 
@@ -1011,7 +1011,7 @@
           ref   (when (ident? class)
                   (ident class data))]
       (if-not (nil? ref)
-        (vary-meta (normalize* (get query (first ref)) data refs)
+        (vary-meta (normalize* (get query (first ref)) data refs errs)
           assoc :om/tag (first ref))
         (throw (js/Error. "Union components must implement Ident"))))
 
@@ -1031,7 +1031,7 @@
               (cond
                 ;; normalize one
                 (map? v)
-                (let [x (normalize* sel v refs)]
+                (let [x (normalize* sel v refs errs)]
                   (if-not (or (nil? class) (not (ident? class)))
                     (let [i (ident class v)]
                       (swap! refs update-in [(first i) (second i)] merge x)
@@ -1040,7 +1040,7 @@
 
                 ;; normalize many
                 (vector? v)
-                (let [xs (into [] (map #(normalize* sel % refs)) v)]
+                (let [xs (into [] (map #(normalize* sel % refs errs)) v)]
                   (if-not (or (nil? class) (not (ident? class)))
                     (let [is (into [] (map #(ident class %)) xs)]
                       (if (vector? sel)
@@ -1082,8 +1082,9 @@
     (tree->db x data false))
   ([x data ^boolean merge-refs]
    (let [refs (atom {})
+         errs (atom {})
          x    (if (vector? x) x (get-query x))
-         ret  (normalize* x data refs)]
+         ret  (normalize* x data refs errs)]
      (if merge-refs
        (let [refs' @refs]
          (assoc (merge ret refs')
