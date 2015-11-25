@@ -845,3 +845,43 @@
       (is (contains? (get db' :post) 1))
       (is (= (get db' :dashboard/items)
              [[:post 0] [:post 1]])))))
+
+;; -----------------------------------------------------------------------------
+;; Arbitrary Links Test
+
+(def link-data
+  {:current-user {'_ {:email "bob.smith@gmail.com"}}
+   :items [{:id 0 :title "Foo"}
+           {:id 1 :title "Bar"}
+           {:id 2 :title "Baz"}]})
+
+(defmulti link-read om/dispatch)
+
+(defmethod link-read :items
+  [{:keys [query state]} k _]
+  (let [st @state]
+    {:value (om/db->tree query (get st k) st)}))
+
+(defui LinkItem
+  static om/Ident
+  (ident [_ {:keys [id]}]
+    [:item/by-id id])
+  static om/IQuery
+  (query [_]
+    '[:id :title [:current-user _]]))
+
+(defui LinkList
+  static om/IQuery
+  (query [_]
+    [{:items (om/get-query LinkItem)}]))
+
+(comment
+
+  (def parser (om/parser {:read link-read}))
+
+  (let [state (atom (om/tree->db LinkList link-data true))]
+    (parser {:state state} (om/get-query LinkList)))
+
+  (om/join? '[:foo _])
+
+  )
