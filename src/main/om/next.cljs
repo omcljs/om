@@ -1142,7 +1142,7 @@
                                  sel)
                      v         (if (ref? key)
                                  (if (= '_ (second key))
-                                   (get refs key)
+                                   (get refs (first key))
                                    (get-in refs (map-ident key)))
                                  (get data key))
                      key       (cond-> key
