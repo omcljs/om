@@ -174,6 +174,9 @@
                                  (throw e)
                                  (reset! error e)))))
                          (let [value (:value res)]
+                           (when call?
+                             (assert (or (nil? value) (map? value))
+                               (str dispatch-key " mutation :value must be nil or a map")))
                            (cond-> ret
                              (not (nil? value)) (assoc key value)
                              @mut-ret (assoc-in [key :result] @mut-ret)
