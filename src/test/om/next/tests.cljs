@@ -851,6 +851,7 @@
 
 (def link-data
   {:current-user {:email "bob.smith@gmail.com"}
+   :settings {0 {:foo :bar}}
    :items [{:id 0 :title "Foo"}
            {:id 1 :title "Bar"}
            {:id 2 :title "Baz"}]})
@@ -868,7 +869,9 @@
     [:item/by-id id])
   static om/IQuery
   (query [_]
-    '[:id :title [:current-user _]]))
+    '[:id :title
+      [:current-user _]
+      [:settings 0]]))
 
 (defui LinkList
   static om/IQuery
@@ -879,4 +882,5 @@
   (let [parser (om/parser {:read link-read})
         state  (atom (om/tree->db LinkList link-data true))
         ui     (parser {:state state} (om/get-query LinkList))]
-    (is (every? #(contains? % :current-user) (:items ui)))))
+    (is (every? #(contains? % :current-user) (:items ui)))
+    (is (every? #(contains? % [:settings 0]) (:items ui)))))
