@@ -1330,6 +1330,8 @@
   (reconcile! [_]
     (let [st @state
           q  (:queue st)]
+      (swap! state update-in [:queued] not)
+      (swap! state assoc :queue [])
       (cond
         ;; TODO: need to move root re-render logic outside of batching logic
         (empty? q) ((:render st))
@@ -1351,9 +1353,7 @@
                 (when (should-update? c next-props (get-state c))
                   (if-not (nil? next-props)
                     (update-component! c next-props)
-                    (.forceUpdate c))))))))
-      (swap! state assoc :queue [])
-      (swap! state update-in [:queued] not)))
+                    (.forceUpdate c))))))))))
 
   (send! [this]
     (let [sends (:queued-sends @state)]
