@@ -1135,7 +1135,9 @@
                                  query
                                  sel)
                      v         (if (ref? key)
-                                 (get-in refs (map-ident key))
+                                 (if (= '_ (second key))
+                                   (get refs key)
+                                   (get-in refs (map-ident key)))
                                  (get data key))
                      key       (cond-> key
                                  (and (ref? key) (= '_ (second key)))

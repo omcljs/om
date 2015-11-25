@@ -850,7 +850,7 @@
 ;; Query Ident Test
 
 (def link-data
-  {:current-user {'_ {:email "bob.smith@gmail.com"}}
+  {:current-user {:email "bob.smith@gmail.com"}
    :items [{:id 0 :title "Foo"}
            {:id 1 :title "Bar"}
            {:id 2 :title "Baz"}]})
