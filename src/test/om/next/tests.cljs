@@ -859,9 +859,10 @@
 (defmulti link-read om/dispatch)
 
 (defmethod link-read :items
-  [{:keys [query state]} k _]
+  [{:keys [query state ast]} k _]
   (let [st @state]
-    {:value (om/db->tree query (get st k) st)}))
+    {:value  (om/db->tree query (get st k) st)
+     :remote (update-in ast [:query] #(into [] (remove om/ident?) %))}))
 
 (defui LinkItem
   static om/Ident
@@ -881,4 +882,6 @@
         state  (atom (om/tree->db LinkList link-data true))
         ui     (parser {:state state} (om/get-query LinkList))]
     (is (every? #(contains? % :current-user) (:items ui)))
-    (is (every? #(contains? % [:settings 0]) (:items ui)))))
+    (is (every? #(contains? % [:settings 0]) (:items ui)))
+    (is (= (parser {:state state} (om/get-query LinkList) :remote)
+           [{:items [:id :title]}]))))
