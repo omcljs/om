@@ -305,7 +305,7 @@
   "Returns true if the argument is an Om component."
   [x]
   (if-not (nil? x)
-    (. x -om$isComponent)
+    (true? (. x -om$isComponent))
     false))
 
 (defn- state [c]
