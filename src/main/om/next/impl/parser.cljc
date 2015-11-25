@@ -71,7 +71,7 @@
       (when-not (= '... v)
         {:children (into [] (map expr->ast) v)}))))
 
-(defn ref->ast [[k id :as ref]]
+(defn ident->ast [[k id :as ref]]
   {:type :prop
    :dispatch-key k
    :key ref})
@@ -83,7 +83,7 @@
     (symbol? x)  (symbol->ast x)
     (keyword? x) (keyword->ast x)
     (map? x)     (join->ast x)
-    (vector? x)  (ref->ast x)
+    (vector? x)  (ident->ast x)
     (seq? x)     (call->ast x)
     :else        (throw
                    (ex-info (str "Invalid expression " x)
