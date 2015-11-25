@@ -1,4 +1,4 @@
-(defproject org.omcljs/om "1.0.0-alpha24"
+(defproject org.omcljs/om "1.0.0-alpha25-SNAPSHOT"
   :description "ClojureScript interface to Facebook's React"
   :url "http://github.com/swannodette/om"
   :license {:name "Eclipse"
@@ -17,9 +17,10 @@
                  [com.cognitect/transit-clj "0.8.285"]
                  [com.cognitect/transit-cljs "0.8.232"]
 
-                 [org.clojure/core.async "0.2.371" :scope "test"]
-                 [figwheel-sidecar "0.5.0-SNAPSHOT" :scope "test"]
-                 [devcards "0.2.0-8" :scope "test"]]
+                 ;[org.clojure/core.async "0.2.371" :scope "test"]
+                 ;[figwheel-sidecar "0.5.0-SNAPSHOT" :scope "test"]
+                 ;[devcards "0.2.0-8" :scope "test"]
+                 ]
 
   :plugins [[lein-cljsbuild "1.1.1"]]
 
