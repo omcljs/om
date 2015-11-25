@@ -864,8 +864,8 @@
                         (doseq [join joins]
                           (let [[prop query'] (join-entry join)
                                 query'        (if (= '... query')
-                                                   query
-                                                   query')]
+                                                query
+                                                query')]
                             (when class
                               (swap! prop->classes
                                 #(merge-with into % {prop #{class}})))
