@@ -847,7 +847,7 @@
              [[:post 0] [:post 1]])))))
 
 ;; -----------------------------------------------------------------------------
-;; Arbitrary Links Test
+;; Query Ident Test
 
 (def link-data
   {:current-user {'_ {:email "bob.smith@gmail.com"}}
@@ -875,13 +875,8 @@
   (query [_]
     [{:items (om/get-query LinkItem)}]))
 
-(comment
-
-  (def parser (om/parser {:read link-read}))
-
-  (let [state (atom (om/tree->db LinkList link-data true))]
-    (parser {:state state} (om/get-query LinkList)))
-
-  (om/join? '[:foo _])
-
-  )
+(deftest test-db->tree-idents-in-query
+  (let [parser (om/parser {:read link-read})
+        state  (atom (om/tree->db LinkList link-data true))
+        ui     (parser {:state state} (om/get-query LinkList))]
+    (is (every? #(contains? % :current-user) (:items ui)))))

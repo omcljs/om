@@ -1123,24 +1123,32 @@
                       (db->tree query' ident' refs map-ident)))]
          (into [] (map step) data))
        ;; map case
-       (let [{props false joins true} (group-by join? query)]
-         (loop [joins (seq joins) ret {}]
-           (if-not (nil? joins)
-             (let [join      (first joins)
-                   [key sel] (join-entry join)
-                   sel       (if (= '... sel)
-                               query
-                               sel)
-                   v         (get data key)]
-               (if-not (ref? v)
-                 (recur (next joins)
-                   (assoc ret
-                     key (db->tree sel v refs map-ident)))
-                 (recur (next joins)
-                   (assoc ret
-                     key (db->tree sel
-                           (get-in refs (map-ident v)) refs map-ident)))))
-             (merge (select-keys data props) ret))))))))
+       (if (= '[*] query)
+         data
+         (let [{props false joins true} (group-by #(or (join? %) (ref? %)) query)]
+           (loop [joins (seq joins) ret {}]
+             (if-not (nil? joins)
+               (let [join      (first joins)
+                     join      (cond-> join (ref? join) (hash-map '[*]))
+                     [key sel] (join-entry join)
+                     sel       (if (= '... sel)
+                                 query
+                                 sel)
+                     v         (if (ref? key)
+                                 (get-in refs (map-ident key))
+                                 (get data key))
+                     key       (cond-> key
+                                 (and (ref? key) (= '_ (second key)))
+                                 first)]
+                 (if-not (ref? v)
+                   (recur (next joins)
+                     (assoc ret
+                       key (db->tree sel v refs map-ident)))
+                   (recur (next joins)
+                     (assoc ret
+                       key (db->tree sel
+                             (get-in refs (map-ident v)) refs map-ident)))))
+               (merge (select-keys data props) ret)))))))))
 
 ;; =============================================================================
 ;; Reconciler
