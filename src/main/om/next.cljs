@@ -764,11 +764,12 @@
               (into tx)))]
     (loop [ks (seq tx) tx' []]
       (if-not (nil? ks)
-        (let [k (first ks)]
-          (if (keyword? k)
+        (let [k  (first ks)
+              dk (:dispatch-key (parser/expr->ast k))]
+          (if (keyword? dk)
             (recur (next ks)
-              (reduce #(add-focused-query k %1 %2)
-                tx' (ref->components r k)))
+              (reduce #(add-focused-query dk %1 %2)
+                tx' (ref->components r dk)))
             (recur (next ks) (conj tx' k))))
         tx'))))
 
@@ -859,7 +860,7 @@
                           (swap! prop->classes
                             #(merge-with into %
                               (zipmap
-                                (map (comp :key parser/expr->ast) props)
+                                (map (comp :dispatch-key parser/expr->ast) props)
                                 (repeat #{class})))))
                         (doseq [join joins]
                           (let [[prop query'] (join-entry join)
