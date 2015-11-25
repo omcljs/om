@@ -869,9 +869,7 @@
     [:item/by-id id])
   static om/IQuery
   (query [_]
-    '[:id :title
-      [:current-user _]
-      [:settings 0]]))
+    '[:id :title [:current-user _] [:settings 0]]))
 
 (defui LinkList
   static om/IQuery

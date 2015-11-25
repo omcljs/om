@@ -161,11 +161,6 @@
 (defprotocol Ident
   (ident [this props] "Return the ref for this component"))
 
-(defn ^boolean ident?
-  "Returns true if x satisfies? Ident"
-  [x]
-  (satisfies? Ident x))
-
 (defprotocol IQueryParams
   (params [this] "Return the query parameters"))
 
@@ -225,7 +220,7 @@
   "Return a IQuery/IParams instance bound query. Works for component classes
    and component instances. See also om.next/full-query."
   [x]
-  (if (satisfies? IQuery x)
+  (if (implements? IQuery x)
     (if (component? x)
       (get-component-query x)
       (let [q (query x)
@@ -235,14 +230,14 @@
     ;; in advanced, statics will get elided
     (when (goog/isFunction x)
       (let [x (js/Object.create (. x -prototype))]
-        (when (satisfies? IQuery x)
+        (when (implements? IQuery x)
           (let [q (query x)
                 c (-> q meta :component)]
             (assert (nil? c) (str "Query violation, " x , " reuses " c " query"))
             (with-meta (bind-query q (params x)) {:component x})))))))
 
 (defn iquery? [x]
-  (satisfies? IQuery x))
+  (implements? IQuery x))
 
 (defn tag [x class]
   (vary-meta x assoc :component class))
@@ -493,7 +488,7 @@
    setState."
   [component new-state]
   {:pre [(component? component)]}
-  (if (satisfies? ILocalState component)
+  (if (implements? ILocalState component)
     (-set-state! component new-state)
     (gobj/set (.-state component) "omcljs$pendingState" new-state))
   (if-let [r (get-reconciler component)]
@@ -509,7 +504,7 @@
    (get-state component []))
   ([component k-or-ks]
    {:pre [(component? component)]}
-   (let [cst (if (satisfies? ILocalState component)
+   (let [cst (if (implements? ILocalState component)
                (-get-state component)
                (when-let [state (. component -state)]
                  (or (gobj/get state "omcljs$pendingState")
@@ -537,12 +532,12 @@
    up-to-date state."
   [component]
   {:pre [(component? component)]}
-  (if (satisfies? ILocalState component)
+  (if (implements? ILocalState component)
     (-get-rendered-state component)
     (some-> component .-state (gobj/get "omcljs$state"))))
 
 (defn- merge-pending-state! [c]
-  (if (satisfies? ILocalState c)
+  (if (implements? ILocalState c)
     (-merge-pending-state! c)
     (when-let [pending (some-> c .-state (gobj/get "omcljs$pendingState"))]
       (let [state    (.-state c)
@@ -584,7 +579,7 @@
         _   (.add (:history cfg) id @st)]
     (when-let [l (:logger cfg)]
       (glog/info l
-        (str (when-let [ref (when (ident? component)
+        (str (when-let [ref (when (implements? Ident component)
                               (ident component (props component)))]
                (str (pr-str ref) " "))
           (when query  "changed query '" query ", ")
@@ -731,7 +726,7 @@
 
 (defn transact* [r c ref tx]
   (let [cfg  (:config r)
-        ref  (if (and c (ident? c) (not ref))
+        ref  (if (and c (implements? Ident c) (not ref))
                (ident c (props c))
                ref)
         env  (merge
@@ -798,14 +793,14 @@
    (if (reconciler? x)
      (transact* x nil nil tx)
      (do
-       (assert (satisfies? IQuery x)
+       (assert (implements? IQuery x)
          (str "transact! invoked by component " x
               " that does not implement IQuery"))
        (loop [p (parent x) x x tx tx]
          (if (nil? p)
            (let [r (get-reconciler x)]
              (transact* r x nil (transform-reads r tx)))
-           (let [[x' tx] (if (satisfies? ITxIntercept p)
+           (let [[x' tx] (if (implements? ITxIntercept p)
                           [p (tx-intercept p tx)]
                           [x tx])]
              (recur (parent p) x' tx)))))))
@@ -898,7 +893,7 @@
         (let [indexes (update-in indexes
                         [:class->components (type c)]
                         (fnil conj #{}) c)
-              ref     (when (ident? c)
+              ref     (when (implements? Ident c)
                         (ident c (props c)))]
           (if-not (nil? ref)
             (cond-> indexes
@@ -911,7 +906,7 @@
         (let [indexes (update-in indexes
                         [:class->components (type c)]
                         disj c)
-              ref     (when (ident? c)
+              ref     (when (implements? Ident c)
                         (ident c (props c)))]
           (if-not (nil? ref)
             (cond-> indexes
@@ -975,7 +970,7 @@
   "Returns the absolute query for a given component, not relative like
    om.next/get-query."
   ([component]
-   (when (satisfies? IQuery component)
+   (when (implements? IQuery component)
      (if (nil? (path component))
        (replace
          (first
@@ -984,7 +979,7 @@
          (get-query component))
        (full-query component (get-query component)))))
   ([component query]
-   (when (satisfies? IQuery component)
+   (when (implements? IQuery component)
      (let [path' (into [] (remove number?) (path component))
            cp    (class-path component)
            qs    (get-in @(-> component get-reconciler get-indexer)
@@ -1005,7 +1000,7 @@
 ;; for advanced optimizations
 (defn to-class [class]
   (when-not (nil? class)
-    (if (not (satisfies? Ident class))
+    (if (not (implements? Ident class))
       (js/Object.create (. class -prototype))
       class)))
 
@@ -1016,7 +1011,7 @@
     ;; union case
     (map? query)
     (let [class (to-class (-> query meta :component))
-          ref   (when (ident? class)
+          ref   (when (implements? Ident class)
                   (ident class data))]
       (if-not (nil? ref)
         (vary-meta (normalize* (get query (first ref)) data refs errs)
@@ -1040,7 +1035,7 @@
                 ;; normalize one
                 (map? v)
                 (let [x (normalize* sel v refs errs)]
-                  (if-not (or (nil? class) (not (ident? class)))
+                  (if-not (or (nil? class) (not (implements? Ident class)))
                     (let [i (ident class v)]
                       (swap! refs update-in [(first i) (second i)] merge x)
                       (recur (next q) (assoc ret k i)))
@@ -1049,7 +1044,7 @@
                 ;; normalize many
                 (vector? v)
                 (let [xs (into [] (map #(normalize* sel % refs errs)) v)]
-                  (if-not (or (nil? class) (not (ident? class)))
+                  (if-not (or (nil? class) (not (implements? Ident class)))
                     (let [is (into [] (map #(ident class %)) xs)]
                       (if (vector? sel)
                         (when-not (empty? is)
@@ -1103,9 +1098,9 @@
   (let [{refs true rest false} (group-by #(vector? (first %)) res)]
     [(into {} refs) (into {} rest)]))
 
-;; TODO: revisit
-
-(defn ^boolean ref? [x]
+(defn ^boolean ident?
+  "Returns true if x is an ident."
+  [x]
   (and (vector? x)
        (== 2 (count x))
        (keyword? (nth x 0))))
@@ -1121,7 +1116,7 @@
   ([query data refs map-ident]
    {:pre [(map? refs)]}
     ;; support taking ident for data param
-   (let [data (cond-> data (ref? data) (->> map-ident (get-in refs)))]
+   (let [data (cond-> data (ident? data) (->> map-ident (get-in refs)))]
      (if (vector? data)
        ;; join
        (let [step (fn [ident]
@@ -1132,24 +1127,24 @@
        ;; map case
        (if (= '[*] query)
          data
-         (let [{props false joins true} (group-by #(or (join? %) (ref? %)) query)]
+         (let [{props false joins true} (group-by #(or (join? %) (ident? %)) query)]
            (loop [joins (seq joins) ret {}]
              (if-not (nil? joins)
                (let [join      (first joins)
-                     join      (cond-> join (ref? join) (hash-map '[*]))
+                     join      (cond-> join (ident? join) (hash-map '[*]))
                      [key sel] (join-entry join)
                      sel       (if (= '... sel)
                                  query
                                  sel)
-                     v         (if (ref? key)
+                     v         (if (ident? key)
                                  (if (= '_ (second key))
                                    (get refs (first key))
                                    (get-in refs (map-ident key)))
                                  (get data key))
                      key       (cond-> key
-                                 (and (ref? key) (= '_ (second key)))
+                                 (and (ident? key) (= '_ (second key)))
                                  first)]
-                 (if-not (ref? v)
+                 (if-not (ident? v)
                    (recur (next joins)
                      (assoc ret
                        key (db->tree sel v refs map-ident)))
@@ -1256,7 +1251,7 @@
     (let [ret   (atom nil)
           rctor (factory root-class)
           guid  (random-uuid)]
-      (when (satisfies? IQuery root-class)
+      (when (implements? IQuery root-class)
         (p/index-root (:indexer config) root-class))
       (when (and (:normalize config)
                  (not (:normalized @state)))
@@ -1322,7 +1317,7 @@
 
   (reindex! [_]
     (let [root (get @state :root)]
-      (when (satisfies? IQuery root)
+      (when (implements? IQuery root)
         (p/index-root (:indexer config) root))))
 
   (queue! [_ ks]
@@ -1385,7 +1380,7 @@
 
 (defn- default-ui->props
   [{:keys [parser ^boolean pathopt] :as env} c]
-  (let [ui (when (and pathopt (ident? c) (iquery? c))
+  (let [ui (when (and pathopt (implements? Ident c) (iquery? c))
              (let [id (ident c (props c))]
                (get (parser env [{id (get-query c)}]) id)))]
     (if-not (nil? ui)
