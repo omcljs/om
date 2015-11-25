@@ -755,20 +755,26 @@
       (p/queue-sends! r snds)
       (schedule-sends! r))))
 
-(declare ref->components)
+(declare ref->components force)
 
 (defn transform-reads [r tx]
-  (letfn [(add-focused-query [k tx c]
+  (letfn [(with-target [target q]
+            (cond-> q
+              (not (nil? target)) (force target)))
+          (add-focused-query [k target tx c]
             (->> (focus-query (get-query c) [k])
+              (with-target target)
               (full-query c)
               (into tx)))]
     (loop [ks (seq tx) tx' []]
       (if-not (nil? ks)
-        (let [k  (first ks)
-              dk (:dispatch-key (parser/expr->ast k))]
+        (let [k   (first ks)
+              ast (parser/expr->ast k)
+              dk  (:dispatch-key ast)
+              tgt (:target ast)]
           (if (keyword? dk)
             (recur (next ks)
-              (reduce #(add-focused-query dk %1 %2)
+              (reduce #(add-focused-query dk tgt %1 %2)
                 tx' (ref->components r dk)))
             (recur (next ks) (conj tx' k))))
         tx'))))
