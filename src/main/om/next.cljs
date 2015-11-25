@@ -759,8 +759,9 @@
 
 (defn transform-reads [r tx]
   (letfn [(with-target [target q]
-            (cond-> q
-              (not (nil? target)) (force target)))
+            (if-not (nil? target)
+              [(force (first q) target)]
+              q))
           (add-focused-query [k target tx c]
             (->> (focus-query (get-query c) [k])
               (with-target target)
