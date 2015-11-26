@@ -11,16 +11,15 @@
   :source-paths  ["src/main" "src/devcards"]
 
   :dependencies [[org.clojure/clojure "1.7.0" :scope "provided"]
-                 [org.clojure/clojurescript "1.7.184" :scope "provided"]
+                 [org.clojure/clojurescript "1.7.170" :scope "provided"]
                  [cljsjs/react "0.14.3-0"]
                  [cljsjs/react-dom "0.14.3-1"]
                  [com.cognitect/transit-clj "0.8.285"]
                  [com.cognitect/transit-cljs "0.8.232"]
 
-                 ;[org.clojure/core.async "0.2.371" :scope "test"]
-                 ;[figwheel-sidecar "0.5.0-SNAPSHOT" :scope "test"]
-                 ;[devcards "0.2.0-8" :scope "test"]
-                 ]
+                 [org.clojure/core.async "0.2.371" :scope "test"]
+                 [figwheel-sidecar "0.5.0-SNAPSHOT" :scope "test"]
+                 [devcards "0.2.0-8" :scope "test"]]
 
   :plugins [[lein-cljsbuild "1.1.1"]]
 
