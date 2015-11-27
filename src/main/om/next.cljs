@@ -1258,8 +1258,7 @@
         (let [new-state (tree->db root-class @(:state config))
               refs      (meta new-state)]
           (reset! (:state config) (merge new-state refs))
-          (swap! state assoc :normalized true)
-          (p/queue! this [::skip])))
+          (swap! state assoc :normalized true)))
       (let [renderf (fn [data]
                       (binding [*reconciler* this
                                 *shared*     (merge
