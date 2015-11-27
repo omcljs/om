@@ -762,17 +762,17 @@
               (with-target target)
               (full-query c)
               (into tx)))]
-    (loop [ks (seq tx) tx' []]
-      (if-not (nil? ks)
-        (let [k   (first ks)
-              ast (parser/expr->ast k)
-              dk  (:dispatch-key ast)
-              tgt (:target ast)]
-          (if (keyword? dk)
-            (recur (next ks)
-              (reduce #(add-focused-query dk tgt %1 %2)
-                tx' (ref->components r dk)))
-            (recur (next ks) (conj tx' k))))
+    (loop [exprs (seq tx) tx' []]
+      (if-not (nil? exprs)
+        (let [expr (first exprs)
+              ast  (parser/expr->ast expr)
+              key  (:key ast)
+              tgt  (:target ast)]
+          (if (keyword? key)
+            (recur (next exprs)
+              (reduce #(add-focused-query key tgt %1 %2)
+                tx' (ref->components r key)))
+            (recur (next exprs) (conj tx' expr))))
         tx'))))
 
 (defn transact!
