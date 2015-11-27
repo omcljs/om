@@ -66,7 +66,7 @@
     (fn [[name [this prev-props prev-state :as args] & body]]
       `(~name ~args
          (let [~prev-props (om.next/-prev-props ~prev-props ~this)
-               ~prev-state (goog.object/get ~prev-state "omcjls$previousState")]
+               ~prev-state (goog.object/get ~prev-state "omcljs$previousState")]
            ~@body
            (om.next/clear-prev-props! ~this))))
     'componentWillMount
