@@ -147,16 +147,15 @@
                                (vector? key)   (assoc :query-root key))
                        type  (:type ast)
                        call? (= :call type)
-                       res   (when (nil? (:target ast))
-                               (case type
-                                 :call
-                                 (do
-                                   (assert mutate "Parse mutation attempted but no :mutate function supplied")
-                                   (mutate env dispatch-key params))
-                                 (:prop :join)
-                                 (do
-                                   (assert read "Parse read attempted but no :read function supplied")
-                                   (read env dispatch-key params))))]
+                       res   (case type
+                               :call
+                               (do
+                                 (assert mutate "Parse mutation attempted but no :mutate function supplied")
+                                 (mutate env dispatch-key params))
+                               (:prop :join)
+                               (do
+                                 (assert read "Parse read attempted but no :read function supplied")
+                                 (read env dispatch-key params)))]
                    (if-not (nil? target)
                      (let [ast' (get res target)]
                        (cond-> ret
