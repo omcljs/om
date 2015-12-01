@@ -1,5 +1,5 @@
 (ns om.next.tests
-  (:require [cljs.test :refer-macros [deftest is testing run-tests]]
+  (:require [cljs.test :refer-macros [deftest is are testing run-tests]]
             [goog.object :as gobj]
             [clojure.zip :as zip]
             [om.next :as om :refer-macros [defui]]
@@ -693,29 +693,53 @@
   [{:keys [ast] :as env} _ _]
   {:remote (assoc ast :query-root true)})
 
-(deftest test-rewrite
-  (is (= ((om/rewrite {:real/key [:fake/key :real/key]})
-           {:real/key 1})
-         {:fake/key {:real/key 1}})))
+(defmethod precise-read :other/key
+  [{:keys [ast] :as env} _ _]
+  {:remote ast})
+
+(defn precise-mutate [{:keys [ast] :as env} _ _]
+  {:remote true })
 
 (deftest test-query-root
   (let [ast (assoc (parser/expr->ast {:real/key [:id]})
               :query-root true)]
     (is (= (meta (parser/ast->expr ast)) {:query-root true}))))
 
-(deftest test-process-roots
-  (let [p (om/parser {:read precise-read})
-        m (om/process-roots
-            (p {:state (atom {})}
-              [{:fake/key [{:real/key [:id]}]}] :remote))]
-    (is (= [{:real/key [:id]}] (:query m))))
-  (is (= (let [p (om/parser {:read precise-read})]
-           ((:rewrite
-              (om/process-roots
-                (p {:state (atom {})}
-                  [{:fake/key [{:real/key [:id]}]}] :remote)))
-             {:real/key 1}))
-         {:fake/key {:real/key 1}})))
+; process-roots can cause duplicate top-level queries. merge-joins is used to pull them together
+(deftest test-merge-joins-on-non-merges
+  (are [merged raw] (= merged (#'om/merge-joins raw))
+    ; calls
+    '[(app/f) :a (app/g)] '[(app/f) :a (app/g)]
+    ; plain properties
+    '[:a :b] '[:a :b]
+    ; ident as key
+    [{[:db/id 1] [:a :b]}] [{[:db/id 1] [:a :b]}]
+    ; unions
+    [{:a [:type] :b [:type]}] [{:a [:type] :b [:type]}]
+    [{:j [:a]} {:widget [{:a [:type] :b [:type]}]}] [{:j [:a]} {:widget [{:a [:type] :b [:type]}]}]))
+
+(deftest test-merge-joins-eliminates-exact-duplicates
+  (are [merged raw] (= merged (#'om/merge-joins raw))
+    [:a] [:a :a]
+    [{:j1 [:a :b]}] [{:j1 [:a :b]} {:j1 [:a :b]}]))
+
+(deftest test-merge-joins-merges-simple-joins
+  (is (= [{:j [:a :b]}] (#'om/merge-joins [{:j [:a]} {:j [:b]}]))))
+
+(deftest test-merge-joins-eliminates-duplicate-selector-elements
+  (is (= [{:j [:a :b]}] (#'om/merge-joins [{:j [:a]} {:j [:a :b]}]))))
+
+(deftest test-merge-joins-merges-nested-joins-of-duplicates
+  (is (= [{:j [:b {:a [:x :y]}]}] (#'om/merge-joins [{:j [{:a [:x]}]} {:j [{:a [:y]} :b]}]))))
+
+(deftest test-merge-joins-retains-property-and-call-order-at-top-level
+  (is (= '[(app/f) :b :d :e {:j [:b {:a [:x :y]}]} {:k [:x {:y [:b]}]} {:c [:ca :cb]} {:l [:m]}]
+         (#'om/merge-joins '[(app/f) {:j [{:a [:x]}]} :b {:k [:x]}
+                             {:c [:ca :cb]} {:j [{:a [:y]} :b]} :d
+                             {:k [{:y [:b]}]} :e {:l [:m]}]))))
+
+(deftest test-merge-joins-handles-recursive-queries
+  (is (= [{:j '...}] (#'om/merge-joins [{:j '...} {:j '...}]))))
 
 (deftest test-process-roots-recursive
   (let [p (om/parser {:read precise-read})
@@ -723,6 +747,53 @@
             (p {:state (atom {})}
               '[{:fake/key [{:real/key ...}]}] :remote))]
     (is (= [{:real/key '...}] (:query m)))))
+
+(deftest test-process-roots-keeps-top-rooted-keys
+  (let [p (om/parser {:read precise-read :mutate precise-mutate})
+        m (om/process-roots
+            (p {:state (atom {})}
+               '[:other/key {:fake/key [{:real/key ...}]} {:other/key [:x]}] :remote))]
+    (is (= '[:other/key {:real/key ...} {:other/key [:x]}] (:query m)))))
+
+(deftest test-process-roots-keeps-mutations
+  (let [p (om/parser {:read precise-read :mutate precise-mutate})
+        m (om/process-roots
+            (p {:state (atom {})}
+               '[(app/f) {:fake/key [{:real/key ...}]} (app/g)] :remote))]
+    (is (= '[(app/f) (app/g) {:real/key ...}] (:query m)))))
+
+(let [ref-rooted-join (with-meta {[:db/id 4] [:a :b]} {:query-root true})
+      j1 (with-meta {:j1 [:a :b]} {:query-root true})
+      j2 (with-meta {:j2 [:x {:j3 [:y :z]}]} {:query-root true})
+      sub-rooted-join (with-meta {:subrooted-join [:x j1]} {:query-root true})]
+
+  (let [{:keys [query rewrite]} (om/process-roots [{:top [ref-rooted-join j1]}])]
+    (deftest test-process-roots-promotes-non-sub-rooted-queries
+      (is (= [{[:db/id 4] [:a :b]} {:j1 [:a :b]}] query)))
+
+    (deftest test-rewrite-result-for-promoted-non-sub-rooted-queries
+      (let [top-result {[:db/id 4] {:a 4 :b 5} :j1 {:a 9 :b 10}}
+            expected-rewritten-result {:top {[:db/id 4] {:a 4 :b 5}
+                                             :j1        {:a 9 :b 10}}}]
+        (is (= expected-rewritten-result (rewrite top-result))))))
+
+  (let [{:keys [query rewrite]} (om/process-roots [{:top [j1 sub-rooted-join]}])]
+    (deftest test-process-roots-ignores-subroots
+      (is (= [{:j1 [:a :b]} {:subrooted-join [:x {:j1 [:a :b]}]}] query)))
+
+    (deftest test-rewrite-roots-on-ignored-subroots
+      (let [top-result {:j1 {:a 9 :b 10} :subrooted-join {:x 11 :j1 {:a 9 :b 10}}}
+            expected-rewritten-result {:top {:j1             {:a 9 :b 10}
+                                             :subrooted-join {:x 11 :j1 {:a 9 :b 10}}}}]
+        (is (= expected-rewritten-result (rewrite top-result))))))
+
+  (let [top-result {:j1 {:a 9 :b 10}}
+        expected-rewritten-result '{:top {:j1 {:a 9 :b 10} :j3 {:j1 {:a 9 :b 10}}}}
+        {:keys [query rewrite]} (om/process-roots [{:top [j1 {:j3 [j1]}]}])]
+    (deftest test-process-roots-can-reroot-same-join-from-multiple-paths
+      (is (= [{:j1 [:a :b]}] query)))
+    (deftest test-rewrite-of-same-join-to-multiple-paths
+      (is (= expected-rewritten-result (rewrite top-result))))))
 
 ;; -----------------------------------------------------------------------------
 ;; User Bugs
