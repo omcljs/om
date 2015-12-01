@@ -78,8 +78,8 @@
          (let [~this    this#
                indexer# (get-in (om.next/get-reconciler this#) [:config :indexer])]
            (when-not (nil? indexer#)
-             (om.next.protocols/index-component! indexer# ~this)))
-         ~@body))
+             (om.next.protocols/index-component! indexer# ~this))
+           ~@body)))
     'componentWillUnmount
     (fn [[name [this :as args] & body]]
       `(~name [this#]
@@ -91,8 +91,8 @@
            (when-not (nil? st#)
              (swap! st# update-in [:om.next/queries] dissoc ~this))
            (when-not (nil? indexer#)
-             (om.next.protocols/drop-component! indexer# ~this)))
-         ~@body))
+             (om.next.protocols/drop-component! indexer# ~this))
+           ~@body)))
     'render
     (fn [[name [this :as args] & body]]
       `(~name [this#]
