@@ -21,6 +21,11 @@
     </scm>
     <build>
         <sourceDirectory>src/main</sourceDirectory>
+        <resources>
+            <resource>
+                <directory>resources</directory>
+            </resource>
+        </resources>
         <testSourceDirectory>test</testSourceDirectory>
         <directory>target</directory>
         <outputDirectory>target/classes</outputDirectory>
