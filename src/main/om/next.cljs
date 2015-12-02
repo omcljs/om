@@ -1089,16 +1089,16 @@
   "Given a Om component class or instance and a tree of data, use the component's
    query to transform the tree into the default database format. All nodes that
    can be mapped via Ident implementations wil be replaced with ident links. The
-   original node data will be moved into tables indexed by ident. If merge-ref
+   original node data will be moved into tables indexed by ident. If merge-idents
    option is true, will return these tables in the result instead of as metadata."
   ([x data]
     (tree->db x data false))
-  ([x data ^boolean merge-refs]
+  ([x data ^boolean merge-idents]
    (let [refs (atom {})
          errs (atom {})
          x    (if (vector? x) x (get-query x))
          ret  (normalize* x data refs errs)]
-     (if merge-refs
+     (if merge-idents
        (let [refs' @refs]
          (assoc (merge ret refs')
            ::tables (into #{} (keys refs'))))
@@ -1208,15 +1208,16 @@
         (assoc st :rewrite (rewrite (:paths st)))
         {:query query :rewrite identity}))))
 
-(defn- merge-refs [tree config refs]
-  (let [{:keys [merge-ref indexer]} config]
+(defn- merge-idents [tree config refs]
+  (let [{:keys [merge-ident indexer]} config]
     (letfn [(step [tree' [ref props]]
               (if (:normalize config)
                 (let [c      (ref->any indexer ref)
                       props' (tree->db c props)
                       refs   (meta props')]
-                  ((:merge-tree config) (merge-ref config tree' ref props') refs))
-                (merge-ref config tree' ref props)))]
+                  ((:merge-tree config)
+                    (merge-ident config tree' ref props') refs))
+                (merge-ident config tree' ref props)))]
       (reduce step tree refs))))
 
 (defn- merge-novelty!
@@ -1228,7 +1229,7 @@
                       (tree->db root res' true)
                       res')]
     (-> state
-      (merge-refs config refs)
+      (merge-idents config refs)
       ((:merge-tree config) res'))))
 
 (defn default-merge [reconciler state res]
@@ -1408,7 +1409,7 @@
                   (glog/warning l (str c " query took " dt " msecs")))))
             (get-in ui (path c))))))))
 
-(defn- default-merge-ref
+(defn- default-merge-ident
   [_ tree ref props]
   (update-in tree ref merge props))
 
@@ -1468,7 +1469,7 @@
            parser indexer
            ui->props normalize
            send merge-sends remotes
-           merge merge-tree merge-ref
+           merge merge-tree merge-ident
            optimize
            history
            root-render root-unmount
@@ -1480,7 +1481,7 @@
          remotes      [:remote]
          merge        default-merge
          merge-tree   default-merge-tree
-         merge-ref    default-merge-ref
+         merge-ident  default-merge-ident
          optimize     (fn [cs] (sort-by depth cs))
          history      100
          root-render  #(js/ReactDOM.render %1 %2)
@@ -1500,7 +1501,7 @@
                   :parser parser :indexer idxr
                   :ui->props ui->props
                   :send send :merge-sends merge-sends :remotes remotes
-                  :merge merge :merge-tree merge-tree :merge-ref merge-ref
+                  :merge merge :merge-tree merge-tree :merge-ident merge-ident
                   :optimize optimize
                   :normalize (or (not norm?) normalize)
                   :history (c/cache history)
