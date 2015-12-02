@@ -29,7 +29,7 @@
                 <directory>src/devcards</directory>
             </resource>
         </resources>
-        <testSourceDirectory>test</testSourceDirectory>
+        <testSourceDirectory>src/test</testSourceDirectory>
         <directory>target</directory>
         <outputDirectory>target/classes</outputDirectory>
         <plugins>
@@ -61,7 +61,7 @@
         <dependency>
             <groupId>org.clojure</groupId>
             <artifactId>clojure</artifactId>
-            <version>1.7.0</version>
+            <version>1.8.0-RC2</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
