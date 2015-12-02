@@ -25,6 +25,9 @@
             <resource>
                 <directory>resources</directory>
             </resource>
+            <resource>
+                <directory>src/devcards</directory>
+            </resource>
         </resources>
         <testSourceDirectory>test</testSourceDirectory>
         <directory>target</directory>
