@@ -508,6 +508,20 @@
                                              :person/mate [:people/by-id 1]}}}
            (om/db->tree '[{[:people/by-id 1] [:person/name {:person/mate ...}]}] app-state app-state)))))
 
+(deftest db->tree-unions
+  (let [db {:panels        [[:panelA :ui] [:panelB :ui] [:panelC :ui]]
+            :current-panel [:panelA :ui]
+            :panelA        {:ui {:boo 42}}
+            :panelB        {:ui {:goo 8}}
+            :panelC        {:ui {:sticky true}}}
+        union {:panelC [:sticky], :panelA [:boo], :panelB [:goo]}
+        list-query [{:panels union}]
+        single-query [{:current-panel union}]
+        ident-query [{[:panelC :ui] union}]]
+    (is (= {:panels [{:boo 42} {:goo 8} {:sticky true}]} (om/db->tree list-query db db)))
+    (is (= {:current-panel {:boo 42}} (om/db->tree single-query db db)))
+    (is (= {[:panelC :ui] {:sticky true}} (om/db->tree ident-query db db)))))
+
 ;; -----------------------------------------------------------------------------
 ;; Message Forwarding
 
