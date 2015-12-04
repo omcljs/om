@@ -1199,14 +1199,14 @@
 ;; Reconciler
 
 (defn rewrite [rewrite-map result]
-  (letfn [(step [new-result [k orig-paths]]
-            (let [result-to-move (get result k)
-                  redistributed (reduce (fn [res path]
-                                          (assoc-in res (conj path k) result-to-move)) new-result orig-paths)]
-              (dissoc redistributed k)))]
+  (letfn [(step [res [k orig-paths]]
+            (let [to-move (get result k)
+                  res'    (reduce #(assoc-in %1 (conj %2 k) to-move)
+                            res orig-paths)]
+              (dissoc res' k)))]
     (reduce step result rewrite-map)))
 
-(defn- alternate-roots
+(defn- move-roots
   "When given a join `{:join selector-vector}`, roots found so far, and a `path` prefix:
   returns a (possibly empty) sequence of [re-rooted-join prefix] results.
   Does NOT support sub-roots. Each re-rooted join will share only
@@ -1215,32 +1215,39 @@
   [join result-roots path]
   (letfn [(query-root? [join] (true? (-> join meta :query-root)))]
     (if (join? join)
-     (if (query-root? join)
-       (conj result-roots [join path])
-       (mapcat #(alternate-roots % result-roots (conj path (join-key join))) (join-value join)))
-     result-roots)))
+      (if (query-root? join)
+        (conj result-roots [join path])
+        (mapcat
+          #(move-roots % result-roots
+            (conj path (join-key join)))
+          (join-value join)))
+      result-roots)))
 
 (defn- merge-joins
   "Searches a query for duplicate joins and deep-merges them into a new query."
   [query]
   (letfn [(step [res query-element]
             (if (contains? (:elements-seen res) query-element)
-              res                                           ; eliminate exact duplicates
+              res ; eliminate exact duplicates
               (update-in
                 (if (and (join? query-element) (not (union? query-element)))
-                  (let [k (join-key query-element)
-                        v (join-value query-element)
-                        q (or (-> res :query-by-join (get k)) [])
-                        nq (if (or (= q '...) (= v '...))
+                  (let [jk (join-key query-element)
+                        jv (join-value query-element)
+                        q  (or (-> res :query-by-join (get jk)) [])
+                        nq (if (or (= q '...) (= jv '...))
                              '...
-                             (merge-joins (into [] (concat q v))))]
-                    (update-in res [:query-by-join] assoc k nq))
+                             (merge-joins (into [] (concat q jv))))]
+                    (update-in res [:query-by-join] assoc jk nq))
                   (update-in res [:non-joins] conj query-element))
                 [:elements-seen] conj query-element)))]
-    (let [{:keys [non-joins query-by-join]} (reduce step {:query-by-join {} :elements-seen #{} :non-joins []} query)
-          merged-joins (mapv (fn [[jkey jsel]] {jkey jsel}) query-by-join)
-          merged-query (into [] (concat non-joins merged-joins))]
-      merged-query)))
+    (let [init {:query-by-join {}
+                :elements-seen #{}
+                :non-joins []}
+          res  (reduce step init query)]
+      (->> (:query-by-join res)
+        (mapv (fn [[jkey jsel]] {jkey jsel}))
+        (concat (:non-joins res))
+        (into [])))))
 
 (defn process-roots [query]
   "A send helper for rewriting the query to remove client local keys that
@@ -1248,19 +1255,21 @@
    return a map with two keys, :query and :rewrite. :query is the
    actual query you should send. Upon receiving the response you should invoke
    :rewrite on the response before invoking the send callback."
-  (let [retain (fn [ele] [[ele []]])                        ; emulate an alternate-root element
-        reroots (mapcat (fn [qele]
-                          (let [alt-roots (alternate-roots qele [] [])]
-                            (if (empty? alt-roots)
-                              (retain qele)
-                              alt-roots))) query)
-        query   (merge-joins (mapv first reroots))
-        rewrite-map (reduce (fn [rewrites [ele path]]
-                              (if (empty? path)
-                                rewrites
-                                (update-in rewrites [(join-key ele)] conj path))) {} reroots)]
-    {:query   query
-     :rewrite (partial rewrite rewrite-map)}))
+  (letfn [(retain [ele] [[ele []]]) ; emulate an alternate-root element
+          (reroot [qele]
+            (let [roots (move-roots qele [] [])]
+              (if (empty? roots)
+                (retain qele)
+                roots)))
+          (rewrite-map-step [rewrites [ele path]]
+            (if (empty? path)
+              rewrites
+              (update-in rewrites [(join-key ele)] conj path)))]
+    (let [reroots     (mapcat reroot query)
+          query       (merge-joins (mapv first reroots))
+          rewrite-map (reduce rewrite-map-step {} reroots)]
+     {:query   query
+      :rewrite (partial rewrite rewrite-map)})))
 
 (defn- merge-idents [tree config refs]
   (let [{:keys [merge-ident indexer]} config]

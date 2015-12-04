@@ -716,7 +716,7 @@
 
 ; process-roots can cause duplicate top-level queries. merge-joins is used to pull them together
 (deftest test-merge-joins-on-non-merges
-  (are [merged raw] (= merged (#'om/merge-joins raw))
+  (are [merged raw] (= merged (om/merge-joins raw))
     ; calls
     '[(app/f) :a (app/g)] '[(app/f) :a (app/g)]
     ; plain properties
@@ -728,27 +728,27 @@
     [{:j [:a]} {:widget [{:a [:type] :b [:type]}]}] [{:j [:a]} {:widget [{:a [:type] :b [:type]}]}]))
 
 (deftest test-merge-joins-eliminates-exact-duplicates
-  (are [merged raw] (= merged (#'om/merge-joins raw))
+  (are [merged raw] (= merged (om/merge-joins raw))
     [:a] [:a :a]
     [{:j1 [:a :b]}] [{:j1 [:a :b]} {:j1 [:a :b]}]))
 
 (deftest test-merge-joins-merges-simple-joins
-  (is (= [{:j [:a :b]}] (#'om/merge-joins [{:j [:a]} {:j [:b]}]))))
+  (is (= [{:j [:a :b]}] (om/merge-joins [{:j [:a]} {:j [:b]}]))))
 
 (deftest test-merge-joins-eliminates-duplicate-selector-elements
-  (is (= [{:j [:a :b]}] (#'om/merge-joins [{:j [:a]} {:j [:a :b]}]))))
+  (is (= [{:j [:a :b]}] (om/merge-joins [{:j [:a]} {:j [:a :b]}]))))
 
 (deftest test-merge-joins-merges-nested-joins-of-duplicates
-  (is (= [{:j [:b {:a [:x :y]}]}] (#'om/merge-joins [{:j [{:a [:x]}]} {:j [{:a [:y]} :b]}]))))
+  (is (= [{:j [:b {:a [:x :y]}]}] (om/merge-joins [{:j [{:a [:x]}]} {:j [{:a [:y]} :b]}]))))
 
 (deftest test-merge-joins-retains-property-and-call-order-at-top-level
   (is (= '[(app/f) :b :d :e {:j [:b {:a [:x :y]}]} {:k [:x {:y [:b]}]} {:c [:ca :cb]} {:l [:m]}]
-         (#'om/merge-joins '[(app/f) {:j [{:a [:x]}]} :b {:k [:x]}
+         (om/merge-joins '[(app/f) {:j [{:a [:x]}]} :b {:k [:x]}
                              {:c [:ca :cb]} {:j [{:a [:y]} :b]} :d
                              {:k [{:y [:b]}]} :e {:l [:m]}]))))
 
 (deftest test-merge-joins-handles-recursive-queries
-  (is (= [{:j '...}] (#'om/merge-joins [{:j '...} {:j '...}]))))
+  (is (= [{:j '...}] (om/merge-joins [{:j '...} {:j '...}]))))
 
 (deftest test-process-roots-recursive
   (let [p (om/parser {:read precise-read})
