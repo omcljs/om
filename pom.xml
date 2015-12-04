@@ -61,7 +61,7 @@
         <dependency>
             <groupId>org.clojure</groupId>
             <artifactId>clojure</artifactId>
-            <version>1.8.0-RC2</version>
+            <version>1.8.0-RC3</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
