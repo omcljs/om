@@ -1166,9 +1166,6 @@
                      join        (cond-> join (ident? join) (hash-map '[*]))
                      [key sel]   (join-entry join)
                      recurse?    (= '... sel)
-                     sel         (if recurse?
-                                   query
-                                   sel)
                      v           (if (ident? key)
                                    (if (= '_ (second key))
                                      (get refs (first key))
@@ -1178,6 +1175,11 @@
                                    (and (ident? key) (= '_ (second key)))
                                    first)
                      v           (if (ident? v) (map-ident v) v)
+                     sel         (cond
+                                   recurse? query
+                                   (and (ident? key) (union? sel)) (get sel (first key))
+                                   (and (ident? v) (union? sel)) (get sel (first v))
+                                   :else sel)
                      graph-loop? (and recurse? (contains? (set (get idents-seen key)) v))
                      idents-seen (if recurse?
                                    (-> idents-seen
