@@ -132,12 +132,24 @@
             <artifactId>figwheel-sidecar</artifactId>
             <version>0.5.0</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.clojure</groupId>
+                    <artifactId>clojurescript</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>devcards</groupId>
             <artifactId>devcards</artifactId>
             <version>0.2.0-8</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.clojure</groupId>
+                    <artifactId>clojurescript</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
     <developers>
