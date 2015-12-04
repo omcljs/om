@@ -596,6 +596,33 @@
         (schedule-sends! r)))
     nil))
 
+(defn update-query!
+  "Update a compoent's query and parameters with a function."
+  ([component f]
+   (set-query! component
+     (f {:query  (get-unbound-query component)
+         :params (get-params component)})))
+  ([component f arg0]
+   (set-query! component
+     (f {:query  (get-unbound-query component)
+         :params (get-params component)}
+       arg0)))
+  ([component f arg0 arg1]
+   (set-query! component
+     (f {:query  (get-unbound-query component)
+         :params (get-params component)}
+       arg0 arg1)))
+  ([component f arg0 arg1 arg2]
+   (set-query! component
+     (f {:query  (get-unbound-query component)
+         :params (get-params component)}
+       arg0 arg1 arg2)))
+  ([component f arg0 arg1 arg2 arg3 & arg-rest]
+   (apply set-query! component
+     (f {:query  (get-unbound-query component)
+         :params (get-params component)}
+       arg0 arg1 arg2 arg3 arg-rest))))
+
 (defn ^boolean mounted?
   "Returns true if the component is mounted."
   [x]
@@ -1152,9 +1179,10 @@
                                    first)
                      v           (if (ident? v) (map-ident v) v)
                      graph-loop? (and recurse? (contains? (set (get idents-seen key)) v))
-                     idents-seen (if recurse? (-> idents-seen
-                                                  (update-in [key] (fnil conj #{}) v)
-                                                  (assoc-in [:last-ident key] v)) idents-seen)]
+                     idents-seen (if recurse?
+                                   (-> idents-seen
+                                     (update-in [key] (fnil conj #{}) v)
+                                     (assoc-in [:last-ident key] v)) idents-seen)]
                  (cond
                    graph-loop? (recur (next joins) ret)
                    (nil? v)    (recur (next joins) ret)
