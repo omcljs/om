@@ -6,4 +6,4 @@ classpath_file=classpath.txt
 
 mvn -q dependency:build-classpath -Dmdep.outputFile=$classpath_file
 
-cat $classpath_file <(echo ":`pwd`/src/main:`pwd`/src/test:`pwd`/src/resources:`pwd`/target/classes")
+(echo ":`pwd`/src/main:`pwd`/src/test:`pwd`/src/resources:`pwd`/target/classes") >> $classpath_file
