@@ -30,8 +30,10 @@
             </resource>
         </resources>
         <testSourceDirectory>src/test</testSourceDirectory>
+        <!--
         <directory>target</directory>
         <outputDirectory>target/classes</outputDirectory>
+        -->
         <plugins>
         </plugins>
     </build>
@@ -67,7 +69,7 @@
         <dependency>
             <groupId>org.clojure</groupId>
             <artifactId>clojurescript</artifactId>
-            <version>1.7.189</version>
+            <version>1.7.192</version>
             <classifier>aot</classifier>
             <scope>provided</scope>
             <exclusions>
