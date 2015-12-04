@@ -59,7 +59,8 @@
       `(~name [this# next-props# next-state#]
          (let [~this       this#
                ~next-props (om.next/-next-props next-props# this#)
-               ~next-state (goog.object/get next-state# "omcljs$pendingState")
+               ~next-state (or (goog.object/get next-state# "omcljs$pendingState")
+                               (goog.object/get next-state# "omcljs$state"))
                ret#        (do ~@body)]
            (om.next/merge-pending-props! ~this)
            (om.next/merge-pending-state! ~this)
