@@ -597,7 +597,7 @@
     nil))
 
 (defn update-query!
-  "Update a compoent's query and parameters with a function."
+  "Update a component's query and query parameters with a function."
   ([component f]
    (set-query! component
      (f {:query  (get-unbound-query component)
