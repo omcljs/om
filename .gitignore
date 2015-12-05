@@ -3,7 +3,6 @@ out
 /target
 /classes
 /checkouts
-pom.xml
 pom.xml.asc
 *.map
 *.js
