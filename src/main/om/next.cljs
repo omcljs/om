@@ -1588,13 +1588,21 @@
   "Return the reconciler's application state atom. Useful when the reconciler
    was initialized via denormalized data."
   [reconciler]
+  {:pre [(reconciler? reconciler)]}
   (-> reconciler :config :state))
+
+(defn app-root
+  "Return the application's root component."
+  [reconciler]
+  {:pre [(reconciler? reconciler)]}
+  (get @(:state reconciler) :root))
 
 (defn from-history
   "Given a reconciler and UUID return the application state snapshost
    from history associated with the UUID. The size of the reconciler history
    may be configured by the :history option when constructing the reconciler."
   [reconciler uuid]
+  {:pre [(reconciler? reconciler)]}
   (.get (-> reconciler :config :history) uuid))
 
 (defn tempid
