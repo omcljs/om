@@ -28,9 +28,10 @@
    Given a QueryExpr you can get the AST via om.next.impl.parser/expr->ast.
    The following keys can appear in the AST representation:
 
-   {:type         (:prop | :join | :call | :root)
+   {:type         (:prop | :join | :call | :root | :union | :union-entry)
     :key          (EdnKeyword | EdnSymbol | IdentExpr)
     :dispatch-key (EdnKeyword | EdnSymbol)
+    :union-key    EdnKeyword
     :query        (QueryRoot | RecurExpr)
     :params       ParamMapExpr
     :children     EdnVector(AST)}
