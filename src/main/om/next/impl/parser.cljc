@@ -114,20 +114,26 @@
   "Given a query expression AST convert it back into a query expression."
   ([ast]
     (ast->expr ast false))
-  ([{:keys [type] :as ast} unparse-children?]
+  ([{:keys [type] :as ast} unparse?]
    (if (= :root type)
-     (into [] (map #(ast->expr % unparse-children?)) (:children ast))
+     (into [] (map #(ast->expr % unparse?)) (:children ast))
      (let [{:keys [key query query-root params]} ast]
        (wrap-expr query-root
          (if-not (nil? params)
-           (let [expr (ast->expr (dissoc ast :params) unparse-children?)]
+           (let [expr (ast->expr (dissoc ast :params) unparse?)]
              (if-not (empty? params)
                (list expr params)
                (list expr)))
            (if (= :join type)
-             (if (true? unparse-children?)
+             (if (true? unparse?)
                (let [children (:children ast)]
-                 {key (into [] (map #(ast->expr % unparse-children?)) children)})
+                 (if (and (== 1 (count children))
+                          (= :union (:type (first children)))) ;; UNION
+                   {key (into {}
+                          (map (fn [{:keys [union-key children]}]
+                                 [union-key (into [] (map #(ast->expr % unparse?)) children)]))
+                          (:children (first children)))}
+                   {key (into [] (map #(ast->expr % unparse?)) children)}))
                {key query})
              key)))))))
 
