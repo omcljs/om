@@ -952,7 +952,7 @@
               (let [cs (get-in indexes [:prop->classes k])]
                 (transduce (map #(get-in indexes [:class->components %]))
                   (completing into) #{} cs))
-              (throw (js/Error. (str "Invalid key " k ", key must be ref or keyword"))))))))))
+              #{})))))))
 
 (defn indexer
   "Given a function (Component -> Ref), return an indexer."
