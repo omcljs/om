@@ -126,7 +126,8 @@
                (list expr)))
            (if (= :join type)
              (if (true? unparse-children?)
-               {key (ast->expr (:children ast) unparse-children?)}
+               (let [children (:children ast)]
+                 {key (into [] (map #(ast->expr % unparse-children?)) children)})
                {key query})
              key)))))))
 
