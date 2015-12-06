@@ -979,3 +979,10 @@
     (is (every? #(contains? % [:settings 0]) (:items ui)))
     (is (= (parser {:state state} (om/get-query LinkList) :remote)
            [{:items [:id :title]}]))))
+
+;; -----------------------------------------------------------------------------
+;; Query AST API parsing/unparsing
+
+(deftest test-ast<->query
+  (let [q0 [{:foo [:bar :baz :woz]}]]
+    (is (= q0 (-> q0 om/query->ast om/ast->query)))))
