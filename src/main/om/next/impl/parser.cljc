@@ -50,6 +50,17 @@
    :dispatch-key k
    :key k})
 
+(defn union-entry->ast [[k v]]
+  {:type :union-entry
+   :union-key k
+   :query v
+   :children (expr->ast v)})
+
+(defn union->ast [m]
+  {:type :union
+   :query m
+   :children (into [] (map union-entry->ast) m)})
+
 (defn call->ast [[f args :as call]]
   (if (= 'quote f)
     (assoc (expr->ast args) :target (or (-> call meta :target) :remote))
@@ -69,7 +80,10 @@
     (merge ast
       {:type :join :query v}
       (when-not (= '... v)
-        {:children (into [] (map expr->ast) v)}))))
+        (cond
+          (vector? v) {:children (into [] (map expr->ast) v)}
+          (map? v) {:children [(union->ast join)]}
+          :else (throw (js/Error. (str "Invalid join, " join))))))))
 
 (defn ident->ast [[k id :as ref]]
   {:type :prop
@@ -109,7 +123,7 @@
            (if-not (empty? params)
              (list (ast->expr (dissoc ast :params)) params)
              (list (ast->expr (dissoc ast :params))))
-           (if-not (nil? query)
+           (if (= :join type)
              (if (true? unparse-children?)
                {key (ast->expr (:children ast) unparse-children?)}
                {key query})
@@ -152,7 +166,7 @@
                                (do
                                  (assert mutate "Parse mutation attempted but no :mutate function supplied")
                                  (mutate env dispatch-key params))
-                               (:prop :join)
+                               (:prop :join :union)
                                (do
                                  (assert read "Parse read attempted but no :read function supplied")
                                  (read env dispatch-key params)))]
