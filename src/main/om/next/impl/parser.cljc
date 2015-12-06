@@ -55,7 +55,7 @@
   {:type :union-entry
    :union-key k
    :query v
-   :children (expr->ast v)})
+   :children (into [] (map expr->ast) v)})
 
 (defn union->ast [m]
   {:type :union
@@ -83,7 +83,7 @@
       (when-not (= '... v)
         (cond
           (vector? v) {:children (into [] (map expr->ast) v)}
-          (map? v) {:children [(union->ast join)]}
+          (map? v) {:children [(union->ast v)]}
           :else (throw (js/Error. (str "Invalid join, " join))))))))
 
 (defn ident->ast [[k id :as ref]]
