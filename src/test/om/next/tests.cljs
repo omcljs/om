@@ -985,6 +985,8 @@
 
 (deftest test-ast<->query
   (let [q0 [{:foo [:bar :baz :woz]}]
-        q1 [{:foo [:bar :baz {:woz [:goz :noz]}]}]]
+        q1 [{:foo [:bar :baz {:woz [:goz :noz]}]}]
+        q2 [{:foo {:bar [:baz] :woz [:noz]}}]]
     (is (= q0 (-> q0 om/query->ast om/ast->query)))
-    (is (= q1 (-> q1 om/query->ast om/ast->query)))))
+    (is (= q1 (-> q1 om/query->ast om/ast->query)))
+    (is (= q2 (-> q2 om/query->ast om/ast->query)))))
