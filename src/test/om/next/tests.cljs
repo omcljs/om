@@ -983,6 +983,8 @@
 ;; -----------------------------------------------------------------------------
 ;; Query AST API parsing/unparsing
 
-(deftest test-ast<->query
-  (let [q0 [{:foo [:bar :baz :woz]}]]
-    (is (= q0 (-> q0 om/query->ast om/ast->query)))))
+#_(deftest test-ast<->query
+  (let [q0 [{:foo [:bar :baz :woz]}]
+        q1 [{:foo [:bar :baz {:woz [:goz :noz]}]}]]
+    (is (= q0 (-> q0 om/query->ast om/ast->query)))
+    (is (= q1 (-> q1 om/query->ast om/ast->query)))))

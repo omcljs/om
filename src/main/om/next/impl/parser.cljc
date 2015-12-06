@@ -116,13 +116,14 @@
     (ast->expr ast false))
   ([{:keys [type] :as ast} unparse-children?]
    (if (= :root type)
-     (into [] (map ast->expr) (:children ast))
+     (into [] (map #(ast->expr % unparse-children?)) (:children ast))
      (let [{:keys [key query query-root params]} ast]
        (wrap-expr query-root
          (if-not (nil? params)
-           (if-not (empty? params)
-             (list (ast->expr (dissoc ast :params)) params)
-             (list (ast->expr (dissoc ast :params))))
+           (let [expr (ast->expr (dissoc ast :params) unparse-children?)]
+             (if-not (empty? params)
+               (list expr params)
+               (list expr)))
            (if (= :join type)
              (if (true? unparse-children?)
                {key (ast->expr (:children ast) unparse-children?)}
