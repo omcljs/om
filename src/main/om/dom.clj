@@ -28,7 +28,9 @@
     datalist
     dd
     del
+    details
     dfn
+    dialog
     div
     dl
     dt
@@ -62,7 +64,6 @@
     main
     map
     mark
-    marquee
     menu
     menuitem
     meta
@@ -75,6 +76,7 @@
     output
     p
     param
+    picture
     pre
     progress
     q
@@ -108,13 +110,16 @@
     var
     video
     wbr
-    
+
     ;; svg
     circle
+    clipPath
     ellipse
     g
     line
+    mask
     path
+    pattern
     polyline
     rect
     svg
