@@ -137,14 +137,17 @@
                (list expr)))
            (if (= :join type)
              (if (true? unparse?)
-               (let [children (:children ast)]
+               (let [{:keys [children component]} ast]
                  (if (and (== 1 (count children))
                           (= :union (:type (first children)))) ;; UNION
                    {key (into {}
-                          (map (fn [{:keys [union-key children]}]
-                                 [union-key (into [] (map #(ast->expr % unparse?)) children)]))
+                          (map (fn [{:keys [union-key children component]}]
+                                 [union-key
+                                  (cond-> (into [] (map #(ast->expr % unparse?)) children)
+                                    (not (nil? component)) (with-meta {:component component}))]))
                           (:children (first children)))}
-                   {key (into [] (map #(ast->expr % unparse?)) children)}))
+                   {key (cond-> (into [] (map #(ast->expr % unparse?)) children)
+                          (not (nil? component)) (with-meta {:component component}))}))
                {key query})
              key)))))))
 
