@@ -84,7 +84,9 @@
         (cond
           (vector? v) {:children (into [] (map expr->ast) v)}
           (map? v) {:children [(union->ast v)]}
-          :else (throw (js/Error. (str "Invalid join, " join))))))))
+          :else (throw
+                  (ex-info (str "Invalid join, " join)
+                    {:type :error/invalid-join})))))))
 
 (defn ident->ast [[k id :as ref]]
   {:type :prop
