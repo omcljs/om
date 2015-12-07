@@ -34,7 +34,8 @@
     :union-key    EdnKeyword
     :query        (QueryRoot | RecurExpr)
     :params       ParamMapExpr
-    :children     EdnVector(AST)}
+    :children     EdnVector(AST)
+    :component    Object}
 
    :query and :params may or may not appear. :type :call is only for
    mutations."}
@@ -52,10 +53,14 @@
    :key k})
 
 (defn union-entry->ast [[k v]]
-  {:type :union-entry
-   :union-key k
-   :query v
-   :children (into [] (map expr->ast) v)})
+  (let [component (-> v meta :component)]
+    (merge
+      {:type :union-entry
+       :union-key k
+       :query v
+       :children (into [] (map expr->ast) v)}
+      (when-not (nil? component)
+        {:component component}))))
 
 (defn union->ast [m]
   {:type :union
@@ -77,9 +82,12 @@
 
 (defn join->ast [join]
   (let [[k v] (first join)
-        ast   (expr->ast k)]
+        ast (expr->ast k)
+        component (-> v meta :component)]
     (merge ast
       {:type :join :query v}
+      (when-not (nil? component)
+        {:component component})
       (when-not (= '... v)
         (cond
           (vector? v) {:children (into [] (map expr->ast) v)}
