@@ -553,7 +553,7 @@
    {:pre [(component? component)]}
    (.setState component #js {:omcljs$state new-state} nil)))
 
-(declare full-query to-env schedule-sends!)
+(declare full-query to-env schedule-sends! reconciler? ref->components force)
 
 (defn gather-sends
   [{:keys [parser] :as env} q remotes]
@@ -563,38 +563,78 @@
       (filter (fn [[_ v]] (pos? (count v)))))
     remotes))
 
+(defn transform-reads [r tx]
+  (letfn [(with-target [target q]
+            (if-not (nil? target)
+              [(force (first q) target)]
+              q))
+          (add-focused-query [k target tx c]
+            (->> (focus-query (get-query c) [k])
+              (with-target target)
+              (full-query c)
+              (into tx)))]
+    (loop [exprs (seq tx) tx' []]
+      (if-not (nil? exprs)
+        (let [expr (first exprs)
+              ast  (parser/expr->ast expr)
+              key  (:key ast)
+              tgt  (:target ast)]
+          (if (keyword? key)
+            (recur (next exprs)
+              (reduce #(add-focused-query key tgt %1 %2)
+                tx' (ref->components r key)))
+            (recur (next exprs) (conj tx' expr))))
+        tx'))))
+
 (defn set-query!
   "Change the query of a component. Takes a map containing :params and/or
    :query. :params should be a map of new bindings and :query should be a query
    expression. Will schedule a re-render as well as remote re-sends if
    necessary."
-  [component {:keys [params query]}]
-  {:pre [(component? component)
-         (or (not (nil? params))
-             (not (nil? query)))]}
-  (let [r   (get-reconciler component)
-        cfg (:config r)
-        st  (:state cfg)
-        id  (random-uuid)
-        _   (.add (:history cfg) id @st)]
-    (when-let [l (:logger cfg)]
-      (glog/info l
-        (str (when-let [ref (when (implements? Ident component)
-                              (ident component (props component)))]
-               (str (pr-str ref) " "))
-          (when query  "changed query '" query ", ")
-          (when params "changed params " params " ")
-          (pr-str id))))
-    (swap! st update-in [:om.next/queries component] merge
-      (merge (when query {:query query}) (when params {:params params})))
-    (p/queue! r [component])
-    (p/reindex! r)
-    (let [sends (gather-sends (to-env cfg)
-                  (full-query component) (:remotes cfg))]
-      (when-not (empty? sends)
-        (p/queue-sends! r sends)
-        (schedule-sends! r)))
-    nil))
+  ([x params&query]
+    (set-query! x params&query nil))
+  ([x {:keys [params query]} reads]
+   {:pre [(or (reconciler? x)
+              (component? x))
+          (or (not (nil? params))
+              (not (nil? query)))
+          (or (nil? reads)
+              (vector? reads))]}
+   (let [r    (if (component? x)
+                (get-reconciler x)
+                x)
+         c    (when (component? x) x)
+         root (:root @(:state r))
+         cfg  (:config r)
+         st   (:state cfg)
+         id   (random-uuid)
+         _    (.add (:history cfg) id @st)]
+     (when-let [l (:logger cfg)]
+       (glog/info l
+         (str (when-let [ref (when (implements? Ident c)
+                               (ident c (props c)))]
+                (str (pr-str ref) " "))
+           (when (reconciler? x) "reconciler ")
+           (when query "changed query '" query ", ")
+           (when params "changed params " params " ")
+           (pr-str id))))
+     (swap! st update-in [:om.next/queries (or c root)] merge
+       (merge (when query {:query query}) (when params {:params params})))
+     (when (and (not (nil? c)) (nil? reads))
+       (p/queue! r [c]))
+     (when-not (nil? reads)
+       (p/queue! r reads))
+     (p/reindex! r)
+     (let [rootq (if (not (nil? c))
+                   (full-query c)
+                   (when (nil? reads)
+                     (get-query root)))
+           sends (gather-sends (to-env cfg)
+                   (into (or rootq []) (transform-reads r reads)) (:remotes cfg))]
+       (when-not (empty? sends)
+         (p/queue-sends! r sends)
+         (schedule-sends! r)))
+     nil)))
 
 (defn update-query!
   "Update a component's query and query parameters with a function."
@@ -776,31 +816,6 @@
     (when-not (empty? snds)
       (p/queue-sends! r snds)
       (schedule-sends! r))))
-
-(declare ref->components force)
-
-(defn transform-reads [r tx]
-  (letfn [(with-target [target q]
-            (if-not (nil? target)
-              [(force (first q) target)]
-              q))
-          (add-focused-query [k target tx c]
-            (->> (focus-query (get-query c) [k])
-              (with-target target)
-              (full-query c)
-              (into tx)))]
-    (loop [exprs (seq tx) tx' []]
-      (if-not (nil? exprs)
-        (let [expr (first exprs)
-              ast  (parser/expr->ast expr)
-              key  (:key ast)
-              tgt  (:target ast)]
-          (if (keyword? key)
-            (recur (next exprs)
-              (reduce #(add-focused-query key tgt %1 %2)
-                tx' (ref->components r key)))
-            (recur (next exprs) (conj tx' expr))))
-        tx'))))
 
 (defn transact!
   "Given a reconciler or component run a transaction. tx is a parse expression
