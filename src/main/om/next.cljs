@@ -512,7 +512,7 @@
      (get-in cst (if (sequential? k-or-ks) k-or-ks [k-or-ks])))))
 
 (defn update-state!
-  "Update a component's local state. Similar to Clojure(Script)'s update-in."
+  "Update a component's local state. Similar to Clojure(Script)'s swap!"
   ([component f]
    (set-state! component (f (get-state component))))
   ([component f arg0]
