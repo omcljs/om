@@ -1243,20 +1243,20 @@
 (defn- merge-joins
   "Searches a query for duplicate joins and deep-merges them into a new query."
   [query]
-  (letfn [(step [res query-element]
-            (if (contains? (:elements-seen res) query-element)
+  (letfn [(step [res expr]
+            (if (contains? (:elements-seen res) expr)
               res ; eliminate exact duplicates
               (update-in
-                (if (and (join? query-element) (not (union? query-element)))
-                  (let [jk (join-key query-element)
-                        jv (join-value query-element)
+                (if (and (join? expr) (not (union? expr)))
+                  (let [jk (join-key expr)
+                        jv (join-value expr)
                         q  (or (-> res :query-by-join (get jk)) [])
                         nq (if (or (= q '...) (= jv '...))
                              '...
                              (merge-joins (into [] (concat q jv))))]
                     (update-in res [:query-by-join] assoc jk nq))
-                  (update-in res [:non-joins] conj query-element))
-                [:elements-seen] conj query-element)))]
+                  (update-in res [:non-joins] conj expr))
+                [:elements-seen] conj expr)))]
     (let [init {:query-by-join {}
                 :elements-seen #{}
                 :non-joins []}
@@ -1272,16 +1272,16 @@
    return a map with two keys, :query and :rewrite. :query is the
    actual query you should send. Upon receiving the response you should invoke
    :rewrite on the response before invoking the send callback."
-  (letfn [(retain [ele] [[ele []]]) ; emulate an alternate-root element
-          (reroot [qele]
-            (let [roots (move-roots qele [] [])]
+  (letfn [(retain [expr] [[expr []]]) ; emulate an alternate-root element
+          (reroot [expr]
+            (let [roots (move-roots expr [] [])]
               (if (empty? roots)
-                (retain qele)
+                (retain expr)
                 roots)))
-          (rewrite-map-step [rewrites [ele path]]
+          (rewrite-map-step [rewrites [expr path]]
             (if (empty? path)
               rewrites
-              (update-in rewrites [(join-key ele)] conj path)))]
+              (update-in rewrites [(join-key expr)] conj path)))]
     (let [reroots     (mapcat reroot query)
           query       (merge-joins (mapv first reroots))
           rewrite-map (reduce rewrite-map-step {} reroots)]
