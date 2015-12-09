@@ -849,38 +849,33 @@
                '[(app/f) {:fake/key [{:real/key ...}]} (app/g)] :remote))]
     (is (= '[(app/f) (app/g) {:real/key ...}] (:query m)))))
 
-(let [ref-rooted-join (with-meta {[:db/id 4] [:a :b]} {:query-root true})
-      j1 (with-meta {:j1 [:a :b]} {:query-root true})
-      j2 (with-meta {:j2 [:x {:j3 [:y :z]}]} {:query-root true})
-      sub-rooted-join (with-meta {:subrooted-join [:x j1]} {:query-root true})]
-
-  (let [{:keys [query rewrite]} (om/process-roots [{:top [ref-rooted-join j1]}])]
-    (deftest test-process-roots-promotes-non-sub-rooted-queries
-      (is (= [{[:db/id 4] [:a :b]} {:j1 [:a :b]}] query)))
-
-    (deftest test-rewrite-result-for-promoted-non-sub-rooted-queries
-      (let [top-result {[:db/id 4] {:a 4 :b 5} :j1 {:a 9 :b 10}}
-            expected-rewritten-result {:top {[:db/id 4] {:a 4 :b 5}
-                                             :j1        {:a 9 :b 10}}}]
-        (is (= expected-rewritten-result (rewrite top-result))))))
-
-  (let [{:keys [query rewrite]} (om/process-roots [{:top [j1 sub-rooted-join]}])]
-    (deftest test-process-roots-ignores-subroots
-      (is (= [{:j1 [:a :b]} {:subrooted-join [:x {:j1 [:a :b]}]}] query)))
-
-    (deftest test-rewrite-roots-on-ignored-subroots
-      (let [top-result {:j1 {:a 9 :b 10} :subrooted-join {:x 11 :j1 {:a 9 :b 10}}}
-            expected-rewritten-result {:top {:j1             {:a 9 :b 10}
-                                             :subrooted-join {:x 11 :j1 {:a 9 :b 10}}}}]
-        (is (= expected-rewritten-result (rewrite top-result))))))
-
-  (let [top-result {:j1 {:a 9 :b 10}}
-        expected-rewritten-result '{:top {:j1 {:a 9 :b 10} :j3 {:j1 {:a 9 :b 10}}}}
-        {:keys [query rewrite]} (om/process-roots [{:top [j1 {:j3 [j1]}]}])]
-    (deftest test-process-roots-can-reroot-same-join-from-multiple-paths
-      (is (= [{:j1 [:a :b]}] query)))
-    (deftest test-rewrite-of-same-join-to-multiple-paths
-      (is (= expected-rewritten-result (rewrite top-result))))))
+(deftest test-process-roots-promotes-non-sub-rooted-queries
+  (let [ref-rooted-join (with-meta {[:db/id 4] [:a :b]} {:query-root true})
+        j1 (with-meta {:j1 [:a :b]} {:query-root true})
+        sub-rooted-join (with-meta {:subrooted-join [:x j1]} {:query-root true})]
+    (let [{:keys [query rewrite]} (om/process-roots [{:top [ref-rooted-join j1]}])]
+      (testing "Process roots promots non-sub-rooted queries"
+       (is (= [{[:db/id 4] [:a :b]} {:j1 [:a :b]}] query)))
+      (testing "Rewrite result for promoted non-sub-rooted queries"
+        (let [top-result {[:db/id 4] {:a 4 :b 5} :j1 {:a 9 :b 10}}
+              expected-rewritten-result {:top {[:db/id 4] {:a 4 :b 5}
+                                               :j1 {:a 9 :b 10}}}]
+          (is (= expected-rewritten-result (rewrite top-result))))))
+    (let [{:keys [query rewrite]} (om/process-roots [{:top [j1 sub-rooted-join]}])]
+      (testing "Process roots ignore subroots"
+        (is (= [{:j1 [:a :b]} {:subrooted-join [:x {:j1 [:a :b]}]}] query)))
+      (testing "Rewrite roots on ignored subroots"
+        (let [top-result {:j1 {:a 9 :b 10} :subrooted-join {:x 11 :j1 {:a 9 :b 10}}}
+              expected-rewritten-result {:top {:j1 {:a 9 :b 10}
+                                               :subrooted-join {:x 11 :j1 {:a 9 :b 10}}}}]
+          (is (= expected-rewritten-result (rewrite top-result))))))
+    (let [top-result {:j1 {:a 9 :b 10}}
+          expected-rewritten-result '{:top {:j1 {:a 9 :b 10} :j3 {:j1 {:a 9 :b 10}}}}
+          {:keys [query rewrite]} (om/process-roots [{:top [j1 {:j3 [j1]}]}])]
+      (testing "Process roots can reroot same join from multiple paths"
+        (is (= [{:j1 [:a :b]}] query)))
+      (testing "Rewrite of the same join to multiple paths"
+        (is (= expected-rewritten-result (rewrite top-result)))))))
 
 (deftest test-process-roots-om526
   (let [q [{:app/pages
