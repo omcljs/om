@@ -1207,7 +1207,7 @@
                                    (and (ident? v) (union? join)) (get sel (first v))
                                    :else sel)
                      graph-loop? (and recurse? (contains? (set (get idents-seen key)) v))
-                     idents-seen (if recurse?
+                     idents-seen (if (and (ident? v) recurse?)
                                    (-> idents-seen
                                      (update-in [key] (fnil conj #{}) v)
                                      (assoc-in [:last-ident key] v)) idents-seen)]

@@ -508,6 +508,71 @@
                                              :person/mate [:people/by-id 1]}}}
            (om/db->tree '[{[:people/by-id 1] [:person/name {:person/mate ...}]}] app-state app-state)))))
 
+(let [db {:nodes [[:node "r/ui"] [:node "r/ui/red-button"] [:node "r/ui/red-button/big"]],
+          :node  {"r/ui/red-button"     {:name     "r/ui/red-button", :title "There is a red button",
+                                         :children [[:node "r/ui/red-button/big"]], :parent [:node "r/ui"]}
+                  "r/ui"                {:name     "r/ui", :title "UI Requirements",
+                                         :children [[:node "r/ui/red-button"]], :parent nil}
+                  "r/ui/red-button/big" {:name     "r/ui/red-button/big", :title "The red button is big",
+                                         :children [], :parent [:node "r/ui/red-button"]}}}]
+
+  (deftest db->tree-graph-loops-allow-recursion-through-non-singletons
+    (is (= {:nodes [{:name     "r/ui",
+                     :title    "UI Requirements",
+                     :children [{:name     "r/ui/red-button",
+                                 :title    "There is a red button",
+                                 :parent   {:name "r/ui", :title "UI Requirements"},
+                                 :children [{:name     "r/ui/red-button/big",
+                                             :title    "The red button is big",
+                                             :parent   {:name "r/ui/red-button", :title "There is a red button"},
+                                             :children []}]}]}
+                    {:name     "r/ui/red-button",
+                     :title    "There is a red button",
+                     :parent   {:name "r/ui", :title "UI Requirements"},
+                     :children [{:name     "r/ui/red-button/big",
+                                 :title    "The red button is big",
+                                 :parent   {:name  "r/ui/red-button",
+                                            :title "There is a red button"},
+                                 :children []}]}
+                    {:name     "r/ui/red-button/big",
+                     :title    "The red button is big",
+                     :parent   {:name  "r/ui/red-button",
+                                :title "There is a red button"},
+                     :children []}]}
+           (om/db->tree [{:nodes [:name :title {:parent [:name :title]} {:children '...}]}] db db))))
+
+  (deftest db->tree-graph-loops-handles-simultaneous-recursive-graph-walk
+    (is (=
+          {:nodes [{:name     "r/ui",
+                    :title    "UI Requirements",
+                    :children [{:name     "r/ui/red-button",
+                                :title    "There is a red button",
+                                :parent   {:name "r/ui", :title "UI Requirements"},
+                                :children [{:name     "r/ui/red-button/big",
+                                            :title    "The red button is big",
+                                            :parent   {:name   "r/ui/red-button",
+                                                       :title  "There is a red button",
+                                                       :parent {:name  "r/ui",
+                                                                :title "UI Requirements"}},
+                                            :children []}]}]}
+                   {:name     "r/ui/red-button",
+                    :title    "There is a red button",
+                    :parent   {:name "r/ui", :title "UI Requirements"},
+                    :children [{:name     "r/ui/red-button/big",
+                                :title    "The red button is big",
+                                :parent   {:name   "r/ui/red-button",
+                                           :title  "There is a red button",
+                                           :parent {:name  "r/ui",
+                                                    :title "UI Requirements"}},
+                                :children []}]}
+                   {:name   "r/ui/red-button/big",
+                    :title  "The red button is big",
+                    :parent {:name "r/ui/red-button",
+                             :title "There is a red button",
+                             :parent {:name "r/ui", :title "UI Requirements"}},
+                    :children []}]}
+          (om/db->tree [{:nodes [:name :title {:parent [:name :title {:parent '...}]} {:children '...}]}] db db)))))
+
 (deftest db->tree-unions
   (let [db {:panels        [[:panelA :ui] [:panelB :ui] [:panelC :ui]]
             :current-panel [:panelA :ui]
@@ -729,7 +794,7 @@
     (is (= (meta (parser/ast->expr ast)) {:query-root true}))))
 
 ; process-roots can cause duplicate top-level queries. merge-joins is used to pull them together
-#_(deftest test-merge-joins-on-non-merges
+(deftest test-merge-joins-on-non-merges
   (are [merged raw] (= merged (om/merge-joins raw))
     ; calls
     '[(app/f) :a (app/g)] '[(app/f) :a (app/g)]
@@ -738,8 +803,8 @@
     ; ident as key
     [{[:db/id 1] [:a :b]}] [{[:db/id 1] [:a :b]}]
     ; unions
-    [{:a [:type] :b [:type]}] [{:a [:type] :b [:type]}]
-    [{:j [:a]} {:widget [{:a [:type] :b [:type]}]}] [{:j [:a]} {:widget [{:a [:type] :b [:type]}]}]))
+    [{:join {:a [:type] :b [:type]}}] [{:join {:a [:type] :b [:type]}}]
+    [{:widget {:a [:type] :b [:type]}} {:j [:a]}] [{:j [:a]} {:widget {:a [:type] :b [:type]}}]))
 
 (deftest test-merge-joins-eliminates-exact-duplicates
   (are [merged raw] (= merged (om/merge-joins raw))
@@ -996,3 +1061,4 @@
     (is (= q0 (-> q0 om/query->ast om/ast->query)))
     (is (= q1 (-> q1 om/query->ast om/ast->query)))
     (is (= q2 (-> q2 om/query->ast om/ast->query)))))
+
