@@ -398,3 +398,43 @@
 (comment
   (pprint/pprint @(-> norm-tree-reconciler :config :indexer))
   )
+
+;; -----------------------------------------------------------------------------
+;; Instrumenting
+
+(defui Wrapper
+  Object
+  (render [this]
+    (let [{:keys [factory props]} (om/props this)]
+      (dom/div nil
+       (dom/h2 nil "Wrapped")
+       (factory props)))))
+
+(def wrapper (om/factory Wrapper))
+
+(defui AView
+  Object
+  (render [this]
+    (dom/div nil "I'm a view!")))
+
+(def aview (om/factory AView))
+
+(defui RootView
+  Object
+  (render [this]
+    (aview {})))
+
+(def instrument-reconciler
+  (om/reconciler
+    {:state {}
+     :parser (fn [_ _ _] {:value :not-found})
+     :instrument (fn [{:keys [props _ class factory]}]
+                   (println "instrument!" (= AView class)
+                     AView class)
+                   (if (= AView class)
+                     (wrapper {:factory aview :props props})
+                     (factory props)))}))
+
+(defcard test-instrument
+  "Test that instrument interception works"
+  (om/mock-root instrument-reconciler RootView))

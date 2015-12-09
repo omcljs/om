@@ -1373,7 +1373,8 @@
                                 *shared*     (merge
                                                (:shared config)
                                                (when (:shared-fn config)
-                                                 ((:shared-fn config) data)))]
+                                                 ((:shared-fn config) data)))
+                                *instrument* (:instrument config)]
                         (let [c (cond
                                   (not (nil? target)) ((:root-render config) (rctor data) target)
                                   (nil? @ret) (rctor data)
@@ -1569,7 +1570,8 @@
            history
            root-render root-unmount
            pathopt
-           migrate id-key]
+           migrate id-key
+           instrument]
     :or {ui->props    default-ui->props
          indexer      om.next/indexer
          merge-sends  #(merge-with into %1 %2)
@@ -1602,7 +1604,12 @@
                   :history (c/cache history)
                   :root-render root-render :root-unmount root-unmount
                   :logger logger :pathopt pathopt
-                  :migrate migrate :id-key id-key}
+                  :migrate migrate :id-key id-key
+                  :instrument (cond-> instrument
+                                (not (nil? instrument))
+                                (fn [x]
+                                  (binding [*instrument* nil]
+                                    (instrument x))))}
                  (atom {:queue [] :queued false :queued-sends {}
                         :sends-queued false
                         :target nil :root nil :render nil :remove nil
