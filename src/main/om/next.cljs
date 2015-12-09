@@ -64,7 +64,9 @@
         (recur (zip/right loc))))))
 
 (defn ^boolean union? [node]
-  (and (map? node) (< 1 (count node))))
+  (let [node (cond-> node (seq? node) first)]
+    (and (map? node)
+         (map? (-> node first second)))))
 
 (defn- query-template [query path]
   (letfn [(query-template* [loc path]
@@ -73,16 +75,22 @@
               (let [node (zip/node loc)]
                 (if (vector? node) ;; SUBQUERY
                   (recur (zip/down loc) path)
-                  (let [[k & ks] path]
-                    (if (union? node)
-                      (let [node (zip/node (move-to-key loc k))]
-                        (recur (zip/replace loc node) ks)) ;; UNION
-                      (let [k' (node->key node)]
-                        (if (keyword-identical? k k')
-                          (if (map? node)
-                            (recur (move-to-key loc k) ks) ;; JOIN
-                            (recur (-> loc zip/down zip/down zip/down zip/right) ks)) ;; CALL
-                          (recur (zip/right loc) path)))))))))]
+                  (let [[k & ks] path
+                        k' (node->key node)]
+                    (if (keyword-identical? k k')
+                      (if (map? node)
+                        (let [loc'  (move-to-key loc k)
+                              node' (zip/node loc')]
+                          (if (map? node') ;; UNION
+                            (if (seq ks)
+                              (recur
+                                (zip/replace loc'
+                                  (zip/node (move-to-key loc' (first ks))))
+                                (next ks))
+                              loc)
+                            (recur loc' ks))) ;; JOIN
+                        (recur (-> loc zip/down zip/down zip/down zip/right) ks)) ;; CALL
+                      (recur (zip/right loc) path)))))))]
     (query-template* (query-zip query) path)))
 
 (defn- replace [template new-query]
@@ -132,7 +140,7 @@
               (value [x]
                 (focused-join x ks))]
         (if (map? query) ;; UNION
-          {k (focus-query (get query k) ks) ::union true}
+          {k (focus-query (get query k) ks)}
           (into [] (comp (filter match) (map value) (take 1)) query))))))
 
 ;; this function assumes focus is actually in fact
@@ -893,6 +901,9 @@
                                         (not recursive?))
                                    (conj class))]
                   (when class
+                    (println classpath (focus-query rootq path) path)
+                    (println (zip/root (query-template (focus-query rootq path) path)))
+                    (println "-----")
                     (swap! class-path->query update-in [classpath]
                       (fnil conj #{})
                       (query-template (focus-query rootq path) path)))
@@ -1192,8 +1203,8 @@
                      v           (if (ident? v) (map-ident v) v)
                      sel         (cond
                                    recurse? query
-                                   (and (ident? key) (union? sel)) (get sel (first key))
-                                   (and (ident? v) (union? sel)) (get sel (first v))
+                                   (and (ident? key) (union? join)) (get sel (first key))
+                                   (and (ident? v) (union? join)) (get sel (first v))
                                    :else sel)
                      graph-loop? (and recurse? (contains? (set (get idents-seen key)) v))
                      idents-seen (if recurse?

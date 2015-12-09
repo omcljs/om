@@ -89,7 +89,7 @@
   (is (= (om/focus-query [{:selected/item {:item/one [:title]
                                            :item/two [:author]}}]
                          [:selected/item :item/two])
-         [{:selected/item {:item/two [:author] :om.next/union true}}])))
+         [{:selected/item {:item/two [:author]}}])))
 
 (deftest test-om-466
   (is (= (om/focus-query
@@ -729,7 +729,7 @@
     (is (= (meta (parser/ast->expr ast)) {:query-root true}))))
 
 ; process-roots can cause duplicate top-level queries. merge-joins is used to pull them together
-(deftest test-merge-joins-on-non-merges
+#_(deftest test-merge-joins-on-non-merges
   (are [merged raw] (= merged (om/merge-joins raw))
     ; calls
     '[(app/f) :a (app/g)] '[(app/f) :a (app/g)]
