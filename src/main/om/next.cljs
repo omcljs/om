@@ -283,7 +283,10 @@
      (when-not (nil? validator)
        (assert (validator props)))
      (if *instrument*
-       (apply *instrument* props children)
+       (*instrument*
+         {:props    props
+          :children children
+          :class    class})
        (let [key (if-not (nil? keyfn)
                    (keyfn props)
                    (compute-react-key class props))
