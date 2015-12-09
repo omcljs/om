@@ -818,6 +818,12 @@
     (deftest test-rewrite-of-same-join-to-multiple-paths
       (is (= expected-rewritten-result (rewrite top-result))))))
 
+(deftest test-process-roots-om526
+  (let [q [{:app/pages
+            {:page/home
+             [{:user/rooms [:id :roomname]} {:app/rooms [:id :roomname]}]}}]]
+    (is (= q (-> (om/process-roots q) :query)))))
+
 ;; -----------------------------------------------------------------------------
 ;; User Bugs
 
