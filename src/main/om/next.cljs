@@ -87,7 +87,7 @@
                                 (zip/replace loc'
                                   (zip/node (move-to-key loc' (first ks))))
                                 (next ks))
-                              loc)
+                              loc')
                             (recur loc' ks))) ;; JOIN
                         (recur (-> loc zip/down zip/down zip/down zip/right) ks)) ;; CALL
                       (recur (zip/right loc) path)))))))]
@@ -901,9 +901,6 @@
                                         (not recursive?))
                                    (conj class))]
                   (when class
-                    (println classpath (focus-query rootq path) path)
-                    (println (zip/root (query-template (focus-query rootq path) path)))
-                    (println "-----")
                     (swap! class-path->query update-in [classpath]
                       (fnil conj #{})
                       (query-template (focus-query rootq path) path)))
