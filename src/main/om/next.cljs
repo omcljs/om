@@ -700,7 +700,8 @@
      #js {:omcljs$value next-props}
      #js {:omcljs$state next-state})))
 
-(defn- class-path [c]
+(defn class-path [c]
+  "Return the component class path associated with a component."
   {:pre [(component? c)]}
   (loop [c c ret (list (type c))]
     (if-let [p (parent c)]
@@ -1009,7 +1010,9 @@
   (let [indexer (if (reconciler? x) (get-indexer x) x)]
     (first (get-in @indexer [:class->components class]))))
 
-(defn class-path->query
+(defn class-path->queries
+  "Given x (a reconciler or indexer) and y (a component or component class
+   path), return the queries for that path."
   [x y]
   (let [indexer (if (reconciler? x) (get-indexer x) x)
         cp      (if (component? y) (class-path y) y)]
