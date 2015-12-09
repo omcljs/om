@@ -279,14 +279,15 @@
   ([class] (factory class nil))
   ([class {:keys [validator keyfn] :as opts}]
    {:pre [(fn? class)]}
-   (fn [props & children]
+   (fn self [props & children]
      (when-not (nil? validator)
        (assert (validator props)))
      (if *instrument*
        (*instrument*
          {:props    props
           :children children
-          :class    class})
+          :class    class
+          :factory  self})
        (let [key (if-not (nil? keyfn)
                    (keyfn props)
                    (compute-react-key class props))
