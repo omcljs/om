@@ -855,7 +855,7 @@
         sub-rooted-join (with-meta {:subrooted-join [:x j1]} {:query-root true})]
     (let [{:keys [query rewrite]} (om/process-roots [{:top [ref-rooted-join j1]}])]
       (testing "Process roots promots non-sub-rooted queries"
-       (is (= [{[:db/id 4] [:a :b]} {:j1 [:a :b]}] query)))
+        (is (= [{[:db/id 4] [:a :b]} {:j1 [:a :b]}] query)))
       (testing "Rewrite result for promoted non-sub-rooted queries"
         (let [top-result {[:db/id 4] {:a 4 :b 5} :j1 {:a 9 :b 10}}
               expected-rewritten-result {:top {[:db/id 4] {:a 4 :b 5}
