@@ -877,11 +877,16 @@
       (testing "Rewrite of the same join to multiple paths"
         (is (= expected-rewritten-result (rewrite top-result)))))))
 
-(deftest test-process-roots-om526
-  (let [q [{:app/pages
-            {:page/home
-             [{:user/rooms [:id :roomname]} {:app/rooms [:id :roomname]}]}}]]
-    (is (= q (-> (om/process-roots q) :query)))))
+(deftest test-process-roots-can-promote-a-union-to-root
+  (let [server-query [(with-meta {:dashboard {:photo   [:url]
+                                              :comment [:text]}} {:query-root true})]
+        full-query [{:ui-key server-query}]
+        response {:dashboard {:url "http://images.com/x.gif"}}
+        full-response {:ui-key response}
+        {:keys [rewrite query]} (om/process-roots full-query)
+        ]
+    (is (= server-query query))
+    (is (= full-response (rewrite response)))))
 
 ;; -----------------------------------------------------------------------------
 ;; User Bugs
