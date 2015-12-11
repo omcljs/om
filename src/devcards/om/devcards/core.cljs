@@ -325,7 +325,7 @@
 
 (defmethod norm-tree-read :node/by-id
   [{:keys [state query query-root]} _ _]
-  (om/db->tree query query-root @state))
+  {:value (om/db->tree query query-root @state)})
 
 (defmulti norm-tree-mutate om/dispatch)
 
