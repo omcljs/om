@@ -62,8 +62,8 @@
                ~next-state (or (goog.object/get next-state# "omcljs$pendingState")
                                (goog.object/get next-state# "omcljs$state"))
                ret#        (do ~@body)]
-           (om.next/merge-pending-props! ~this)
-           (om.next/merge-pending-state! ~this)
+           (om.next/merge-pending-props! this#)
+           (om.next/merge-pending-state! this#)
            ret#)))
     'componentDidUpdate
     (fn [[name [this prev-props prev-state :as args] & body]]
@@ -72,14 +72,14 @@
                ~prev-props (om.next/-prev-props prev-props# this#)
                ~prev-state (goog.object/get prev-state# "omcljs$previousState")]
            ~@body
-           (om.next/clear-prev-props! ~this))))
+           (om.next/clear-prev-props! this#))))
     'componentWillMount
     (fn [[name [this :as args] & body]]
       `(~name [this#]
          (let [~this    this#
                indexer# (get-in (om.next/get-reconciler this#) [:config :indexer])]
            (when-not (nil? indexer#)
-             (om.next.protocols/index-component! indexer# ~this))
+             (om.next.protocols/index-component! indexer# this#))
            ~@body)))
     'componentWillUnmount
     (fn [[name [this :as args] & body]]
@@ -90,9 +90,9 @@
                st#      (:state cfg#)
                indexer# (:indexer cfg#)]
            (when-not (nil? st#)
-             (swap! st# update-in [:om.next/queries] dissoc ~this))
+             (swap! st# update-in [:om.next/queries] dissoc this#))
            (when-not (nil? indexer#)
-             (om.next.protocols/drop-component! indexer# ~this))
+             (om.next.protocols/drop-component! indexer# this#))
            ~@body)))
     'render
     (fn [[name [this :as args] & body]]
