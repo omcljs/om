@@ -833,8 +833,7 @@
 (defn transact!
   "Given a reconciler or component run a transaction. tx is a parse expression
    that should include mutations followed by any necessary read. The reads will
-   be used to trigger component re-rendering. If given a reconciler can be
-   optionally passed a ref as the second argument.
+   be used to trigger component re-rendering.
 
    Example:
 
