@@ -244,12 +244,12 @@
         (with-meta (bind-query q (params x)) {:component x})))
     ;; in advanced, statics will get elided
     (when (goog/isFunction x)
-      (let [x (js/Object.create (. x -prototype))]
-        (when (implements? IQuery x)
-          (let [q (query x)
+      (let [y (js/Object.create (. x -prototype))]
+        (when (implements? IQuery y)
+          (let [q (query y)
                 c (-> q meta :component)]
-            (assert (nil? c) (str "Query violation, " x , " reuses " c " query"))
-            (with-meta (bind-query q (params x)) {:component x})))))))
+            (assert (nil? c) (str "Query violation, " y , " reuses " c " query"))
+            (with-meta (bind-query q (params y)) {:component x})))))))
 
 (defn tag [x class]
   (vary-meta x assoc :component class))
