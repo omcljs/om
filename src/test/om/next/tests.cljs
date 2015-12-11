@@ -2,7 +2,7 @@
   (:require [cljs.test :refer-macros [deftest is are testing run-tests]]
             [goog.object :as gobj]
             [clojure.zip :as zip]
-            [om.next :as om :refer-macros [defui]]
+            [om.next :as om :refer-macros [defui ui]]
             [om.next.protocols :as p]
             [om.next.impl.parser :as parser]
             [om.dom :as dom]
@@ -46,6 +46,19 @@
   (let [c (component-list {:foo/bar 1})]
     (is (= (om/react-type c) ComponentList))
     (is (= (om/t c) 0))))
+
+;; -----------------------------------------------------------------------------
+;; Anonymous Components
+
+(defn make-ui-class []
+  (ui
+    static om/IQuery
+    (query [this]
+      '[:foo/bar :baz/woz])))
+
+(deftest test-get-query-anon-ui
+  (let [q (om/get-query (make-ui-class))]
+    (is (= [:foo/bar :baz/woz] q))))
 
 ;; -----------------------------------------------------------------------------
 ;; Queries
