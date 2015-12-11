@@ -187,10 +187,10 @@
 
 (defn- var? [x]
   (and (symbol? x)
-       (gstring/startsWith (name x) "?")))
+       (gstring/startsWith (str x) "?")))
 
 (defn- var->keyword [x]
-  (keyword (.substring (name x) 1)))
+  (keyword (.substring (str x) 1)))
 
 (defn- bind-query [query params]
   (letfn [(replace-var [node]
