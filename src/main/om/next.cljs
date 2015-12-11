@@ -224,6 +224,13 @@
       (bind-query q (:params qps (params c)))
       {:component (type c)})))
 
+(defn ^boolean iquery? [x]
+  (if (implements? IQuery x)
+    true
+    (when (goog/isFunction x)
+      (let [x (js/Object.create (. x -prototype))]
+        (implements? IQuery x)))))
+
 (defn get-query
   "Return a IQuery/IParams instance bound query. Works for component classes
    and component instances. See also om.next/full-query."
@@ -243,9 +250,6 @@
                 c (-> q meta :component)]
             (assert (nil? c) (str "Query violation, " x , " reuses " c " query"))
             (with-meta (bind-query q (params x)) {:component x})))))))
-
-(defn iquery? [x]
-  (implements? IQuery x))
 
 (defn tag [x class]
   (vary-meta x assoc :component class))
@@ -847,7 +851,7 @@
    (if (reconciler? x)
      (transact* x nil nil tx)
      (do
-       (assert (implements? IQuery x)
+       (assert (iquery? x)
          (str "transact! invoked by component " x
               " that does not implement IQuery"))
        (loop [p (parent x) x x tx tx]
@@ -1026,7 +1030,7 @@
   "Returns the absolute query for a given component, not relative like
    om.next/get-query."
   ([component]
-   (when (implements? IQuery component)
+   (when (iquery? component)
      (if (nil? (path component))
        (replace
          (first
@@ -1035,7 +1039,7 @@
          (get-query component))
        (full-query component (get-query component)))))
   ([component query]
-   (when (implements? IQuery component)
+   (when (iquery? component)
      (let [path' (into [] (remove number?) (path component))
            cp    (class-path component)
            qs    (get-in @(-> component get-reconciler get-indexer)
@@ -1359,7 +1363,7 @@
     (let [ret   (atom nil)
           rctor (factory root-class)
           guid  (random-uuid)]
-      (when (implements? IQuery root-class)
+      (when (iquery? root-class)
         (p/index-root (:indexer config) root-class))
       (when (and (:normalize config)
                  (not (:normalized @state)))
@@ -1425,7 +1429,7 @@
 
   (reindex! [_]
     (let [root (get @state :root)]
-      (when (implements? IQuery root)
+      (when (iquery? root)
         (p/index-root (:indexer config) root))))
 
   (queue! [_ ks]
