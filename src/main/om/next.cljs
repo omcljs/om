@@ -1461,8 +1461,6 @@
         ;; TODO: need to move root re-render logic outside of batching logic
         (empty? q) ((:render st))
 
-        (some (comp zero? depth) q) ((:render st))
-
         (= [::skip] q) nil
 
         :else
@@ -1636,6 +1634,13 @@
   [reconciler]
   {:pre [(reconciler? reconciler)]}
   (get @(:state reconciler) :root))
+
+(defn force-root-render!
+  "Force a re-render of the root. Not recommended for anything except
+   recomputing :shared."
+  [reconciler]
+  {:pre [(reconciler? reconciler)]}
+  ((get @(:state reconciler) :render)))
 
 (defn from-history
   "Given a reconciler and UUID return the application state snapshost
