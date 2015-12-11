@@ -1319,38 +1319,42 @@
       (reduce step tree refs))))
 
 (defn- merge-novelty!
-  [reconciler state res]
+  [reconciler state res query]
   (let [config      (:config reconciler)
-        root        (:root @(:state reconciler))
         [refs res'] (sift-refs res)
         res'        (if (:normalize config)
-                      (tree->db root res' true)
+                      (tree->db
+                        (or query (:root @(:state reconciler)))
+                        res' true)
                       res')]
     (-> state
       (merge-idents config refs)
       ((:merge-tree config) res'))))
 
-(defn default-merge [reconciler state res]
+(defn default-merge [reconciler state res query]
   {:keys    (into [] (remove symbol?) (keys res))
-   :next    (merge-novelty! reconciler state res)
+   :next    (merge-novelty! reconciler state res query)
    :tempids (->> (filter (comp symbol? first) res)
               (map (comp :tempids second))
               (reduce merge {}))})
 
 (defn merge!
   "Merge a state delta into the application state. Affected components managed
-   by the reconciler will re-render."
-  [reconciler delta]
-  (let [config (:config reconciler)
-        state  (:state config)
-        merge  (:merge config)
-        {:keys [keys next tempids]} (merge reconciler @state delta)]
-    (p/queue! reconciler keys)
-    (reset! state
-      (if-let [migrate (:migrate config)]
-        (migrate next (get-query (:root @(:state reconciler)))
-          tempids (:id-key config))
-        next))))
+   by the reconciler will re-render. "
+  ([reconciler delta]
+    (merge! reconciler delta nil))
+  ([reconciler delta query]
+   (let [config (:config reconciler)
+         state (:state config)
+         merge (:merge config)
+         {:keys [keys next tempids]} (merge reconciler @state delta query)]
+     (p/queue! reconciler keys)
+     (reset! state
+       (if-let [migrate (:migrate config)]
+         (migrate next
+           (or query (get-query (:root @(:state reconciler))))
+           tempids (:id-key config))
+         next)))))
 
 (defrecord Reconciler [config state]
   IDeref
@@ -1418,8 +1422,8 @@
             (when-not (empty? snds)
               (when-let [send (:send config)]
                 (send snds
-                  #(do
-                    (merge! this %)
+                  (fn [res query]
+                    (merge! this res query)
                     (renderf ((:parser config) env sel))))))))
         @ret)))
 
@@ -1486,7 +1490,9 @@
             (-> state
               (assoc :queued-sends {})
               (assoc :sends-queued false))))
-        ((:send config) sends #(merge! this %))))))
+        ((:send config) sends
+          (fn [res query]
+            (merge! this res query)))))))
 
 (defn- default-ui->props
   [{:keys [parser ^boolean pathopt] :as env} c]
@@ -1552,7 +1558,9 @@
                      and a callback which should be invoked with the result from each
                      remote target. Note this means the callback can be invoked
                      multiple times to support parallel fetching and incremental
-                     loading if desired.
+                     loading if desired. The callback should take the response as the
+                     first argument and the the query that was sent as the second
+                     argument.
      :normalize    - whether the state should be normalized. If true it is assumed
                      all novelty introduced into the system will also need
                      normalization.
