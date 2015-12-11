@@ -28,6 +28,14 @@
 
 (def component-list (om/factory ComponentList))
 
+(defui ComponentWithParams
+  static om/IQueryParams
+  (params [this]
+    {:some/param 42})
+  static om/IQuery
+  (query [this]
+    '[{:some/key ?some/param} :app/title]))
+
 (deftest test-component?
   (is (om/component? (Component. {}))))
 
@@ -52,7 +60,9 @@
   (is (= (om/get-query Component)
          '[:foo/bar :baz/woz]))
   (is (= (om/get-query ComponentList)
-         '[{:components/list [:foo/bar :baz/woz]} :app/title])))
+         '[{:components/list [:foo/bar :baz/woz]} :app/title]))
+  (is (= (om/get-query ComponentWithParams)
+         '[{:some/key 42} :app/title])))
 
 (deftest test-focus-query
   (is (= (om/focus-query [:foo/bar] [])
