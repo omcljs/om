@@ -892,7 +892,7 @@
 ;; =============================================================================
 ;; Indexer
 
-(defrecord Indexer [indexes]
+(defrecord Indexer [indexes extfs]
   IDeref
   (-deref [_] @indexes)
 
@@ -948,7 +948,7 @@
   (index-component! [_ c]
     (swap! indexes
       (fn [indexes]
-        (let [indexes (update-in indexes
+        (let [indexes (update-in ((:index-component extfs) indexes c)
                         [:class->components (type c)]
                         (fnil conj #{}) c)
               ref     (when (implements? Ident c)
@@ -961,7 +961,7 @@
   (drop-component! [_ c]
     (swap! indexes
       (fn [indexes]
-        (let [indexes (update-in indexes
+        (let [indexes (update-in ((:drop-component extfs) indexes c)
                         [:class->components (type c)]
                         disj c)
               ref     (when (implements? Ident c)
@@ -975,23 +975,31 @@
     (let [indexes @indexes]
       (if (component? k)
         #{k}
-        (let [cs (get-in indexes [:ref->components k] ::not-found)]
-          (if-not (keyword-identical? ::not-found cs)
-            cs
-            (if (keyword? k)
-              ;; TODO: more robust validation, might be bogus key
-              (let [cs (get-in indexes [:prop->classes k])]
-                (transduce (map #(get-in indexes [:class->components %]))
-                  (completing into) #{} cs))
-              #{})))))))
+        (if-let [cs ((:ref->components extfs) indexes k)]
+          cs
+          (let [cs (get-in indexes [:ref->components k] ::not-found)]
+            (if-not (keyword-identical? ::not-found cs)
+              cs
+              (if (keyword? k)
+                ;; TODO: more robust validation, might be bogus key
+                (let [cs (get-in indexes [:prop->classes k])]
+                  (transduce (map #(get-in indexes [:class->components %]))
+                    (completing into) #{} cs))
+                #{}))))))))
 
 (defn indexer
   "Given a function (Component -> Ref), return an indexer."
-  []
-  (Indexer.
-    (atom
-      {:class->components {}
-       :ref->components   {}})))
+  ([]
+    (indexer
+      {:index-component (fn [indexes component] indexes)
+       :drop-component  (fn [indexes component] indexes)
+       :ref->components (fn [indexes ref] nil)}))
+  ([extfs]
+   (Indexer.
+     (atom
+       {:class->components {}
+        :ref->components   {}})
+     extfs)))
 
 (defn get-indexer
   "PRIVATE: Get the indexer associated with the reconciler."
