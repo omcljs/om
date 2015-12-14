@@ -8,6 +8,11 @@
   [opts]
   (parser/parser (assoc opts :elide-paths true)))
 
+(defn dispatch
+  "Helper function for implementing :read and :mutate as multimethods. Use this
+   as the dispatch-fn."
+  [_ key _] key)
+
 (defn reader
   "Create a Om Next transit reader. This reader can handler the tempid type.
    Can pass transit reader customization opts map."
