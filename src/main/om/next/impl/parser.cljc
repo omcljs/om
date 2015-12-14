@@ -13,7 +13,7 @@
    expressions follows:
 
    QueryRoot    := EdnVector(QueryExpr*)
-   QueryExpr    := (EdnKeyword | IdentExpr | ParamExpr | JoinExpr | UnionExpr)
+   QueryExpr    := (EdnKeyword | IdentExpr | ParamExpr | JoinExpr)
    IdentExpr    := EdnVector2(Keyword, EdnValue)
    ParamExpr    := EdnList2(QueryExpr | EdnSymbol, ParamMapExpr)
    ParamMapExpr := EdnMap(Keyword, EdnValue)
