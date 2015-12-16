@@ -58,7 +58,7 @@
     (is (not (nil? @idxr)) "Indexer is IDeref")))
 
 ;; -----------------------------------------------------------------------------
-;; Counteres
+;; Counters
 
 (defmulti counters-read (fn [_ k] k))
 
