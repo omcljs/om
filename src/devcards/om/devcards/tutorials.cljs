@@ -166,6 +166,57 @@
   (om/mock-root cian-reconciler RootView))
 
 ;; =============================================================================
+;; Thinking With Links!
+
+(def links-init-data
+  {:current-user {:email "bob.smith@gmail.com"}
+   :items [{:id 0 :title "Foo"}
+           {:id 1 :title "Bar"}
+           {:id 2 :title "Baz"}]})
+
+(defmulti links-read om/dispatch)
+
+(defmethod links-read :items
+  [{:keys [query state]} k _]
+  (let [st @state]
+    {:value (om/db->tree query (get st k) st)}))
+
+(defui LinksItem
+  static om/Ident
+  (ident [_ {:keys [id]}]
+    [:item/by-id id])
+  static om/IQuery
+  (query [_]
+    '[:id :title [:current-user _]])
+  Object
+  (render [this]
+    (let [{:keys [title current-user]} (om/props this)]
+      (dom/li nil
+        (dom/div nil title)
+        (dom/div nil (:email current-user))))))
+
+(def links-item (om/factory LinksItem))
+
+(defui LinksSomeList
+  static om/IQuery
+  (query [_]
+    [{:items (om/get-query LinksItem)}])
+  Object
+  (render [this]
+    (dom/div
+      (dom/h2 nil "A List!")
+      (dom/ul nil
+        (map links-item (-> this om/props :items))))))
+
+(def links-reconciler
+  (om/reconciler
+    {:state links-init-data
+     :parser (om/parser {:read links-read})}))
+
+(defcard links
+  (om/mock-root links-reconciler LinksSomeList))
+
+;; =============================================================================
 ;; Queries with unions
 
 (def union-init-data
