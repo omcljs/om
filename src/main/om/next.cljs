@@ -36,6 +36,10 @@
 (defn ^boolean nil-or-map? [x]
   (or (nil? x) (map? x)))
 
+(defn ^boolean recursion? [x]
+  (or (symbol-identical? '... x)
+      (number? x)))
+
 (defn- node->key [node]
   (cond
     (map? node) (ffirst node)
@@ -157,7 +161,7 @@
             (some join? focus)
             (== 1 (count focus)))
      (let [[k focus'] (join-entry (first focus))
-           focus'     (if (= '... focus')
+           focus'     (if (recursion? focus')
                         focus
                         focus')]
        (recur focus' bound (conj path k)))
@@ -924,7 +928,7 @@
                                 (repeat #{class})))))
                         (doseq [join joins]
                           (let [[prop query'] (join-entry join)
-                                query'        (if (= '... query')
+                                query'        (if (recursion? query')
                                                 query
                                                 query')]
                             (when class
@@ -1101,7 +1105,7 @@
         (let [node (first q)]
           (if (join? node)
             (let [[k sel] (join-entry node)
-                  recursive? (= '... sel)
+                  recursive? (recursion? sel)
                   sel     (if recursive?
                             query
                             sel)
@@ -1206,7 +1210,7 @@
                (let [join        (first joins)
                      join        (cond-> join (ident? join) (hash-map '[*]))
                      [key sel]   (join-entry join)
-                     recurse?    (= '... sel)
+                     recurse?    (recursion? sel)
                      v           (if (ident? key)
                                    (if (= '_ (second key))
                                      (get refs (first key))
@@ -1277,9 +1281,10 @@
                   (let [jk (join-key expr)
                         jv (join-value expr)
                         q  (or (-> res :query-by-join (get jk)) [])
-                        nq (if (or (= q '...) (= jv '...))
-                             '...
-                             (merge-joins (into [] (concat q jv))))]
+                        nq (cond
+                             (recursion? q) q
+                             (recursion? jv) jv
+                             :else (merge-joins (into [] (concat q jv))))]
                     (update-in res [:query-by-join] assoc jk nq))
                   (update-in res [:non-joins] conj expr))
                 [:elements-seen] conj expr)))]
