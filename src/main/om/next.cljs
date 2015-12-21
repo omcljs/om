@@ -1015,8 +1015,9 @@
 (defn ref->components
   "Return all components for a given ref."
   [x ref]
-  (let [indexer (if (reconciler? x) (get-indexer x) x)]
-    (p/key->components indexer ref)))
+  (when-not (nil? ref)
+    (let [indexer (if (reconciler? x) (get-indexer x) x)]
+      (p/key->components indexer ref))))
 
 (defn ref->any
   "Get any component from the indexer that matches the ref."
@@ -1559,13 +1560,28 @@
             (cond
               ;; query root
               (vector? query)
-              (loop [exprs (seq query)]
-                (if-not (nil? exprs)
-                  (let [expr (first exprs)
-                        data (get res (expr->key expr))]
-                    )
-                  res))))]
-    (let [errs (atom {:err->refs {} :ref->err {}})
+              (let [class (-> query meta :component)]
+                (loop [exprs (seq query) ret {}]
+                  (if-not (nil? exprs)
+                    (let [expr (first exprs)
+                          k    (expr->key expr)
+                          data (get res k)]
+                      (cond
+                        (has-error? data)
+                        (let [ref (or (ident class data) k)
+                              cs  (ref->components reconciler ref)]
+                          (when-not (empty? cs)
+                            (swap! errs
+                              (fn [xs]
+                                (reduce
+                                  #(update-in %1 [%2] (fnil conj #{}) (:error data))
+                                  xs))))
+                          (recur (next exprs) res))
+
+                        :else
+                        (recur (next exprs) (assoc ret k data))))
+                    res)))))]
+    (let [errs (atom {})
           ret  (extract* query res errs)]
       {:tree ret :errors @errs})))
 
