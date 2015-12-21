@@ -40,12 +40,13 @@
   (or (symbol-identical? '... x)
       (number? x)))
 
-(defn- node->key [node]
+(defn- expr->key [expr]
   (cond
-    (map? node) (ffirst node)
-    (seq? node) (let [node' (first node)]
-                  (when (map? node')
-                    (ffirst node')))
+    (keyword? expr) expr
+    (map? expr) (ffirst expr)
+    (seq? expr) (let [expr' (first expr)]
+                  (when (map? expr')
+                    (ffirst expr')))
     :else nil))
 
 (defn- query-zip [root]
@@ -67,10 +68,10 @@
         (-> loc zip/down zip/right)
         (recur (zip/right loc))))))
 
-(defn ^boolean union? [node]
-  (let [node (cond-> node (seq? node) first)]
-    (and (map? node)
-         (map? (-> node first second)))))
+(defn ^boolean union? [expr]
+  (let [expr (cond-> expr (seq? expr) first)]
+    (and (map? expr)
+         (map? (-> expr first second)))))
 
 (defn- query-template [query path]
   (letfn [(query-template* [loc path]
@@ -80,7 +81,7 @@
                 (if (vector? node) ;; SUBQUERY
                   (recur (zip/down loc) path)
                   (let [[k & ks] path
-                        k' (node->key node)]
+                        k' (expr->key node)]
                     (if (keyword-identical? k k')
                       (if (map? node)
                         (let [loc'  (move-to-key loc k)
@@ -102,16 +103,16 @@
 
 (declare focus-query)
 
-(defn- join-key [node]
+(defn- join-key [expr]
   (cond
-    (map? node) (ffirst node)
-    (seq? node) (join-key (first node))
-    :else       node))
+    (map? expr) (ffirst expr)
+    (seq? expr) (join-key (first expr))
+    :else       expr))
 
-(defn- join-entry [node]
-  (if (seq? node)
-    (ffirst node)
-    (first node)))
+(defn- join-entry [expr]
+  (if (seq? expr)
+    (ffirst expr)
+    (first expr)))
 
 (defn- join-value [join]
   (second (join-entry join)))
@@ -120,11 +121,11 @@
   (let [x (if (seq? x) (first x) x)]
     (map? x)))
 
-(defn- focused-join [node ks]
+(defn- focused-join [expr ks]
   (cond
-    (map? node) {(ffirst node) (focus-query (-> node first second) ks)}
-    (seq? node) (list (focused-join (first node) ks) (second node))
-    :else       node))
+    (map? expr) {(ffirst expr) (focus-query (-> expr first second) ks)}
+    (seq? expr) (list (focused-join (first expr) ks) (second expr))
+    :else       expr))
 
 (defn focus-query
   "Given a query, focus it along the specified path.
@@ -197,10 +198,10 @@
   (keyword (.substring (str x) 1)))
 
 (defn- bind-query [query params]
-  (letfn [(replace-var [node]
-            (if (var? node)
-              (get params (var->keyword node) node)
-              node))]
+  (letfn [(replace-var [expr]
+            (if (var? expr)
+              (get params (var->keyword expr) expr)
+              expr))]
     (walk/prewalk replace-var query)))
 
 (declare component? get-reconciler props)
@@ -1102,9 +1103,9 @@
     :else
     (loop [q (seq query) ret data]
       (if-not (nil? q)
-        (let [node (first q)]
-          (if (join? node)
-            (let [[k sel] (join-entry node)
+        (let [expr (first q)]
+          (if (join? expr)
+            (let [[k sel] (join-entry expr)
                   recursive? (recursion? sel)
                   sel     (if recursive?
                             query
@@ -1150,7 +1151,7 @@
 
                 ;; can't handle
                 :else (recur (next q) (assoc ret k v))))
-            (let [k (if (seq? node) (first node) node)
+            (let [k (if (seq? expr) (first expr) expr)
                   v (get data k)]
               (if (nil? v)
                 (recur (next q) ret)
@@ -1549,6 +1550,24 @@
           (db->tree query pure' pure'
             (fn [ident] (get tempids ident ident))) true))
       pure)))
+
+(defn- ^boolean has-error? [x]
+  (and (map? x) (contains? x ::error)))
+
+(defn- default-extract-errors [reconciler res query]
+  (letfn [(extract* [query res errs]
+            (cond
+              ;; query root
+              (vector? query)
+              (loop [exprs (seq query)]
+                (if-not (nil? exprs)
+                  (let [expr (first exprs)
+                        data (get res (expr->key expr))]
+                    )
+                  res))))]
+    (let [errs (atom {:err->refs {} :ref->err {}})
+          ret  (extract* query res errs)]
+      {:tree ret :errors @errs})))
 
 (defn reconciler
   "Construct a reconciler from a configuration map.
