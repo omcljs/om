@@ -1083,7 +1083,7 @@
        (== 2 (count x))
        (keyword? (nth x 0))))
 
-(defn- normalize* [query data refs errs]
+(defn- normalize* [query data refs]
   (cond
     (= '[*] query) data
 
@@ -1093,7 +1093,7 @@
           ref   (when (implements? Ident class)
                   (ident class data))]
       (if-not (nil? ref)
-        (vary-meta (normalize* (get query (first ref)) data refs errs)
+        (vary-meta (normalize* (get query (first ref)) data refs)
           assoc :om/tag (first ref))
         (throw (js/Error. "Union components must implement Ident"))))
 
@@ -1116,7 +1116,7 @@
                 (and recursive? (ident? v)) (recur (next q) ret)
                 ;; normalize one
                 (map? v)
-                (let [x (normalize* sel v refs errs)]
+                (let [x (normalize* sel v refs)]
                   (if-not (or (nil? class) (not (implements? Ident class)))
                     (let [i (ident class v)]
                       (swap! refs update-in [(first i) (second i)] merge x)
@@ -1125,7 +1125,7 @@
 
                 ;; normalize many
                 (vector? v)
-                (let [xs (into [] (map #(normalize* sel % refs errs)) v)]
+                (let [xs (into [] (map #(normalize* sel % refs)) v)]
                   (if-not (or (nil? class) (not (implements? Ident class)))
                     (let [is (into [] (map #(ident class %)) xs)]
                       (if (vector? sel)
@@ -1167,9 +1167,8 @@
     (tree->db x data false))
   ([x data ^boolean merge-idents]
    (let [refs (atom {})
-         errs (atom {})
          x    (if (vector? x) x (get-query x))
-         ret  (normalize* x data refs errs)]
+         ret  (normalize* x data refs)]
      (if merge-idents
        (let [refs' @refs]
          (assoc (merge ret refs')
@@ -1353,7 +1352,7 @@
 
 (defn merge!
   "Merge a state delta into the application state. Affected components managed
-   by the reconciler will re-render. "
+   by the reconciler will re-render."
   ([reconciler delta]
     (merge! reconciler delta nil))
   ([reconciler delta query]
