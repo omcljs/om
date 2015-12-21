@@ -124,8 +124,8 @@
 ;; Query Templating
 
 (deftest test-node->key
-  (is (= :foo (om/node->key {:foo []})))
-  (is (= :foo (om/node->key '({:foo []} {:bar :baz})))))
+  (is (= :foo (om/expr->key {:foo []})))
+  (is (= :foo (om/expr->key '({:foo []} {:bar :baz})))))
 
 (deftest test-query-template
   (is (= [:app/title {:todos/list [:db/id :todo/title]}]
