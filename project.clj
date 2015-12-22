@@ -15,7 +15,7 @@
                  [cljsjs/react "0.14.3-0"]
                  [cljsjs/react-dom "0.14.3-1"]
                  [com.cognitect/transit-clj "0.8.285"]
-                 [com.cognitect/transit-cljs "0.8.232"]
+                 [com.cognitect/transit-cljs "0.8.237"]
 
                  [org.clojure/core.async "0.2.371" :scope "test"]
                  [figwheel-sidecar "0.5.0" :scope "test"]
