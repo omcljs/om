@@ -1625,6 +1625,7 @@
            ui->props normalize
            send merge-sends remotes
            merge merge-tree merge-ident
+           prune-tree
            optimize
            history
            root-render root-unmount
@@ -1638,6 +1639,7 @@
          merge        default-merge
          merge-tree   default-merge-tree
          merge-ident  default-merge-ident
+         prune-tree   default-extract-errors
          optimize     (fn [cs] (sort-by depth cs))
          history      100
          root-render  #(js/ReactDOM.render %1 %2)
@@ -1658,6 +1660,7 @@
                   :ui->props ui->props
                   :send send :merge-sends merge-sends :remotes remotes
                   :merge merge :merge-tree merge-tree :merge-ident merge-ident
+                  :prune-tree prune-tree
                   :optimize optimize
                   :normalize (or (not norm?) normalize)
                   :history (c/cache history)
