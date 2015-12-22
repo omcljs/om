@@ -1095,10 +1095,9 @@
     `[:foo {:bar ~(om/get-query UiB)}]))
 
 (deftest test-component-preserved
-  (let [q0 (om/get-query UiA)]
-    (is (= UiA
-           (-> (om/get-query UiA) om/query->ast om/ast->query
-             meta :component)))))
+  (is (= UiA
+         (-> (om/get-query UiA) om/query->ast om/ast->query
+           meta :component))))
 
 ;; -----------------------------------------------------------------------------
 ;; Error handling
