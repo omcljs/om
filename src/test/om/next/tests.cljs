@@ -1084,6 +1084,22 @@
     (is (= q1 (-> q1 om/query->ast om/ast->query)))
     (is (= q2 (-> q2 om/query->ast om/ast->query)))))
 
+(defui UiB
+  static om/IQuery
+  (query [this]
+    `[:baz]))
+
+(defui UiA
+  static om/IQuery
+  (query [this]
+    `[:foo {:bar ~(om/get-query UiB)}]))
+
+(deftest test-component-preserved
+  (let [q0 (om/get-query UiA)]
+    (is (= UiA
+           (-> (om/get-query UiA) om/query->ast om/ast->query
+             meta :component)))))
+
 ;; -----------------------------------------------------------------------------
 ;; Error handling
 

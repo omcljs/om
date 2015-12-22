@@ -77,8 +77,12 @@
 (defn query->ast
   "Convert a query to its AST representation."
   [query]
-  {:type :root
-   :children (into [] (map expr->ast) query)})
+  (let [component (-> query meta :component)]
+    (merge
+      {:type :root
+       :children (into [] (map expr->ast) query)}
+      (when-not (nil? component)
+        {:component component}))))
 
 (defn join->ast [join]
   (let [[k v] (first join)
@@ -125,9 +129,10 @@
   "Given a query expression AST convert it back into a query expression."
   ([ast]
     (ast->expr ast false))
-  ([{:keys [type] :as ast} unparse?]
+  ([{:keys [type component] :as ast} unparse?]
    (if (= :root type)
-     (into [] (map #(ast->expr % unparse?)) (:children ast))
+     (cond-> (into [] (map #(ast->expr % unparse?)) (:children ast))
+       (not (nil? component)) (with-meta {:component component}))
      (let [{:keys [key query query-root params]} ast]
        (wrap-expr query-root
          (if-not (nil? params)
@@ -137,7 +142,7 @@
                (list expr)))
            (if (= :join type)
              (if (true? unparse?)
-               (let [{:keys [children component]} ast]
+               (let [{:keys [children]} ast]
                  (if (and (== 1 (count children))
                           (= :union (:type (first children)))) ;; UNION
                    {key (into {}
