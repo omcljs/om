@@ -172,7 +172,7 @@
 ;; Query Protocols & Helpers
 
 (defprotocol Ident
-  (ident [this props] "Return the ref for this component"))
+  (ident [this props] "Return the ident for this component"))
 
 (defprotocol IQueryParams
   (params [this] "Return the query parameters"))
