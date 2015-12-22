@@ -1084,3 +1084,13 @@
     (is (= q1 (-> q1 om/query->ast om/ast->query)))
     (is (= q2 (-> q2 om/query->ast om/ast->query)))))
 
+;; -----------------------------------------------------------------------------
+;; Error handling
+
+(comment
+
+  (om/default-extract-errors nil
+    {:foo {:error {:type :bar}}}
+    [:foo])
+
+  )

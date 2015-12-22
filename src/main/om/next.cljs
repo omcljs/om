@@ -1567,6 +1567,7 @@
                           k    (expr->key expr)
                           data (get res k)]
                       (cond
+                        ;; elide data with errors
                         (has-error? data)
                         (let [ref (or (ident class data) k)
                               cs  (ref->components reconciler ref)]
@@ -1577,6 +1578,10 @@
                                   #(update-in %1 [%2] (fnil conj #{}) (:error data))
                                   xs))))
                           (recur (next exprs) res))
+
+                        (join? expr)
+                        (let [k (join-key expr)]
+                          (assoc ret k (extract* (join-value expr) data errs)))
 
                         :else
                         (recur (next exprs) (assoc ret k data))))
