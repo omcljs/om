@@ -1087,10 +1087,11 @@
 ;; -----------------------------------------------------------------------------
 ;; Error handling
 
-(comment
+(deftest test-has-error?
+  (is (true? (om/has-error? (:foo {:foo {::om/error {:type :bar}}})))))
 
-  (om/default-extract-errors nil
-    {:foo {:error {:type :bar}}}
-    [:foo])
-
-  )
+(deftest test-basic-errors
+  (let [x (om/default-extract-errors nil
+            {:foo {::om/error {:type :bar}}}
+            [:foo])]
+    (is (= {:tree {}, :errors {:foo #{{:type :bar}}}} x))))

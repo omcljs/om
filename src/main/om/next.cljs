@@ -1569,23 +1569,21 @@
                       (cond
                         ;; elide data with errors
                         (has-error? data)
-                        (let [ref (or (ident class data) k)
-                              cs  (ref->components reconciler ref)]
-                          (when-not (empty? cs)
-                            (swap! errs
-                              (fn [xs]
-                                (reduce
-                                  #(update-in %1 [%2] (fnil conj #{}) (:error data))
-                                  xs))))
-                          (recur (next exprs) res))
+                        (do
+                          (swap! errs
+                            #(update-in %
+                              [(or (when-not (nil? class) (ident class data)) k)]
+                              (fnil conj #{}) (::error data)))
+                          (recur (next exprs) ret))
 
                         (join? expr)
                         (let [k (join-key expr)]
-                          (assoc ret k (extract* (join-value expr) data errs)))
+                          (recur (next exprs)
+                            (assoc ret k (extract* (join-value expr) data errs))))
 
                         :else
                         (recur (next exprs) (assoc ret k data))))
-                    res)))))]
+                    ret)))))]
     (let [errs (atom {})
           ret  (extract* query res errs)]
       {:tree ret :errors @errs})))
