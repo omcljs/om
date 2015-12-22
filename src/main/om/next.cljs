@@ -1570,12 +1570,14 @@
                         ;; elide data with errors
                         (has-error? data)
                         (do
+                          ;; TODO: [:ident _] pattern
                           (swap! errs
                             #(update-in %
                               [(or (when-not (nil? class) (ident class data)) k)]
                               (fnil conj #{}) (::error data)))
                           (recur (next exprs) ret))
 
+                        ;; TODO: Unions
                         (join? expr)
                         (let [k (join-key expr)]
                           (recur (next exprs)
