@@ -1,0 +1,5 @@
+#!/bin/bash
+
+set -e
+
+java -cp `cat classpath.txt` clojure.main $@
