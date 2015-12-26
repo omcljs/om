@@ -66,6 +66,46 @@
   "Test that Parameterized joins work"
   (om/mock-root reconciler Dashboard))
 
+;; ==================
+;; OM-552
+
+(defui Child
+  Object
+  (componentWillUpdate [this next-props _]
+    (.log js/console "will upd" (clj->js (om/props this)) (clj->js next-props)))
+  (render [this]
+    (let [{:keys [x y]} (om/props this)]
+      (dom/p nil (str "x: " x "; y: " y)))))
+
+(def child (om/factory Child))
+
+(defui Root
+  Object
+  (initLocalState [_]
+    {:x 0 :y 0 :pressed? false})
+  (mouse-down [this e]
+    (om/update-state! this assoc :pressed? true)
+    (.mouse-move this e))
+  (mouse-move [this e]
+    (when-let [pressed? (-> this om/get-state :pressed?)]
+      (om/update-state! this assoc :x (.-pageX e) :y (.-pageY e))))
+  (render [this]
+    (let [{:keys [x y]} (om/get-state this)]
+      (dom/div #js {:style #js {:height 200
+                                :width 600
+                                :backgroundColor "red"}
+                    :onMouseDown #(.mouse-down this %)
+                    :onMouseMove #(.mouse-move this %)
+                    :onMouseUp #(om/update-state! this assoc :pressed? false :x 0 :y 0)}
+        (child {:x x :y y})))))
+
+(def rec (om/reconciler {:state {}
+                         :parser (om/parser {:read read})}))
+
+(defcard test-om-552
+  "Test that componentWillUpdate receives updated next-props"
+  (om/mock-root rec Root))
+
 (comment
 
   (require '[cljs.pprint :as pprint])

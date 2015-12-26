@@ -385,8 +385,8 @@
 (defn -next-props [next-props component]
   (unwrap
     (props*
-      (get-props next-props)
       (-> component .-props get-props)
+      (get-props next-props)
       (-> component .-state get-next-props))))
 
 (defn- merge-pending-props! [c]
