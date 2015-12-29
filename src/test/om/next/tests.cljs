@@ -1118,4 +1118,8 @@
   (let [y (om/default-extract-errors nil
             '{:foo {::om/error {:type :bar}}}
             '[[:foo _]])]
-    (is (= {:tree {}, :errors {:foo #{{:type :bar}}}} y))))
+    (is (= {:tree {}, :errors {:foo #{{:type :bar}}}} y)))
+  (let [z (om/default-extract-errors nil
+            '{[:foo 0] {::om/error {:type :bar}}}
+            '[[:foo 0]])]
+    (is (= {:tree {}, :errors {[:foo 0] #{{:type :bar}}}} z))))
