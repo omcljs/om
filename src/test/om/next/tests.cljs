@@ -1112,14 +1112,27 @@
 
 (deftest test-basic-errors
   (let [x (om/default-extract-errors nil
-            {:foo {::om/error {:type :bar}}}
+            {:foo {::om/error {:type :oops!}}}
             [:foo])]
-    (is (= {:tree {}, :errors {:foo #{{:type :bar}}}} x)))
+    (is (= {:tree nil, :errors {:foo #{{:type :oops!}}}} x)))
   (let [y (om/default-extract-errors nil
-            '{:foo {::om/error {:type :bar}}}
+            '{:foo {::om/error {:type :oops!}}}
             '[[:foo _]])]
-    (is (= {:tree {}, :errors {:foo #{{:type :bar}}}} y)))
+    (is (= {:tree nil, :errors {:foo #{{:type :oops!}}}} y)))
   (let [z (om/default-extract-errors nil
-            '{[:foo 0] {::om/error {:type :bar}}}
+            '{[:foo 0] {::om/error {:type :oops!}}}
             '[[:foo 0]])]
-    (is (= {:tree {}, :errors {[:foo 0] #{{:type :bar}}}} z))))
+    (is (= {:tree nil, :errors {[:foo 0] #{{:type :oops!}}}} z))))
+
+(defui UiC
+  om/Ident
+  (ident [this props]
+    [:ui-c (:id props)]))
+
+(deftest test-join-errors
+  (let [x (om/default-extract-errors nil
+            {:foo [{:id 0 :title "foo"}
+                   {:id 1 :title "bar"}
+                   {:id 1 :error {:type :oops!}}]}
+            [{:foo [:id :title]}])]
+    ))

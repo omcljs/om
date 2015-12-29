@@ -1583,16 +1583,26 @@
                             #(update-in %
                               [(or (when-not (nil? class) (ident class data)) k)]
                               (fnil conj #{}) (::error data)))
-                          (recur (next exprs) ret))
+                          (recur (next exprs) nil))
 
                         ;; TODO: Unions
+
                         (join? expr)
-                        (let [k (join-key expr)]
-                          (recur (next exprs)
-                            (assoc ret k (extract* (join-value expr) data errs))))
+                        (let [jk (join-key expr)
+                              jv (join-value expr)]
+                          (if (map? data)
+                            (recur (next exprs)
+                              (when-not (nil? ret)
+                                (assoc ret jk (extract* jv data errs))))
+                            (recur (next exprs)
+                              (when-not (nil? ret)
+                                (assoc ret
+                                 jk (into [] (map #(extract* jv % errs)) data))))))
 
                         :else
-                        (recur (next exprs) (assoc ret k data))))
+                        (recur (next exprs)
+                          (when-not (nil? ret)
+                            (assoc ret k data)))))
                     ret)))))]
     (let [errs (atom {})
           ret  (extract* query res errs)]
