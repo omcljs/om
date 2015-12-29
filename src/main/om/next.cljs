@@ -36,18 +36,31 @@
 (defn ^boolean nil-or-map? [x]
   (or (nil? x) (map? x)))
 
+(defn ^boolean ident?
+  "Returns true if x is an ident."
+  [x]
+  (and (vector? x)
+    (== 2 (count x))
+    (keyword? (nth x 0))))
+
 (defn ^boolean recursion? [x]
   (or (symbol-identical? '... x)
       (number? x)))
 
-(defn- expr->key [expr]
+(defn- expr->key
+  "Given a query expression return its key."
+  [expr]
   (cond
     (keyword? expr) expr
-    (map? expr) (ffirst expr)
-    (seq? expr) (let [expr' (first expr)]
-                  (when (map? expr')
-                    (ffirst expr')))
-    :else nil))
+    (map? expr)     (ffirst expr)
+    (seq? expr)     (let [expr' (first expr)]
+                      (when (map? expr')
+                        (ffirst expr')))
+    (ident? expr)   (cond-> expr (= '_ (second expr)) first)
+    :else
+    (throw
+      (ex-info (str "Invalid query expr " expr)
+        {:type :error/invalid-expression}))))
 
 (defn- query-zip [root]
   (zip/zipper
@@ -1078,12 +1091,8 @@
       (js/Object.create (. class -prototype))
       class)))
 
-(defn ^boolean ident?
-  "Returns true if x is an ident."
-  [x]
-  (and (vector? x)
-       (== 2 (count x))
-       (keyword? (nth x 0))))
+(defn- ^boolean unique-ident? [x]
+  (and (ident? x) (= '_ (second x))))
 
 (defn- normalize* [query data refs]
   (cond
@@ -1217,9 +1226,7 @@
                                      (get refs (first key))
                                      (get-in refs (map-ident key)))
                                    (get data key))
-                     key         (cond-> key
-                                   (and (ident? key) (= '_ (second key)))
-                                   first)
+                     key         (cond-> key (unique-ident? key) first)
                      v           (if (ident? v) (map-ident v) v)
                      sel         (cond
                                    recurse? query
@@ -1564,13 +1571,14 @@
                 (loop [exprs (seq query) ret {}]
                   (if-not (nil? exprs)
                     (let [expr (first exprs)
-                          k    (expr->key expr)
+                          k    (as-> (expr->key expr) k
+                                 (cond-> k
+                                   (unique-ident? k) first))
                           data (get res k)]
                       (cond
                         ;; elide data with errors
                         (has-error? data)
                         (do
-                          ;; TODO: [:ident _] pattern
                           (swap! errs
                             #(update-in %
                               [(or (when-not (nil? class) (ident class data)) k)]

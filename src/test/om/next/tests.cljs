@@ -123,9 +123,10 @@
 ;; -----------------------------------------------------------------------------
 ;; Query Templating
 
-(deftest test-node->key
+(deftest test-expr->key
   (is (= :foo (om/expr->key {:foo []})))
-  (is (= :foo (om/expr->key '({:foo []} {:bar :baz})))))
+  (is (= :foo (om/expr->key '({:foo []} {:bar :baz}))))
+  (is (= :foo (om/expr->key '[:foo _]))))
 
 (deftest test-query-template
   (is (= [:app/title {:todos/list [:db/id :todo/title]}]
@@ -1102,6 +1103,9 @@
 ;; -----------------------------------------------------------------------------
 ;; Error handling
 
+(deftest test-unique-ident?
+  (is (om/unique-ident? '[:foo _])))
+
 (deftest test-has-error?
   (is (true? (om/has-error? (:foo {:foo {::om/error {:type :bar}}})))))
 
@@ -1109,4 +1113,8 @@
   (let [x (om/default-extract-errors nil
             {:foo {::om/error {:type :bar}}}
             [:foo])]
-    (is (= {:tree {}, :errors {:foo #{{:type :bar}}}} x))))
+    (is (= {:tree {}, :errors {:foo #{{:type :bar}}}} x)))
+  (let [y (om/default-extract-errors nil
+            '{:foo {::om/error {:type :bar}}}
+            '[[:foo _]])]
+    (is (= {:tree {}, :errors {:foo #{{:type :bar}}}} y))))
