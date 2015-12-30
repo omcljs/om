@@ -1125,14 +1125,19 @@
     (is (= {:tree nil, :errors {[:foo 0] #{{:type :oops!}}}} z))))
 
 (defui UiC
-  om/Ident
+  static om/Ident
   (ident [this props]
-    [:ui-c (:id props)]))
+    [:ui-c (:id props)])
+  static om/IQuery
+  (query [this]
+    [:id :title]))
 
 (deftest test-join-errors
   (let [x (om/default-extract-errors nil
             {:foo [{:id 0 :title "foo"}
-                   {:id 1 :title "bar"}
-                   {:id 1 :error {:type :oops!}}]}
-            [{:foo [:id :title]}])]
-    ))
+                   {:id 1 ::om/error {:type :oops!}}
+                   {:id 2 :title "bar"}]}
+            [{:foo (om/get-query UiC)}])]
+    (is (= {:tree   {:foo [{:id 0, :title "foo"} nil {:id 2, :title "bar"}]},
+            :errors {[:ui-c 1] #{{:type :oops!}}}}
+           x))))
