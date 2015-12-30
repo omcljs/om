@@ -1564,46 +1564,48 @@
 
 (defn- default-extract-errors [reconciler res query]
   (letfn [(extract* [query res errs]
-            (cond
-              ;; query root
-              (vector? query)
-              (let [class (-> query meta :component)]
-                (loop [exprs (seq query) ret {}]
-                  (if-not (nil? exprs)
-                    (let [expr (first exprs)
-                          k    (as-> (expr->key expr) k
-                                 (cond-> k
-                                   (unique-ident? k) first))
-                          data (get res k)]
-                      (cond
-                        ;; elide data with errors
-                        (has-error? data)
-                        (do
-                          (swap! errs
-                            #(update-in %
-                              [(or (when-not (nil? class) (ident class data)) k)]
-                              (fnil conj #{}) (::error data)))
-                          (recur (next exprs) nil))
+            (let [class      (-> query meta :component)
+                  top-error? (when (and (not (nil? class)) (has-error? res))
+                               (swap! errs
+                                 #(update-in % [(ident class res)]
+                                   (fnil conj #{}) (::error res))))
+                  ret        (when (nil? top-error?) {})]
+              (cond
+                ;; query root
+                (vector? query)
+                (if (vector? res)
+                  (into [] (map #(extract* query % errs)) res)
+                  (loop [exprs (seq query) ret ret]
+                    (if-not (nil? exprs)
+                      (let [expr (first exprs)
+                            k (as-> (expr->key expr) k
+                                (cond-> k
+                                  (unique-ident? k) first))
+                            data (get res k)]
+                        (cond
+                          ;; TODO: Unions
 
-                        ;; TODO: Unions
-
-                        (join? expr)
-                        (let [jk (join-key expr)
-                              jv (join-value expr)]
-                          (if (map? data)
+                          ;; need to examine contents
+                          (join? expr)
+                          (let [jk (join-key expr)
+                                jv (join-value expr)]
                             (recur (next exprs)
                               (when-not (nil? ret)
-                                (assoc ret jk (extract* jv data errs))))
-                            (recur (next exprs)
-                              (when-not (nil? ret)
-                                (assoc ret
-                                 jk (into [] (map #(extract* jv % errs)) data))))))
+                                (assoc ret jk (extract* jv data errs)))))
 
-                        :else
-                        (recur (next exprs)
-                          (when-not (nil? ret)
-                            (assoc ret k data)))))
-                    ret)))))]
+                          (has-error? data)
+                          (do
+                            (swap! errs
+                              #(update-in %
+                                [(or (when-not (nil? class) (ident class data)) k)]
+                                (fnil conj #{}) (::error data)))
+                            (recur (next exprs) nil))
+
+                          :else
+                          (recur (next exprs)
+                            (when-not (nil? ret)
+                              (assoc ret k data)))))
+                      ret))))))]
     (let [errs (atom {})
           ret  (extract* query res errs)]
       {:tree ret :errors @errs})))
