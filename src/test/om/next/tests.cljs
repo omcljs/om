@@ -1141,3 +1141,27 @@
     (is (= {:tree   {:foo [{:id 0, :title "foo"} nil {:id 2, :title "bar"}]},
             :errors {[:ui-c 1] #{{:type :oops!}}}}
            x))))
+
+(defui UiE
+  static om/Ident
+  (ident [this props]
+    [:ui-e (:id props)])
+  static om/IQuery
+  (query [this]
+    [:id :title]))
+
+(defui UiD
+  static om/Ident
+  (ident [this props]
+    [:ui-d (:id props)])
+  static om/IQuery
+  (query [this]
+    [{:foo (om/get-query UiE)}]))
+
+(deftest test-nested-error
+  (let [x (om/default-extract-errors nil
+            {:id 0
+             :foo {:id 1 :title "Cool" ::om/error {:type :ouch!}}}
+            (om/get-query UiD))]
+    (is (= {:tree {:foo nil}, :errors {[:ui-e 1] #{{:type :ouch!}}}}
+           x))))
