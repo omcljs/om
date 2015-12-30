@@ -1578,9 +1578,9 @@
                   (loop [exprs (seq query) ret ret]
                     (if-not (nil? exprs)
                       (let [expr (first exprs)
-                            k (as-> (expr->key expr) k
-                                (cond-> k
-                                  (unique-ident? k) first))
+                            k    (as-> (expr->key expr) k
+                                   (cond-> k
+                                     (unique-ident? k) first))
                             data (get res k)]
                         (cond
                           ;; TODO: Unions
@@ -1593,11 +1593,11 @@
                               (when-not (nil? ret)
                                 (assoc ret jk (extract* jv data errs)))))
 
-                          (has-error? data)
+                          (and (map? data) (has-error? data))
                           (do
                             (swap! errs
                               #(update-in %
-                                [(or (when-not (nil? class) (ident class data)) k)]
+                                [(or (when-not (nil? class) (ident class res)) k)]
                                 (fnil conj #{}) (::error data)))
                             (recur (next exprs) nil))
 

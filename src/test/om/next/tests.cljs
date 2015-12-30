@@ -1148,7 +1148,7 @@
     [:ui-e (:id props)])
   static om/IQuery
   (query [this]
-    [:id :title]))
+    [:id :title :author]))
 
 (defui UiD
   static om/Ident
@@ -1161,7 +1161,20 @@
 (deftest test-nested-error
   (let [x (om/default-extract-errors nil
             {:id 0
-             :foo {:id 1 :title "Cool" ::om/error {:type :ouch!}}}
+             :foo {:id 1 :title "Cool"
+                   :author :foo
+                   ::om/error {:type :ouch!}}}
             (om/get-query UiD))]
     (is (= {:tree {:foo nil}, :errors {[:ui-e 1] #{{:type :ouch!}}}}
            x))))
+
+(deftest test-multiple-errors
+  (let [x (om/default-extract-errors nil
+            {:id 0
+             :foo {:id 1
+                   :title {::om/error {:type :ouch!}}
+                   :author {::om/error {:type :oof!}}}}
+            (om/get-query UiD))]
+    (is (= {:tree {:foo nil}
+            :errors {[:ui-e 1] #{{:type :ouch!} {:type :oof!}}}}
+          x))))
