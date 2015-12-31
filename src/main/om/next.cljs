@@ -161,6 +161,8 @@
           {k (focus-query (get query k) ks)}
           (into [] (comp (filter match) (map value) (take 1)) query))))))
 
+(declare ident?)
+
 ;; this function assumes focus is actually in fact
 ;; already focused!
 (defn- focus->path
@@ -175,6 +177,7 @@
             (some join? focus)
             (== 1 (count focus)))
      (let [[k focus'] (join-entry (first focus))
+           k (if (ident? k) (first k) k)
            focus'     (if (recursion? focus')
                         focus
                         focus')]
