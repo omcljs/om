@@ -8,7 +8,7 @@
 
   :jvm-opts ^:replace ["-Xms512m" "-Xmx512m" "-server"]
 
-  :source-paths  ["src/main" "src/devcards"]
+  :source-paths  ["src/main" "src/devcards" "src/test"]
 
   :dependencies [[org.clojure/clojure "1.7.0" :scope "provided"]
                  [org.clojure/clojurescript "1.7.170" :scope "provided"]
@@ -21,7 +21,7 @@
                  [figwheel-sidecar "0.5.0" :scope "test"]
                  [devcards "0.2.0-8" :scope "test"]]
 
-  :plugins [[lein-cljsbuild "1.1.1"]]
+  :plugins [[lein-cljsbuild "1.1.2"]]
 
   :jar-exclusions [#".DS_Store" #"dev" #"devcards" #"test" #"index.html"
                    #"main" #"public"]
