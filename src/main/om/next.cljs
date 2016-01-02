@@ -1196,6 +1196,17 @@
   (let [{refs true rest false} (group-by #(vector? (first %)) res)]
     [(into {} refs) (into {} rest)]))
 
+(defn reduce-query-depth
+  "Changes a join on key k with depth limit from [:a {:k n}] to [:a {:k (dec n)}]"
+  [q k]
+  (let [ast (query->ast q)
+        step (fn [{:keys [query key] :as node}]
+               (if-let [query (and (= k key) (if (number? query) (dec query) query))]
+                 (assoc node :query query)
+                 node))
+        children (map step (:children ast))]
+    (ast->query (assoc ast :children children))))
+
 ;; TODO: easy to optimize
 
 (defn db->tree
@@ -1234,18 +1245,20 @@
                                    (get data key))
                      key         (cond-> key (unique-ident? key) first)
                      v           (if (ident? v) (map-ident v) v)
+                     limit       (if (number? sel) sel :none)
                      union-entry (if (union? join) sel union-seen)
                      sel         (cond
-                                   recurse? (if-not (nil? union-seen) union-entry query)
+                                   recurse? (if-not (nil? union-seen) union-entry (reduce-query-depth query key))
                                    (and (ident? key) (union? join)) (get sel (first key))
                                    (and (ident? v) (union? join)) (get sel (first v))
                                    :else sel)
-                     graph-loop? (and recurse? (contains? (set (get idents-seen key)) v))
+                     graph-loop? (and recurse? (contains? (set (get idents-seen key)) v) (= :none limit))
                      idents-seen (if (and (ident? v) recurse?)
                                    (-> idents-seen
                                      (update-in [key] (fnil conj #{}) v)
                                      (assoc-in [:last-ident key] v)) idents-seen)]
                  (cond
+                   (= 0 limit) (recur (next joins) ret)
                    graph-loop? (recur (next joins) ret)
                    (nil? v)    (recur (next joins) ret)
                    :else       (recur (next joins)
