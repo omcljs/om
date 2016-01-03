@@ -1097,7 +1097,7 @@
 (defn- ^boolean unique-ident? [x]
   (and (ident? x) (= '_ (second x))))
 
-(defn- normalize* [query data refs]
+(defn- normalize* [query data refs union-seen]
   (cond
     (= '[*] query) data
 
@@ -1107,7 +1107,7 @@
           ref   (when (implements? Ident class)
                   (ident class data))]
       (if-not (nil? ref)
-        (vary-meta (normalize* (get query (first ref)) data refs)
+        (vary-meta (normalize* (get query (first ref)) data refs union-seen)
           assoc :om/tag (first ref))
         (throw (js/Error. "Union components must implement Ident"))))
 
@@ -1120,8 +1120,11 @@
           (if (join? expr)
             (let [[k sel] (join-entry expr)
                   recursive? (recursion? sel)
+                  union-entry (if (union? expr) sel union-seen)
                   sel     (if recursive?
-                            query
+                            (if-not (nil? union-seen)
+                              union-seen
+                              query)
                             sel)
                   class   (to-class (-> sel meta :component))
                   v       (get data k)]
@@ -1130,7 +1133,7 @@
                 (and recursive? (ident? v)) (recur (next q) ret)
                 ;; normalize one
                 (map? v)
-                (let [x (normalize* sel v refs)]
+                (let [x (normalize* sel v refs union-entry)]
                   (if-not (or (nil? class) (not (implements? Ident class)))
                     (let [i (ident class v)]
                       (swap! refs update-in [(first i) (second i)] merge x)
@@ -1139,7 +1142,7 @@
 
                 ;; normalize many
                 (vector? v)
-                (let [xs (into [] (map #(normalize* sel % refs)) v)]
+                (let [xs (into [] (map #(normalize* sel % refs union-entry)) v)]
                   (if-not (or (nil? class) (not (implements? Ident class)))
                     (let [is (into [] (map #(ident class %)) xs)]
                       (if (vector? sel)
@@ -1182,7 +1185,7 @@
   ([x data ^boolean merge-idents]
    (let [refs (atom {})
          x    (if (vector? x) x (get-query x))
-         ret  (normalize* x data refs)]
+         ret  (normalize* x data refs nil)]
      (if merge-idents
        (let [refs' @refs]
          (assoc (merge ret refs')
@@ -1200,10 +1203,10 @@
    application state in the default database format, return the tree where all
    ident links have been replaced with their original node values."
   ([query data refs]
-   (db->tree query data refs identity {}))
+   (db->tree query data refs identity {} nil))
   ([query data refs map-ident]
-   (db->tree query data refs map-ident {}))
-  ([query data refs map-ident idents-seen]
+   (db->tree query data refs map-ident {} nil))
+  ([query data refs map-ident idents-seen union-seen]
    {:pre [(map? refs)]}
     ;; support taking ident for data param
    (let [data (cond-> data (ident? data) (->> map-ident (get-in refs)))]
@@ -1212,7 +1215,7 @@
        (let [step (fn [ident]
                     (let [ident' (get-in refs (map-ident ident))
                           query' (cond-> query (map? query) (get (first ident)))] ;; UNION
-                      (db->tree query' ident' refs map-ident idents-seen)))]
+                      (db->tree query' ident' refs map-ident idents-seen union-seen)))]
          (into [] (map step) data))
        ;; map case
        (if (= '[*] query)
@@ -1231,8 +1234,9 @@
                                    (get data key))
                      key         (cond-> key (unique-ident? key) first)
                      v           (if (ident? v) (map-ident v) v)
+                     union-entry (if (union? join) sel union-seen)
                      sel         (cond
-                                   recurse? query
+                                   recurse? (if-not (nil? union-seen) union-entry query)
                                    (and (ident? key) (union? join)) (get sel (first key))
                                    (and (ident? v) (union? join)) (get sel (first v))
                                    :else sel)
@@ -1245,7 +1249,7 @@
                    graph-loop? (recur (next joins) ret)
                    (nil? v)    (recur (next joins) ret)
                    :else       (recur (next joins)
-                                (assoc ret key (db->tree sel v refs map-ident idents-seen)))))
+                                (assoc ret key (db->tree sel v refs map-ident idents-seen union-entry)))))
                (if-let [looped-key (some (fn [[k identset]]
                                            (if (contains? identset (get data k))
                                              (get-in idents-seen [:last-ident k])

@@ -731,6 +731,59 @@
     (is (= tree (:tree tree-data)))))
 
 ;; -----------------------------------------------------------------------------
+;; Recursive Unions
+
+(def union-tree-data
+  {:tree {:node/type :tree/foo
+          :id 0
+          :foo/value "1"
+          :children [{:node/type :tree/bar
+                      :bar/value "1.1"
+                      :id 1
+                      :children [{:node/type :tree/bar
+                                  :id 2
+                                  :bar/value "1.1.1"
+                                  :children []}]}
+                     {:node/type :tree/foo
+                      :id 3
+                      :foo/value "1.2"
+                      :children []}]}})
+
+(defui UnionBarNode
+  static om/IQuery
+  (query [this]
+    '[:id :node/type :bar/value {:children ...}]))
+
+(defui UnionFooNode
+  static om/IQuery
+  (query [this]
+    '[:id :node/type :foo/value {:children ...}]))
+
+(defui ItemNode
+  static om/Ident
+  (ident [this {:keys [node/type id]}]
+    [type id])
+  static om/IQuery
+  (query [this]
+    {:tree/foo (om/get-query UnionFooNode)
+     :tree/bar (om/get-query UnionBarNode)}))
+
+(defui UnionTree
+  static om/IQuery
+  (query [this]
+    `[{:tree ~(om/get-query ItemNode)}]))
+
+(deftest test-normalize-recursive-union
+  (let [db (om/tree->db UnionTree union-tree-data true)]
+    (is (= [:tree/foo 0] (:tree db)))
+    (is (contains? db :tree/foo))
+    (is (contains? db :tree/bar))
+    (is (= union-tree-data
+           (om/db->tree (om/get-query UnionTree)
+             (om/tree->db UnionTree union-tree-data)
+             db)))))
+
+;; -----------------------------------------------------------------------------
 ;; Path Optimization
 
 (defmethod tree-read :node/by-id
