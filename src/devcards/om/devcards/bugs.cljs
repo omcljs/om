@@ -106,6 +106,111 @@
   "Test that componentWillUpdate receives updated next-props"
   (om/mock-root rec Root))
 
+;; ==================
+;; OM-543
+
+(def om-543-data
+  {:tree {:node/type :tree/foo
+          :id 0
+          :foo/value "1"
+          :children [{:node/type :tree/bar
+                      :bar/value "1.1"
+                      :id 1
+                      :children [{:node/type :tree/bar
+                                  :id 2
+                                  :bar/value "1.1.1"
+                                  :children []}]}
+                     {:node/type :tree/foo
+                      :id 3
+                      :foo/value "1.2"
+                      :children []}]}})
+
+(declare item-node)
+
+(defui UnionBarNode
+  static om/IQuery
+  (query [this]
+    '[:id :node/type :bar/value {:children ...}])
+  Object
+  (render [this]
+    (let [{:keys [bar/value children]} (om/props this)]
+      (dom/li nil
+        (dom/p nil (str "Bar value: " value))
+        (dom/ul nil
+          (map item-node children))))))
+
+(def bar-node (om/factory UnionBarNode))
+
+(defui UnionFooNode
+  static om/IQuery
+  (query [this]
+    '[:id :node/type :foo/value {:children ...}])
+  Object
+  (render [this]
+    (let [{:keys [foo/value children]} (om/props this)]
+      (dom/li nil
+        (dom/p nil (str "Foo value: " value))
+        (dom/ul nil
+          (map item-node children))))))
+
+(def foo-node (om/factory UnionFooNode))
+
+(defui ItemNode
+  static om/Ident
+  (ident [this {:keys [node/type id]}]
+    [type id])
+  static om/IQuery
+  (query [this]
+    {:tree/foo (om/get-query UnionFooNode)
+     :tree/bar (om/get-query UnionBarNode)})
+  Object
+  (render [this]
+    (let [{:keys [node/type] :as props} (om/props this)]
+      (({:tree/foo foo-node
+         :tree/bar bar-node} type)
+         props))))
+
+(def item-node (om/factory ItemNode))
+
+(defui UnionTree
+  static om/IQuery
+  (query [this]
+    `[{:tree ~(om/get-query ItemNode)}])
+  Object
+  (render [this]
+    (let [{:keys [tree]} (om/props this)]
+      (dom/ul nil
+        (item-node tree)))))
+
+(defmulti om-543-read om/dispatch)
+
+(defmethod om-543-read :default
+  [{:keys [data] :as env} k _]
+  {:value (get data k)})
+
+(defmethod om-543-read :children
+  [{:keys [parser data union-query state] :as env} k _]
+  (let [st @state
+        f #(parser (assoc env :data (get-in st %)) ((first %) union-query))]
+    {:value (into [] (map f) (:children data))}))
+
+(defmethod om-543-read :tree
+  [{:keys [state parser query ast] :as env} k _]
+  (let [st @state
+        [type id :as entry] (get st k)
+        data (get-in st entry)
+        new-env (assoc env :data data :union-query query)]
+    {:value (parser new-env (type query))}))
+
+(def om-543-reconciler
+  (om/reconciler {:state om-543-data
+                  :parser (om/parser {:read om-543-read})}))
+
+(defcard om-543
+  "Test that recursive queries in unions work"
+  (om/mock-root om-543-reconciler UnionTree))
+
+
 (comment
 
   (require '[cljs.pprint :as pprint])
