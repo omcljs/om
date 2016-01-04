@@ -1,5 +1,5 @@
 (ns om.devcards.autocomplete
-  (:require-macros [devcards.core :refer [defcard deftest]]
+  (:require-macros [devcards.core :refer [defcard deftest dom-node]]
                    [cljs.core.async.macros :refer [go]])
   (:require [cljs.core.async :as async :refer [<! >! put! chan]]
             [clojure.string :as string]
@@ -92,4 +92,6 @@
 
 (defcard test-autocomplete
   "Demonstrate simple autocompleter"
-  (om/mock-root reconciler AutoCompleter))
+  (dom-node
+    (fn [_ node]
+      (om/add-root! reconciler AutoCompleter node))))

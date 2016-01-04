@@ -1,5 +1,5 @@
 (ns om.devcards.shared-fn-test
-  (:require-macros [devcards.core :refer [defcard deftest]])
+  (:require-macros [devcards.core :refer [defcard deftest dom-node]])
   (:require [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]))
 
@@ -42,4 +42,6 @@
 
 (defcard test-om-478
   "Test that re-running shared-fn works"
-  (om/mock-root reconciler Home))
+  (dom-node
+    (fn [_ node]
+      (om/add-root! reconciler Home node))))
