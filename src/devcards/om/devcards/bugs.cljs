@@ -1,5 +1,5 @@
 (ns om.devcards.bugs
-  (:require-macros [devcards.core :refer [defcard deftest]])
+  (:require-macros [devcards.core :refer [defcard deftest dom-node]])
   (:require [cljs.test :refer-macros [is async]]
             [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]))
@@ -64,7 +64,9 @@
 
 (defcard test-om-466
   "Test that Parameterized joins work"
-  (om/mock-root reconciler Dashboard))
+  (dom-node
+    (fn [_ node]
+      (om/add-root! reconciler Dashboard node))))
 
 ;; ==================
 ;; OM-552
@@ -104,7 +106,9 @@
 
 (defcard test-om-552
   "Test that componentWillUpdate receives updated next-props"
-  (om/mock-root rec Root))
+  (dom-node
+    (fn [_ node]
+      (om/add-root! rec Root node))))
 
 ;; ==================
 ;; OM-543
@@ -208,7 +212,9 @@
 
 (defcard om-543
   "Test that recursive queries in unions work"
-  (om/mock-root om-543-reconciler UnionTree))
+  (dom-node
+    (fn [_ node]
+      (om/add-root! om-543-reconciler UnionTree node))))
 
 
 (comment

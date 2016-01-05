@@ -1,5 +1,5 @@
 (ns om.devcards.tutorials
-  (:require-macros [devcards.core :refer [defcard deftest]])
+  (:require-macros [devcards.core :refer [defcard deftest dom-node]])
   (:require [cljs.test :refer-macros [is async]]
             [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]))
@@ -51,7 +51,9 @@
      :parser (om/parser {:read animals-read})}))
 
 (defcard animals
-  (om/mock-root animals-reconciler AnimalsList))
+  (dom-node
+    (fn [_ node]
+      (om/add-root! animals-reconciler AnimalsList node))))
 
 ;; =============================================================================
 ;; Componentes, Identity & Normalization
@@ -163,7 +165,9 @@
      :parser (om/parser {:read cian-read :mutate cian-mutate})}))
 
 (defcard component-identity-and-normalization
-  (om/mock-root cian-reconciler RootView))
+  (dom-node
+    (fn [_ node]
+      (om/add-root! cian-reconciler RootView node))))
 
 ;; =============================================================================
 ;; Thinking With Links!
@@ -214,7 +218,9 @@
      :parser (om/parser {:read links-read})}))
 
 (defcard links
-  (om/mock-root links-reconciler LinksSomeList))
+  (dom-node
+    (fn [_ node]
+      (om/add-root! links-reconciler LinksSomeList node))))
 
 ;; =============================================================================
 ;; Queries with unions
@@ -352,4 +358,6 @@
      :parser (om/parser {:read union-read :mutate mutate})}))
 
 (defcard union
-  (om/mock-root union-reconciler Dashboard))
+  (dom-node
+    (fn [_ node]
+      (om/add-root! union-reconciler Dashboard node))))

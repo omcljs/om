@@ -1,5 +1,5 @@
 (ns om.devcards.core
-  (:require-macros [devcards.core :refer [defcard deftest]])
+  (:require-macros [devcards.core :refer [defcard deftest dom-node]])
   (:require [cljs.test :refer-macros [is async]]
             [cljs.pprint :as pprint]
             [om.devcards.tutorials]
@@ -210,7 +210,9 @@
 
 (defcard test-counters
   "Test that we can mock a reconciler backed Om Next component into devcards"
-  (om/mock-root counters-reconciler CountersApp))
+  (dom-node
+    (fn [_ node]
+      (om/add-root! counters-reconciler CountersApp node))))
 
 (defcard test-counters-atom
   (om/app-state counters-reconciler))
@@ -297,7 +299,9 @@
 
 (defcard test-simple-recursive-syntax
   "Test that `'[:node-value {:children ...}]` syntax works."
-  (om/mock-root simple-tree-reconciler SimpleTree))
+  (dom-node
+    (fn [_ node]
+      (om/add-root! simple-tree-reconciler SimpleTree node))))
 
 ;; -----------------------------------------------------------------------------
 ;; Recursive Query Syntax with Mutations
@@ -393,7 +397,9 @@
 (defcard test-simple-recursive-syntax-with-mutation
   "Test that simple recursive syntax works with mutations and component
    local state. Cool"
-  (om/mock-root norm-tree-reconciler NormTree))
+  (dom-node
+    (fn [_ node]
+      (om/add-root! norm-tree-reconciler NormTree node))))
 
 (comment
   (pprint/pprint @(-> norm-tree-reconciler :config :indexer))
@@ -437,4 +443,6 @@
 
 (defcard test-instrument
   "Test that instrument interception works"
-  (om/mock-root instrument-reconciler RootView))
+  (dom-node
+    (fn [_ node]
+      (om/add-root! instrument-reconciler RootView node))))
