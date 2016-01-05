@@ -611,6 +611,56 @@
     (is (= {:current-panel {:boo 42}} (om/db->tree single-query db db)))
     (is (= {[:panelC :ui] {:sticky true}} (om/db->tree ident-query db db)))))
 
+(deftest test-recursion-limit-grammar
+  (let [original-query [:k {:j 2}]
+        ast (om/query->ast original-query)
+        child (-> (om/query->ast original-query) :children second)
+        query (om/ast->query ast)]
+    (is (= 2 (:query child)))
+    (is (= original-query query))
+    (testing "ast symmetry on infinite recursion"
+      (are [q] (= q (om/ast->query (om/query->ast q)))
+               [:a {:b '...}]))))
+
+(deftest test-reduce-query-depth
+  (is (= [:a :b {:c 2}] (om/reduce-query-depth [:a :b {:c 3}] :c)))
+  (is (= [:a {:j 4} :b {:c 2}] (om/reduce-query-depth [:a {:j 4} :b {:c 3}] :c)))
+  (is (= [:a {:j 3} :b {:c 3}] (om/reduce-query-depth [:a {:j 4} :b {:c 3}] :j)))
+  (testing "recursive queries that should not be affected"
+    (are [q k] (= q (om/reduce-query-depth q k))
+            [:a :b {:c '...}] :c
+            [:a :b {:j '...} {:c {:x [:a] :y [:b]}}] :j)))
+
+(defui BulletItem
+  static om/Ident
+  (ident [this {:keys [id]}] [:item/by-id id])
+  static om/IQuery
+  (query [this] [:id :label {:subitems 1}]))
+
+(defui BulletList
+  static om/IQuery
+  (query [this] [{:items (om/get-query BulletItem)}]))
+
+(def recursion-limit-data {:items        [[:items/by-id 1] [:items/by-id 5]]
+                            :items/by-id {1 {:id 1 :label "A" :subitems [:items/by-id 2]}
+                                          2 {:id 2 :label "B" :subitems [:items/by-id 3]}
+                                          3 {:id 3 :label "C" :subitems [:items/by-id 4]}
+                                          4 {:id 4 :label "D"}
+                                          5 {:id 5 :label "E"}}})
+
+(deftest test-db->tree-recursion-limit
+  (is (= {:items [{:id 1 :label "A" :subitems {:id 2 :label "B"}}
+                  {:id 5 :label "E"}]}
+         (om/db->tree (om/get-query BulletList) recursion-limit-data recursion-limit-data))))
+
+(deftest test-tree->db-normalizes-in-presence-of-recursion-limit
+  (is (= {:items [[:item/by-id 1]],
+          :item/by-id {1 {:id 1, :label "A", :subitems [[:item/by-id 2]]},
+                       2 {:id 2, :label "B", :subitems [:item/by-id 3]},
+                       3 {:id 3, :label "C"}},
+          :om.next/tables #{:item/by-id}}
+         (om/tree->db (om/get-query BulletList) {:items [{:id 1 :label "A" :subitems [{:id 2 :label "B" :subitems {:id 3 :label "C"}}]}]} true))))
+
 ;; -----------------------------------------------------------------------------
 ;; Message Forwarding
 

@@ -19,7 +19,7 @@
    ParamMapExpr := EdnMap(Keyword, EdnValue)
    JoinExpr     := EdnMap((Keyword | IdentExpr), (QueryRoot | UnionExpr | RecurExpr))
    UnionExpr    := EdnMap(Keyword, QueryRoot)
-   RecurExpr    := '...
+   RecurExpr    := ('... | Integer)
 
    Note most apis in Om Next expect a QueryRoot not a QueryExpr.
 
@@ -92,7 +92,7 @@
       {:type :join :query v}
       (when-not (nil? component)
         {:component component})
-      (when-not (= '... v)
+      (when-not (or (number? v) (= '... v))
         (cond
           (vector? v) {:children (into [] (map expr->ast) v)}
           (map? v) {:children [(union->ast v)]}
@@ -141,7 +141,7 @@
                (list expr params)
                (list expr)))
            (if (= :join type)
-             (if (true? unparse?)
+             (if (and (not= '... query) (not (number? query)) (true? unparse?))
                (let [{:keys [children]} ast]
                  (if (and (== 1 (count children))
                           (= :union (:type (first children)))) ;; UNION
