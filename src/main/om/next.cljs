@@ -1200,17 +1200,17 @@
         children (map step (:children ast))]
     (ast->query (assoc ast :children children))))
 
+(defn- reduce-union-recursion-depth
+  [union-entry recursion-key]
+  (->> union-entry
+      (map (fn [[k q]]
+             [k (reduce-query-depth q recursion-key)]))
+      (into {})))
+
 ;; TODO: easy to optimize
 
-(defn db->tree
-  "Given a query, some data in the default database format, and the entire
-   application state in the default database format, return the tree where all
-   ident links have been replaced with their original node values."
-  ([query data refs]
-   (db->tree query data refs identity {} nil))
-  ([query data refs map-ident]
-   (db->tree query data refs map-ident {} nil))
-  ([query data refs map-ident idents-seen union-seen]
+(defn- denormalize*
+  [query data refs map-ident idents-seen union-seen recursion-key]
    {:pre [(map? refs)]}
     ;; support taking ident for data param
    (let [data (cond-> data (ident? data) (->> map-ident (get-in refs)))]
@@ -1218,8 +1218,15 @@
        ;; join
        (let [step (fn [ident]
                     (let [ident' (get-in refs (map-ident ident))
+                          union-recursion? (and union-seen recursion-key)
+                          query (cond-> query
+                                  union-recursion? (reduce-union-recursion-depth recursion-key))
+                          ;; also reduce query depth of union-seen, there can
+                          ;; be more union recursions inside
+                          union-seen' (cond-> union-seen
+                                        union-recursion? (reduce-union-recursion-depth recursion-key))
                           query' (cond-> query (map? query) (get (first ident)))] ;; UNION
-                      (db->tree query' ident' refs map-ident idents-seen union-seen)))]
+                      (denormalize* query' ident' refs map-ident idents-seen union-seen' nil)))]
          (into [] (map step) data))
        ;; map case
        (if (= '[*] query)
@@ -1231,6 +1238,7 @@
                      join        (cond-> join (ident? join) (hash-map '[*]))
                      [key sel]   (join-entry join)
                      recurse?    (recursion? sel)
+                     recursion-key (when recurse? key)
                      v           (if (ident? key)
                                    (if (= '_ (second key))
                                      (get refs (first key))
@@ -1255,13 +1263,23 @@
                    graph-loop? (recur (next joins) ret)
                    (nil? v)    (recur (next joins) ret)
                    :else       (recur (next joins)
-                                (assoc ret key (db->tree sel v refs map-ident idents-seen union-entry)))))
+                                (assoc ret key (denormalize* sel v refs map-ident idents-seen union-entry recursion-key)))))
                (if-let [looped-key (some (fn [[k identset]]
                                            (if (contains? identset (get data k))
                                              (get-in idents-seen [:last-ident k])
                                              nil)) (dissoc idents-seen :last-ident))]
                  looped-key
-                 (merge (select-keys data props) ret))))))))))
+                 (merge (select-keys data props) ret)))))))))
+
+(defn db->tree
+  "Given a query, some data in the default database format, and the entire
+   application state in the default database format, return the tree where all
+   ident links have been replaced with their original node values."
+  ([query data refs]
+   (denormalize* query data refs identity {} nil nil))
+  ([query data refs map-ident]
+   (denormalize* query data refs map-ident {} nil nil)))
+
 
 ;; =============================================================================
 ;; Reconciler
