@@ -834,6 +834,116 @@
              db)))))
 
 ;; -----------------------------------------------------------------------------
+;; Recursive Unions + recursion limit
+
+(def union-tree-limit-by-1-result
+  {:tree
+   {:id 0 :node/type :tree/foo
+    :foo/value "1"
+    :children
+    [{:id 1 :node/type :tree/bar :bar/value "1.1"}
+     {:id 3 :node/type :tree/foo :foo/value "1.2"}]}})
+
+(def union-tree-different-limit-data
+  {:tree
+    {:node/type :tree/qux
+     :id 0
+     :qux/value "1"
+     :children [{:node/type :tree/foo
+                 :foo/value "1.1"
+                 :id 1
+                 :children
+                   [{:node/type :tree/foo
+                     :id 2
+                     :foo/value "1.1.1"
+                     :children
+                       [{:node/type :tree/foo
+                         :id 3
+                         :foo/value "1.1.1.1"
+                         :children []}]}]}
+                {:node/type :tree/qux
+                 :id 4
+                 :qux/value "1.2"
+                 :children
+                  [{:node/type :tree/foo
+                    :id 5
+                    :foo/value "1.2.1"}]}]}})
+
+(def union-tree-different-limit-result
+  {:tree
+    {:node/type :tree/qux
+     :id 0
+     :qux/value "1"
+     :children [{:node/type :tree/foo
+                 :foo/value "1.1"
+                 :id 1}
+                ;; qux allowed to recurse twice, so children included in result
+                {:node/type :tree/qux
+                 :id 4
+                 :qux/value "1.2"
+                 :children
+                   [{:node/type :tree/foo
+                     :id 5
+                     :foo/value "1.2.1"}]}]}})
+
+(defui UnionLimitBarNode
+  static om/IQuery
+  (query [this]
+    '[:id :node/type :bar/value {:children 1}]))
+
+(defui UnionLimitFooNode
+  static om/IQuery
+  (query [this]
+    '[:id :node/type :foo/value {:children 1}]))
+
+(defui ItemSameLimitNode
+  static om/Ident
+  (ident [this {:keys [node/type id]}]
+    [type id])
+  static om/IQuery
+  (query [this]
+    {:tree/foo (om/get-query UnionLimitFooNode)
+     :tree/bar (om/get-query UnionLimitBarNode)}))
+
+(defui UnionSameLimitTree
+  static om/IQuery
+  (query [this]
+    `[{:tree ~(om/get-query ItemSameLimitNode)}]))
+
+(defui UnionLimitQuxNode
+  static om/IQuery
+  (query [this]
+    '[:id :node/type :qux/value {:children 2}]))
+
+(defui ItemDifferentLimitNode
+  static om/Ident
+  (ident [this {:keys [node/type id]}]
+    [type id])
+  static om/IQuery
+  (query [this]
+    {:tree/foo (om/get-query UnionLimitFooNode)
+     :tree/qux (om/get-query UnionLimitQuxNode)}))
+
+(defui UnionDifferentLimitTree
+  static om/IQuery
+  (query [this]
+    `[{:tree ~(om/get-query ItemDifferentLimitNode)}]))
+
+(deftest test-db->tree-union-recursion-limit
+  (testing "same recursion limit in all union branches"
+    (let [db (om/tree->db UnionSameLimitTree union-tree-data true)]
+      (is (= union-tree-limit-by-1-result
+             (om/db->tree (om/get-query UnionSameLimitTree)
+               (om/tree->db UnionSameLimitTree union-tree-data)
+               db)))))
+    (testing "different recursion limit in union branches"
+      (let [db (om/tree->db UnionDifferentLimitTree union-tree-different-limit-data true)]
+        (is (= union-tree-different-limit-result
+               (om/db->tree (om/get-query UnionDifferentLimitTree)
+                 (om/tree->db UnionDifferentLimitTree union-tree-different-limit-data)
+                 db))))))
+
+;; -----------------------------------------------------------------------------
 ;; Path Optimization
 
 (defmethod tree-read :node/by-id
