@@ -1205,9 +1205,9 @@
            ::tables (into #{} (keys refs'))))
        (with-meta ret @refs)))))
 
-(defn- sift-refs [res]
-  (let [{refs true rest false} (group-by #(vector? (first %)) res)]
-    [(into {} refs) (into {} rest)]))
+(defn- sift-idents [res]
+  (let [{idents true rest false} (group-by #(vector? (first %)) res)]
+    [(into {} idents) (into {} rest)]))
 
 (defn reduce-query-depth
   "Changes a join on key k with depth limit from [:a {:k n}] to [:a {:k (dec n)}]"
@@ -1317,7 +1317,6 @@
   ([query data refs map-ident]
    (denormalize* query data refs map-ident {} nil nil)))
 
-
 ;; =============================================================================
 ;; Reconciler
 
@@ -1410,14 +1409,14 @@
 (defn- merge-novelty!
   [reconciler state res query]
   (let [config      (:config reconciler)
-        [refs res'] (sift-refs res)
+        [idts res'] (sift-idents res)
         res'        (if (:normalize config)
                       (tree->db
                         (or query (:root @(:state reconciler)))
                         res' true)
                       res')]
     (-> state
-      (merge-idents config refs)
+      (merge-idents config idts)
       ((:merge-tree config) res'))))
 
 (defn default-merge [reconciler state res query]
