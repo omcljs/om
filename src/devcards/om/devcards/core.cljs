@@ -2,6 +2,7 @@
   (:require-macros [devcards.core :refer [defcard deftest dom-node]])
   (:require [cljs.test :refer-macros [is async]]
             [cljs.pprint :as pprint]
+            [om.devcards.utils :as utils]
             [om.devcards.tutorials]
             [om.devcards.bugs]
             [om.devcards.autocomplete]
