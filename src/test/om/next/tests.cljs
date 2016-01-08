@@ -1,12 +1,11 @@
 (ns om.next.tests
   (:require [cljs.test :refer-macros [deftest is are testing run-tests]]
-            [goog.object :as gobj]
             [clojure.zip :as zip]
+            [cljsjs.react]
             [om.next :as om :refer-macros [defui ui]]
             [om.next.protocols :as p]
             [om.next.impl.parser :as parser]
-            [om.dom :as dom]
-            [om.tempid :as tempid :refer [tempid]]))
+            [om.tempid :refer [tempid]]))
 
 ;; -----------------------------------------------------------------------------
 ;; Components
