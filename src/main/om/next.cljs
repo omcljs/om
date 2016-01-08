@@ -62,7 +62,9 @@
       (ex-info (str "Invalid query expr " expr)
         {:type :error/invalid-expression}))))
 
-(defn- query-zip [root]
+(defn- query-zip
+  "Return a zipper on a query expression."
+  [root]
   (zip/zipper
     #(or (vector? %) (map? %) (seq? %))
     seq
@@ -74,7 +76,10 @@
         (with-meta ret (meta node))))
     root))
 
-(defn- move-to-key [loc k]
+(defn- move-to-key
+  "Move from the current zipper location to the specified key. loc must be a
+   hash map node."
+  [loc k]
   (loop [loc (zip/down loc)]
     (let [node (zip/node loc)]
       (if (= k (first node))
@@ -86,7 +91,11 @@
     (and (map? expr)
          (map? (-> expr first second)))))
 
-(defn- query-template [query path]
+(defn- query-template
+  "Given a query and a path into a query return a zipper focused at the location
+   specified by the path. This location can be replaced to customize / alter
+   the query."
+  [query path]
   (letfn [(query-template* [loc path]
             (if (empty? path)
               loc
@@ -166,6 +175,12 @@
 ;; this function assumes focus is actually in fact
 ;; already focused!
 (defn- focus->path
+  "Given a focused query return the path represented by the query.
+
+   Examples:
+
+     (om.next/focus->path [{:foo [{:bar {:baz []}]}])
+     => [:foo :bar :baz]"
   ([focus]
    (focus->path focus '* []))
   ([focus bound]
@@ -600,7 +615,12 @@
       (filter (fn [[_ v]] (pos? (count v)))))
     remotes))
 
-(defn transform-reads [r tx]
+(defn transform-reads
+  "Given r (a reconciler) and a query expression including a mutation and
+   any simple reads, return the equivalent query expression where the simple
+   reads have been replaced by the full query for each component that cares about
+   the specified read."
+  [r tx]
   (letfn [(with-target [target q]
             (if-not (nil? target)
               [(force (first q) target)]
