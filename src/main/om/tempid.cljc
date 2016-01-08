@@ -45,3 +45,6 @@
 #?(:clj
    (defn tempid [uuid]
      (TempId. uuid)))
+
+(defn ^boolean tempid? [x]
+  (instance? TempId x))

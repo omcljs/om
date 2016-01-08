@@ -1805,6 +1805,11 @@
   ([] (tempid/tempid))
   ([id] (tempid/tempid id)))
 
+(defn ^boolean tempid?
+  "Return true if x is a tempid, false otherwise"
+  [x]
+  (tempid/tempid? x))
+
 (defn reader
   "Create a Om Next transit reader. This reader can handler the tempid type.
    Can pass transit reader customization opts map."
