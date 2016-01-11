@@ -180,12 +180,16 @@
            ctor  (if (-> name meta :once)
                    `(when-not (cljs.core/exists? ~name)
                       ~ctor)
-                   ctor)]
+                   ctor)
+           display-name (if env
+                          (str (-> env :ns :name) "/" name)
+                          'js/undefined)]
        `(do
           ~ctor
           (set! (.-prototype ~name) (goog.object/clone js/React.Component.prototype))
           (specify! (.-prototype ~name) ~@(reshape dt reshape-map))
           (set! (.. ~name -prototype -constructor) ~name)
+          (set! (.. ~name -prototype -constructor -displayName) ~display-name)
           (set! (.. ~name -prototype -om$isComponent) true)
           ~@(map #(field-set! name %) (:fields statics))
           (specify! ~name ~@(:protocols statics))
