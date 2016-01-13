@@ -1606,21 +1606,28 @@
     (merge a b)
     b))
 
-(defn- default-migrate [pure query tempids id-key]
-  (letfn [(dissoc-in [pure [table id]]
-            (assoc pure table (dissoc (get pure table) id)))
-          (step [pure [old [_ id :as new]]]
-            (-> pure
-              (dissoc-in old)
-              (assoc-in new
-                (cond-> (merge (get-in pure old) (get-in pure new))
-                  (not (nil? id-key)) (assoc id-key id)))))]
-    (if-not (empty? tempids)
-      (let [pure' (reduce step pure tempids)]
-        (tree->db query
-          (db->tree query pure' pure'
-            (fn [ident] (get tempids ident ident))) true))
-      pure)))
+(defn- default-migrate
+  "Given app-state-pure (the application state as an immutable value), a query,
+   tempids (a hash map from tempid to stable id), and an optional id-key
+   keyword, return a new application state value with the tempids replaced by
+   the stable ids."
+  ([app-state-pure query tempids]
+    (default-migrate app-state-pure query tempids nil))
+  ([app-state-pure query tempids id-key]
+   (letfn [(dissoc-in [pure [table id]]
+             (assoc pure table (dissoc (get pure table) id)))
+           (step [pure [old [_ id :as new]]]
+             (-> pure
+               (dissoc-in old)
+               (assoc-in new
+                 (cond-> (merge (get-in pure old) (get-in pure new))
+                   (not (nil? id-key)) (assoc id-key id)))))]
+     (if-not (empty? tempids)
+       (let [pure' (reduce step app-state-pure tempids)]
+         (tree->db query
+           (db->tree query pure' pure'
+             (fn [ident] (get tempids ident ident))) true))
+       app-state-pure))))
 
 (defn- ^boolean has-error? [x]
   (and (map? x) (contains? x ::error)))
