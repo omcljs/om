@@ -1212,14 +1212,10 @@
 (defn reduce-query-depth
   "Changes a join on key k with depth limit from [:a {:k n}] to [:a {:k (dec n)}]"
   [q k]
-  (letfn [(step [{:keys [query key] :as node}]
-            (let [query (cond-> query (number? query) dec)]
-              (if-let [query (and (= k key) query)]
-                (assoc node :query query)
-                node)))]
-    (let [ast      (query->ast q)
-          children (map step (:children ast))]
-     (ast->query (assoc ast :children children)))))
+  (let [pos (query-template q [k])
+        node (zip/node pos)
+        node' (cond-> node (number? node) dec)]
+    (replace pos node')))
 
 (defn- reduce-union-recursion-depth
   "Given a union expression decrement each of the query roots by one if it
