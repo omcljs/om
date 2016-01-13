@@ -46,5 +46,7 @@
    (defn tempid [uuid]
      (TempId. uuid)))
 
-(defn ^boolean tempid? [x]
+(defn tempid?
+  #?(:cljs {:tag boolean})
+  [x]
   (instance? TempId x))
