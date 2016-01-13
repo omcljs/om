@@ -1390,3 +1390,9 @@
     (is (= {:tree {:foo nil}
             :errors {[:ui-e 1] #{{:type :ouch!} {:type :oof!}}}}
           x))))
+
+;; test that we get top and contained errors
+
+;; test that we get errors from unions
+;;   in joins involving a single value
+;;   in joins involving multiple values
