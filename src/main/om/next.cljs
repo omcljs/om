@@ -1348,7 +1348,7 @@
             (if (contains? (:elements-seen res) expr)
               res ; eliminate exact duplicates
               (update-in
-                (if (and (join? expr) (not (union? expr)))
+                (if (and (join? expr) (not (union? expr)) (not (list? expr)))
                   (let [jk (join-key expr)
                         jv (join-value expr)
                         q  (or (-> res :query-by-join (get jk)) [])
@@ -1357,15 +1357,15 @@
                              (recursion? jv) jv
                              :else (merge-joins (into [] (concat q jv))))]
                     (update-in res [:query-by-join] assoc jk nq))
-                  (update-in res [:non-joins] conj expr))
+                  (update-in res [:not-mergeable] conj expr))
                 [:elements-seen] conj expr)))]
     (let [init {:query-by-join {}
                 :elements-seen #{}
-                :non-joins []}
+                :not-mergeable []}
           res  (reduce step init query)]
       (->> (:query-by-join res)
         (mapv (fn [[jkey jsel]] {jkey jsel}))
-        (concat (:non-joins res))
+        (concat (:not-mergeable res))
         (into [])))))
 
 (defn process-roots [query]

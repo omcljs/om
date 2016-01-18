@@ -1125,6 +1125,25 @@
     (is (= server-query query))
     (is (= full-response (rewrite response)))))
 
+(deftest test-process-roots-preserves-query-parameters
+  (let [re-rooted-query (with-meta '({:dashboard {:photo   [:url]
+                                                  :comment [:text]}} {:x 1}) {:query-root true})
+        full-query [:a :b {:ui-key [re-rooted-query]}]
+        response {:dashboard {:url "http://images.com/x.gif"}}
+        full-response {:ui-key response}
+        {:keys [rewrite query]} (om/process-roots full-query)]
+    (is (= [:a :b re-rooted-query] query))
+    (is (= full-response (rewrite response)))))
+
+(deftest test-process-roots-preserves-parameters-2
+  (let [parameters  {:user/email "email", :user/password "password"}
+        fragment    (with-meta (list {:auth [:token ]}
+                                      parameters)
+                    {:query-root true})
+        full-query [{:current-login-q [fragment]}]
+        {:keys [rewrite query]} (om/process-roots full-query)]
+    (is (= [fragment] query))))
+
 ;; -----------------------------------------------------------------------------
 ;; User Bugs
 
