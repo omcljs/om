@@ -177,16 +177,20 @@
                         (set! (.-state this#) (.initLocalState this#))
                         (set! (.-state this#) (cljs.core/js-obj)))
                       this#))
+           set-react-proto! `(set! (.-prototype ~name)
+                                 (goog.object/clone js/React.Component.prototype))
            ctor  (if (-> name meta :once)
                    `(when-not (cljs.core/exists? ~name)
-                      ~ctor)
-                   ctor)
+                      ~ctor
+                      ~set-react-proto!)
+                   `(do
+                      ~ctor
+                      ~set-react-proto!))
            display-name (if env
                           (str (-> env :ns :name) "/" name)
                           'js/undefined)]
        `(do
           ~ctor
-          (set! (.-prototype ~name) (goog.object/clone js/React.Component.prototype))
           (specify! (.-prototype ~name) ~@(reshape dt reshape-map))
           (set! (.. ~name -prototype -constructor) ~name)
           (set! (.. ~name -prototype -constructor -displayName) ~display-name)
