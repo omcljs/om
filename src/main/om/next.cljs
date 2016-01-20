@@ -1653,7 +1653,15 @@
                                      (unique-ident? k) first))
                             data (get res k)]
                         (cond
-                          ;; TODO: Unions
+                          (union? expr)
+                          (let [jk     (join-key expr)
+                                class' (-> expr meta :component)
+                                query' (cond-> expr
+                                         (not (vector? data))
+                                         (get expr (second (ident class' data))))
+                                ret'   (extract* query data errs)]
+                            (when-not (nil? ret)
+                              (assoc ret jk ret')))
 
                           ;; need to examine contents
                           (join? expr)
