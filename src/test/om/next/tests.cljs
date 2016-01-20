@@ -1390,14 +1390,25 @@
     [{:foo (om/get-query UiE)}]))
 
 (deftest test-nested-error
-  (let [x (om/default-extract-errors nil
-            {:id 0
-             :foo {:id 1 :title "Cool"
-                   :author :foo
-                   ::om/error {:type :ouch!}}}
-            (om/get-query UiD))]
+  (let [x  (om/default-extract-errors nil
+             {:id 0
+              :foo {:id 1 :title "Cool"
+                    :author "Bob"
+                    ::om/error {:type :ouch!}}}
+             (om/get-query UiD))
+        ys (om/default-extract-errors nil
+             {:id 0
+              :foo [{:id 1 :title "Cool"
+                     :author "Bob"
+                     ::om/error {:type :ouch!}}
+                    {:id 2 :title "Awesome"
+                     :author "George"}]}
+             (om/get-query UiD))]
     (is (= {:tree {:foo nil}, :errors {[:ui-e 1] #{{:type :ouch!}}}}
-           x))))
+           x))
+    (is (= {:tree {:foo [nil {:id 2, :title "Awesome", :author "George"}]}
+            :errors {[:ui-e 1] #{{:type :ouch!}}}}
+           ys))))
 
 (deftest test-multiple-errors
   (let [x (om/default-extract-errors nil
