@@ -1408,9 +1408,20 @@
             (om/get-query UiD))]
     (is (= {:tree {:foo nil}
             :errors {[:ui-e 1] #{{:type :ouch!} {:type :oof!}}}}
-          x))))
+           x))))
 
-;; test that we get top and contained errors
+(deftest test-top-and-contained-errors
+  (let [x (om/default-extract-errors nil
+            {:id 0
+             ::om/error :yow!
+             :foo {:id 1
+                   :title {::om/error {:type :ouch!}}
+                   :author {::om/error {:type :oof!}}}}
+            (om/get-query UiD))]
+    (is (= {:tree nil
+            :errors {[:ui-d 0] #{:yow!},
+                     [:ui-e 1] #{{:type :ouch!} {:type :oof!}}}}
+           x))))
 
 ;; test that we get errors from unions
 ;;   in joins involving a single value

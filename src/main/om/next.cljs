@@ -1657,11 +1657,12 @@
 
                           ;; need to examine contents
                           (join? expr)
-                          (let [jk (join-key expr)
-                                jv (join-value expr)]
+                          (let [jk   (join-key expr)
+                                jv   (join-value expr)
+                                ret' (extract* jv data errs)]
                             (recur (next exprs)
                               (when-not (nil? ret)
-                                (assoc ret jk (extract* jv data errs)))))
+                                (assoc ret jk ret'))))
 
                           (and (map? data) (has-error? data))
                           (do
