@@ -1660,8 +1660,9 @@
                                          (not (vector? data))
                                          (get expr (second (ident class' data))))
                                 ret'   (extract* query data errs)]
-                            (when-not (nil? ret)
-                              (assoc ret jk ret')))
+                            (recur (next exprs)
+                              (when-not (nil? ret)
+                                (assoc ret jk ret'))))
 
                           ;; need to examine contents
                           (join? expr)
