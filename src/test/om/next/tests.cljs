@@ -1426,3 +1426,5 @@
 ;; test that we get errors from unions
 ;;   in joins involving a single value
 ;;   in joins involving multiple values
+
+;; test that we get errors from all of the above in presence of parameters
