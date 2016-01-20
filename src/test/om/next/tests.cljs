@@ -1411,28 +1411,52 @@
            ys))))
 
 (deftest test-multiple-errors
-  (let [x (om/default-extract-errors nil
-            {:id 0
-             :foo {:id 1
-                   :title {::om/error {:type :ouch!}}
-                   :author {::om/error {:type :oof!}}}}
-            (om/get-query UiD))]
+  (let [x  (om/default-extract-errors nil
+             {:id 0
+              :foo {:id 1
+                    :title {::om/error {:type :ouch!}}
+                    :author {::om/error {:type :oof!}}}}
+             (om/get-query UiD))
+        ys (om/default-extract-errors nil
+             {:id 0
+              :foo [{:id 1
+                     :title {::om/error {:type :ouch!}}
+                     :author {::om/error {:type :oof!}}}
+                    {:id 2 :title "Awesome"
+                     :author "George"}]}
+             (om/get-query UiD))]
     (is (= {:tree {:foo nil}
             :errors {[:ui-e 1] #{{:type :ouch!} {:type :oof!}}}}
-           x))))
+           x))
+    (is (= {:tree {:foo [nil {:id 2, :title "Awesome", :author "George"}]},
+            :errors {[:ui-e 1] #{{:type :ouch!} {:type :oof!}}}}
+           ys))))
 
 (deftest test-top-and-contained-errors
-  (let [x (om/default-extract-errors nil
-            {:id 0
-             ::om/error :yow!
-             :foo {:id 1
-                   :title {::om/error {:type :ouch!}}
-                   :author {::om/error {:type :oof!}}}}
-            (om/get-query UiD))]
+  (let [x  (om/default-extract-errors nil
+             {:id 0
+              ::om/error :yow!
+              :foo {:id 1
+                    :title {::om/error {:type :ouch!}}
+                    :author {::om/error {:type :oof!}}}}
+             (om/get-query UiD))
+        ys (om/default-extract-errors nil
+             {:id 0
+              ::om/error :yow!
+              :foo [{:id 1
+                     :title {::om/error {:type :ouch!}}
+                     :author {::om/error {:type :oof!}}}
+                    {:id 2 :title "Awesome"
+                     :author "George"}]}
+             (om/get-query UiD))]
     (is (= {:tree nil
             :errors {[:ui-d 0] #{:yow!},
                      [:ui-e 1] #{{:type :ouch!} {:type :oof!}}}}
-           x))))
+           x))
+    (is (= {:tree nil
+            :errors {[:ui-d 0] #{:yow!}
+                     [:ui-e 1] #{{:type :ouch!} {:type :oof!}}}}
+           ys))))
 
 ;; test that we get errors from unions
 ;;   in joins involving a single value
