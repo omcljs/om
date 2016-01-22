@@ -1475,6 +1475,24 @@
                      [:ui-e 1] #{{:type :ouch!} {:type :oof!}}}}
            ys))))
 
+(comment
+
+  (om/default-extract-errors nil
+    {:id 0
+     :bar {:id 1 :type :c
+           :title "Cool"
+           ::om/error {:type :ouch!}}}
+    (om/get-query UiF))
+
+  (om/default-extract-errors nil
+    {:id 0
+     :bar [{:id 1 :type :c
+            :title "Cool"
+            ::om/error {:type :ouch!}}]}
+    (om/get-query UiF))
+
+  )
+
 ;; test that we get errors from unions
 ;;   in joins involving a single value
 ;;   in joins involving multiple values
