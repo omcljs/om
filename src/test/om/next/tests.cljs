@@ -1521,4 +1521,16 @@
 (deftest test-union-contained-and-top-errors
   (let []))
 
+(comment
+
+  (om/default-extract-errors nil
+    {:id 0
+     ::om/error :yow!
+     :foo {:id 1 :type :c
+           :title {::om/error {:type :ouch!}}
+           :author {::om/error {:type :oof!}}}}
+    (om/get-query UiF))
+
+  )
+
 ;; test that we get errors from all of the above in presence of parameters
