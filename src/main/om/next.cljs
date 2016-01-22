@@ -1658,12 +1658,12 @@
                                 jv     (join-value expr)
                                 class' (-> jv meta :component)]
                             (if (not (vector? data))
-                              (recur (next exprs)
-                                (when-not (nil? ret)
-                                  (assoc ret
-                                    jk (extract*
-                                         (get jv (first (ident class' data)))
-                                         data errs))))
+                              (let [ret' (extract*
+                                           (get jv (first (ident class' data)))
+                                           data errs)]
+                                (recur (next exprs)
+                                  (when-not (nil? ret)
+                                    (assoc ret jk ret'))))
                               (let [ret' (into []
                                            (map #(extract* (get jv (first (ident class' %))) % errs))
                                            data)]

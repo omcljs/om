@@ -1519,18 +1519,16 @@
            ys))))
 
 (deftest test-union-contained-and-top-errors
-  (let []))
-
-(comment
-
-  (om/default-extract-errors nil
-    {:id 0
-     ::om/error :yow!
-     :foo {:id 1 :type :c
-           :title {::om/error {:type :ouch!}}
-           :author {::om/error {:type :oof!}}}}
-    (om/get-query UiF))
-
-  )
+  (let [x  (om/default-extract-errors nil
+             {:id 0
+              ::om/error :yow!
+              :bar {:id 1 :type :e
+                    :title {::om/error {:type :ouch!}}
+                    :author {::om/error {:type :oof!}}}}
+             (om/get-query UiF))]
+    (is (= {:tree nil
+            :errors {[:ui-f 0] #{:yow!}
+                     [:ui-e 1] #{{:type :ouch!} {:type :oof!}}}}
+           x))))
 
 ;; test that we get errors from all of the above in presence of parameters
