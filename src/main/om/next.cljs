@@ -1656,14 +1656,17 @@
                           (union? expr)
                           (let [jk     (join-key expr)
                                 jv     (join-value expr)
-                                class' (-> jv meta :component)
-                                query' (cond-> jv
-                                         (not (vector? data))
-                                         (get (first (ident class' data))))
-                                ret'   (extract* query' data errs)]
-                            (recur (next exprs)
-                              (when-not (nil? ret)
-                                (assoc ret jk ret'))))
+                                class' (-> jv meta :component)]
+                            (if (not (vector? data))
+                              (recur (next exprs)
+                                (when-not (nil? ret)
+                                  (assoc ret
+                                    jk (extract*
+                                         (get jv (first (ident class' data)))
+                                         data errs))))
+                              (recur (next exprs)
+                                (when-not (nil? ret)
+                                  (assoc ret jk [])))))
 
                           ;; need to examine contents
                           (join? expr)
