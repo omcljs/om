@@ -1493,4 +1493,32 @@
     (is (= {:tree {:bar [nil]}, :errors {[:ui-c 1] #{{:type :ouch!}}}}
            ys))))
 
+(deftest test-multiple-union-errors
+  (let [x  (om/default-extract-errors nil
+             {:id 0
+              :bar {:id 1 :type :e
+                    :title {::om/error {:type :ouch!}}
+                    :author {::om/error {:type :oof!}}}}
+             (om/get-query UiF))
+        ys (om/default-extract-errors nil
+             {:id 0
+              :bar [{:id 1 :type :e :title "Cool"
+                     :author "Bob"}
+                    {:id 2 :type :c
+                     :title {::om/error {:type :ouch!}}
+                     :author {::om/error {:type :oof!}}}
+                    {:id 3 :type :e :title "Awesome"
+                     :author "George"}]}
+             (om/get-query UiF))]
+    (is (= {:tree {:bar nil}, :errors {[:ui-e 1] #{{:type :ouch!} {:type :oof!}}}}
+           x))
+    (is (= {:tree {:bar [{:id 1, :title "Cool", :author "Bob"}
+                         nil
+                         {:id 3, :title "Awesome", :author "George"}]},
+            :errors {[:ui-c 2] #{{:type :ouch!}}}}
+           ys))))
+
+(deftest test-union-contained-and-top-errors
+  (let []))
+
 ;; test that we get errors from all of the above in presence of parameters
