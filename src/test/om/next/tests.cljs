@@ -1389,6 +1389,23 @@
   (query [this]
     [{:foo (om/get-query UiE)}]))
 
+(defui UiC&E
+  static om/Ident
+  (ident [this {:keys [id type] :as props}]
+    [({:c :ui-c :e :ui-e} type) id])
+  static om/IQuery
+  (query [this]
+    {:ui-c (om/get-query UiC)
+     :ui-e (om/get-query UiE)}))
+
+(defui UiF
+  static om/Ident
+  (ident [this props]
+    [:ui-f (:id props)])
+  static om/IQuery
+  (query [this]
+    [{:bar (om/get-query UiC&E)}]))
+
 (deftest test-nested-error
   (let [x  (om/default-extract-errors nil
              {:id 0
