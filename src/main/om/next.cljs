@@ -1664,9 +1664,12 @@
                                     jk (extract*
                                          (get jv (first (ident class' data)))
                                          data errs))))
-                              (recur (next exprs)
-                                (when-not (nil? ret)
-                                  (assoc ret jk [])))))
+                              (let [ret' (into []
+                                           (map #(extract* (get jv (first (ident class' %))) % errs))
+                                           data)]
+                                (recur (next exprs)
+                                  (when-not (nil? ret)
+                                    (assoc ret jk ret'))))))
 
                           ;; need to examine contents
                           (join? expr)
