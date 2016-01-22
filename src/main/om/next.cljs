@@ -1659,7 +1659,7 @@
                                 query' (cond-> expr
                                          (not (vector? data))
                                          (get expr (second (ident class' data))))
-                                ret'   (extract* query data errs)]
+                                ret'   (extract* query' data errs)]
                             (recur (next exprs)
                               (when-not (nil? ret)
                                 (assoc ret jk ret'))))
