@@ -1655,7 +1655,8 @@
                         (cond
                           (union? expr)
                           (let [jk     (join-key expr)
-                                class' (-> expr meta :component)
+                                jv     (join-value expr)
+                                class' (-> jv meta :component)
                                 query' (cond-> expr
                                          (not (vector? data))
                                          (get expr (second (ident class' data))))
