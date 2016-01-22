@@ -1525,10 +1525,25 @@
               :bar {:id 1 :type :e
                     :title {::om/error {:type :ouch!}}
                     :author {::om/error {:type :oof!}}}}
+             (om/get-query UiF))
+        ys (om/default-extract-errors nil
+             {:id 0
+              ::om/error :yow!
+              :bar [{:id 1 :type :c
+                     :title "Cool"}
+                    {:id 2 :type :e
+                     :title {::om/error {:type :ouch!}}
+                     :author {::om/error {:type :oof!}}}
+                    {:id 2 :type :c
+                     :title "Awesome"}]}
              (om/get-query UiF))]
     (is (= {:tree nil
             :errors {[:ui-f 0] #{:yow!}
                      [:ui-e 1] #{{:type :ouch!} {:type :oof!}}}}
-           x))))
+           x))
+    (is (= {:tree nil
+            :errors {[:ui-f 0] #{:yow!}
+                     [:ui-e 2] #{{:type :ouch!} {:type :oof!}}}}
+           ys))))
 
 ;; test that we get errors from all of the above in presence of parameters
