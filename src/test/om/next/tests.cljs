@@ -1475,19 +1475,18 @@
                      [:ui-e 1] #{{:type :ouch!} {:type :oof!}}}}
            ys))))
 
+(deftest test-simple-union-errors
+  (let [x  (om/default-extract-errors nil
+             {:id 0
+              :bar {:id 1 :type :c
+                    :title "Cool"
+                    ::om/error {:type :ouch!}}}
+             (om/get-query UiF))
+        ]
+    (is (= {:tree {:bar nil}, :errors {[:ui-c 1] #{{:type :ouch!}}}}
+           x))))
+
 (comment
-
-  (om/default-extract-errors nil
-    {:id 0
-     :bar {:id 1 :type :c
-           :title "Cool"
-           ::om/error {:type :ouch!}}}
-    (om/get-query UiF))
-
-  (om/ident UiC&E
-    {:id 1 :type :c
-     :title "Cool"
-     ::om/error {:type :ouch!}})
 
   (om/default-extract-errors nil
     {:id 0
