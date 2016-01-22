@@ -1657,9 +1657,9 @@
                           (let [jk     (join-key expr)
                                 jv     (join-value expr)
                                 class' (-> jv meta :component)
-                                query' (cond-> expr
+                                query' (cond-> jv
                                          (not (vector? data))
-                                         (get expr (second (ident class' data))))
+                                         (get (first (ident class' data))))
                                 ret'   (extract* query' data errs)]
                             (recur (next exprs)
                               (when-not (nil? ret)

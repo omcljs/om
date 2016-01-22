@@ -1484,6 +1484,11 @@
            ::om/error {:type :ouch!}}}
     (om/get-query UiF))
 
+  (om/ident UiC&E
+    {:id 1 :type :c
+     :title "Cool"
+     ::om/error {:type :ouch!}})
+
   (om/default-extract-errors nil
     {:id 0
      :bar [{:id 1 :type :c
