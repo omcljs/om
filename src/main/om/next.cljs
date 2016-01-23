@@ -668,9 +668,9 @@
          _    (.add (:history cfg) id @st)]
      (when-let [l (:logger cfg)]
        (glog/info l
-         (str (when-let [ref (when (implements? Ident c)
-                               (ident c (props c)))]
-                (str (pr-str ref) " "))
+         (str (when-let [ident (when (implements? Ident c)
+                                 (ident c (props c)))]
+                (str (pr-str ident) " "))
            (when (reconciler? x) "reconciler ")
            (when query "changed query '" query ", ")
            (when params "changed params " params " ")
@@ -985,11 +985,11 @@
         (let [indexes (update-in ((:index-component extfs) indexes c)
                         [:class->components (type c)]
                         (fnil conj #{}) c)
-              ref     (when (implements? Ident c)
+              ident     (when (implements? Ident c)
                         (ident c (props c)))]
-          (if-not (nil? ref)
+          (if-not (nil? ident)
             (cond-> indexes
-              ref (update-in [:ref->components ref] (fnil conj #{}) c))
+              ident (update-in [:ref->components ident] (fnil conj #{}) c))
             indexes)))))
 
   (drop-component! [_ c]
@@ -998,11 +998,11 @@
         (let [indexes (update-in ((:drop-component extfs) indexes c)
                         [:class->components (type c)]
                         disj c)
-              ref     (when (implements? Ident c)
+              ident     (when (implements? Ident c)
                         (ident c (props c)))]
-          (if-not (nil? ref)
+          (if-not (nil? ident)
             (cond-> indexes
-              ref (update-in [:ref->components ref] disj c))
+              ident (update-in [:ref->components ident] disj c))
             indexes)))))
 
   (key->components [_ k]
@@ -1117,11 +1117,11 @@
     ;; union case
     (map? query)
     (let [class (to-class (-> query meta :component))
-          ref   (when (implements? Ident class)
+          ident   (when (implements? Ident class)
                   (ident class data))]
-      (if-not (nil? ref)
-        (vary-meta (normalize* (get query (first ref)) data refs union-seen)
-          assoc :om/tag (first ref))
+      (if-not (nil? ident)
+        (vary-meta (normalize* (get query (first ident)) data refs union-seen)
+          assoc :om/tag (first ident))
         (throw (js/Error. "Union components must implement Ident"))))
 
     (vector? data) data ;; already normalized
