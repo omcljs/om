@@ -1,6 +1,6 @@
 (ns om.next
   (:refer-clojure :exclude [var? key replace force])
-  (:require-macros [om.next :refer [defui]])
+  (:require-macros [om.next :refer [defui invariant]])
   (:require [goog.string :as gstring]
             [goog.object :as gobj]
             [goog.log :as glog]

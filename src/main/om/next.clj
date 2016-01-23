@@ -1,7 +1,8 @@
 (ns om.next
   (:refer-clojure :exclude [deftype])
   (:require [cljs.core :refer [deftype specify! this-as js-arguments]]
-            [cljs.analyzer :as ana]))
+            [cljs.analyzer :as ana]
+            [cljs.analyzer.api :as ana-api]))
 
 (defn collect-statics [dt]
   (letfn [(split-on-static [forms]
@@ -211,6 +212,24 @@
   [& forms]
   (let [t (with-meta (gensym "ui_") {:anonymous true})]
     `(do (defui ~t ~@forms) ~t)))
+
+(defn invariant*
+  [condition message env]
+  (let [opts (ana-api/get-options)
+        fn-scope (:fn-scope env)
+        fn-name (some-> fn-scope first :name str)]
+    (when-not (:elide-asserts opts)
+      `(let [l# om.next/*logger*]
+         (when-not ~condition
+           (goog.log/error l#
+             (str "Invariant Violation"
+               (when-not (nil? ~fn-name)
+                 (str " (in function: `" ~fn-name "`)"))
+               ": " ~message)))))))
+
+(defmacro invariant
+  [condition message]
+  (invariant* condition message &env))
 
 (comment
   (collect-statics
