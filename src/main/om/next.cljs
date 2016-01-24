@@ -1256,7 +1256,8 @@
       ;; map case
       (if (= '[*] query)
         data
-        (let [{props false joins true} (group-by #(or (join? %) (ident? %)) query)]
+        (let [{props false joins true} (group-by #(or (join? %) (ident? %)) query)
+              props (mapv #(cond-> % (seq? %) first) props)]
           (loop [joins (seq joins) ret {}]
             (if-not (nil? joins)
               (let [join        (first joins)
