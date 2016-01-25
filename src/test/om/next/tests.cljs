@@ -508,6 +508,13 @@
           add* [:person/by-id id])))
     state))
 
+(deftest test-db->tree-param
+  (let [data {:people [:by-name "Alice"]
+              :by-name {"Alice" {:name "Alice" :age 31}
+                        "Bob" {:name "Bob" :age 25}}}
+        query '[(:people {:length 3})]]
+    (is (= (om/db->tree query data data) {:people [:by-name "Alice"]}))))
+
 (deftest test-db->tree-collection
   (let [norm-data  (om/tree->db People1 people-data true)
         app-state  (atom norm-data)
