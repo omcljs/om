@@ -1391,16 +1391,17 @@
      {:query   query
       :rewrite (partial rewrite rewrite-map)})))
 
-(defn- merge-idents [tree config refs]
-  (let [{:keys [merge-ident indexer]} config]
-    (letfn [(step [tree' [ref props]]
+(defn- merge-idents [tree config refs query]
+  (let [{:keys [merge-ident indexer]} config
+        ident-joins (into {} (filter #(and (join? %) (ident? (join-key %))) query))]
+    (letfn [ (step [tree' [ident props]]
               (if (:normalize config)
-                (let [c      (ref->any indexer ref)
-                      props' (tree->db c props)
+                (let [c-or-q (or (get ident-joins ident) (ref->any indexer ident))
+                      props' (tree->db c-or-q props)
                       refs   (meta props')]
                   ((:merge-tree config)
-                    (merge-ident config tree' ref props') refs))
-                (merge-ident config tree' ref props)))]
+                    (merge-ident config tree' ident props') refs))
+                (merge-ident config tree' ident props)))]
       (reduce step tree refs))))
 
 (defn- merge-novelty!
@@ -1413,7 +1414,7 @@
                         res' true)
                       res')]
     (-> state
-      (merge-idents config idts)
+      (merge-idents config idts query)
       ((:merge-tree config) res'))))
 
 (defn default-merge [reconciler state res query]
