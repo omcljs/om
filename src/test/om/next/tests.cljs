@@ -1554,3 +1554,30 @@
            ys))))
 
 ;; test that we get errors from all of the above in presence of parameters
+
+
+;; -----------------------------------------------------------------------------
+;; Om Merge Internals
+
+(defui Person-Merge
+  static om/Ident
+  (ident [this {:keys [id]}] [:person/by-id id])
+  static om/IQuery
+  (query [this]
+    [:id :name ]))
+
+
+(deftest test-merge-idents
+  (let [merge-idents #'om/merge-idents                      ; make it non-private for the test
+        response     {[:person/by-id 1] {:id 1 :name "Joe"}}
+        config       {:normalize true :merge-tree merge :merge-ident om/default-merge-ident}
+        query        [{[:person/by-id 1] (om/get-query Person-Merge)}]
+        no-query     []
+        expected     {:person/by-id {1 {:id 1 :name "Joe"}}}]
+    (with-redefs [om/ref->any (fn [idx ident] (om/get-query Person-Merge))]
+      (testing "Merge works when a component's query is used for the normalization."
+        (is (= expected (merge-idents {} config response no-query)))
+        (is (= expected (merge-idents {} config response nil)))))
+    (testing "Merge works when a query is passed as an argument."
+      (is (= expected (merge-idents {} config response query))))))
+
