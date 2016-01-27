@@ -2,7 +2,8 @@
   (:refer-clojure :exclude [deftype])
   (:require [cljs.core :refer [deftype specify! this-as js-arguments]]
             [cljs.analyzer :as ana]
-            [cljs.analyzer.api :as ana-api]))
+            [cljs.analyzer.api :as ana-api]
+            [clojure.string :as str]))
 
 (defn collect-statics [dt]
   (letfn [(split-on-static [forms]
@@ -27,6 +28,14 @@
               :else (throw (IllegalArgumentException. "Malformed static")))
             (recur nil dt' statics)))
         {:dt dt' :statics statics}))))
+
+(defn- validate-statics [dt]
+  (when-let [invalid (some #{"Ident" "IQuery" "IQueryParams"}
+                       (map #(-> % str (str/split #"/") last)
+                         (filter symbol? dt)))]
+     (throw
+       (IllegalArgumentException.
+         (str invalid " protocol declaration must appear with `static`.")))))
 
 (def lifecycle-sigs
   '{initLocalState [this]
@@ -168,6 +177,7 @@
    (letfn [(field-set! [obj [field value]]
              `(set! (. ~obj ~(symbol (str "-" field))) ~value))]
      (let [{:keys [dt statics]} (collect-statics forms)
+           _ (validate-statics dt)
            rname (if env
                    (:name (ana/resolve-var (dissoc env :locals) name))
                    name)

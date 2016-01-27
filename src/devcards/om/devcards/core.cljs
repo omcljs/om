@@ -117,7 +117,7 @@
   static om/IQuery
   (query [this]
     '[:id :counter/count])
-  om/Ident
+  static om/Ident
   (ident [this {:keys [id]}]
     [:app/counters id])
   Object
