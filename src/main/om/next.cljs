@@ -986,7 +986,13 @@
                         [:class->components (type c)]
                         (fnil conj #{}) c)
               ident     (when (implements? Ident c)
-                        (ident c (props c)))]
+                          (let [ident (ident c (props c))]
+                            (invariant (ident? ident)
+                              (str "malformed Ident. An ident must be a vector of "
+                                "two elements (a keyword and an EDN value). Check "
+                                "the Ident implementation of component `"
+                                (.. c -constructor -displayName) "`."))
+                            ident))]
           (if-not (nil? ident)
             (cond-> indexes
               ident (update-in [:ref->components ident] (fnil conj #{}) c))
