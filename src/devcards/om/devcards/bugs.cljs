@@ -216,6 +216,44 @@
     (fn [_ node]
       (om/add-root! om-543-reconciler UnionTree node))))
 
+;; ==================
+;; OM-595
+
+(defmulti read om/dispatch)
+
+(defmethod read :item
+  [{:keys [state query parser] :as env} key _]
+  (let [st @state]
+    {:value (om/db->tree query (get st key) st)}))
+
+(def parser
+  (om/parser {:read read :mutate mutate}))
+
+(def state
+  {:item [:item/by-id 1]
+   :item/by-id {1 {:id 1
+                   :title "first"
+                   :next  [:item/by-id 2]}
+                2 {:id 2
+                   :title "second"}}})
+
+(def om-595-reconciler
+  (om/reconciler {:state  state
+                  :parser parser}))
+
+(defui OM-595-App
+  static om/IQuery
+  (query [this]
+    '[{:item [:id :title {:next ...}]}])
+  Object
+    (render [this]
+      (dom/div nil (str (om/props this)))))
+
+(defcard om-595
+  "Test that `index-root` doesn't blow the stack"
+  (dom-node
+    (fn [_ node]
+      (om/add-root! om-595-reconciler OM-595-App node))))
 
 (comment
 
