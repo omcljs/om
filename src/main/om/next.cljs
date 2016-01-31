@@ -339,6 +339,7 @@
          (js/React.createElement class
           #js {:key               key
                :ref               ref
+               :omcljs$reactKey   key
                :omcljs$value      (om-props props t)
                :omcljs$path       (-> props meta :om-path)
                :omcljs$reconciler *reconciler*
@@ -458,7 +459,7 @@
 (defn react-key
   "Returns the components React key."
   [component]
-  (.. component -props -key))
+  (get-prop component "omcljs$reactKey"))
 
 (defn react-type
   "Returns the component type, regardless of whether the component has been
