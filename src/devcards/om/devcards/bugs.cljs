@@ -219,17 +219,14 @@
 ;; ==================
 ;; OM-595
 
-(defmulti read om/dispatch)
+(defmulti om-595-read om/dispatch)
 
-(defmethod read :item
+(defmethod om-595-read :item
   [{:keys [state query parser] :as env} key _]
   (let [st @state]
     {:value (om/db->tree query (get st key) st)}))
 
-(def parser
-  (om/parser {:read read :mutate mutate}))
-
-(def state
+(def om-595-state
   {:item [:item/by-id 1]
    :item/by-id {1 {:id 1
                    :title "first"
@@ -238,8 +235,8 @@
                    :title "second"}}})
 
 (def om-595-reconciler
-  (om/reconciler {:state  state
-                  :parser parser}))
+  (om/reconciler {:state  om-595-state
+                  :parser (om/parser {:read om-595-read})}))
 
 (defui OM-595-App
   static om/IQuery
@@ -318,6 +315,54 @@
   (dom-node
     (fn [_ node]
       (om/add-root! om-601-reconciler OM-601-App node))))
+
+;; ==================
+;; OM-598
+
+(defmulti om-598-read om/dispatch)
+
+(defmethod om-598-read :default
+  [{:keys [state]} k _]
+  (let [st @state]
+    {:value (get st k)}))
+
+(defui OM-598-Child
+  static om/IQuery
+  (query [this]
+   [:bar])
+  Object
+  (initLocalState [_]
+    {:a 1})
+  (render [this]
+    (let [{:keys [a]} (om/get-state this)]
+      (dom/div nil
+        (dom/button #js {:onClick #(om/update-state! this update :a inc)}
+          (str "a: " a))))))
+
+(def om-598-child (om/factory OM-598-Child))
+
+(defui OM-598-App
+  static om/IQuery
+  (query [this]
+   [:foo])
+  Object
+  (componentDidMount [this]
+    (om/set-query! this {:query [{:child (om/get-query OM-598-Child)}]}))
+  (render [this]
+    (let [props (om/props this)]
+      (dom/div nil
+        (when-let [child-props (:child props)]
+          (om-598-child child-props))))))
+
+(def om-598-reconciler
+  (om/reconciler {:state {:foo 3 :child {:bar 2}}
+                  :parser (om/parser {:read om-598-read})}))
+
+(defcard om-598
+  "Test that `reindex!` works on query transitions"
+  (dom-node
+    (fn [_ node]
+      (om/add-root! om-598-reconciler OM-598-App node))))
 
 
 (comment
