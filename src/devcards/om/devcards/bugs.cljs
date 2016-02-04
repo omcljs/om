@@ -255,6 +255,71 @@
     (fn [_ node]
       (om/add-root! om-595-reconciler OM-595-App node))))
 
+;; ==================
+;; OM-601
+
+(defn om-601-read
+  [{:keys [state] :as env} k _]
+  (let [st @state]
+    {:value (get st k)}))
+
+(defn om-601-mutate
+  [{:keys [state] :as env} _ _]
+  {:action #(swap! state update-in [:foo :foo/val] inc)})
+
+(def om-601-state
+  {:foo {:foo/val 0}
+   :bar {:bar/val 0}})
+
+(def om-601-reconciler
+  (om/reconciler {:state  om-601-state
+                  :parser (om/parser {:read om-601-read :mutate om-601-mutate})}))
+
+(defui OM-601-Foo
+  static om/IQuery
+  (query [this]
+    [:foo/val])
+  Object
+  (render [this]
+    (println "Render Foo")
+    (dom/div nil
+      (dom/p nil (str "Foo: " (:foo/val (om/props this)))))))
+
+(def om-601-foo (om/factory OM-601-Foo))
+
+(defui OM-601-Bar
+  static om/IQuery
+  (query [this]
+    [:bar/val])
+  Object
+  (render [this]
+    (println "Render Bar")
+    (dom/div nil
+      (dom/p nil (str "Bar: " (:bar/val (om/props this)))))))
+
+(def om-601-bar (om/factory OM-601-Bar))
+
+(defui OM-601-App
+  static om/IQuery
+  (query [this]
+    [{:foo (om/get-query OM-601-Foo)
+      :bar (om/get-query OM-601-Bar)}])
+  Object
+  (render [this]
+    (let [{:keys [foo bar]} (om/props this)]
+      (dom/div nil
+        (om-601-foo foo)
+        (om-601-bar bar)
+        (dom/button #js {:onClick #(om/transact! this '[(increment/foo!)])}
+          "Inc foo")))))
+
+(defcard om-601-card
+  "Test that `shouldComponentUpdate` doesn't render unchanged children"
+  (dom-node
+    (fn [_ node]
+      (om/add-root! om-601-reconciler OM-601-App node))))
+
+
 (comment
 
   (require '[cljs.pprint :as pprint])
