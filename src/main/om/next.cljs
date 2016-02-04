@@ -1527,7 +1527,7 @@
       (when (iquery? root)
         (let [indexer (:indexer config)
               c (first (get-in @indexer [:class->components root]))]
-          (p/index-root indexer c)))))
+          (p/index-root indexer (or c root))))))
 
   (queue! [_ ks]
     (swap! state update-in [:queue] into ks))
