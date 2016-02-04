@@ -165,6 +165,24 @@
 ;; -----------------------------------------------------------------------------
 ;; Indexer
 
+(defui ComponentA
+  static om/IQuery
+  (query [this]
+    '[:foo]))
+
+(defui ComponentB
+  static om/IQuery
+  (query [this]
+    '[:bar]))
+
+(defui RootComponent
+  static om/IQueryParams
+  (params [this]
+    {:component (om/get-query ComponentA)})
+  static om/IQuery
+  (query [this]
+    '[{:components/list ?component}]))
+
 (deftest test-indexer
   (let [idxr (om/indexer)
         idxs (p/index-root idxr ComponentList)]
@@ -177,6 +195,26 @@
             {:state (atom nil)
              :ui->ref identity})]
     (is (instance? om/Indexer (get-in r [:config :indexer])))))
+
+(deftest test-reindex-instances
+  (let [r (om/reconciler
+            {:state (atom nil)
+             :parser (om/parser {:read #(do {})})})
+        idxr (get-in r [:config :indexer])
+        ;; simulate mounting
+        _ (p/add-root! r RootComponent nil nil)
+        _ (p/index-component! idxr (RootComponent. #js {:omcljs$reconciler r}))
+        indexes @(:indexes idxr)
+        classes (-> indexes :class->components keys)
+        cps (-> indexes :class-path->query keys)
+        c (first (get-in indexes [:class->components RootComponent]))]
+    (is (= (first classes) RootComponent))
+    (is (not (nil? (some #{[RootComponent ComponentA]} cps))))
+    ;; will reindex
+    (om/set-query! c {:params {:component (om/get-query ComponentB)}})
+    (let [indexes @(:indexes idxr)
+          cps (-> indexes :class-path->query keys)]
+      (is (not (nil? (some #{[RootComponent ComponentB]} cps)))))))
 
 ;; -----------------------------------------------------------------------------
 ;; Parser

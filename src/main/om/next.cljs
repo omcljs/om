@@ -1522,10 +1522,12 @@
     (when-let [remove (:remove @state)]
       (remove)))
 
-  (reindex! [_]
+  (reindex! [this]
     (let [root (get @state :root)]
       (when (iquery? root)
-        (p/index-root (:indexer config) root))))
+        (let [indexer (:indexer config)
+              c (first (get-in @indexer [:class->components root]))]
+          (p/index-root indexer c)))))
 
   (queue! [_ ks]
     (swap! state update-in [:queue] into ks))
