@@ -95,6 +95,9 @@
   (let [expr (cond-> expr (seq? expr) first)]
     (symbol? expr)))
 
+(defn mutation-key [expr]
+  (first expr))
+
 (defn- query-template
   "Given a query and a path into a query return a zipper focused at the location
    specified by the path. This location can be replaced to customize / alter
@@ -1666,6 +1669,19 @@
                                      (unique-ident? k) first))
                             data (get res k)]
                         (cond
+                          (mutation? expr)
+                          (let [mk   (mutation-key expr)
+                                ret' (get res mk)]
+                            (if (has-error? ret')
+                              (let [x (-> expr meta :mutator)]
+                                (swap! errs
+                                  #(update-in % [x]
+                                    (fnil conj #{} (::error ret'))))
+                                (recur (next expr) ret))
+                              (recur (next exprs)
+                                (when-not (nil? ret)
+                                  (assoc ret mk ret')))))
+
                           (union? expr)
                           (let [jk     (join-key expr)
                                 jv     (join-value expr)
