@@ -8,6 +8,16 @@
             [om.tempid :refer [tempid]]))
 
 ;; -----------------------------------------------------------------------------
+;; Predicates
+
+(deftest test-expr-predicates
+  (is (om/join? '{:foo [*]}))
+  (is (om/join? '({:foo [*]} {:woz 0})))
+  (is (om/union? '{:foo {:bar [*] :baz [*]}}))
+  (is (om/union? '({:foo {:bar [*] :baz [*]}} {:woz 0})))
+  (is (om/mutation? '(foo/bar {:baz :woz}))))
+
+;; -----------------------------------------------------------------------------
 ;; Components
 
 (defui ^:once Component

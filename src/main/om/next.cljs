@@ -91,6 +91,10 @@
     (and (map? expr)
          (map? (-> expr first second)))))
 
+(defn ^boolean mutation? [expr]
+  (let [expr (cond-> expr (seq? expr) first)]
+    (symbol? expr)))
+
 (defn- query-template
   "Given a query and a path into a query return a zipper focused at the location
    specified by the path. This location can be replaced to customize / alter
