@@ -1601,6 +1601,15 @@
                      [:ui-e 2] #{{:type :ouch!} {:type :oof!}}}}
            ys))))
 
+;; Mutations
+
+(deftest test-annotate-mutations
+  (let [ident [:gizmo/by-id 0]
+        tx    '[{:foo [*]} (bar/baz {:woz 2}) {:noz [*]}]]
+    (is (= (-> (om/annotate-mutations tx ident)
+             second meta :mutator)
+           ident))))
+
 ;; -----------------------------------------------------------------------------
 ;; Om Merge Internals
 

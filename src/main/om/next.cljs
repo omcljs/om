@@ -876,6 +876,23 @@
       (p/queue-sends! r snds)
       (schedule-sends! r))))
 
+(defn annotate-mutations
+  "Given a query expression annotate all mutations by adding a :mutator -> ident
+   entry to the metadata of each mutation expression in the query."
+  [tx ident]
+  (letfn [(annotate [expr ident]
+            (cond-> expr
+              (mutation? expr) (vary-meta assoc :mutator ident)))]
+    (into [] (map #(annotate % ident)) tx)))
+
+(defn get-ident [x]
+  "Given a mounted component with assigned props, return the ident for the
+   component."
+  {:pre [(component? x)]}
+  (let [m (props x)]
+    (assert (not (nil? m)) "get-ident invoked on component with nil props")
+    (ident x m)))
+
 (defn transact!
   "Given a reconciler or component run a transaction. tx is a parse expression
    that should include mutations followed by any necessary read. The reads will
@@ -890,20 +907,23 @@
    {:pre [(or (component? x)
               (reconciler? x))
           (vector? tx)]}
-   (if (reconciler? x)
-     (transact* x nil nil tx)
-     (do
-       (assert (iquery? x)
-         (str "transact! invoked by component " x
-              " that does not implement IQuery"))
-       (loop [p (parent x) x x tx tx]
-         (if (nil? p)
-           (let [r (get-reconciler x)]
-             (transact* r x nil (transform-reads r tx)))
-           (let [[x' tx] (if (implements? ITxIntercept p)
-                          [p (tx-intercept p tx)]
-                          [x tx])]
-             (recur (parent p) x' tx)))))))
+   (let [tx (cond-> tx
+              (and (component? x) (satisfies? Ident x))
+              (annotate-mutations (get-ident x)))]
+     (if (reconciler? x)
+       (transact* x nil nil tx)
+       (do
+         (assert (iquery? x)
+           (str "transact! invoked by component " x
+             " that does not implement IQuery"))
+         (loop [p (parent x) x x tx tx]
+           (if (nil? p)
+             (let [r (get-reconciler x)]
+               (transact* r x nil (transform-reads r tx)))
+             (let [[x' tx] (if (implements? ITxIntercept p)
+                             [p (tx-intercept p tx)]
+                             [x tx])]
+               (recur (parent p) x' tx))))))))
   ([r ref tx]
    (transact* r nil ref tx)))
 
