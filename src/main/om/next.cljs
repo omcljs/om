@@ -1720,7 +1720,6 @@
                                   (when-not (nil? ret)
                                     (assoc ret jk ret'))))))
 
-                          ;; need to examine contents
                           (join? expr)
                           (let [jk   (join-key expr)
                                 jv   (join-value expr)
