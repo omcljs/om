@@ -156,14 +156,17 @@
                {key query})
              key)))))))
 
-(defn path-meta [x path]
-  (let [x' (cond->> x
-             (map? x) (into {} (map (fn [[k v]] [k (path-meta v (conj path k))])))
-             (vector? x) (into [] (map-indexed #(path-meta %2 (conj path %1)))))]
-    (cond-> x'
-      #?(:clj  (instance? clojure.lang.IObj x')
-         :cljs (satisfies? IWithMeta x'))
-      (vary-meta assoc :om-path path))))
+(defn path-meta
+  ([x path]
+   (path-meta x path nil))
+  ([x path query]
+   (let [x' (cond->> x
+              (map? x) (into {} (map (fn [[k v]] [k (path-meta v (conj path k))])))
+              (vector? x) (into [] (map-indexed #(path-meta %2 (conj path %1)))))]
+     (cond-> x'
+       #?(:clj  (instance? clojure.lang.IObj x')
+          :cljs (satisfies? IWithMeta x'))
+       (vary-meta assoc :om-path path)))))
 
 (defn rethrow? [x]
   (and (instance? #?(:clj clojure.lang.ExceptionInfo :cljs ExceptionInfo) x)
@@ -222,6 +225,6 @@
                              @mut-ret (assoc-in [key :result] @mut-ret)
                              @error (assoc key {:om.next/error @error}))))))))]
          (cond-> (reduce step (if (nil? target) {} []) query)
-           (not (or (not (nil? target)) elide-paths?)) (path-meta path)))))))
+           (not (or (not (nil? target)) elide-paths?)) (path-meta path query)))))))
 
 (defn dispatch [_ k _] k)

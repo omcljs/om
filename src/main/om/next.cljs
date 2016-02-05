@@ -785,11 +785,13 @@
       (get-query (react-ref x ref))
       (get-query subquery-class))))
 
-(defn get-ident
-  "Given a component return its ident"
-  [component]
-  {:pre [(component? component)]}
-  (ident component (props component)))
+(defn get-ident [x]
+  "Given a mounted component with assigned props, return the ident for the
+   component."
+  {:pre [(component? x)]}
+  (let [m (props x)]
+    (assert (not (nil? m)) "get-ident invoked on component with nil props")
+    (ident x m)))
 
 ;; =============================================================================
 ;; Reconciler API
@@ -884,14 +886,6 @@
             (cond-> expr
               (mutation? expr) (vary-meta assoc :mutator ident)))]
     (into [] (map #(annotate % ident)) tx)))
-
-(defn get-ident [x]
-  "Given a mounted component with assigned props, return the ident for the
-   component."
-  {:pre [(component? x)]}
-  (let [m (props x)]
-    (assert (not (nil? m)) "get-ident invoked on component with nil props")
-    (ident x m)))
 
 (defn transact!
   "Given a reconciler or component run a transaction. tx is a parse expression
