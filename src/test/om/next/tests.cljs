@@ -1432,7 +1432,7 @@
     [:ui-d (:id props)])
   static om/IQuery
   (query [this]
-    [{:foo (om/get-query UiE)}]))
+    `[({:foo ~(om/get-query UiE)} {:some-param :some-value})]))
 
 (defui UiC&E
   static om/Ident
@@ -1590,9 +1590,6 @@
             :errors {[:ui-f 0] #{:yow!}
                      [:ui-e 2] #{{:type :ouch!} {:type :oof!}}}}
            ys))))
-
-;; test that we get errors from all of the above in presence of parameters
-
 
 ;; -----------------------------------------------------------------------------
 ;; Om Merge Internals
