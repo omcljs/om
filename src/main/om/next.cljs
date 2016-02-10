@@ -1826,7 +1826,7 @@
                  (atom {:queue [] :queued false :queued-sends {}
                         :sends-queued false
                         :target nil :root nil :render nil :remove nil
-                        :t 0 :normalized false}))]
+                        :t 0 :normalized norm?}))]
     ret))
 
 (defn ^boolean reconciler?
