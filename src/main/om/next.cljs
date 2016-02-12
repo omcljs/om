@@ -967,33 +967,35 @@
                   (when class
                     (swap! class-path->query update-in [classpath]
                       (fnil conj #{})
-                      (query-template (focus-query rootq path) path))
-                    (when-not recursive?
-                      (cond
-                        (vector? query)
-                        (let [{props false joins true} (group-by join? query)]
-                          (swap! prop->classes
-                            #(merge-with into %
-                              (zipmap
-                                (map (comp :dispatch-key parser/expr->ast) props)
-                                (repeat #{class}))))
-                          (doseq [join joins]
-                            (let [[prop query'] (join-entry join)
-                                  query'        (if (recursion? query')
-                                                  query
-                                                  query')]
-                              (swap! prop->classes
-                                #(merge-with into % {prop #{class}}))
-                              (let [class' (-> query' meta :component)]
+                      (query-template (focus-query rootq path) path)))
+                  (when-not recursive?
+                    (cond
+                      (vector? query)
+                      (let [{props false joins true} (group-by join? query)]
+                        (swap! prop->classes
+                          #(merge-with into %
+                            (zipmap
+                              (map (comp :dispatch-key parser/expr->ast) props)
+                              (repeat #{class}))))
+                        (doseq [join joins]
+                          (let [[prop query'] (join-entry join)
+                                recursion? (recursion? query')
+                                query'        (if recursion?
+                                                query
+                                                query')]
+                            (swap! prop->classes
+                              #(merge-with into % {prop #{class}}))
+                            (let [class' (-> query' meta :component)]
+                              (when-not (and recursion? (nil? class'))
                                 (build-index* class' query'
-                                  (conj path prop) classpath)))))
+                                  (conj path prop) classpath))))))
 
-                        ;; Union query case
-                        (map? query)
-                        (doseq [[prop query'] query]
-                          (let [class' (-> query' meta :component)]
-                            (build-index* class' query'
-                              (conj path prop) classpath))))))))]
+                      ;; Union query case
+                      (map? query)
+                      (doseq [[prop query'] query]
+                        (let [class' (-> query' meta :component)]
+                          (build-index* class' query'
+                            (conj path prop) classpath)))))))]
         (build-index* class rootq [] [])
         (swap! indexes merge
           {:prop->classes     @prop->classes
