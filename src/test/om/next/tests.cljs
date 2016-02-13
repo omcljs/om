@@ -129,6 +129,17 @@
            [:dashboard/posts])
          '[({:dashboard/posts [:id :favorites]} {:foo "bar"})])))
 
+(deftest test-om-615
+  (let [q1 '[^:query-root (:test {:a ?a})]
+        q2 '[^:query-root {:foo [(:bar {:a ?a}) :b]} (:test {:a ?a, :b ?b})]
+        params {:a 1 :b 2}
+        bq1 (om/bind-query q1 params)
+        bq2 (om/bind-query q2 params)]
+    (is (= bq1 '[(:test {:a 1})]))
+    (is (not (nil? (-> bq1 first meta))))
+    (is (= bq2 '[{:foo [(:bar {:a 1}) :b]} (:test {:a 1, :b 2})]))
+    (is (not (nil? (-> bq2 first meta))))))
+
 ;; -----------------------------------------------------------------------------
 ;; Query Templating
 
