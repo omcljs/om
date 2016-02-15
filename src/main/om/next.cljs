@@ -235,12 +235,20 @@
 (defn- var->keyword [x]
   (keyword (.substring (str x) 1)))
 
+(defn- replace-var [expr params]
+  (if (var? expr)
+    (get params (var->keyword expr) expr)
+    expr))
+
 (defn- bind-query [query params]
-  (letfn [(replace-var [expr]
-            (if (var? expr)
-              (get params (var->keyword expr) expr)
-              expr))]
-    (walk/prewalk replace-var query)))
+  (let [qm (meta query)
+        tr (map #(bind-query % params))
+        ret (cond
+              (seq? query) (apply list (into [] tr query))
+              (coll? query) (into (empty query) tr query)
+              :else (replace-var query params))]
+    (cond-> ret
+      (and qm (satisfies? IMeta ret)) (with-meta qm))))
 
 (declare component? get-reconciler props)
 
