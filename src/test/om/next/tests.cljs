@@ -204,12 +204,54 @@
   (query [this]
     '[{:components/list ?component}]))
 
+(defui IdxrChild
+  static om/IQuery
+  (query [_]
+    [:name]))
+
+(defui IdxrRoot
+  static om/IQuery
+  (query [_]
+    [{:root [{:child (om/get-query IdxrChild)}]}]))
+
+(defui OM-595-Component
+  static om/IQuery
+  (query [this]
+    '[{:item [:id :title {:next ...}]}]))
+
+(defui IdxrNode
+  static om/IQuery
+  (query [this]
+    '[:node-value {:children ...}]))
+
+(defui IdxrTree
+  static om/IQuery
+  (query [this]
+    [{:tree (om/get-query IdxrNode)}]))
+
 (deftest test-indexer
-  (let [idxr (om/indexer)
-        idxs (p/index-root idxr ComponentList)]
-    (is (= (set (keys (:prop->classes idxs)))
-           #{:app/title :components/list :foo/bar :baz/woz}))
-    ))
+  (testing "prop->classes"
+    (let [idxr (om/indexer)
+          idxs (p/index-root idxr ComponentList)]
+      (is (= (set (keys (:prop->classes idxs)))
+            #{:app/title :components/list :foo/bar :baz/woz}))))
+  (testing "simple recursion indexing"
+    (let [idxr (om/indexer)
+          idxs (p/index-root idxr IdxrTree)
+          cps (keys (:class-path->query idxs))]
+      (is (= (count cps) 2))
+      (is (not (nil? (some #{[IdxrTree IdxrNode]} cps))))))
+  (testing "OM-595: recursion queries without own component"
+    (let [idxr (om/indexer)
+          idxs (p/index-root idxr OM-595-Component)
+          cps (keys (:class-path->query idxs))]
+      (is (= (count cps) 1))
+      (is (= (first cps) [OM-595-Component]))))
+  (testing "OM-612: regression introduced by OM-595"
+    (let [idxr (om/indexer)
+          idxs (p/index-root idxr IdxrRoot)
+          cps (keys (:class-path->query idxs))]
+      (is (not (nil? (some #{[IdxrRoot IdxrChild]} cps)))))))
 
 (deftest test-reconciler-has-indexer
   (let [r (om/reconciler
