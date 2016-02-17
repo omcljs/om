@@ -109,7 +109,7 @@ examples:
 * [Fitsme](http://fitsmeapp.com)
 * [Goya](http://jackschaedler.github.io/goya/), pixel editor with
   undo/redo and visual history
-* [Coils](https://github.com/zubairq/coils), a Clojure web framework
+* [AppShare](https://github.com/zubairq/AppShare), a Clojure web framework
 * [wordsmith](http://wordsmith.variadic.me), a markdown editor
 * [omchaya](http://github.com/sgrove/omchaya)
 * [BVCA Private Equity Map](http://bvca.clustermap.trampolinesystems.com/)
