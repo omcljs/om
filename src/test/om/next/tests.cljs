@@ -229,6 +229,26 @@
   (query [this]
     [{:tree (om/get-query IdxrNode)}]))
 
+(defui IdxrLinkProp
+  static om/IQuery
+  (query [this]
+    '[:foo [:current-user _]]))
+
+(defui IdxrLinkJoin
+  static om/IQuery
+  (query [this]
+    '[:foo {[:current-user _] [:name :email]}]))
+
+(defui IdxrIdentProp
+  static om/IQuery
+  (query [this]
+    '[:foo [:users/by-id 2]]))
+
+(defui IdxrIdentJoin
+  static om/IQuery
+  (query [this]
+    '[:foo {[:users/by-id 2] [:id :name :email]}]))
+
 (deftest test-indexer
   (testing "prop->classes"
     (let [idxr (om/indexer)
@@ -251,7 +271,17 @@
     (let [idxr (om/indexer)
           idxs (p/index-root idxr IdxrRoot)
           cps (keys (:class-path->query idxs))]
-      (is (not (nil? (some #{[IdxrRoot IdxrChild]} cps)))))))
+      (is (not (nil? (some #{[IdxrRoot IdxrChild]} cps))))))
+  (testing "OM-620: link & indent indexing"
+    (let [idxr (om/indexer)]
+      (are [class res] (= (->> class
+                            (p/index-root idxr)
+                            :prop->classes keys set)
+                         res)
+        IdxrLinkProp #{:foo :current-user}
+        IdxrLinkJoin #{:foo :current-user :name :email}
+        IdxrIdentProp #{:foo [:users/by-id 2]}
+        IdxrIdentJoin #{:foo [:users/by-id 2] :id :name :email}))))
 
 (deftest test-reconciler-has-indexer
   (let [r (om/reconciler
