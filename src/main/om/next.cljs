@@ -967,6 +967,14 @@
           rootq             (get-query x)
           class             (cond-> x (component? x) type)]
       (letfn [(build-index* [class query path classpath]
+                (invariant (or (not (iquery? class))
+                             (and (iquery? class)
+                               (not (empty? query))))
+                  (str "`IQuery` implementation must return a non-empty query."
+                    " Check the `IQuery` implementation of component `"
+                    (if (component? class)
+                      (.. class -constructor -displayName)
+                      (.. class -prototype -constructor -displayName)) "`."))
                 (let [recursive? (some #{class} classpath)
                       classpath  (cond-> classpath
                                    (and (not (nil? class))
