@@ -966,7 +966,11 @@
           class-path->query (atom {})
           rootq             (get-query x)
           class             (cond-> x (component? x) type)]
-      (letfn [(build-index* [class query path classpath]
+      (letfn [(get-dispatch-key [prop]
+                (cond-> prop
+                  (and (ident? prop)
+                    (= (second prop) '_)) ((comp :dispatch-key parser/expr->ast))))
+              (build-index* [class query path classpath]
                 (invariant (or (not (iquery? class))
                              (and (iquery? class)
                                (not (empty? query))))
@@ -990,11 +994,12 @@
                       (let [{props false joins true} (group-by join? query)]
                         (swap! prop->classes
                           #(merge-with into %
-                            (zipmap
-                              (map (comp :dispatch-key parser/expr->ast) props)
-                              (repeat #{class}))))
+                             (zipmap
+                               (map get-dispatch-key props)
+                               (repeat #{class}))))
                         (doseq [join joins]
                           (let [[prop query'] (join-entry join)
+                                prop (get-dispatch-key prop)
                                 recursion? (recursion? query')
                                 query'        (if recursion?
                                                 query
