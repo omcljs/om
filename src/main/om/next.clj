@@ -43,6 +43,7 @@
     componentWillUpdate [this next-props next-state]
     componentDidUpdate [this prev-props prev-state]
     componentWillMount [this]
+    componentDidMount [this]
     componentWillUnmount [this]
     render [this]})
 
