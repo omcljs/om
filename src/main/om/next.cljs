@@ -561,7 +561,7 @@
     (gobj/set (.-state component) "omcljs$pendingState" new-state))
   (if-let [r (get-reconciler component)]
     (do
-      (p/queue-component! r component)
+      (p/queue! r [component])
       (schedule-render! r))
     (.forceUpdate component)))
 
@@ -1571,9 +1571,6 @@
   (queue! [_ ks]
     (swap! state update-in [:queue] into ks))
 
-  (queue-component! [_ comp]
-    (swap! state update-in [:queued-components] conj comp))
-
   (queue-sends! [_ sends]
     (swap! state update-in [:queued-sends]
       (:merge-sends config) sends))
@@ -1593,8 +1590,7 @@
   ;; TODO: need to reindex roots after reconcilation
   (reconcile! [_]
     (let [st @state
-          queue (:queue st)
-          q  (into (:queue st) (:queued-components st))]
+          q  (:queue st)]
       (swap! state update-in [:queued] not)
       (swap! state assoc :queue [])
       (cond
@@ -1612,10 +1608,7 @@
           (doseq [c ((:optimize config) cs)]
             (when (mounted? c)
               (let [computed   (get-computed (props c))
-                    needs-requery (some #(= % c) queue)
-                    next-props (om.next/computed
-                                (if needs-requery (ui->props env c) (props c))
-                                computed)]
+                    next-props (om.next/computed (ui->props env c) computed)]
                 (when (should-update? c next-props (get-state c))
                   (if-not (nil? next-props)
                     (update-component! c next-props)
@@ -1848,8 +1841,8 @@
                                 (fn [x]
                                   (binding [*instrument* nil]
                                     (instrument x))))}
-                 (atom {:queue [] :queued-components [] :queued-sends {}
-                        :queued false :sends-queued false
+                 (atom {:queue [] :queued false :queued-sends {}
+                        :sends-queued false
                         :target nil :root nil :render nil :remove nil
                         :t 0 :normalized norm?}))]
     ret))

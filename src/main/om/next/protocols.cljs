@@ -15,7 +15,6 @@
   (schedule-render! [reconciler])
   (schedule-sends! [reconciler])
   (queue! [reconciler ks])
-  (queue-component! [reconciler component])
   (queue-sends! [reconciler sends])
   (reindex! [reconciler])
   (reconcile! [reconciler])
