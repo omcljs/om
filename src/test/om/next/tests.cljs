@@ -1698,8 +1698,7 @@
         x     (om/default-extract-errors nil
                 '{do/it! {::om/error {:type :argh!}}}
                 (om/annotate-mutations '[(do/it! {:arg0 1})] ident))]
-    #_(println x)
-    ))
+    (is (= {:tree {}, :errors {[:gizmo/by-id 0] #{{:type :argh!}}}} x))))
 
 ;; -----------------------------------------------------------------------------
 ;; Om Merge Internals
