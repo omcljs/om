@@ -96,6 +96,7 @@
     (symbol? expr)))
 
 (defn mutation-key [expr]
+  {:pre [(symbol? (first expr))]}
   (first expr))
 
 (defn- query-template
