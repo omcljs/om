@@ -1715,7 +1715,7 @@
                                 (swap! errs
                                   #(update-in % [x]
                                     (fnil conj #{} (::error ret'))))
-                                (recur (next expr) ret))
+                                (recur (next exprs) ret))
                               (recur (next exprs)
                                 (when-not (nil? ret)
                                   (assoc ret mk ret')))))

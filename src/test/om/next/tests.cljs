@@ -1696,10 +1696,7 @@
 (deftest test-mutation-error
   (let [ident [:gizmo/by-id 0]
         x     (om/default-extract-errors nil
-                '{do/it! {::om/error {:type :argh!}}
-                  :widgets [{:id 1 :type :e
-                             :title {::om/error {:type :ouch!}}
-                             :author {::om/error {:type :oof!}}}]}
+                '{do/it! {::om/error {:type :argh!}}}
                 (om/annotate-mutations '[(do/it! {:arg0 1})] ident))]
     #_(println x)
     ))
