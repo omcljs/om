@@ -211,30 +211,33 @@
     (cond-> ret
       (and qm (satisfies? IMeta ret)) (with-meta qm))))
 
-(declare component? get-reconciler props)
+(declare component? get-reconciler props class-path get-indexer path)
 
-(defn- get-local-query-data [component]
+(defn- component->query-data [component]
   (some-> (get-reconciler component)
     :config :state deref ::queries (get component)))
 
 (defn get-unbound-query
   "Return the unbound query for a component."
   [component]
-  (:query (get-local-query-data component) (query component)))
+  (:query (component->query-data component) (query component)))
 
 (defn get-params
   "Return the query params for a component."
   [component]
-  (:params (get-local-query-data component) (params component)))
+  (:params (component->query-data component) (params component)))
 
-(defn- get-component-query [c]
-  (let [qps (get-local-query-data c)
-        q   (:query qps (query c))
-        c'  (-> q meta :component)]
-    (assert (nil? c') (str "Query violation, " c , " reuses " c' " query"))
-    (with-meta
-      (bind-query q (:params qps (params c)))
-      {:component (type c)})))
+(defn- get-component-query
+  ([component]
+   (get-component-query component (component->query-data component)))
+  ([component query-data]
+   (let [q  (:query query-data (query component))
+         c' (-> q meta :component)]
+     (assert (nil? c')
+       (str "Query violation, " component " reuses " c' " query"))
+     (with-meta
+       (bind-query q (:params query-data (params component)))
+       {:component (type component)}))))
 
 (defn ^boolean iquery? [x]
   (if (implements? IQuery x)
@@ -243,17 +246,36 @@
       (let [x (js/Object.create (. x -prototype))]
         (implements? IQuery x)))))
 
+(defn- get-class-or-instance-query
+  "Return a IQuery/IParams local bound query. Works for component classes
+   and component instances. Does not use the indexer."
+  [x]
+  (if (component? x)
+    (get-component-query x)
+    (let [q (query x)
+          c (-> q meta :component)]
+      (assert (nil? c) (str "Query violation, " x , " reuses " c " query"))
+      (with-meta (bind-query q (params x)) {:component x}))))
+
 (defn get-query
   "Return a IQuery/IParams instance bound query. Works for component classes
    and component instances. See also om.next/full-query."
   [x]
   (if (implements? IQuery x)
     (if (component? x)
-      (get-component-query x)
-      (let [q (query x)
-            c (-> q meta :component)]
-        (assert (nil? c) (str "Query violation, " x , " reuses " c " query"))
-        (with-meta (bind-query q (params x)) {:component x})))
+      (if-let [query-data (component->query-data x)]
+        (get-component-query x query-data)
+        (let [cp (class-path x)
+              r (get-reconciler x)
+              data-path (into [] (remove number?) (path x))
+              class-path-query-data (get (:class-path->query @(get-indexer r)) cp)
+              qs (filter #(= data-path (-> % zip/root (focus->path data-path)))
+                   class-path-query-data)
+              qs (if (empty? qs) class-path-query-data qs)]
+          (if-not (empty? qs)
+            (zip/node (first qs))
+            (get-class-or-instance-query x))))
+      (get-class-or-instance-query x))
     ;; in advanced, statics will get elided
     (when (goog/isFunction x)
       (let [y (js/Object.create (. x -prototype))]
@@ -917,6 +939,47 @@
 ;; =============================================================================
 ;; Indexer
 
+(defn- cascade-query
+  "Cascades a query up the classpath. class-path->query is a map of classpaths
+   to their queries. classpath is the classpath where we start cascading (typically
+   the direct parent's classpath of the component changing query). data-path is
+   the data path in the classpath's query to the new query. new-query is the
+   query to be applied to the classpaths. union-keys are any keys into union
+   queries found during index building; they are used to access union queries
+   when cascading the classpath, and to generate the classpaths' rendered-paths,
+   which skip these keys."
+  [class-path->query classpath data-path new-query union-keys]
+  (loop [cp classpath
+         data-path data-path
+         new-query new-query
+         ret {}]
+    (if-not (empty? cp)
+      (let [rendered-data-path (into [] (remove (set union-keys)) data-path)
+            filter-data-path (cond-> rendered-data-path
+                               (not (empty? rendered-data-path)) pop)
+            qs (filter #(= filter-data-path
+                           (-> % zip/root (focus->path filter-data-path)))
+                 (get class-path->query cp))
+            qs' (into #{}
+                  (map (fn [q]
+                         (let [new-query (if (or (map? (zip/node q))
+                                               (some #{(peek data-path)} union-keys))
+                                           (let [union-key (peek data-path)]
+                                             (-> (query-template (zip/root q)
+                                                   rendered-data-path)
+                                                 zip/node
+                                                 (assoc union-key new-query)))
+                                           new-query)]
+                           (-> (zip/root q)
+                             (query-template rendered-data-path)
+                             (replace new-query)
+                             (focus-query filter-data-path)
+                             (query-template filter-data-path)))))
+                  qs)]
+        (recur (pop cp) (pop data-path)
+          (-> qs' first zip/node) (assoc ret cp qs')))
+      ret)))
+
 (defrecord Indexer [indexes extfs]
   IDeref
   (-deref [_] @indexes)
@@ -932,7 +995,7 @@
                   (or (not (util/ident? prop))
                       (= (second prop) '_))
                   ((comp :dispatch-key parser/expr->ast))))
-              (build-index* [class query path classpath]
+              (build-index* [class query path classpath union-keys]
                 (invariant (or (not (iquery? class))
                              (and (iquery? class)
                                (not (empty? query))))
@@ -945,11 +1008,17 @@
                       classpath  (cond-> classpath
                                    (and (not (nil? class))
                                         (not recursive?))
-                                   (conj class))]
+                                   (conj class))
+                      dp->cs     (get-in @indexes [:data-path->components])]
                   (when class
-                    (swap! class-path->query update-in [classpath]
-                      (fnil conj #{})
-                      (query-template (focus-query rootq path) path)))
+                    (let [focused-query (query-template
+                                          (focus-query rootq path)
+                                          path)
+                          cp-query      (cond-> focused-query
+                                          (not= (zip/node focused-query) query)
+                                          (zip/replace query))]
+                      (swap! class-path->query update-in [classpath]
+                        (fnil conj #{}) cp-query)))
                   (when-not recursive?
                     (cond
                       (vector? query)
@@ -960,26 +1029,67 @@
                                (map get-dispatch-key props)
                                (repeat #{class}))))
                         (doseq [join joins]
-                          (let [[prop query'] (util/join-entry join)
+                          (let [[prop query']  (util/join-entry join)
                                 prop-dispatch-key (get-dispatch-key prop)
-                                recursion? (util/recursion? query')
-                                query'        (if recursion?
-                                                query
-                                                query')]
+                                recursion?     (util/recursion? query')
+                                query'         (if recursion?
+                                                 query
+                                                 query')
+                                path'          (conj path prop)
+                                rendered-path' (into [] (remove (set union-keys) path'))
+                                cs (get dp->cs rendered-path')
+                                cascade-query? (and (= (count cs) 1)
+                                                 (= (-> query' meta :component)
+                                                   (type (first cs)))
+                                                 (not (map? query')))
+                                query''        (if cascade-query?
+                                                 (get-query (first cs))
+                                                 query')]
                             (swap! prop->classes
                               #(merge-with into % {prop-dispatch-key #{class}}))
-                            (let [class' (-> query' meta :component)]
+                            (when (and cascade-query? (not= query' query''))
+                              (let [cp->q' (cascade-query @class-path->query classpath
+                                             path' query'' union-keys)]
+                                (swap! class-path->query merge cp->q')))
+                            (let [class' (-> query'' meta :component)]
                               (when-not (and recursion? (nil? class'))
-                                (build-index* class' query'
-                                  (conj path prop) classpath))))))
+                                (build-index* class' query''
+                                  path' classpath union-keys))))))
 
                       ;; Union query case
                       (map? query)
                       (doseq [[prop query'] query]
-                        (let [class' (-> query' meta :component)]
-                          (build-index* class' query'
-                            (conj path prop) classpath)))))))]
-        (build-index* class rootq [] [])
+                        (let [path'          (conj path prop)
+                              class'         (-> query' meta :component)
+                              cs             (filter #(= class' (type %))
+                                               (get dp->cs path))
+                              cascade-query? (and class' (= (count cs) 1))
+                              query''        (if cascade-query?
+                                               (get-query (first cs))
+                                               query')]
+                          (when (and cascade-query? (not= query' query''))
+                            (let [qs        (get @class-path->query classpath)
+                                  q         (first qs)
+                                  qnode     (zip/node
+                                              (cond-> q
+                                                (nil? class) (query-template path)))
+                                  new-query (assoc qnode
+                                              prop query'')
+                                  q'        (cond-> (zip/replace
+                                                      (query-template (zip/root q) path)
+                                                      new-query)
+                                              (nil? class)
+                                              (-> zip/root
+                                                (focus-query (pop path))
+                                                (query-template (pop path))))
+                                  qs'       (into #{q'} (remove #{q}) qs)
+                                  cp->q'    (merge {classpath qs'}
+                                              (cascade-query @class-path->query
+                                                (pop classpath) path
+                                                (zip/node q') union-keys))]
+                              (swap! class-path->query merge cp->q')))
+                          (build-index* class' query'' path' classpath (conj union-keys prop))))))))]
+        (build-index* class rootq [] [] [])
         (swap! indexes merge
           {:prop->classes     @prop->classes
            :class-path->query @class-path->query}))))
@@ -989,6 +1099,10 @@
       (fn [indexes]
         (let [indexes (update-in ((:index-component extfs) indexes c)
                         [:class->components (type c)]
+                        (fnil conj #{}) c)
+              data-path (into [] (remove number?) (path c))
+              indexes (update-in ((:index-component extfs) indexes c)
+                        [:data-path->components data-path]
                         (fnil conj #{}) c)
               ident     (when (implements? Ident c)
                           (let [ident (ident c (props c))]
@@ -1008,6 +1122,10 @@
       (fn [indexes]
         (let [indexes (update-in ((:drop-component extfs) indexes c)
                         [:class->components (type c)]
+                        disj c)
+              data-path (into [] (remove number?) (path c))
+              indexes (update-in ((:drop-component extfs) indexes c)
+                        [:data-path->components data-path]
                         disj c)
               ident     (when (implements? Ident c)
                         (ident c (props c)))]
@@ -1043,6 +1161,7 @@
    (Indexer.
      (atom
        {:class->components {}
+        :data-path->components {}
         :ref->components   {}})
      extfs)))
 
