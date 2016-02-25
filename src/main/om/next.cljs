@@ -1482,14 +1482,15 @@
   ([reconciler delta query]
    (let [config (:config reconciler)
          state (:state config)
-         merge (:merge config)
-         {:keys [keys next tempids]} (merge reconciler @state delta query)]
+         merge* (:merge config)
+         {:keys [keys next tempids]} (merge* reconciler @state delta query)]
      (p/queue! reconciler keys)
      (reset! state
        (if-let [migrate (:migrate config)]
-         (migrate next
-           (or query (get-query (:root @(:state reconciler))))
-           tempids (:id-key config))
+         (merge (select-keys next [:om.next/queries])
+           (migrate next
+             (or query (get-query (:root @(:state reconciler))))
+             tempids (:id-key config)))
          next)))))
 
 (defrecord Reconciler [config state]
