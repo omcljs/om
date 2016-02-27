@@ -1262,10 +1262,12 @@
 (defn reduce-query-depth
   "Changes a join on key k with depth limit from [:a {:k n}] to [:a {:k (dec n)}]"
   [q k]
-  (let [pos (query-template q [k])
-        node (zip/node pos)
-        node' (cond-> node (number? node) dec)]
-    (replace pos node')))
+  (if-not (empty? (focus-query q [k]))
+    (let [pos (query-template q [k])
+          node (zip/node pos)
+          node' (cond-> node (number? node) dec)]
+      (replace pos node'))
+    q))
 
 (defn- reduce-union-recursion-depth
   "Given a union expression decrement each of the query roots by one if it

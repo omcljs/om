@@ -766,7 +766,10 @@
   (testing "recursive queries that should not be affected"
     (are [q k] (= q (om/reduce-query-depth q k))
             [:a :b {:c '...}] :c
-            [:a :b {:j '...} {:c {:x [:a] :y [:b]}}] :j)))
+            [:a :b {:j '...} {:c {:x [:a] :y [:b]}}] :j))
+  (testing "OM-634: recursive union branches might not recurse"
+    (is (= (om/reduce-query-depth [:foo :bar] :missing)
+           [:foo :bar]))))
 
 (defui BulletItem
   static om/Ident
