@@ -1590,7 +1590,7 @@
   (schedule-sends! [_]
     (if-not (:sends-queued @state)
       (do
-        (swap! state assoc [:sends-queued] true)
+        (swap! state assoc :sends-queued true)
         true)
       false))
 
