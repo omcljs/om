@@ -73,6 +73,17 @@
                ~next-state (or (goog.object/get next-state# "omcljs$pendingState")
                                (goog.object/get next-state# "omcljs$state"))
                ret#        (do ~@body)]
+           (when (cljs.core/implements? om.next/Ident this#)
+             (let [ident# (om.next/ident this# (om.next/props this#))
+                   next-ident# (om.next/ident this# ~next-props)]
+               (when (not= ident# next-ident#)
+                 (let [idxr# (get-in (om.next/get-reconciler this#) [:config :indexer])]
+                   (when-not (nil? idxr#)
+                     (swap! (:indexes idxr#)
+                       (fn [indexes#]
+                         (-> indexes#
+                           (update-in [:ref->components ident#] disj this#)
+                           (update-in [:ref->components next-ident#] (fnil conj #{}) this#)))))))))
            (om.next/merge-pending-props! this#)
            (om.next/merge-pending-state! this#)
            ret#)))
@@ -133,6 +144,17 @@
                        (goog.object/get next-state# "omcljs$state"))))))
      ~'componentWillUpdate
      ([this# next-props# next-state#]
+      (when (cljs.core/implements? om.next/Ident this#)
+        (let [ident# (om.next/ident this# (om.next/props this#))
+              next-ident# (om.next/ident this# (om.next/-next-props next-props# this#))]
+          (when (not= ident# next-ident#)
+            (let [idxr# (get-in (om.next/get-reconciler this#) [:config :indexer])]
+              (when-not (nil? idxr#)
+                (swap! (:indexes idxr#)
+                  (fn [indexes#]
+                    (-> indexes#
+                      (update-in [:ref->components ident#] disj this#)
+                      (update-in [:ref->components next-ident#] (fnil conj #{}) this#)))))))))
        (om.next/merge-pending-props! this#)
        (om.next/merge-pending-state! this#))
      ~'componentDidUpdate

@@ -364,6 +364,60 @@
     (fn [_ node]
       (om/add-root! om-598-reconciler OM-598-App node))))
 
+;; ==================
+;; OM-641
+
+(declare om-641-reconciler)
+
+(defui OM-641-Item
+  static om/Ident
+  (ident [this {:keys [id]}]
+    [:items/by-id id])
+  static om/IQuery
+  (query [this] [:id :name])
+  Object
+  (render [this]
+    (let [{:keys [name]} (om/props this)]
+      (dom/div nil
+        (dom/p nil
+          (str "item: " name))
+        (dom/p nil
+          (str "ref->components "
+            (pr-str (-> @(om/get-indexer om-641-reconciler) :ref->components))))))))
+
+(defui OM-641-Root
+  static om/IQuery
+  (query [this]
+    [{:item (om/get-query OM-641-Item)}])
+  Object
+  (render [this]
+    (let [{:keys [item]} (om/props this)]
+      (dom/div nil
+        ((om/factory OM-641-Item) item)
+        (dom/button #js {:onClick #(om/transact! this '[(change/item!)])}
+          "change item")))))
+
+(defn om-641-read
+  [{:keys [state query]} k params]
+  (let [st @state]
+    {:value (om/db->tree query (get st k) st)}))
+
+(defn om-641-mutate
+  [{:keys [state]} _ _]
+  {:action (fn []
+             (let [item (get @state :item)]
+               (swap! state assoc :item [:items/by-id (mod (inc (second item)) 2)])))})
+
+(def om-641-reconciler
+  (om/reconciler {:state (atom {:item [:items/by-id 0]
+                                :items/by-id {0 {:id 0 :name "Item 0"}
+                                              1 {:id 1 :name "Item 1"}}})
+                  :parser (om/parser {:read om-641-read :mutate om-641-mutate})}))
+
+(defcard om-641-card
+  (dom-node (fn [_ node]
+              (om/add-root! om-641-reconciler OM-641-Root node))))
+
 
 (comment
 
