@@ -249,6 +249,16 @@
   (query [this]
     '[:foo {[:users/by-id 2] [:id :name :email]}]))
 
+(defui IdxrLinkItem
+  static om/IQuery
+  (query [this]
+    [:b]))
+
+(defui IdxrLinkRoot
+  static om/IQuery
+  (query [this]
+    [{[:a '_] (om/get-query IdxrLinkItem)}]))
+
 (deftest test-indexer
   (testing "prop->classes"
     (let [idxr (om/indexer)
@@ -281,7 +291,11 @@
         IdxrLinkProp #{:foo :current-user}
         IdxrLinkJoin #{:foo :current-user :name :email}
         IdxrIdentProp #{:foo [:users/by-id 2]}
-        IdxrIdentJoin #{:foo [:users/by-id 2] :id :name :email}))))
+        IdxrIdentJoin #{:foo [:users/by-id 2] :id :name :email})))
+  (testing "OM-639: index-root fails on links"
+    (let [idxr (om/indexer)
+          idxs (p/index-root idxr IdxrLinkRoot)]
+      (is (contains? idxs :prop->classes)))))
 
 (deftest test-reconciler-has-indexer
   (let [r (om/reconciler

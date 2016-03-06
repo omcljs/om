@@ -1000,13 +1000,13 @@
                                (repeat #{class}))))
                         (doseq [join joins]
                           (let [[prop query'] (join-entry join)
-                                prop (get-dispatch-key prop)
+                                prop-dispatch-key (get-dispatch-key prop)
                                 recursion? (recursion? query')
                                 query'        (if recursion?
                                                 query
                                                 query')]
                             (swap! prop->classes
-                              #(merge-with into % {prop #{class}}))
+                              #(merge-with into % {prop-dispatch-key #{class}}))
                             (let [class' (-> query' meta :component)]
                               (when-not (and recursion? (nil? class'))
                                 (build-index* class' query'
