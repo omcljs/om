@@ -111,7 +111,8 @@
                cfg#     (:config r#)
                st#      (:state cfg#)
                indexer# (:indexer cfg#)]
-           (when-not (nil? st#)
+           (when (and (not (nil? st#))
+                      (get-in @st# [:om.next/queries this#]))
              (swap! st# update-in [:om.next/queries] dissoc this#))
            (when-not (nil? indexer#)
              (om.next.protocols/drop-component! indexer# this#))
@@ -171,7 +172,8 @@
              cfg#     (:config r#)
              st#      (:state cfg#)
              indexer# (:indexer cfg#)]
-         (when-not (nil? st#)
+         (when (and (not (nil? st#))
+                    (get-in @st# [:om.next/queries this#]))
            (swap! st# update-in [:om.next/queries] dissoc this#))
          (when-not (nil? indexer#)
            (om.next.protocols/drop-component! indexer# this#))))}})
