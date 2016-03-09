@@ -207,7 +207,7 @@
     [{:items (om/get-query LinksItem)}])
   Object
   (render [this]
-    (dom/div
+    (dom/div nil
       (dom/h2 nil "A List!")
       (dom/ul nil
         (map links-item (-> this om/props :items))))))
