@@ -36,17 +36,6 @@
 (defn ^boolean nil-or-map? [x]
   (or (nil? x) (map? x)))
 
-(defn ^boolean ident?
-  "Returns true if x is an ident."
-  [x]
-  (and (vector? x)
-    (== 2 (count x))
-    (keyword? (nth x 0))))
-
-(defn ^boolean recursion? [x]
-  (or (symbol-identical? '... x)
-      (number? x)))
-
 (defn- expr->key
   "Given a query expression return its key."
   [expr]
@@ -56,7 +45,7 @@
     (seq? expr)     (let [expr' (first expr)]
                       (when (map? expr')
                         (ffirst expr')))
-    (ident? expr)   (cond-> expr (= '_ (second expr)) first)
+    (util/ident? expr)   (cond-> expr (= '_ (second expr)) first)
     :else
     (throw
       (ex-info (str "Invalid query expr " expr)
@@ -85,19 +74,6 @@
       (if (= k (first node))
         (-> loc zip/down zip/right)
         (recur (zip/right loc))))))
-
-(defn ^boolean union? [expr]
-  (let [expr (cond-> expr (seq? expr) first)]
-    (and (map? expr)
-         (map? (-> expr first second)))))
-
-(defn ^boolean mutation? [expr]
-  (let [expr (cond-> expr (seq? expr) first)]
-    (symbol? expr)))
-
-(defn mutation-key [expr]
-  {:pre [(symbol? (first expr))]}
-  (first expr))
 
 (defn- query-template
   "Given a query and a path into a query return a zipper focused at the location
@@ -133,24 +109,6 @@
 
 (declare focus-query)
 
-(defn- join-key [expr]
-  (cond
-    (map? expr) (ffirst expr)
-    (seq? expr) (join-key (first expr))
-    :else       expr))
-
-(defn- join-entry [expr]
-  (if (seq? expr)
-    (ffirst expr)
-    (first expr)))
-
-(defn- join-value [join]
-  (second (join-entry join)))
-
-(defn- join? [x]
-  (let [x (if (seq? x) (first x) x)]
-    (map? x)))
-
 (defn- focused-join [expr ks]
   (cond
     (map? expr) {(ffirst expr) (focus-query (-> expr first second) ks)}
@@ -171,14 +129,12 @@
     query
     (let [[k & ks] path]
       (letfn [(match [x]
-                (= k (join-key x)))
+                (= k (util/join-key x)))
               (value [x]
                 (focused-join x ks))]
         (if (map? query) ;; UNION
           {k (focus-query (get query k) ks)}
           (into [] (comp (filter match) (map value) (take 1)) query))))))
-
-(declare ident?)
 
 ;; this function assumes focus is actually in fact
 ;; already focused!
@@ -197,11 +153,11 @@
    (if (and (or (= bound '*)
                 (and (not= path bound)
                      (< (count path) (count bound))))
-            (some join? focus)
+            (some util/join? focus)
             (== 1 (count focus)))
-     (let [[k focus'] (join-entry (first focus))
-           k (if (ident? k) (first k) k)
-           focus'     (if (recursion? focus')
+     (let [[k focus'] (util/join-entry (first focus))
+           k (if (util/ident? k) (first k) k)
+           focus'     (if (util/recursion? focus')
                         focus
                         focus')]
        (recur focus' bound (conj path k)))
@@ -893,7 +849,7 @@
   [tx ident]
   (letfn [(annotate [expr ident]
             (cond-> expr
-              (mutation? expr) (vary-meta assoc :mutator ident)))]
+              (util/mutation? expr) (vary-meta assoc :mutator ident)))]
     (into [] (map #(annotate % ident)) tx)))
 
 (defn transact!
@@ -969,7 +925,7 @@
           class             (cond-> x (component? x) type)]
       (letfn [(get-dispatch-key [prop]
                 (cond-> prop
-                  (or (not (ident? prop))
+                  (or (not (util/ident? prop))
                       (= (second prop) '_))
                   ((comp :dispatch-key parser/expr->ast))))
               (build-index* [class query path classpath]
@@ -993,16 +949,16 @@
                   (when-not recursive?
                     (cond
                       (vector? query)
-                      (let [{props false joins true} (group-by join? query)]
+                      (let [{props false joins true} (group-by util/join? query)]
                         (swap! prop->classes
                           #(merge-with into %
                              (zipmap
                                (map get-dispatch-key props)
                                (repeat #{class}))))
                         (doseq [join joins]
-                          (let [[prop query'] (join-entry join)
+                          (let [[prop query'] (util/join-entry join)
                                 prop-dispatch-key (get-dispatch-key prop)
-                                recursion? (recursion? query')
+                                recursion? (util/recursion? query')
                                 query'        (if recursion?
                                                 query
                                                 query')]
@@ -1032,7 +988,7 @@
                         (fnil conj #{}) c)
               ident     (when (implements? Ident c)
                           (let [ident (ident c (props c))]
-                            (invariant (ident? ident)
+                            (invariant (util/ident? ident)
                               (str "malformed Ident. An ident must be a vector of "
                                 "two elements (a keyword and an EDN value). Check "
                                 "the Ident implementation of component `"
@@ -1158,9 +1114,6 @@
       (js/Object.create (. class -prototype))
       class)))
 
-(defn- ^boolean unique-ident? [x]
-  (and (ident? x) (= '_ (second x))))
-
 (defn- normalize* [query data refs union-seen]
   (cond
     (= '[*] query) data
@@ -1181,10 +1134,10 @@
     (loop [q (seq query) ret data]
       (if-not (nil? q)
         (let [expr (first q)]
-          (if (join? expr)
-            (let [[k sel] (join-entry expr)
-                  recursive? (recursion? sel)
-                  union-entry (if (union? expr) sel union-seen)
+          (if (util/join? expr)
+            (let [[k sel] (util/join-entry expr)
+                  recursive? (util/recursion? sel)
+                  union-entry (if (util/union? expr) sel union-seen)
                   sel     (if recursive?
                             (if-not (nil? union-seen)
                               union-seen
@@ -1194,7 +1147,7 @@
                   v       (get data k)]
               (cond
                 ;; graph loop: db->tree leaves ident in place
-                (and recursive? (ident? v)) (recur (next q) ret)
+                (and recursive? (util/ident? v)) (recur (next q) ret)
                 ;; normalize one
                 (map? v)
                 (let [x (normalize* sel v refs union-entry)]
@@ -1290,7 +1243,7 @@
   [query data refs map-ident idents-seen union-expr recurse-key]
   {:pre [(map? refs)]}
   ;; support taking ident for data param
-  (let [data (cond-> data (ident? data) (->> map-ident (get-in refs)))]
+  (let [data (cond-> data (util/ident? data) (->> map-ident (get-in refs)))]
     (if (vector? data)
       ;; join
       (let [step (fn [ident]
@@ -1309,35 +1262,45 @@
       ;; map case
       (if (= '[*] query)
         data
-        (let [{props false joins true} (group-by #(or (join? %) (ident? %)) query)
+        (let [{props false joins true} (group-by #(or (util/join? %)
+                                                      (util/ident? %))
+                                         query)
               props (mapv #(cond-> % (seq? %) first) props)]
           (loop [joins (seq joins) ret {}]
             (if-not (nil? joins)
               (let [join        (first joins)
-                    join        (cond-> join (ident? join) (hash-map '[*]))
-                    [key sel]   (join-entry join)
-                    recurse?    (recursion? sel)
+                    join        (cond-> join (util/ident? join) (hash-map '[*]))
+                    [key sel]   (util/join-entry join)
+                    recurse?    (util/recursion? sel)
                     recurse-key (when recurse? key)
-                    v           (if (ident? key)
+                    v           (if (util/ident? key)
                                   (if (= '_ (second key))
                                     (get refs (first key))
                                     (get-in refs (map-ident key)))
                                   (get data key))
-                    key         (cond-> key (unique-ident? key) first)
-                    v           (if (ident? v) (map-ident v) v)
+                    key         (cond-> key (util/unique-ident? key) first)
+                    v           (if (util/ident? v) (map-ident v) v)
                     limit       (if (number? sel) sel :none)
-                    union-entry (if (union? join) sel union-expr)
+                    union-entry (if (util/union? join) sel union-expr)
                     sel         (cond
-                                  recurse? (if-not (nil? union-expr)
-                                             union-entry
-                                             (reduce-query-depth query key))
-                                  (and (ident? key) (union? join)) (get sel (first key))
-                                  (and (ident? v) (union? join)) (get sel (first v))
+                                  recurse?
+                                  (if-not (nil? union-expr)
+                                    union-entry
+                                    (reduce-query-depth query key))
+
+                                  (and (util/ident? key)
+                                    (util/union? join))
+                                  (get sel (first key))
+
+                                  (and (util/ident? v)
+                                       (util/union? join))
+                                  (get sel (first v))
+
                                   :else sel)
                     graph-loop? (and recurse?
                                   (contains? (set (get idents-seen key)) v)
                                   (= :none limit))
-                    idents-seen (if (and (ident? v) recurse?)
+                    idents-seen (if (and (util/ident? v) recurse?)
                                   (-> idents-seen
                                     (update-in [key] (fnil conj #{}) v)
                                     (assoc-in [:last-ident key] v)) idents-seen)]
@@ -1386,13 +1349,13 @@
   "
   [join result-roots path]
   (letfn [(query-root? [join] (true? (-> join meta :query-root)))]
-    (if (join? join)
+    (if (util/join? join)
       (if (query-root? join)
         (conj result-roots [join path])
         (mapcat
           #(move-roots % result-roots
-            (conj path (join-key join)))
-          (join-value join)))
+            (conj path (util/join-key join)))
+          (util/join-value join)))
       result-roots)))
 
 (defn- merge-joins
@@ -1402,13 +1365,15 @@
             (if (contains? (:elements-seen res) expr)
               res ; eliminate exact duplicates
               (update-in
-                (if (and (join? expr) (not (union? expr)) (not (list? expr)))
-                  (let [jk (join-key expr)
-                        jv (join-value expr)
+                (if (and (util/join? expr)
+                         (not (util/union? expr))
+                         (not (list? expr)))
+                  (let [jk (util/join-key expr)
+                        jv (util/join-value expr)
                         q  (or (-> res :query-by-join (get jk)) [])
                         nq (cond
-                             (recursion? q) q
-                             (recursion? jv) jv
+                             (util/recursion? q) q
+                             (util/recursion? jv) jv
                              :else (merge-joins (into [] (concat q jv))))]
                     (update-in res [:query-by-join] assoc jk nq))
                   (update-in res [:not-mergeable] conj expr))
@@ -1437,7 +1402,7 @@
           (rewrite-map-step [rewrites [expr path]]
             (if (empty? path)
               rewrites
-              (update-in rewrites [(join-key expr)] conj path)))]
+              (update-in rewrites [(util/join-key expr)] conj path)))]
     (let [reroots     (mapcat reroot query)
           query       (merge-joins (mapv first reroots))
           rewrite-map (reduce rewrite-map-step {} reroots)]
@@ -1446,7 +1411,9 @@
 
 (defn- merge-idents [tree config refs query]
   (let [{:keys [merge-ident indexer]} config
-        ident-joins (into {} (filter #(and (join? %) (ident? (join-key %))) query))]
+        ident-joins (into {} (filter #(and (util/join? %)
+                                           (util/ident? (util/join-key %)))
+                               query))]
     (letfn [ (step [tree' [ident props]]
               (if (:normalize config)
                 (let [c-or-q (or (get ident-joins ident) (ref->any indexer ident))
@@ -1708,11 +1675,11 @@
                       (let [expr (first exprs)
                             k    (as-> (expr->key expr) k
                                    (cond-> k
-                                     (unique-ident? k) first))
+                                     (util/unique-ident? k) first))
                             data (get res k)]
                         (cond
-                          (mutation? expr)
-                          (let [mk   (mutation-key expr)
+                          (util/mutation? expr)
+                          (let [mk   (util/mutation-key expr)
                                 ret' (get res mk)]
                             (if (has-error? ret')
                               (let [x (-> expr meta :mutator)]
@@ -1724,9 +1691,9 @@
                                 (when-not (nil? ret)
                                   (assoc ret mk ret')))))
 
-                          (union? expr)
-                          (let [jk     (join-key expr)
-                                jv     (join-value expr)
+                          (util/union? expr)
+                          (let [jk     (util/join-key expr)
+                                jv     (util/join-value expr)
                                 class' (-> jv meta :component)]
                             (if (not (vector? data))
                               (let [ret' (extract*
@@ -1742,9 +1709,9 @@
                                   (when-not (nil? ret)
                                     (assoc ret jk ret'))))))
 
-                          (join? expr)
-                          (let [jk   (join-key expr)
-                                jv   (join-value expr)
+                          (util/join? expr)
+                          (let [jk   (util/join-key expr)
+                                jv   (util/join-value expr)
                                 ret' (extract* jv data errs)]
                             (recur (next exprs)
                               (when-not (nil? ret)

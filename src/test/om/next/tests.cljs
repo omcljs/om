@@ -5,17 +5,18 @@
             [om.next :as om :refer-macros [defui ui]]
             [om.next.protocols :as p]
             [om.next.impl.parser :as parser]
-            [om.tempid :refer [tempid]]))
+            [om.tempid :refer [tempid]]
+            [om.util :as util]))
 
 ;; -----------------------------------------------------------------------------
 ;; Predicates
 
 (deftest test-expr-predicates
-  (is (om/join? '{:foo [*]}))
-  (is (om/join? '({:foo [*]} {:woz 0})))
-  (is (om/union? '{:foo {:bar [*] :baz [*]}}))
-  (is (om/union? '({:foo {:bar [*] :baz [*]}} {:woz 0})))
-  (is (om/mutation? '(foo/bar {:baz :woz}))))
+  (is (util/join? '{:foo [*]}))
+  (is (util/join? '({:foo [*]} {:woz 0})))
+  (is (util/union? '{:foo {:bar [*] :baz [*]}}))
+  (is (util/union? '({:foo {:bar [*] :baz [*]}} {:woz 0})))
+  (is (util/mutation? '(foo/bar {:baz :woz}))))
 
 ;; -----------------------------------------------------------------------------
 ;; Components
@@ -379,6 +380,72 @@
          '(do/it {:woz 1})))
   (is (= (parser/ast->expr {:type :call :key 'do/it :dispatch-key 'do/it :params {}})
          '(do/it))))
+
+(deftest test-path-meta
+  (testing "joins"
+    (let [x {:children [{:name "John" :age 3} {:name "Mary" :age 5}]}
+          props (parser/path-meta x [] [{:children [:name :age]}])]
+      (is (= props x))
+      (are [x path] (= (-> x meta :om-path) path)
+        props []
+        (:children props) [:children]
+        (-> props :children first) [:children 0])))
+  (testing "joins & links"
+    (let [x {:items [{:id 0 :title "Foo" :current-user {:email "bob.smith@gmail.com"}}
+                     {:id 1 :title "Bar" :current-user {:email "bob.smith@gmail.com"}}]}
+          props (parser/path-meta x [] '[{:items [:id :title [:current-user _]]}])]
+      (is (= props x))
+      (are [x path] (= (-> x meta :om-path) path)
+        props []
+        (:items props) [:items]
+        (-> props :items first) [:items 0]
+        (-> props :items first :current-user) [:items 0 :current-user])))
+  (testing "unions"
+    (let [x {:dashboard/items
+             [{:id 0 :type :dashboard/post :author "Laura Smith"
+               :title "A Post!" :content "Lorem ipsum dolor" :favorites 0}
+              {:id 1 :type :dashboard/photo :title "A Photo!"
+               :image "photo.jpg" :caption "Lorem ipsum" :favorites 0}
+              {:id 2 :type :dashboard/graphic :title "Charts and Stufff!"
+               :image "chart.jpg" :favorites 0}]}
+          q [{:dashboard/items
+              {:dashboard/post [:id :type :title :author :content :favorites]
+               :dashboard/photo [:id :type :title :image :caption :favorites]
+               :dashboard/graphic [:id :type :title :image :favorites]}}]
+          props (parser/path-meta x [] q)]
+      (is (= props x))
+      (are [x path] (= (-> x meta :om-path) path)
+        props []
+        (:dashboard/items props) [:dashboard/items]
+        (-> props :dashboard/items first) [:dashboard/items 0]
+        (-> props :dashboard/items second) [:dashboard/items 1])))
+  (testing "recursive queries"
+    (let [x {:tree {:node-value 1
+                    :children [{:node-value 2
+                                :children [{:node-value 3 :children []}]}
+                               {:node-value 4 :children []}]}}
+          q '[{:tree [:node-value {:children ...}]}]
+          props (parser/path-meta x [] q)]
+      (is (= props x))
+      (are [x path] (= (-> x meta :om-path) path)
+        props []
+        (:tree props) [:tree]
+        (-> props :tree :children) [:tree :children]
+        (-> props :tree :children first) [:tree :children 0]
+        (-> props :tree :children first :children) [:tree :children 0 :children])))
+  (testing "mutations"
+    (let [x {'counter/increment
+             {:keys []
+              :result {:app/title "Hello World!"
+                       :app/current-id 3
+                       :app/counters {0 {:id 0 :counter/count 1}
+                                      1 {:id 1 :counter/count 0}
+                                      2 {:id 2 :counter/count 0}}
+                       :counters/list [[:app/counters 0] [:app/counters 1] [:app/counters 2]]}}}
+          props (parser/path-meta x [] '[(counter/increment)])]
+      (is (= props x))
+      (is (= (-> props meta :om-path) []))
+      (is (= (-> props (get 'counter/increment) meta :om-path) nil)))))
 
 (defmulti read (fn [env k params] k))
 
@@ -1449,7 +1516,7 @@
   [{:keys [query state ast]} k _]
   (let [st @state]
     {:value  (om/db->tree query (get st k) st)
-     :remote (update-in ast [:query] #(into [] (remove om/ident?) %))}))
+     :remote (update-in ast [:query] #(into [] (remove util/ident?) %))}))
 
 (defui LinkItem
   static om/Ident
@@ -1503,7 +1570,7 @@
 ;; Error handling
 
 (deftest test-unique-ident?
-  (is (om/unique-ident? '[:foo _])))
+  (is (util/unique-ident? '[:foo _])))
 
 (deftest test-has-error?
   (is (true? (om/has-error? (:foo {:foo {::om/error {:type :bar}}})))))
