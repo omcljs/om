@@ -259,12 +259,24 @@
   (query [this]
     [{[:a '_] (om/get-query IdxrLinkItem)}]))
 
+(defui IdxrParamsComponent
+  static om/IQueryParams
+  (params [_]
+    {:foo ""})
+  static om/IQuery
+  (query [_]
+    '[(:some/key {:foo ?foo})]))
+
 (deftest test-indexer
   (testing "prop->classes"
     (let [idxr (om/indexer)
           idxs (p/index-root idxr ComponentList)]
       (is (= (set (keys (:prop->classes idxs)))
-            #{:app/title :components/list :foo/bar :baz/woz}))))
+            #{:app/title :components/list :foo/bar :baz/woz})))
+    (let [idxr (om/indexer)
+          idxs (p/index-root idxr IdxrParamsComponent)]
+      (is (= (set (keys (:prop->classes idxs)))
+            #{:some/key}))))
   (testing "simple recursion indexing"
     (let [idxr (om/indexer)
           idxs (p/index-root idxr IdxrTree)
