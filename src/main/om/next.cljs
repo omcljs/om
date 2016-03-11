@@ -969,8 +969,9 @@
           class             (cond-> x (component? x) type)]
       (letfn [(get-dispatch-key [prop]
                 (cond-> prop
-                  (and (ident? prop)
-                    (= (second prop) '_)) ((comp :dispatch-key parser/expr->ast))))
+                  (or (not (ident? prop))
+                      (= (second prop) '_))
+                  ((comp :dispatch-key parser/expr->ast))))
               (build-index* [class query path classpath]
                 (invariant (or (not (iquery? class))
                              (and (iquery? class)
