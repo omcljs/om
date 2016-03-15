@@ -576,7 +576,7 @@
    (react-set-state! component new-state nil))
   ([component new-state cb]
    {:pre [(component? component)]}
-   (.setState component #js {:omcljs$state new-state} nil)))
+   (.setState component #js {:omcljs$state new-state} cb)))
 
 (declare full-query to-env schedule-sends! reconciler? ref->components force)
 
