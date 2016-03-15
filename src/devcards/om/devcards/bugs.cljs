@@ -418,6 +418,52 @@
   (dom-node (fn [_ node]
               (om/add-root! om-641-reconciler OM-641-Root node))))
 
+;; ==================
+;; OM-644
+
+(def om-644-app-state (atom {:children []}))
+
+(defn om-644-read [{:keys [state] :as env} key params]
+  (let [st @state]
+    (if-let [[_ value] (find st key)]
+      {:value value}
+      {:value :not-found})))
+
+(defn om-644-mutate [{:keys [state] :as env} key params]
+  (if (= 'load key)
+    {:value {:keys [:count]}
+     :action #(swap! state update-in [:children] conj (rand-int 10))}
+    {:value :not-found}))
+
+(defui OM-644-Child
+  Object
+  (render [this]
+    (dom/div nil (om/children this))))
+
+(def om-644-child (om/factory OM-644-Child))
+
+(defui OM-644-Root
+  static om/IQuery
+  (query [this]
+    [:children])
+  Object
+  (render [this]
+    (let [{:keys [children]} (om/props this)]
+      (om-644-child nil
+        (dom/button #js {:onClick #(om/transact! this '[(load)])}
+          "Load children")
+        (dom/ul nil
+          (map #(dom/li nil %) children))))))
+
+(def om-644-reconciler
+  (om/reconciler
+   {:state om-644-app-state
+    :parser (om/parser {:read om-644-read :mutate om-644-mutate})}))
+
+(defcard om-644-card
+  (dom-node
+    (fn [_ node]
+      (om/add-root! om-644-reconciler OM-644-Root node))))
 
 (comment
 

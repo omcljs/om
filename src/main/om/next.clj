@@ -135,14 +135,17 @@
            "_reactInternalInstance" "_renderedComponent")))
      ~'shouldComponentUpdate
      ([this# next-props# next-state#]
-      (let [next-props# (goog.object/get next-props# "omcljs$value")
+      (let [next-children# (. next-props# -children)
+            next-props# (goog.object/get next-props# "omcljs$value")
             next-props# (cond-> next-props#
                           (instance? OmProps next-props#) om.next/unwrap)]
         (or (not= (om.next/props this#)
                   next-props#)
             (and (.. this# ~'-state)
                  (not= (goog.object/get (. this# ~'-state) "omcljs$state")
-                       (goog.object/get next-state# "omcljs$state"))))))
+                       (goog.object/get next-state# "omcljs$state")))
+            (not= (.. this# -props -children)
+                  next-children#))))
      ~'componentWillUpdate
      ([this# next-props# next-state#]
       (when (cljs.core/implements? om.next/Ident this#)
