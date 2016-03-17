@@ -184,6 +184,31 @@
            (om/replace [:caption]))
         [{:selected/item [:caption]}])))
 
+(deftest test-query-template-params
+  (is (= (-> (om/query-template
+               '[({:join [*]} {:param 42})]
+                [:join])
+           zip/root)
+         '[({:join [*]} {:param 42})]))
+  (is (= (-> (om/query-template
+               '[{:join [(:some/key {:param 42})]}]
+                [:join])
+           zip/root)
+         '[{:join [(:some/key {:param 42})]}]))
+  (is (= (-> (om/query-template
+               '[({:selected/item {:item/one [:title]
+                                   :item/two [:author]}}
+                  {:some/param 42})]
+                [:selected/item :item/two])
+           zip/root)
+         '[({:selected/item [:author]} {:some/param 42})]))
+  (is (= (-> (om/query-template
+               '[{:selected/item {:item/one [:title]
+                                  :item/two [({:author [:name]} {:some/param 42})]}}]
+                [:selected/item :item/two])
+           zip/root)
+         '[{:selected/item [({:author [:name]} {:some/param 42})]}])))
+
 ;; -----------------------------------------------------------------------------
 ;; Indexer
 
