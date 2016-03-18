@@ -89,8 +89,9 @@
                   (let [[k & ks] path
                         k' (expr->key node)]
                     (if (keyword-identical? k k')
-                      (if (map? node)
-                        (let [loc'  (move-to-key loc k)
+                      (if (or (map? node)
+                              (and (seq? node) (map? (first node))))
+                        (let [loc'  (move-to-key (cond-> loc (seq? node) zip/down) k)
                               node' (zip/node loc')]
                           (if (map? node') ;; UNION
                             (if (seq ks)
