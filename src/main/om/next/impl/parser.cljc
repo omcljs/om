@@ -86,13 +86,16 @@
         {:component component}))))
 
 (defn join->ast [join]
-  (let [[k v] (first join)
+  (let [query-root? (-> join meta :query-root)
+        [k v] (first join)
         ast (expr->ast k)
         component (-> v meta :component)]
     (merge ast
       {:type :join :query v}
       (when-not (nil? component)
         {:component component})
+      (when query-root?
+        {:query-root true})
       (when-not (or (number? v) (= '... v))
         (cond
           (vector? v) {:children (into [] (map expr->ast) v)}
