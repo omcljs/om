@@ -44,7 +44,7 @@
   (dom/input
     #js {:key "search-field"
          :value query
-         :onKeyUp
+         :onChange
          (fn [e]
            (om/set-query! ac
              {:params {:query (.. e -target -value)}}))}))
@@ -62,7 +62,7 @@
       (dom/div nil
         (dom/h2 nil "Autocompleter")
         (cond->
-          [(search-field this (:search-query (om/get-params this)))]
+          [(search-field this (:query (om/get-params this)))]
           (not (empty? results)) (conj (result-list results)))))))
 
 (defn search-loop [c]
