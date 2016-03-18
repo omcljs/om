@@ -130,6 +130,14 @@
            [:dashboard/posts])
          '[({:dashboard/posts [:id :favorites]} {:foo "bar"})])))
 
+(deftest test-om-656
+  (is (= (-> (om/focus-query [^:query-root {:child [:foo :bar]}] [:child])
+           first meta) {:query-root true}))
+  (is (= (-> (om/focus-query [{:child [^:query-root {:foo [:qux]} :bar]}] [:child])
+           first :child first meta) {:query-root true}))
+  (is (= (-> (om/focus-query [{:child [^:query-root {:foo [:qux]} :bar]}] [:child :foo])
+           first :child first meta) {:query-root true})))
+
 (deftest test-om-615
   (let [q1 '[^:query-root (:test {:a ?a})]
         q2 '[^:query-root {:foo [(:bar {:a ?a}) :b]} (:test {:a ?a, :b ?b})]
