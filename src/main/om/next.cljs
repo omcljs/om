@@ -1267,13 +1267,18 @@
       (if (= '[*] query)
         data
         (let [{props false joins true} (group-by #(or (util/join? %)
-                                                      (util/ident? %))
+                                                      (util/ident? %)
+                                                      (and (seq? %)
+                                                           (util/ident? (first %))))
                                          query)
               props (mapv #(cond-> % (seq? %) first) props)]
           (loop [joins (seq joins) ret {}]
             (if-not (nil? joins)
               (let [join        (first joins)
-                    join        (cond-> join (util/ident? join) (hash-map '[*]))
+                    join        (cond-> join
+                                  (seq? join) first)
+                    join        (cond-> join
+                                  (util/ident? join) (hash-map '[*]))
                     [key sel]   (util/join-entry join)
                     recurse?    (util/recursion? sel)
                     recurse-key (when recurse? key)

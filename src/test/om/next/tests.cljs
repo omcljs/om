@@ -772,6 +772,24 @@
         query '[(:people {:length 3})]]
     (is (= (om/db->tree query data data) {:people [:by-name "Alice"]}))))
 
+(deftest test-db->tree-param-link
+  (let [data {:current-user {:name "Alice" :email "alice@gmail.com"}
+              :items [[:items/by-id 0] [:items/by-id 1]]
+              :items/by-id {0 {:id 0 :title "Foo"}
+                            1 {:id 1 :title "Bar"}}}
+        simple-query '[{:items [([:current-user _] {:a 3}) :title]}]
+        join-query '[{:items [({[:current-user _] [:name]} {:a 3}) :title]}]]
+    (is (= (om/db->tree simple-query data data) {:items [{:title "Foo"
+                                                          :current-user {:name "Alice"
+                                                                         :email "alice@gmail.com"}}
+                                                         {:title "Bar"
+                                                          :current-user {:name "Alice"
+                                                                         :email "alice@gmail.com"}}]}))
+    (is (= (om/db->tree join-query data data) {:items [{:title "Foo"
+                                                        :current-user {:name "Alice"}}
+                                                       {:title "Bar"
+                                                        :current-user {:name "Alice"}}]}))))
+
 (deftest test-db->tree-collection
   (let [norm-data  (om/tree->db People1 people-data true)
         app-state  (atom norm-data)
