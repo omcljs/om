@@ -480,6 +480,20 @@
       (is (= (-> props meta :om-path) []))
       (is (= (-> props (get 'counter/increment) meta :om-path) nil)))))
 
+(deftest test-path-meta-lists
+  (let [x {:children '({:name "John" :age 3} {:name "Mary" :age 5})}
+        props (parser/path-meta x [] [{:children [:name :age]}])]
+    (is (= props x))
+    (is (= (-> props meta :om-path) []))
+    (is (= (-> props :children meta :om-path) [:children]))
+    (is (= (-> props :children first meta :om-path) [:children 0])))
+  (let [x {:children '({:name {:first "John" :last "Doe"} :age 3} {:name {:first "Mary" :last "Smith"} :age 5})}
+        props (parser/path-meta x [] [{:children [{:name [:first :last]} :age]}])]
+    (is (= props x))
+    (is (= (-> props meta :om-path) []))
+    (is (= (-> props :children meta :om-path) [:children]))
+    (is (= (-> props :children first :name meta :om-path) [:children 0 :name]))))
+
 (defmulti read (fn [env k params] k))
 
 (defmethod read :default

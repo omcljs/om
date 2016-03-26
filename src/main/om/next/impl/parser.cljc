@@ -178,7 +178,7 @@
             :cljs (satisfies? IWithMeta data))
          (vary-meta assoc :om-path path))
 
-       (vector? data)
+       (sequential? data)
        (-> (into []
              (map-indexed
                (fn [idx v]
