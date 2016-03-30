@@ -46,7 +46,7 @@
 (defn recursion?
   #?(:cljs {:tag boolean})
   [x]
-  (or #?(:clj (identical? '... x)
+  (or #?(:clj (= '... x)
          :cljs (symbol-identical? '... x))
       (number? x)))
 
