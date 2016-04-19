@@ -10,16 +10,22 @@
 
   :source-paths  ["src/main" "src/devcards" "src/test"]
 
-  :dependencies [[org.clojure/clojure "1.7.0" :scope "provided"]
-                 [org.clojure/clojurescript "1.7.170" :scope "provided"]
-                 [cljsjs/react "0.14.3-0"]
-                 [cljsjs/react-dom "0.14.3-1"]
+  :dependencies [[org.clojure/clojure "1.8.0" :scope "provided"]
+                 [org.clojure/clojurescript "1.8.40" :scope "provided"
+                  :exclusions [org.clojure/tools.reader org.clojure/data.json]]
+                 [org.clojure/tools.reader "0.10.0-alpha3" :scope "provided"]
+                 [org.clojure/data.json "0.2.6" :scope "provided"]
+                 [cljsjs/react "15.0.1-1"]
+                 [cljsjs/react-dom "15.0.1-1"]
                  [com.cognitect/transit-clj "0.8.285"]
                  [com.cognitect/transit-cljs "0.8.237"]
 
-                 [org.clojure/core.async "0.2.371" :scope "test"]
-                 [figwheel-sidecar "0.5.0" :scope "test"]
-                 [devcards "0.2.0-8" :scope "test"]]
+                 [org.clojure/core.async "0.2.374" :scope "test"
+                  :exclusions [org.clojure/tools.reader]]
+                 [figwheel-sidecar "0.5.2" :scope "test"
+                  :exclusions [org.clojure/clojurescript org.clojure/tools.reader]]
+                 [devcards "0.2.1-6" :scope "test"
+                  :exclusions [org.clojure/clojurescript]]]
 
   :plugins [[lein-cljsbuild "1.1.2"]]
 
