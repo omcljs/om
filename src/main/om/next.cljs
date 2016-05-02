@@ -257,6 +257,22 @@
       (assert (nil? c) (str "Query violation, " x , " reuses " c " query"))
       (with-meta (bind-query q (params x)) {:component x}))))
 
+(defn- get-indexed-query
+  "Get a component's static query from the indexer. For recursive queries, recurses
+   up the data path. Falls back to `get-class-or-instance-query` if nothing is
+   found in the indexer."
+  [component class-path-query-data data-path]
+  (let [qs (filter #(= data-path (-> % zip/root (focus->path data-path)))
+             class-path-query-data)
+        qs (if (empty? qs) class-path-query-data qs)]
+    (if-not (empty? qs)
+      (let [q (first qs)
+            node (zip/node q)]
+        (if-not (util/recursion? node)
+          node
+          (recur component class-path-query-data (pop data-path))))
+      (get-class-or-instance-query component))))
+
 (defn get-query
   "Return a IQuery/IParams instance bound query. Works for component classes
    and component instances. See also om.next/full-query."
@@ -268,13 +284,8 @@
         (let [cp (class-path x)
               r (get-reconciler x)
               data-path (into [] (remove number?) (path x))
-              class-path-query-data (get (:class-path->query @(get-indexer r)) cp)
-              qs (filter #(= data-path (-> % zip/root (focus->path data-path)))
-                   class-path-query-data)
-              qs (if (empty? qs) class-path-query-data qs)]
-          (if-not (empty? qs)
-            (zip/node (first qs))
-            (get-class-or-instance-query x))))
+              class-path-query-data (get (:class-path->query @(get-indexer r)) cp)]
+          (get-indexed-query x class-path-query-data data-path)))
       (get-class-or-instance-query x))
     ;; in advanced, statics will get elided
     (when (goog/isFunction x)
@@ -1015,7 +1026,8 @@
                                           (focus-query rootq path)
                                           path)
                           cp-query      (cond-> focused-query
-                                          (not= (zip/node focused-query) query)
+                                          (and (not= (zip/node focused-query) query)
+                                               (not recursive?))
                                           (zip/replace query))]
                       (swap! class-path->query update-in [classpath]
                         (fnil conj #{}) cp-query)))

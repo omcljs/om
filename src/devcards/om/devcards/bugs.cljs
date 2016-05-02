@@ -525,6 +525,90 @@
     (fn [_ node]
       (om/add-root! om-628-reconciler om-628-Parent node))))
 
+;; ==================
+;; OM-676
+
+(def om-676-data
+  {:composite/item {:id 0
+                   :width 400
+                   :height 400
+                   :color "#428BCA"
+                   :children [{:id 1
+                               :width 200
+                               :height 200
+                               :color "#9ACD32"
+                               :children [{:id 3
+                                           :width 100
+                                           :height 100
+                                           :color "#CD329A"}
+                                          {:id 4
+                                           :width 100
+                                           :height 100
+                                           :color "#32CD65"}]}
+                              {:id 2
+                               :width 200
+                               :height 200
+                               :color "#39DBBE"}]}})
+
+(declare om-676-component)
+
+(defui OM-676-Component
+  static om/Ident
+  (ident [this {:keys [id]}]
+    [:component id])
+  static om/IQuery
+  (query [this]
+    '[:id :width :height :color {:children ...}])
+  Object
+  (render [this]
+    (let [{:keys [id width height color caption children] :as props} (om/props this)
+          {:keys [active]} (om/get-state this)]
+      (dom/div #js {:className (str id)
+                    :onClick (fn [e]
+                               (.stopPropagation e)
+                               (om/update-state! this update :active not))
+                    :style
+                    #js {:position "relative"
+                         :float "left"
+                         :width width
+                         :height height
+                         :zIndex 2
+                         :textAlign "center"
+                         :backgroundColor (if active "black" color)}}
+        (map om-676-component children)))))
+
+(def om-676-component (om/factory OM-676-Component))
+
+(defui OM-676-App
+  static om/IQuery
+  (query [this]
+    [{:composite/item (om/get-query OM-676-Component)}])
+  Object
+  (render [this]
+    (let [{:keys [composite/item] :as props} (om/props this)]
+      (dom/div #js {:style #js {:margin "0 auto"
+                                :display "table"}}
+        (om-676-component item)
+        (dom/div #js {:style #js {:clear "both"}})))))
+
+(defmulti om-676-read om/dispatch)
+
+(defmethod om-676-read :composite/item
+  [{:keys [state parser query ast] :as env} k _]
+  [{:keys [query state]} k _]
+  (let [st @state]
+    {:value (om/db->tree query (get st k) st)}))
+
+(def om-676-reconciler
+  (om/reconciler {:state om-676-data
+                  :parser (om/parser {:read om-676-read})}))
+
+(defcard om-676-card
+  (dom-node
+    (fn [_ node]
+      (om/add-root! om-676-reconciler OM-676-App node))))
+
+
 (comment
 
   (require '[cljs.pprint :as pprint])
