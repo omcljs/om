@@ -608,6 +608,85 @@
     (fn [_ node]
       (om/add-root! om-676-reconciler OM-676-App node))))
 
+;; ==================
+;; OM-679
+
+(def om-679-data
+  {:tree {:id 0
+          :counter {:value 1}
+          :children [{:id 1
+                      :counter {:value 2}
+                      :children [{:id 2
+                                  :counter {:value 3}
+                                  :children []}]}
+                     {:id 3
+                      :counter {:value 4}
+                      :children []}]}})
+
+(declare om-679-node)
+
+(defmulti om-679-read om/dispatch)
+
+(defmethod om-679-read :tree
+  [{:keys [state query] :as env} _ _]
+  (let [st @state]
+    {:value (om/db->tree query (:tree st) st)}))
+
+(defui OM-679-Counter
+  static om/IQuery
+  (query [this]
+    [:value])
+  Object
+  (initLocalState [this]
+    {:val (-> (om/props this) :value)})
+  (render [this]
+    (let [{:keys [val]} (om/get-state this)]
+      (dom/div nil
+        (dom/label nil (str "Counter value at node: " val))
+        (dom/button #js {:onClick #(om/update-state! this update-in [:val] inc)}
+          "Inc")))))
+
+(def om-679-counter (om/factory OM-679-Counter))
+
+(defui OM-679-Node
+  static om/Ident
+  (ident [this {:keys [id]}]
+    [:node/by-id id])
+  static om/IQuery
+  (query [this]
+    `[:id {:counter ~(om/get-query OM-679-Counter)} {:children ~'...}])
+  Object
+  (render [this]
+    (let [{:keys [id counter children]} (om/props this)]
+      (dom/li nil
+        (om-679-counter counter)
+        (dom/ul nil
+          (map om-679-node children))))))
+
+(def om-679-node (om/factory OM-679-Node))
+
+(defui OM-679-Tree
+  static om/IQuery
+  (query [this]
+    [{:tree (om/get-query OM-679-Node)}])
+  Object
+  (render [this]
+    (let [{:keys [tree]} (om/props this)]
+      (dom/ul nil
+        (om-679-node tree)))))
+
+(def om-679-parser
+  (om/parser {:read   om-679-read}))
+
+(def om-679-reconciler
+  (om/reconciler
+    {:state   om-679-data
+     :parser  om-679-parser}))
+
+(defcard om-679-card
+  (dom-node
+    (fn [_ node]
+      (om/add-root! om-679-reconciler OM-679-Tree node))))
 
 (comment
 

@@ -101,7 +101,11 @@
   (is (= (om/focus-query
            [:foo/bar {:baz/woz [:goz/noz {:bop/wop [:nop/sop]} :cuz/wuz]}]
            [:baz/woz :bop/wop])
-        [{:baz/woz [{:bop/wop [:nop/sop]}]}])))
+        [{:baz/woz [{:bop/wop [:nop/sop]}]}]))
+  (is (= (om/focus-query
+           '[{:tree [:id {:counter [:value]} {:children ...}]}]
+           [:tree :children :counter])
+        [{:tree [{:children [{:counter [:value]}]}]}])))
 
 (deftest test-focus->path
   (is (= (om/focus->path [{:baz/woz [{:bop/wop [:nop/sop]}]}])

@@ -110,10 +110,17 @@
 
 (declare focus-query)
 
-(defn- focused-join [expr ks]
+(defn- focused-join [expr ks full-expr]
   (let [expr-meta (meta expr)
         expr' (cond
-                (map? expr) {(ffirst expr) (focus-query (-> expr first second) ks)}
+                (map? expr)
+                (let [join-value (-> expr first second)
+                      join-value (if (and (util/recursion? join-value)
+                                          (seq ks))
+                                   full-expr
+                                   join-value)]
+                  {(ffirst expr) (focus-query join-value ks)})
+
                 (seq? expr) (list (focused-join (first expr) ks) (second expr))
                 :else       expr)]
     (cond-> expr'
@@ -135,7 +142,7 @@
       (letfn [(match [x]
                 (= k (util/join-key x)))
               (value [x]
-                (focused-join x ks))]
+                (focused-join x ks query))]
         (if (map? query) ;; UNION
           {k (focus-query (get query k) ks)}
           (into [] (comp (filter match) (map value) (take 1)) query))))))
@@ -759,21 +766,32 @@
      #js {:omcljs$value next-props}
      #js {:omcljs$state next-state})))
 
-(defn class-path [c]
-  "Return the component class path associated with a component."
-  {:pre [(component? c)]}
+(defn- raw-class-path [c]
+  "Return the raw component class path associated with a component. Contains
+   duplicates for recursive component trees."
   (loop [c c ret (list (type c))]
     (if-let [p (parent c)]
       (if (iquery? p)
         (recur p (cons (type p) ret))
         (recur p ret))
-      (let [seen (atom #{})]
-        (take-while
-          (fn [x]
-            (when-not (contains? @seen x)
-              (swap! seen conj x)
-              x))
-          ret)))))
+      ret)))
+
+(defn class-path [c]
+  "Return the component class path associated with a component."
+  {:pre [(component? c)]}
+  (let [raw-cp (raw-class-path c)]
+    (loop [cp (seq raw-cp) ret [] seen #{}]
+      (if cp
+        (let [c (first cp)]
+          (if (contains? seen c)
+            (recur (next cp) ret seen)
+            (recur (next cp) (conj ret c) (conj seen c))))
+        (seq ret)))))
+
+(defn- ^boolean recursive-class-path? [c]
+  "Returns true if a component's classpath is recursive"
+  {:pre [(component? c)]}
+  (not (apply distinct? (raw-class-path c))))
 
 (defn subquery
   "Given a class or mounted component x and a ref to an instantiated component
@@ -1031,7 +1049,14 @@
                                           (zip/replace query))]
                       (swap! class-path->query update-in [classpath]
                         (fnil conj #{}) cp-query)))
-                  (when-not recursive?
+                  (when (or (not recursive?)
+                            (and recursive?
+                                 (some (fn [e]
+                                         (and (util/join? e)
+                                           (not (util/recursion?
+                                                  (util/join-value e)))))
+                                   query)
+                                 (not= (peek path) (peek (pop path)))))
                     (cond
                       (vector? query)
                       (let [{props false joins true} (group-by util/join? query)]
@@ -1225,7 +1250,9 @@
        (full-query component (get-query component)))))
   ([component query]
    (when (iquery? component)
-     (let [path' (into [] (remove number?) (path component))
+     (let [xf    (cond->> (remove number?)
+                   (recursive-class-path? component) (comp (distinct)))
+           path' (into [] xf (path component))
            cp    (class-path component)
            qs    (get-in @(-> component get-reconciler get-indexer)
                    [:class-path->query cp])]
