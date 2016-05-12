@@ -439,7 +439,7 @@
                    (println "instrument!" (= AView class)
                      AView class)
                    (if (= AView class)
-                     (wrapper {:factory aview :props props})
+                     (wrapper {:factory (om/factory AView {:instrument? false}) :props props})
                      (factory props)))}))
 
 (defcard test-instrument
