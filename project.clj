@@ -11,9 +11,9 @@
   :source-paths  ["src/main" "src/devcards" "src/test"]
 
   :dependencies [[org.clojure/clojure "1.8.0" :scope "provided"]
-                 [org.clojure/clojurescript "1.8.40" :scope "provided"
+                 [org.clojure/clojurescript "1.8.51" :scope "provided"
                   :exclusions [org.clojure/tools.reader org.clojure/data.json]]
-                 [org.clojure/tools.reader "0.10.0-alpha3" :scope "provided"]
+                 [org.clojure/tools.reader "1.0.0-beta1" :scope "provided"]
                  [org.clojure/data.json "0.2.6" :scope "provided"]
                  [cljsjs/react "15.0.1-1"]
                  [cljsjs/react-dom "15.0.1-1"]
