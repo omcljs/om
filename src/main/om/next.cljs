@@ -592,11 +592,14 @@
 (defn get-rendered-state
   "Get the rendered state of component. om.next/get-state always returns the
    up-to-date state."
-  [component]
-  {:pre [(component? component)]}
-  (if (implements? ILocalState component)
-    (-get-rendered-state component)
-    (some-> component .-state (gobj/get "omcljs$state"))))
+  ([component]
+   (get-rendered-state component []))
+  ([component k-or-ks]
+   {:pre [(component? component)]}
+   (let [cst (if (implements? ILocalState component)
+               (-get-rendered-state component)
+               (some-> component .-state (gobj/get "omcljs$state")))]
+     (get-in cst (if (sequential? k-or-ks) k-or-ks [k-or-ks])))))
 
 (defn- merge-pending-state! [c]
   (if (implements? ILocalState c)
