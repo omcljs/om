@@ -688,6 +688,131 @@
     (fn [_ node]
       (om/add-root! om-679-reconciler OM-679-Tree node))))
 
+;; ==================
+;; OM-679-2
+
+(def om-679-2-data
+  {:tree {:node/type :tree/foo
+          :id 0
+          :foo/value "1"
+          :children [{:node/type :tree/bar
+                      :bar/value "1.1"
+                      :counter {:value 1}
+                      :id 1
+                      :children [{:node/type :tree/bar
+                                  :id 2
+                                  :counter {:value 2}
+                                  :bar/value "1.1.1"
+                                  :children []}]}
+                     {:node/type :tree/foo
+                      :id 3
+                      :foo/value "1.2"
+                      :children []}]}})
+
+(defui OM-679-2-Counter
+  static om/IQuery
+  (query [this]
+    [:value])
+  Object
+  (initLocalState [this]
+    {:val (-> (om/props this) :value)})
+  (render [this]
+    (let [{:keys [val]} (om/get-state this)]
+      (dom/div nil
+        (dom/label nil (str "Counter value at node: " val))
+        (dom/button #js {:onClick #(om/update-state! this update-in [:val] inc)}
+          "Inc")))))
+
+(def om-679-2-counter (om/factory OM-679-2-Counter))
+
+(declare om-679-2-node)
+
+(defui OM-679-2-BarNode
+  static om/IQuery
+  (query [this]
+    `[:id :node/type {:counter ~(om/get-query OM-679-2-Counter)} :bar/value {:children ~'...}])
+  Object
+  (render [this]
+    (let [{:keys [bar/value counter children]} (om/props this)]
+      (dom/li nil
+        (dom/p nil (str "Bar value: " value))
+        (om-679-2-counter counter)
+        (dom/ul nil
+          (map om-679-2-node children))))))
+
+(def om-679-2-bar-node (om/factory OM-679-2-BarNode))
+
+(defui OM-679-2-FooNode
+  static om/IQuery
+  (query [this]
+    '[:id :node/type :foo/value {:children ...}])
+  Object
+  (render [this]
+    (let [{:keys [foo/value children]} (om/props this)]
+      (dom/li nil
+        (dom/p nil (str "Foo value: " value))
+        (dom/ul nil
+          (map om-679-2-node children))))))
+
+(def om-679-2-foo-node (om/factory OM-679-2-FooNode))
+
+(defui OM-679-2-Node
+  static om/Ident
+  (ident [this {:keys [node/type id]}]
+    [type id])
+  static om/IQuery
+  (query [this]
+    {:tree/foo (om/get-query OM-679-2-FooNode)
+     :tree/bar (om/get-query OM-679-2-BarNode)})
+  Object
+  (render [this]
+    (let [{:keys [node/type] :as props} (om/props this)]
+      (({:tree/foo om-679-2-foo-node
+         :tree/bar om-679-2-bar-node} type)
+         props))))
+
+(def om-679-2-node (om/factory OM-679-2-Node))
+
+(defui OM-679-2-Tree
+  static om/IQuery
+  (query [this]
+    `[{:tree ~(om/get-query OM-679-2-Node)}])
+  Object
+  (render [this]
+    (let [{:keys [tree]} (om/props this)]
+      (dom/ul nil
+        (om-679-2-node tree)))))
+
+(defmulti om-679-2-read om/dispatch)
+
+(defmethod om-679-2-read :default
+  [{:keys [data] :as env} k _]
+  {:value (get data k)})
+
+(defmethod om-679-2-read :children
+  [{:keys [parser data union-query state] :as env} k _]
+  (let [st @state
+        f #(parser (assoc env :data (get-in st %)) ((first %) union-query))]
+    {:value (into [] (map f) (:children data))}))
+
+(defmethod om-679-2-read :tree
+  [{:keys [state parser query ast] :as env} k _]
+  (let [st @state
+        [type id :as entry] (get st k)
+        data (get-in st entry)
+        new-env (assoc env :data data :union-query query)]
+    {:value (parser new-env (type query))}))
+
+(def om-679-2-reconciler
+  (om/reconciler {:state om-679-2-data
+                  :parser (om/parser {:read om-679-2-read})}))
+
+(defcard om-679-2
+  (dom-node
+    (fn [_ node]
+      (om/add-root! om-679-2-reconciler OM-679-2-Tree node))))
+
+
 (comment
 
   (require '[cljs.pprint :as pprint])

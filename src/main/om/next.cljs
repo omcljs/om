@@ -108,23 +108,38 @@
 (defn- replace [template new-query]
   (-> template (zip/replace new-query) zip/root))
 
-(declare focus-query)
+(declare focus-query*)
 
-(defn- focused-join [expr ks full-expr]
+(defn- focused-join [expr ks full-expr union-expr]
   (let [expr-meta (meta expr)
         expr' (cond
                 (map? expr)
                 (let [join-value (-> expr first second)
                       join-value (if (and (util/recursion? join-value)
                                           (seq ks))
-                                   full-expr
+                                   (if-not (nil? union-expr)
+                                     union-expr
+                                     full-expr)
                                    join-value)]
-                  {(ffirst expr) (focus-query join-value ks)})
+                  {(ffirst expr) (focus-query* join-value ks nil)})
 
-                (seq? expr) (list (focused-join (first expr) ks) (second expr))
+                (seq? expr) (list (focused-join (first expr) ks nil nil) (second expr))
                 :else       expr)]
     (cond-> expr'
       (some? expr-meta) (with-meta expr-meta))))
+
+(defn- focus-query*
+  [query path union-expr]
+  (if (empty? path)
+    query
+    (let [[k & ks] path]
+      (letfn [(match [x]
+                (= k (util/join-key x)))
+              (value [x]
+                (focused-join x ks query union-expr))]
+        (if (map? query) ;; UNION
+          {k (focus-query* (get query k) ks query)}
+          (into [] (comp (filter match) (map value) (take 1)) query))))))
 
 (defn focus-query
   "Given a query, focus it along the specified path.
@@ -136,16 +151,7 @@
     (om.next/focus-query [{:foo [:bar :baz]} :woz] [:foo :bar])
     => [{:foo [:bar]}]"
   [query path]
-  (if (empty? path)
-    query
-    (let [[k & ks] path]
-      (letfn [(match [x]
-                (= k (util/join-key x)))
-              (value [x]
-                (focused-join x ks query))]
-        (if (map? query) ;; UNION
-          {k (focus-query (get query k) ks)}
-          (into [] (comp (filter match) (map value) (take 1)) query))))))
+  (focus-query* query path nil))
 
 ;; this function assumes focus is actually in fact
 ;; already focused!
@@ -1027,7 +1033,7 @@
                   (or (not (util/ident? prop))
                       (= (second prop) '_))
                   ((comp :dispatch-key parser/expr->ast))))
-              (build-index* [class query path classpath union-keys]
+              (build-index* [class query path classpath union-expr union-keys]
                 (invariant (or (not (iquery? class))
                              (and (iquery? class)
                                (not (empty? query))))
@@ -1052,84 +1058,92 @@
                                           (zip/replace query))]
                       (swap! class-path->query update-in [classpath]
                         (fnil conj #{}) cp-query)))
-                  (when (or (not recursive?)
-                            (and recursive?
-                                 (some (fn [e]
-                                         (and (util/join? e)
-                                           (not (util/recursion?
-                                                  (util/join-value e)))))
-                                   query)
-                                 (not= (peek path) (peek (pop path)))))
-                    (cond
-                      (vector? query)
-                      (let [{props false joins true} (group-by util/join? query)]
-                        (swap! prop->classes
-                          #(merge-with into %
-                             (zipmap
-                               (map get-dispatch-key props)
-                               (repeat #{class}))))
-                        (doseq [join joins]
-                          (let [[prop query']  (util/join-entry join)
-                                prop-dispatch-key (get-dispatch-key prop)
-                                recursion?     (util/recursion? query')
-                                query'         (if recursion?
-                                                 query
-                                                 query')
-                                path'          (conj path prop)
-                                rendered-path' (into [] (remove (set union-keys) path'))
-                                cs (get dp->cs rendered-path')
-                                cascade-query? (and (= (count cs) 1)
-                                                 (= (-> query' meta :component)
-                                                   (type (first cs)))
-                                                 (not (map? query')))
+                  (let [recursive-join? (and recursive?
+                                          (some (fn [e]
+                                                  (and (util/join? e)
+                                                    (not (util/recursion?
+                                                           (util/join-value e)))))
+                                            query)
+                                          (= (distinct path) path))
+                        recursive-union? (and recursive?
+                                           union-expr
+                                           (= (distinct path) path))]
+                    (when (or (not recursive?)
+                            recursive-join?
+                            recursive-union?)
+                      (cond
+                        (vector? query)
+                        (let [{props false joins true} (group-by util/join? query)]
+                          (swap! prop->classes
+                            #(merge-with into %
+                               (zipmap
+                                 (map get-dispatch-key props)
+                                 (repeat #{class}))))
+                          (doseq [join joins]
+                            (let [[prop query']  (util/join-entry join)
+                                  prop-dispatch-key (get-dispatch-key prop)
+                                  recursion?     (util/recursion? query')
+                                  union-recursion? (and recursion? union-expr)
+                                  query'         (if recursion?
+                                                   (if-not (nil? union-expr)
+                                                     union-expr
+                                                     query)
+                                                   query')
+                                  path'          (conj path prop)
+                                  rendered-path' (into [] (remove (set union-keys) path'))
+                                  cs (get dp->cs rendered-path')
+                                  cascade-query? (and (= (count cs) 1)
+                                                   (= (-> query' meta :component)
+                                                     (type (first cs)))
+                                                   (not (map? query')))
+                                  query''        (if cascade-query?
+                                                   (get-query (first cs))
+                                                   query')]
+                              (swap! prop->classes
+                                #(merge-with into % {prop-dispatch-key #{class}}))
+                              (when (and cascade-query? (not= query' query''))
+                                (let [cp->q' (cascade-query @class-path->query classpath
+                                               path' query'' union-keys)]
+                                  (swap! class-path->query merge cp->q')))
+                              (let [class' (-> query'' meta :component)]
+                                (when-not (and recursion? (nil? class'))
+                                  (build-index* class' query''
+                                    path' classpath union-expr union-keys))))))
+
+                        ;; Union query case
+                        (map? query)
+                        (doseq [[prop query'] query]
+                          (let [path'          (conj path prop)
+                                class'         (-> query' meta :component)
+                                cs             (filter #(= class' (type %))
+                                                 (get dp->cs path))
+                                cascade-query? (and class' (= (count cs) 1))
                                 query''        (if cascade-query?
                                                  (get-query (first cs))
                                                  query')]
-                            (swap! prop->classes
-                              #(merge-with into % {prop-dispatch-key #{class}}))
                             (when (and cascade-query? (not= query' query''))
-                              (let [cp->q' (cascade-query @class-path->query classpath
-                                             path' query'' union-keys)]
+                              (let [qs        (get @class-path->query classpath)
+                                    q         (first qs)
+                                    qnode     (zip/node
+                                                (cond-> q
+                                                  (nil? class) (query-template path)))
+                                    new-query (assoc qnode
+                                                prop query'')
+                                    q'        (cond-> (zip/replace
+                                                        (query-template (zip/root q) path)
+                                                        new-query)
+                                                (nil? class)
+                                                (-> zip/root
+                                                  (focus-query (pop path))
+                                                  (query-template (pop path))))
+                                    qs'       (into #{q'} (remove #{q}) qs)
+                                    cp->q'    (merge {classpath qs'}
+                                                (cascade-query @class-path->query
+                                                  (pop classpath) path
+                                                  (zip/node q') union-keys))]
                                 (swap! class-path->query merge cp->q')))
-                            (let [class' (-> query'' meta :component)]
-                              (when-not (and recursion? (nil? class'))
-                                (build-index* class' query''
-                                  path' classpath union-keys))))))
-
-                      ;; Union query case
-                      (map? query)
-                      (doseq [[prop query'] query]
-                        (let [path'          (conj path prop)
-                              class'         (-> query' meta :component)
-                              cs             (filter #(= class' (type %))
-                                               (get dp->cs path))
-                              cascade-query? (and class' (= (count cs) 1))
-                              query''        (if cascade-query?
-                                               (get-query (first cs))
-                                               query')]
-                          (when (and cascade-query? (not= query' query''))
-                            (let [qs        (get @class-path->query classpath)
-                                  q         (first qs)
-                                  qnode     (zip/node
-                                              (cond-> q
-                                                (nil? class) (query-template path)))
-                                  new-query (assoc qnode
-                                              prop query'')
-                                  q'        (cond-> (zip/replace
-                                                      (query-template (zip/root q) path)
-                                                      new-query)
-                                              (nil? class)
-                                              (-> zip/root
-                                                (focus-query (pop path))
-                                                (query-template (pop path))))
-                                  qs'       (into #{q'} (remove #{q}) qs)
-                                  cp->q'    (merge {classpath qs'}
-                                              (cascade-query @class-path->query
-                                                (pop classpath) path
-                                                (zip/node q') union-keys))]
-                              (swap! class-path->query merge cp->q')))
-                          (build-index* class' query'' path' classpath (conj union-keys prop))))))))]
-        (build-index* class rootq [] [] [])
+                            (build-index* class' query'' path' classpath query (conj union-keys prop)))))))))]
+        (build-index* class rootq [] [] nil [])
         (swap! indexes merge
           {:prop->classes     @prop->classes
            :class-path->query @class-path->query}))))

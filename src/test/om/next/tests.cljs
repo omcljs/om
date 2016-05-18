@@ -105,7 +105,28 @@
   (is (= (om/focus-query
            '[{:tree [:id {:counter [:value]} {:children ...}]}]
            [:tree :children :counter])
-        [{:tree [{:children [{:counter [:value]}]}]}])))
+        [{:tree [{:children [{:counter [:value]}]}]}]))
+  (is (= (om/focus-query
+           '[{:tree
+              {:tree/foo [:id :node/type :foo/value {:children ...}]
+               :tree/bar [:id :node/type {:counter [:value]} :bar/value {:children ...}]}}]
+           [:tree :tree/foo :children :tree/foo])
+         '[{:tree {:tree/foo [{:children {:tree/foo [:id :node/type :foo/value {:children ...}]}}]}}]))
+  (is (= (om/focus-query
+           '[{:tree
+              {:tree/foo [:id :node/type :foo/value {:children ...}]
+               :tree/bar [:id :node/type {:counter [:value]} :bar/value {:children ...}]}}]
+           [:tree :tree/foo :children :tree/bar])
+         '[{:tree
+            {:tree/foo [{:children {:tree/bar [:id :node/type {:counter [:value]}
+                                               :bar/value {:children ...}]}}]}}]))
+  (is (= (om/focus-query
+           '[{:tree
+              {:tree/foo [:id :node/type :foo/value {:children ...}]
+               :tree/bar [:id :node/type {:counter [:value]} :bar/value {:children ...}]}}]
+           [:tree :tree/foo :children :tree/bar :counter])
+         '[{:tree
+            {:tree/foo [{:children {:tree/bar [{:counter [:value]}]}}]}}])))
 
 (deftest test-focus->path
   (is (= (om/focus->path [{:baz/woz [{:bop/wop [:nop/sop]}]}])
