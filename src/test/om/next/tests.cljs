@@ -132,7 +132,13 @@
   (is (= (om/focus->path [{:baz/woz [{:bop/wop [:nop/sop]}]}])
          [:baz/woz :bop/wop]))
   (is (= (om/focus->path [:app/title {:counters/list [:db/id :counter/count]}])
-         [])))
+         []))
+  (is (= (om/focus->path [{:todos/list [{[:todo/by-id 0] [:id :title]}]}])
+         [:todos/list [:todo/by-id 0]]))
+  (is (= (om/focus->path [{:todos/list [{'[:current-todo _] [:id :title]}]}])
+         [:todos/list '[:current-todo _]]))
+  (is (= (om/focus->path [{:people/list [{[:person/by-id 0] [{:person/name [:name/first :name/last]}]}]}])
+         [:people/list [:person/by-id 0] :person/name])))
 
 (comment
   (om/focus-query '[{:tree [:id :node-value {:children ...}]}]
