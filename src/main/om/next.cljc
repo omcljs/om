@@ -2208,10 +2208,13 @@
     (if (util/join? join)
       (if (query-root? join)
         (conj result-roots [join path])
-        (mapcat
-          #(move-roots % result-roots
-            (conj path (util/join-key join)))
-          (util/join-value join)))
+        (let [joinvalue (util/join-value join)]
+          (if (vector? joinvalue)
+            (mapcat
+             #(move-roots % result-roots
+                          (conj path (util/join-key join)))
+             joinvalue)
+            result-roots)))
       result-roots)))
 
 (defn- merge-joins

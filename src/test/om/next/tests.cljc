@@ -1821,6 +1821,13 @@
               '[{:fake/key [{:real/key ...}]}] :remote))]
     (is (= [{:real/key '...}] (:query m)))))
 
+(deftest test-process-roots-recursive-non-query-root
+  (let [p (om/parser {:read precise-read})
+        m (om/process-roots
+            (p {:state (atom {})}
+              '[{:fake/key [{:real/key ...}]} {:other/key [:other/key {:other/key ...}]}] :remote))]
+    (is (= [{:real/key '...} {:other/key [:other/key {:other/key '...}]}] (:query m)))))
+
 (deftest test-process-roots-keeps-top-rooted-keys
   (let [p (om/parser {:read precise-read :mutate precise-mutate})
         m (om/process-roots
