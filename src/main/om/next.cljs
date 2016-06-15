@@ -1107,7 +1107,7 @@
                               (let [class' (-> query'' meta :component)]
                                 (when-not (and recursion? (nil? class'))
                                   (build-index* class' query''
-                                    path' classpath union-expr union-keys))))))
+                                    path' classpath (if recursion? union-expr nil) union-keys))))))
 
                         ;; Union query case
                         (map? query)
