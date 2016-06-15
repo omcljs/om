@@ -740,9 +740,9 @@
          :params (get-params component)}
        arg0 arg1 arg2)))
   ([component f arg0 arg1 arg2 arg3 & arg-rest]
-   (apply set-query! component
-     (f {:query  (get-unbound-query component)
-         :params (get-params component)}
+   (set-query! component
+     (apply f {:query  (get-unbound-query component)
+               :params (get-params component)}
        arg0 arg1 arg2 arg3 arg-rest))))
 
 (defn ^boolean mounted?
@@ -1107,7 +1107,7 @@
                               (let [class' (-> query'' meta :component)]
                                 (when-not (and recursion? (nil? class'))
                                   (build-index* class' query''
-                                    path' classpath union-expr union-keys))))))
+                                    path' classpath (if recursion? union-expr nil) union-keys))))))
 
                         ;; Union query case
                         (map? query)
