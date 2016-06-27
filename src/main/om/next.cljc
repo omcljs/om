@@ -2563,9 +2563,10 @@
                       :cljs (system-time))]
             #?(:cljs
                (when-let [l (:logger env)]
-                 (let [dt (- e s)]
+                 (let [dt (- e s)
+                       component-name (.. c -constructor -displayName)]
                    (when (< 16 dt)
-                     (glog/warning l (str c " query took " dt " msecs"))))))
+                     (glog/warning l (str component-name " query took " dt " msecs"))))))
             (get-in ui (path c))))))))
 
 (defn default-merge-ident
