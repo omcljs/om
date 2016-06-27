@@ -1797,9 +1797,17 @@
   (query [this]
     `[:foo {:bar ~(om/get-query UiB)}]))
 
+(defui UiUnion
+  static om/IQuery
+  (query [_] {:a (om/get-query UiA)
+              :b (om/get-query UiB)}))
+
 (deftest test-component-preserved
   (is (= UiA
          (-> (om/get-query UiA) om/query->ast om/ast->query
+           meta :component)))
+  (is (= UiUnion
+         (-> [{:union (om/get-query UiUnion)}] om/query->ast om/ast->query ffirst second
            meta :component))))
 
 ;; -----------------------------------------------------------------------------

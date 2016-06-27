@@ -149,7 +149,8 @@
                (let [{:keys [children]} ast]
                  (if (and (== 1 (count children))
                           (= :union (:type (first children)))) ;; UNION
-                   {key (into {}
+                   {key (into (cond-> {}
+                                component (with-meta {:component component}))
                           (map (fn [{:keys [union-key children component]}]
                                  [union-key
                                   (cond-> (into [] (map #(ast->expr % unparse?)) children)
