@@ -1421,7 +1421,10 @@
   [query data refs map-ident idents-seen union-expr recurse-key]
   {:pre [(map? refs)]}
   ;; support taking ident for data param
-  (let [data (cond-> data (util/ident? data) (->> map-ident (get-in refs)))]
+  (let [data (loop [data data]
+               (if (util/ident? data)
+                 (recur (get-in refs (map-ident data)))
+                 data))]
     (if (vector? data)
       ;; join
       (let [step (fn [ident]
@@ -1462,7 +1465,13 @@
                                     (get-in refs (map-ident key)))
                                   (get data key))
                     key         (cond-> key (util/unique-ident? key) first)
-                    v           (if (util/ident? v) (map-ident v) v)
+                    v           (if (util/ident? v)
+                                  (loop [v v]
+                                    (let [next (get-in refs (map-ident v))]
+                                      (if (util/ident? next)
+                                        (recur next)
+                                        (map-ident v))))
+                                  v)
                     limit       (if (number? sel) sel :none)
                     union-entry (if (util/union? join) sel union-expr)
                     sel         (cond
@@ -1471,13 +1480,13 @@
                                     union-entry
                                     (reduce-query-depth query key))
 
-                                  (and (util/ident? key)
-                                    (util/union? join))
-                                  (get sel (first key))
-
                                   (and (util/ident? v)
                                        (util/union? join))
                                   (get sel (first v))
+
+                                  (and (util/ident? key)
+                                       (util/union? join))
+                                  (get sel (first key))
 
                                   :else sel)
                     graph-loop? (and recurse?
