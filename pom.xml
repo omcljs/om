@@ -117,7 +117,7 @@
         <dependency>
             <groupId>com.cognitect</groupId>
             <artifactId>transit-cljs</artifactId>
-            <version>0.8.237</version>
+            <version>0.8.239</version>
         </dependency>
         <dependency>
             <groupId>cljsjs</groupId>

@@ -18,7 +18,7 @@
                  [cljsjs/react "15.0.1-1"]
                  [cljsjs/react-dom "15.0.1-1"]
                  [com.cognitect/transit-clj "0.8.285"]
-                 [com.cognitect/transit-cljs "0.8.237"]
+                 [com.cognitect/transit-cljs "0.8.239"]
 
                  [org.clojure/core.async "0.2.374" :scope "test"
                   :exclusions [org.clojure/tools.reader]]
