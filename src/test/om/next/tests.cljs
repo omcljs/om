@@ -1077,6 +1077,26 @@
     (is (= {:current-panel {:boo 42}} (om/db->tree single-query db db)))
     (is (= {[:panelC :ui] {:sticky true}} (om/db->tree ident-query db db)))))
 
+(deftest test-db->tree-ident-chain
+  (testing "simple joins"
+    (let [data {:a [:b 1]
+                :b {1 [:c 2]}
+                :c {2 {:foo "bar"}}}
+          query [{:a [:foo]}]]
+      (is (= (om/db->tree query data data)
+            {:a {:foo "bar"}}))))
+  (testing "simple unions"
+    (let [data {:a [:b 1]
+                :b {1 [:c 2]}
+                :c {2 {:foo "foo" :bar "bar"}}}]
+      (is (= (om/db->tree [{:a {:b [:x] :c [:foo]}}] data data)
+             {:a {:foo "foo"}}))))
+  (testing "unions with idents in queries"
+    (let [data {:y {"bla" [:z "meh"]}
+                :z {"meh" {:name "Bar" :age 25}}}]
+      (is (= (om/db->tree [{[:y "bla"] {:z [:name]}}] data data)
+             {[:y "bla"] {:name "Bar"}})))))
+
 (deftest test-recursion-limit-grammar
   (let [original-query [:k {:j 2}]
         ast (om/query->ast original-query)
