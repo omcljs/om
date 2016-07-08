@@ -622,7 +622,29 @@
         props []
         (:dashboard/items props) [:dashboard/items]
         (-> props :dashboard/items first) [:dashboard/items 0]
-        (-> props :dashboard/items second) [:dashboard/items 1])))
+        (-> props :dashboard/items second) [:dashboard/items 1]))
+    ;; test union query inference
+    (let [x {:data {:foo {:some/key 42}}}
+          q [{:data {:branch/foo [{:foo [:some/key]} :qux]
+                     :branch/bar [:bar :baz]}}]
+          props (parser/path-meta x [] q)]
+      (is (= props x))
+      (are [x path] (= (-> x meta :om-path) path)
+        props []
+        (:data props) [:data]
+        (-> props :data :foo) [:data :foo]))
+    (let [x {:data {:foo {:some/key 42}
+                    :bar 43
+                    :baz 44}}
+          q [{:data {:branch/one [{:foo [:some/key]} :bar :baz :other]
+                     :branch/two [:foo :bar :baz :qux :one/more]
+                     :branch/three [{:foo [:some/key]} :bar :baz]}}]
+          props (parser/path-meta x [] q)]
+      (is (= props x))
+      (are [x path] (= (-> x meta :om-path) path)
+        props []
+        (:data props) [:data]
+        (-> props :data :foo) [:data :foo])))
   (testing "recursive queries"
     (let [x {:tree {:node-value 1
                     :children [{:node-value 2

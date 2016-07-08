@@ -40,7 +40,8 @@
    :query and :params may or may not appear. :type :call is only for
    mutations."}
   om.next.impl.parser
-  (:require [om.util :as util]))
+  (:require [clojure.set :as set]
+            [om.util :as util]))
 
 (declare expr->ast)
 
@@ -216,12 +217,15 @@
        (let [dispatch-key (comp :dispatch-key expr->ast)
              branches     (vals query)
              props (map dispatch-key (keys data))
-             query (some (fn [q]
-                           (let [query-props (map dispatch-key q)]
-                             (when (= (set props)
-                                     (set query-props))
-                               q)))
-                     branches)]
+             query (reduce (fn [ret q]
+                             (let [query-props (into #{} (map dispatch-key) q)
+                                   props (set props)]
+                               (cond
+                                 (= (set props)
+                                    (set query-props)) (reduced q)
+                                 (set/subset? props query-props) q
+                                 :else ret)))
+                     nil branches)]
          (path-meta data path query union-expr))
        data))))
 
