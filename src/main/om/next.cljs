@@ -338,17 +338,18 @@
   "Create a factory constructor from a component class created with
    om.next/defui."
   ([class] (factory class nil))
-  ([class {:keys [validator keyfn] :as opts}]
+  ([class {:keys [validator keyfn instrument?]
+           :or {instrument? true} :as opts}]
    {:pre [(fn? class)]}
    (fn self [props & children]
      (when-not (nil? validator)
        (assert (validator props)))
-     (if *instrument*
+     (if (and *instrument* instrument?)
        (*instrument*
          {:props    props
           :children children
           :class    class
-          :factory  self})
+          :factory  (factory class (assoc opts :instrument? false))})
        (let [key (if-not (nil? keyfn)
                    (keyfn props)
                    (compute-react-key class props))
@@ -2005,11 +2006,7 @@
                   :root-render root-render :root-unmount root-unmount
                   :logger logger :pathopt pathopt
                   :migrate migrate :id-key id-key
-                  :instrument (cond-> instrument
-                                (not (nil? instrument))
-                                (fn [x]
-                                  (binding [*instrument* nil]
-                                    (instrument x))))}
+                  :instrument instrument}
                  (atom {:queue [] :queued false :queued-sends {}
                         :sends-queued false
                         :target nil :root nil :render nil :remove nil
