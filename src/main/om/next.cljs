@@ -1796,7 +1796,7 @@
           (fn [res query]
             (merge! this res query)))))))
 
-(defn- default-ui->props
+(defn default-ui->props
   [{:keys [parser ^boolean pathopt] :as env} c]
   (let [ui (when (and pathopt (implements? Ident c) (iquery? c))
              (let [id (ident c (props c))]
@@ -1814,17 +1814,17 @@
                   (glog/warning l (str c " query took " dt " msecs")))))
             (get-in ui (path c))))))))
 
-(defn- default-merge-ident
+(defn default-merge-ident
   [_ tree ref props]
   (update-in tree ref merge props))
 
-(defn- default-merge-tree
+(defn default-merge-tree
   [a b]
   (if (map? a)
     (merge a b)
     b))
 
-(defn- default-migrate
+(defn default-migrate
   "Given app-state-pure (the application state as an immutable value), a query,
    tempids (a hash map from tempid to stable id), and an optional id-key
    keyword, return a new application state value with the tempids replaced by
@@ -1850,7 +1850,7 @@
 (defn- ^boolean has-error? [x]
   (and (map? x) (contains? x ::error)))
 
-(defn- default-extract-errors [reconciler res query]
+(defn default-extract-errors [reconciler res query]
   (letfn [(extract* [query res errs]
             (let [class      (-> query meta :component)
                   top-error? (when (and (not (nil? class)) (has-error? res))
