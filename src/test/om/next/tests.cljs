@@ -803,6 +803,31 @@
     (is (= (p {:state state} '[(action/no-value)] :remote) []))
     (is (= nil @state))))
 
+(defmethod read :app/count
+  [{:keys [state]} k _]
+  {:value (get @state k)})
+
+(defmethod mutate 'app/inc!
+  [{:keys [state]} _ _]
+  {:action #(swap! state update-in [:app/count] inc)})
+
+(deftest test-transact!
+  (let [r (om/reconciler {:state (atom {:app/count 0})
+                          :parser p})
+        t-ret (om/transact! r '[(app/inc!)])
+        t-err (om/transact! r '[(this/throws)])]
+    (is (= (:app/count @r) 1))
+    (is (some? t-ret))
+    (is (= t-ret {'app/inc! {:result {:app/count 1}}}))
+    (is (= (om/transact! r '[(app/inc!) :app/count])
+           {'app/inc! {:result {:app/count 2}}
+            :app/count 2}))
+    (is (some? t-err))
+    (is (contains? t-err 'this/throws))
+    (is (contains? (get t-err 'this/throws) :om.next/error))
+    (is (not (contains? (get t-err 'this/throws) :result)))
+    (is (= (get (om/transact! r '[(this/throws) :app/count]) :app/count) 2))))
+
 ;; -----------------------------------------------------------------------------
 ;; Recursive Parsing
 

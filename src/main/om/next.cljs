@@ -905,7 +905,8 @@
     (p/queue! r (into q (remove symbol?) (keys v)))
     (when-not (empty? snds)
       (p/queue-sends! r snds)
-      (schedule-sends! r))))
+      (schedule-sends! r))
+    v))
 
 (defn annotate-mutations
   "Given a query expression annotate all mutations by adding a :mutator -> ident
