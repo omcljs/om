@@ -43,8 +43,11 @@
      (.write writer (str "#om/id[\"" (.id x) "\"]"))))
 
 #?(:clj
-   (defn tempid [uuid]
-     (TempId. uuid)))
+   (defn tempid
+     ([]
+      (tempid (java.util.UUID/randomUUID)))
+     ([uuid]
+      (TempId. uuid))))
 
 (defn tempid?
   #?(:cljs {:tag boolean})
