@@ -1756,6 +1756,35 @@
                           :content "Hello World!", :id 1}},
           :om.next/tables #{:post/by-id}})))
 
+(deftest test-om-637
+  (let [data {:some/list [[:item/by-id 1]]
+              :item/by-id {1 {:id 1
+                              :name "foo"}}}]
+    (is (= (om/db->tree '[{:some/list [*]}] data data)
+           {:some/list [{:id 1, :name "foo"}]})))
+  (is (= (om/db->tree '[[:my-route _]] {:my-route [:some-route]} {:my-route [:some-route]})
+         {:my-route [:some-route]}))
+  (is (= (om/db->tree '[[:my-route _]] {:my-route [:some-route :other-key]} {:my-route [:some-route :other-key]})
+         {:my-route [:some-route :other-key]}))
+  (let [data {:todos/list [[:todo/by-id 42]]
+              :todo/by-id {42 {:id 42
+                               :states [:archived]}}}]
+    (is (= (om/db->tree [{:todos/list [:id :states]}] data data)
+           {:todos/list [{:id 42, :states [:archived]}]})))
+  (let [data {:todos/list [[:todo/by-id 42]]
+              :todo/by-id {42 {:id 42
+                               :states [:done :archived]}}
+              :current-users [{:id 0 :name "John"} {:id 1 :name "Mary"}]}]
+    (is (= (om/db->tree [{:todos/list [:id :states '[:current-users _]]}] data data)
+           {:todos/list [{:id 42, :states [:done :archived]
+                          :current-users [{:id 0 :name "John"}
+                                          {:id 1, :name "Mary"}]}]})))
+  (let [data {:todos/list [{:id 42 :title "do stuff" :states [:done :archived]}
+                           {:id 43 :title "buy milk" :states [:done :archived]}]}]
+    (is (= (om/db->tree [{:todos/list [:id :title]}] data data)
+           {:todos/list [{:id 42 :title "do stuff"}
+                         {:id 43 :title "buy milk"}]}))))
+
 ;; -----------------------------------------------------------------------------
 ;; Union Migration
 
