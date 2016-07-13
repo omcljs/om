@@ -812,6 +812,31 @@
     (fn [_ node]
       (om/add-root! om-679-2-reconciler OM-679-2-Tree node))))
 
+;; ==================
+;; OM-673
+
+(defui OM-673-Child
+  Object
+  (render [this]
+    (dom/div nil (-> this om/props :text))))
+
+(def om-673-child (om/factory OM-673-Child))
+
+(defui OM-673-App
+  Object
+  (render [this]
+    (dom/div nil
+      (om-673-child {:text "child 1"})
+      (om-673-child {:text "child 2"}))))
+
+(def om-673-reconciler
+  (om/reconciler {:state nil}))
+
+(defcard om-673
+  (dom-node
+    (fn [_ node]
+      (om/add-root! om-673-reconciler OM-673-App node))))
+
 
 (comment
 
