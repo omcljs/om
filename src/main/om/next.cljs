@@ -1437,7 +1437,18 @@
                    (if-not (mappable-ident? refs ident)
                      (if (= query '[*])
                        ident
-                       (select-keys ident query))
+                       (let [{props false joins true} (group-by util/join? query)
+                             props (mapv #(cond-> % (seq? %) first) props)]
+                         (loop [joins (seq joins) ret {}]
+                           (if-not (nil? joins)
+                             (let [join        (first joins)
+                                   [key sel]   (util/join-entry join)
+                                   v           (get ident key)]
+                               (recur (next joins)
+                                 (assoc ret
+                                   key (denormalize* sel v refs map-ident
+                                         idents-seen union-expr recurse-key))))
+                             (merge (select-keys ident props) ret)))))
                      (let [ident'       (get-in refs (map-ident ident))
                            union-recur? (and union-expr recurse-key)
                            query        (cond-> query
