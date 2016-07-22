@@ -4,7 +4,6 @@
   (:require [goog.string :as gstring]
             [goog.object :as gobj]
             [goog.log :as glog]
-            [clojure.walk :as walk]
             [om.next.protocols :as p]
             [om.next.impl.parser :as parser]
             [om.next.cache :as c]
@@ -252,11 +251,7 @@
        {:component (type component)}))))
 
 (defn ^boolean iquery? [x]
-  (if (implements? IQuery x)
-    true
-    (when (goog/isFunction x)
-      (let [x (js/Object.create (. x -prototype))]
-        (implements? IQuery x)))))
+  (implements? IQuery x))
 
 (defn- get-class-or-instance-query
   "Return a IQuery/IParams local bound query. Works for component classes
@@ -289,7 +284,7 @@
   "Return a IQuery/IParams instance bound query. Works for component classes
    and component instances. See also om.next/full-query."
   [x]
-  (if (implements? IQuery x)
+  (when (implements? IQuery x)
     (if (component? x)
       (if-let [query-data (component->query-data x)]
         (get-component-query x query-data)
@@ -298,15 +293,7 @@
               data-path (into [] (remove number?) (path x))
               class-path-query-data (get (:class-path->query @(get-indexer r)) cp)]
           (get-indexed-query x class-path-query-data data-path)))
-      (get-class-or-instance-query x))
-    ;; in advanced, statics will get elided
-    (when (goog/isFunction x)
-      (let [y (js/Object.create (. x -prototype))]
-        (when (implements? IQuery y)
-          (let [q (query y)
-                c (-> q meta :component)]
-            (assert (nil? c) (str "Query violation, " y , " reuses " c " query"))
-            (with-meta (bind-query q (params y)) {:component x})))))))
+      (get-class-or-instance-query x))))
 
 (defn tag [x class]
   (vary-meta x assoc :component class))
@@ -1287,20 +1274,13 @@
            (ex-info (str "No queries exist for component path " cp)
              {:type :om.next/no-queries})))))))
 
-;; for advanced optimizations
-(defn to-class [class]
-  (when-not (nil? class)
-    (if (not (implements? Ident class))
-      (js/Object.create (. class -prototype))
-      class)))
-
 (defn- normalize* [query data refs union-seen]
   (cond
     (= '[*] query) data
 
     ;; union case
     (map? query)
-    (let [class (to-class (-> query meta :component))
+    (let [class (-> query meta :component)
           ident   (when (implements? Ident class)
                   (ident class data))]
       (if-not (nil? ident)
@@ -1323,7 +1303,7 @@
                               union-seen
                               query)
                             sel)
-                  class   (to-class (-> sel meta :component))
+                  class   (-> sel meta :component)
                   v       (get data k)]
               (cond
                 ;; graph loop: db->tree leaves ident in place

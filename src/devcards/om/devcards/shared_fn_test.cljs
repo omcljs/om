@@ -1,6 +1,6 @@
 (ns om.devcards.shared-fn-test
-  (:require-macros [devcards.core :refer [defcard deftest dom-node]])
-  (:require [om.next :as om :refer-macros [defui]]
+  (:require [devcards.core :refer-macros [defcard deftest dom-node]]
+            [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]))
 
 (defui Home
