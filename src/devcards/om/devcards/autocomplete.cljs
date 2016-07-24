@@ -1,7 +1,7 @@
 (ns om.devcards.autocomplete
-  (:require-macros [devcards.core :refer [defcard deftest dom-node]]
-                   [cljs.core.async.macros :refer [go]])
+  (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.core.async :as async :refer [<! >! put! chan]]
+            [devcards.core :refer-macros [defcard deftest dom-node]]
             [clojure.string :as string]
             [om.next :as om :refer-macros [defui]]
             [om.dom :as dom])

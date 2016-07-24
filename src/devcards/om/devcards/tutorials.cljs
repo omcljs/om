@@ -1,6 +1,6 @@
 (ns om.devcards.tutorials
-  (:require-macros [devcards.core :refer [defcard deftest dom-node]])
   (:require [cljs.test :refer-macros [is async]]
+            [devcards.core :refer-macros [defcard deftest dom-node]]
             [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]))
 

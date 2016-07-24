@@ -202,6 +202,50 @@
               dt))]
     (->> dt (map reshape*) vec add-object-protocol add-defaults)))
 
+(defn- add-proto-methods* [pprefix type type-sym [f & meths :as form]]
+  (let [pf (str pprefix (name f))]
+    (if (vector? (first meths))
+      ;; single method case
+      (let [meth meths
+            emit-static (when (-> form meta :static)
+                          `(~'js* "/** @nocollapse */"))
+            form-meta (cond-> (meta form)
+                        (-> form meta :static)
+                        (dissoc :static))]
+        [`(do
+            ~emit-static
+            (set! ~(#'cljs.core/extend-prefix type-sym (str pf "$arity$" (count (first meth))))
+              ~(with-meta `(fn ~@(#'cljs.core/adapt-proto-params type meth)) form-meta)))])
+      (map (fn [[sig & body :as meth]]
+             `(set! ~(#'cljs.core/extend-prefix type-sym (str pf "$arity$" (count sig)))
+                ~(with-meta `(fn ~(#'cljs.core/adapt-proto-params type meth)) (meta form))))
+        meths))))
+
+(intern 'cljs.core 'add-proto-methods* add-proto-methods*)
+
+(defn- proto-assign-impls [env resolve type-sym type [p sigs]]
+  (#'cljs.core/warn-and-update-protocol p type env)
+  (let [psym      (resolve p)
+        pprefix   (#'cljs.core/protocol-prefix psym)
+        skip-flag (set (-> type-sym meta :skip-protocol-flag))
+        emit-static (when (-> p meta :static)
+                      `(~'js* "/** @nocollapse */"))]
+    (if (= p 'Object)
+      (#'cljs.core/add-obj-methods type type-sym sigs)
+      (concat
+        (when-not (skip-flag psym)
+          [`(do
+              ~emit-static
+              (set! ~(#'cljs.core/extend-prefix type-sym pprefix) true))])
+        (mapcat
+          (fn [sig]
+            (if (= psym 'cljs.core/IFn)
+              (#'cljs.core/add-ifn-methods type type-sym sig)
+              (#'cljs.core/add-proto-methods* pprefix type type-sym sig)))
+          sigs)))))
+
+(intern 'cljs.core 'proto-assign-impls proto-assign-impls)
+
 (defn defui*
   ([name form] (defui* name form nil))
   ([name forms env]
@@ -238,7 +282,8 @@
           (set! (.. ~name -prototype -constructor -displayName) ~display-name)
           (set! (.. ~name -prototype -om$isComponent) true)
           ~@(map #(field-set! name %) (:fields statics))
-          (specify! ~name ~@(:protocols statics))
+          (specify! ~name
+            ~@(mapv #(vary-meta % assoc :static true) (:protocols statics)))
           (specify! (. ~name ~'-prototype) ~@(:protocols statics))
           (set! (.-cljs$lang$type ~rname) true)
           (set! (.-cljs$lang$ctorStr ~rname) ~(str rname))
