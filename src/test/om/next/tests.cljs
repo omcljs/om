@@ -180,6 +180,14 @@
     (is (= bq2 '[{:foo [(:bar {:a 1}) :b]} (:test {:a 1, :b 2})]))
     (is (not (nil? (-> bq2 first meta))))))
 
+(deftest test-om-727
+  (let [data {:item [:bar 0]
+              :bar    {0 {:id 0 :next [:bar 1]}
+                             1 {:id 1 :next [:bar 2]}
+                             2 {:id 2}}}]
+    (is (= (om/db->tree [{:item {:foo [:id] :bar [:id {:next '...}]}}] data data)
+           {:item {:id 0, :next {:id 1, :next {:id 2}}}}))))
+
 ;; -----------------------------------------------------------------------------
 ;; Query Templating
 
