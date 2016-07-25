@@ -1405,7 +1405,6 @@
    evaluated. recurse-key is key representing the current recursive query being
    evaluted."
   [query data refs map-ident idents-seen union-expr recurse-key]
-  {:pre [(map? refs)]}
   ;; support taking ident for data param
   (let [data (loop [data data]
                (if (mappable-ident? refs data)
@@ -1474,7 +1473,10 @@
                                         (map-ident v))))
                                   v)
                     limit       (if (number? sel) sel :none)
-                    union-entry (if (util/union? join) sel union-expr)
+                    union-entry (if (util/union? join)
+                                  sel
+                                  (when recurse?
+                                    union-expr))
                     sel         (cond
                                   recurse?
                                   (if-not (nil? union-expr)
@@ -1519,8 +1521,10 @@
    application state in the default database format, return the tree where all
    ident links have been replaced with their original node values."
   ([query data refs]
+   {:pre [(map? refs)]}
    (denormalize* query data refs identity {} nil nil))
   ([query data refs map-ident]
+   {:pre [(map? refs)]}
    (denormalize* query data refs map-ident {} nil nil)))
 
 ;; =============================================================================
