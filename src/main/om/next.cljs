@@ -817,17 +817,19 @@
 (defn- basis-t [reconciler]
   (p/basis-t reconciler))
 
+(defn- queue-render! [f]
+  (cond
+    (fn? *raf*) (*raf* f)
+
+    (not (exists? js/requestAnimationFrame))
+    (js/setTimeout f 16)
+
+    :else
+    (js/requestAnimationFrame f)))
+
 (defn schedule-render! [reconciler]
   (when (p/schedule-render! reconciler)
-    (let [f #(p/reconcile! reconciler)]
-      (cond
-        (fn? *raf*) (*raf* f)
-
-        (not (exists? js/requestAnimationFrame))
-        (js/setTimeout f 16)
-
-        :else
-        (js/requestAnimationFrame f)))))
+    (queue-render! #(p/reconcile! reconciler))))
 
 (defn schedule-sends! [reconciler]
   (when (p/schedule-sends! reconciler)
@@ -1714,7 +1716,9 @@
         (add-watch (:state config) (or target guid)
           (fn [_ _ _ _]
             (swap! state update-in [:t] inc)
-            (schedule-render! this)))
+            (if-not (iquery? root-class)
+              (queue-render! parsef)
+              (schedule-render! this))))
         (parsef)
         (when-let [sel (get-query (or (and target @ret) root-class))]
           (let [env  (to-env config)
@@ -1747,7 +1751,9 @@
 
   (schedule-render! [_]
     (if-not (:queued @state)
-      (swap! state update-in [:queued] not)
+      (do
+        (swap! state assoc :queued true)
+        true)
       false))
 
   (schedule-sends! [_]
@@ -1763,13 +1769,9 @@
           q  (:queue st)]
       (swap! state update-in [:queued] not)
       (swap! state assoc :queue [])
-      (cond
+      (if (empty? q)
         ;; TODO: need to move root re-render logic outside of batching logic
-        (empty? q) ((:render st))
-
-        (= [::skip] q) nil
-
-        :else
+        ((:render st))
         (let [cs (transduce
                    (map #(p/key->components (:indexer config) %))
                    #(into %1 %2) #{} q)
