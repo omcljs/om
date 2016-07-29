@@ -1408,11 +1408,15 @@
    evaluted."
   [query data refs map-ident idents-seen union-expr recurse-key]
   ;; support taking ident for data param
-  (let [data (loop [data data]
+  (let [union-recur? (and union-expr recurse-key)
+        recur-ident (when union-recur?
+                      data)
+        data (loop [data data]
                (if (mappable-ident? refs data)
                  (recur (get-in refs (map-ident data)))
                  data))]
-    (if (vector? data)
+    (cond
+      (vector? data)
       ;; join
       (let [step (fn [ident]
                    (if-not (mappable-ident? refs ident)
@@ -1431,7 +1435,6 @@
                                          idents-seen union-expr recurse-key))))
                              (merge (select-keys ident props) ret)))))
                      (let [ident'       (get-in refs (map-ident ident))
-                           union-recur? (and union-expr recurse-key)
                            query        (cond-> query
                                           union-recur? (reduce-union-recursion-depth recurse-key))
                            ;; also reduce query depth of union-seen, there can
@@ -1442,6 +1445,12 @@
                                           (map? query) (get (first ident)))] ;; UNION
                        (denormalize* query' ident' refs map-ident idents-seen union-seen' nil))))]
         (into [] (map step) data))
+
+      (and (map? query) union-recur?)
+      (denormalize* (get query (first recur-ident)) data refs map-ident
+        idents-seen union-expr recurse-key)
+
+      :else
       ;; map case
       (if (= '[*] query)
         data
