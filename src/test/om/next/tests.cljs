@@ -1810,6 +1810,15 @@
     (is (= (om/db->tree [{:items [:id {:stuff ['({:name [:first]} {:param 1})]}]}] data data)
           {:items [{:id 1, :stuff [{:name {:first "John"}}]}]}))))
 
+(deftest test-om-732
+  (let [state {:curr-view [:main :view]
+               :main {:view {:curr-item [[:sub-item/by-id 2]]}}
+               :sub-item/by-id {2 {:foo :baz :sub-items [[:sub-item/by-id 4]]}
+                                4 {:foo :bar}}}]
+    (is (= (om/db->tree [{:curr-view
+                          {:main [{:curr-item [:foo {:sub-items '...}]}]}}] state state)
+          {:curr-view {:curr-item [{:foo :baz :sub-items [{:foo :bar}]}]}}))))
+
 ;; -----------------------------------------------------------------------------
 ;; Union Migration
 
