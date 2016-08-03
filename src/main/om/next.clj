@@ -256,7 +256,11 @@
            rname (if env
                    (:name (ana/resolve-var (dissoc env :locals) name))
                    name)
-           ctor  `(defn ~(with-meta name {:jsdoc ["@constructor"]}) []
+           ctor  `(defn ~(with-meta name
+                           (merge {:jsdoc ["@constructor"]}
+                             (when (-> name meta :private)
+                               {:private true})))
+                    []
                     (this-as this#
                       (.apply js/React.Component this# (js-arguments))
                       (if-not (nil? (.-initLocalState this#))

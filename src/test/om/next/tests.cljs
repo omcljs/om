@@ -188,6 +188,20 @@
     (is (= (om/db->tree [{:item {:foo [:id] :bar [:id {:next '...}]}}] data data)
            {:item {:id 0, :next {:id 1, :next {:id 2}}}}))))
 
+(defui ^:private Private
+  static om/IQuery
+  (query [this]
+    [:foo]))
+
+(defui ^:private ^:once PrivateOnce
+  static om/IQuery
+  (query [this]
+    [:foo]))
+
+(deftest test-om-739
+  (is (true? (-> #'Private meta :private)))
+  (is (true? (-> #'PrivateOnce meta :private))))
+
 ;; -----------------------------------------------------------------------------
 ;; Query Templating
 
@@ -2214,4 +2228,3 @@
         (is (= expected (merge-idents {} config response nil)))))
     (testing "Merge works when a query is passed as an argument."
       (is (= expected (merge-idents {} config response query))))))
-
