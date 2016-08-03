@@ -1777,7 +1777,7 @@
       false))
 
   ;; TODO: need to reindex roots after reconcilation
-  (reconcile! [_]
+  (reconcile! [this]
     (let [st @state
           q  (:queue st)]
       (swap! state update-in [:queued] not)
@@ -1793,7 +1793,15 @@
           (doseq [c ((:optimize config) cs)]
             (when (mounted? c)
               (let [computed   (get-computed (props c))
-                    next-props (om.next/computed (ui->props env c) computed)]
+                    next-props (om.next/computed (ui->props env c) computed)
+                    root (:root @state)
+                    props-change? (> (p/basis-t this) (t root))]
+                (when (and (exists? (.-componentWillReceiveProps c))
+                           (iquery? root)
+                           props-change?)
+                  ;; `componentWilReceiveProps` is always called before `shouldComponentUpdate`
+                  (.componentWillReceiveProps c
+                    #js {:omcljs$value (om-props next-props (p/basis-t this))}))
                 (when (should-update? c next-props (get-state c))
                   (if-not (nil? next-props)
                     (update-component! c next-props)
