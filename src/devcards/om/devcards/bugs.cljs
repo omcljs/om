@@ -299,8 +299,8 @@
 (defui OM-601-App
   static om/IQuery
   (query [this]
-    [{:foo (om/get-query OM-601-Foo)
-      :bar (om/get-query OM-601-Bar)}])
+    [{:foo (om/get-query OM-601-Foo)}
+     {:bar (om/get-query OM-601-Bar)}])
   Object
   (render [this]
     (let [{:keys [foo bar]} (om/props this)]
