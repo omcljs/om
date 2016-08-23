@@ -1,6 +1,6 @@
 (ns om.next
   (:refer-clojure :exclude [deftype])
-  (:require [cljs.core :refer [deftype specify! this-as js-arguments]]
+  (:require #?(:clj [cljs.core :refer [deftype specify! this-as js-arguments]])
             [cljs.analyzer :as ana]
             [cljs.analyzer.api :as ana-api]
             [clojure.string :as str]))
@@ -25,7 +25,8 @@
                 (recur (seq dt) dt'
                   (update-in statics [:protocols]
                     into (concat [sym] protocol-info))))
-              :else (throw (IllegalArgumentException. "Malformed static")))
+              :else (throw #?(:clj  (IllegalArgumentException. "Malformed static")
+                              :cljs (js/Error. "Malformed static"))))
             (recur nil dt' statics)))
         {:dt dt' :statics statics}))))
 
@@ -34,8 +35,10 @@
                        (map #(-> % str (str/split #"/") last)
                          (filter symbol? dt)))]
      (throw
-       (IllegalArgumentException.
-         (str invalid " protocol declaration must appear with `static`.")))))
+       #?(:clj  (IllegalArgumentException.
+                  (str invalid " protocol declaration must appear with `static`."))
+          :cljs (js/Error.
+                  (str invalid " protocol declaration must appear with `static`."))))))
 
 (def lifecycle-sigs
   '{initLocalState [this]
@@ -139,7 +142,7 @@
       (let [next-children# (. next-props# -children)
             next-props# (goog.object/get next-props# "omcljs$value")
             next-props# (cond-> next-props#
-                          (instance? OmProps next-props#) om.next/unwrap)]
+                          (instance? om.next/OmProps next-props#) om.next/unwrap)]
         (or (not= (om.next/props this#)
                   next-props#)
             (and (.. this# ~'-state)
@@ -203,51 +206,53 @@
               dt))]
     (->> dt (map reshape*) vec add-object-protocol add-defaults)))
 
-(defn- add-proto-methods* [pprefix type type-sym [f & meths :as form]]
-  (let [pf (str pprefix (name f))
-        emit-static (when (-> type-sym meta :static)
-                      `(~'js* "/** @nocollapse */"))]
-    (if (vector? (first meths))
-      ;; single method case
-      (let [meth meths]
-        [`(do
-            ~emit-static
-            (set! ~(#'cljs.core/extend-prefix type-sym (str pf "$arity$" (count (first meth))))
-              ~(with-meta `(fn ~@(#'cljs.core/adapt-proto-params type meth)) (meta form))))])
-      (map (fn [[sig & body :as meth]]
-             `(do
-                ~emit-static
-                (set! ~(#'cljs.core/extend-prefix type-sym (str pf "$arity$" (count sig)))
-                  ~(with-meta `(fn ~(#'cljs.core/adapt-proto-params type meth)) (meta form)))))
-        meths))))
+#?(:clj
+   (defn- add-proto-methods* [pprefix type type-sym [f & meths :as form]]
+     (let [pf (str pprefix (name f))
+           emit-static (when (-> type-sym meta :static)
+                         `(~'js* "/** @nocollapse */"))]
+       (if (vector? (first meths))
+         ;; single method case
+         (let [meth meths]
+           [`(do
+               ~emit-static
+               (set! ~(#'cljs.core/extend-prefix type-sym (str pf "$arity$" (count (first meth))))
+                 ~(with-meta `(fn ~@(#'cljs.core/adapt-proto-params type meth)) (meta form))))])
+         (map (fn [[sig & body :as meth]]
+                `(do
+                   ~emit-static
+                   (set! ~(#'cljs.core/extend-prefix type-sym (str pf "$arity$" (count sig)))
+                     ~(with-meta `(fn ~(#'cljs.core/adapt-proto-params type meth)) (meta form)))))
+           meths)))))
 
-(intern 'cljs.core 'add-proto-methods* add-proto-methods*)
+#?(:clj (intern 'cljs.core 'add-proto-methods* add-proto-methods*))
 
-(defn- proto-assign-impls [env resolve type-sym type [p sigs]]
-  (#'cljs.core/warn-and-update-protocol p type env)
-  (let [psym      (resolve p)
-        pprefix   (#'cljs.core/protocol-prefix psym)
-        skip-flag (set (-> type-sym meta :skip-protocol-flag))
-        static?   (-> p meta :static)
-        type-sym  (cond-> type-sym
-                    static? (vary-meta assoc :static true))
-        emit-static (when static?
-                      `(~'js* "/** @nocollapse */"))]
-    (if (= p 'Object)
-      (#'cljs.core/add-obj-methods type type-sym sigs)
-      (concat
-        (when-not (skip-flag psym)
-          [`(do
-              ~emit-static
-              (set! ~(#'cljs.core/extend-prefix type-sym pprefix) true))])
-        (mapcat
-          (fn [sig]
-            (if (= psym 'cljs.core/IFn)
-              (#'cljs.core/add-ifn-methods type type-sym sig)
-              (#'cljs.core/add-proto-methods* pprefix type type-sym sig)))
-          sigs)))))
+#?(:clj
+   (defn- proto-assign-impls [env resolve type-sym type [p sigs]]
+     (#'cljs.core/warn-and-update-protocol p type env)
+     (let [psym      (resolve p)
+           pprefix   (#'cljs.core/protocol-prefix psym)
+           skip-flag (set (-> type-sym meta :skip-protocol-flag))
+           static?   (-> p meta :static)
+           type-sym  (cond-> type-sym
+                       static? (vary-meta assoc :static true))
+           emit-static (when static?
+                         `(~'js* "/** @nocollapse */"))]
+       (if (= p 'Object)
+         (#'cljs.core/add-obj-methods type type-sym sigs)
+         (concat
+           (when-not (skip-flag psym)
+             [`(do
+                 ~emit-static
+                 (set! ~(#'cljs.core/extend-prefix type-sym pprefix) true))])
+           (mapcat
+             (fn [sig]
+               (if (= psym 'cljs.core/IFn)
+                 (#'cljs.core/add-ifn-methods type type-sym sig)
+                 (#'cljs.core/add-proto-methods* pprefix type type-sym sig)))
+             sigs))))))
 
-(intern 'cljs.core 'proto-assign-impls proto-assign-impls)
+#?(:clj (intern 'cljs.core 'proto-assign-impls proto-assign-impls))
 
 (defn defui*
   ([name form] (defui* name form nil))
