@@ -35,7 +35,8 @@
     :query        (QueryRoot | RecurExpr)
     :params       ParamMapExpr
     :children     EdnVector(AST)
-    :component    Object}
+    :component    Object
+    :target       EdnKeyword}
 
    :query and :params may or may not appear. :type :call is only for
    mutations."}
