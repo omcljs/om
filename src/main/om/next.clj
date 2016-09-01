@@ -39,6 +39,7 @@
 
 (def lifecycle-sigs
   '{initLocalState [this]
+    shouldComponentUpdate [this next-props next-state]
     componentWillReceiveProps [this next-props]
     componentWillUpdate [this next-props next-state]
     componentDidUpdate [this prev-props prev-state]
