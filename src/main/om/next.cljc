@@ -259,15 +259,20 @@
   ([name forms env]
    (letfn [(field-set! [obj [field value]]
              `(set! (. ~obj ~(symbol (str "-" field))) ~value))]
-     (let [{:keys [dt statics]} (collect-statics forms)
+     (let [docstring (when (string? (first forms))
+                       (first forms))
+           forms (cond-> forms
+                   docstring rest)
+           {:keys [dt statics]} (collect-statics forms)
            _ (validate-statics dt)
            rname (if env
                    (:name (ana/resolve-var (dissoc env :locals) name))
                    name)
            ctor  `(defn ~(with-meta name
                            (merge {:jsdoc ["@constructor"]}
-                             (when (-> name meta :private)
-                               {:private true})))
+                             (meta name)
+                             (when docstring
+                               {:doc docstring})))
                     []
                     (this-as this#
                       (.apply js/React.Component this# (js-arguments))
