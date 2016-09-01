@@ -141,7 +141,7 @@
   `(do
      ~@(clojure.core/map gen-react-dom-inline-fn tags)))
 
-(gen-react-dom-inline-fns)
+#?(:clj (gen-react-dom-inline-fns))
 
 (defn ^:private gen-react-dom-fn [tag]
   `(defn ~tag [opts# & children#]
