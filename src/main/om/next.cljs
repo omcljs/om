@@ -1789,13 +1789,14 @@
                    (map #(p/key->components (:indexer config) %))
                    #(into %1 %2) #{} q)
               {:keys [ui->props]} config
-              env (to-env config)]
+              env (to-env config)
+              root (:root @state)
+              props-change? (> (p/basis-t this) (t root))]
           (doseq [c ((:optimize config) cs)]
             (when (mounted? c)
               (let [computed   (get-computed (props c))
-                    next-props (om.next/computed (ui->props env c) computed)
-                    root (:root @state)
-                    props-change? (> (p/basis-t this) (t root))]
+                    next-raw-props (ui->props env c)
+                    next-props     (om.next/computed next-raw-props computed)]
                 (when (and (exists? (.-componentWillReceiveProps c))
                            (iquery? root)
                            props-change?)
@@ -1805,7 +1806,19 @@
                 (when (should-update? c next-props (get-state c))
                   (if-not (nil? next-props)
                     (update-component! c next-props)
-                    (.forceUpdate c))))))))))
+                    (.forceUpdate c))
+                  ;; Only applies if we're doing incremental rendering, not
+                  ;; the case in applications without queries
+                  (when (and (iquery? root)
+                             (not= c root)
+                             props-change?)
+                    (let [update-path (path c)]
+                      (loop [p (parent c)]
+                        (when (some? p)
+                          (let [update-path' (subvec update-path (count (path p)))]
+                            (update-props! p (assoc-in (props p) update-path' next-raw-props))
+                            (merge-pending-props! p)
+                            (recur (parent p)))))))))))))))
 
   (send! [this]
     (let [sends (:queued-sends @state)]

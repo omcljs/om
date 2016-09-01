@@ -875,6 +875,54 @@
     (fn [_ node]
       (om/add-root! OM-734-reconciler OM-734-Root node))))
 
+;; ==================
+;; OM-738
+
+(defn update-child-data!
+  [this value]
+  (om/transact! this `[(child/update {:newval ~value})]))
+
+(defui OM-738-Child
+  static om/IQuery
+  (query [_]
+    [:child/data])
+  Object
+  (render [this]
+    (let [{:keys [child/data]} (om/props this)]
+      (dom/div nil
+        (dom/button #js {:onClick #(update-child-data! this "Child Clicked")} "Child Button")
+        (dom/p nil (str data))))))
+
+(def om-738-child (om/factory OM-738-Child))
+
+(defui OM-738-Root
+  static om/IQuery
+  (query [_]
+    [{:parent/data (om/get-query OM-738-Child)}])
+  Object
+  (render [this]
+    (let [{:keys [parent/data]} (om/props this)]
+      (dom/div nil
+        (dom/button #js {:onClick #(update-child-data! this "Parent Clicked")} "Parent Button")
+        (om-738-child data)))))
+
+(defn OM-738-read
+  [{:keys [state query]} key _]
+  {:value (get @state key)})
+
+(defn OM-738-mutate
+  [{:keys [state]} _ {:keys [newval]}]
+  {:action #(swap! state assoc-in [:parent/data :child/data] newval)})
+
+(def OM-738-reconciler
+  (om/reconciler {:state {:parent/data {:child/data "Hello"}}
+                  :parser (om/parser {:read OM-738-read :mutate OM-738-mutate})
+                  :remotes []}))
+
+(defcard OM-738-card
+  (dom-node
+    (fn [_ node]
+      (om/add-root! OM-738-reconciler OM-738-Root node))))
 
 (comment
 
