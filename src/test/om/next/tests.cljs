@@ -200,7 +200,17 @@
 
 (deftest test-om-739
   (is (true? (-> #'Private meta :private)))
-  (is (true? (-> #'PrivateOnce meta :private))))
+  (is (true? (-> #'PrivateOnce meta :private)))
+  (is (true? (-> #'PrivateOnce meta :once))))
+
+(defui OM-746-Component
+  "Some docstring"
+  static om/IQuery
+  (query [this]
+    [:foo]))
+
+(deftest test-om-746
+  (is (= (-> #'OM-746-Component meta :doc) "Some docstring")))
 
 ;; -----------------------------------------------------------------------------
 ;; Query Templating
