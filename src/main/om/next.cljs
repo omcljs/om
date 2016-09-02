@@ -639,10 +639,10 @@
               [(force (first q) target)]
               q))
           (add-focused-query [k target tx c]
-            (->> (focus-query (get-query c) [k])
-              (with-target target)
-              (full-query c)
-              (into tx)))]
+            (let [transformed (->> (focus-query (get-query c) [k])
+                                (with-target target)
+                                (full-query c))]
+              (into tx (remove (set tx)) transformed)))]
     (loop [exprs (seq tx) tx' []]
       (if-not (nil? exprs)
         (let [expr (first exprs)
@@ -650,9 +650,11 @@
               key  (:key ast)
               tgt  (:target ast)]
           (if (keyword? key)
-            (recur (next exprs)
-              (reduce #(add-focused-query key tgt %1 %2)
-                (conj tx' expr) (ref->components r key)))
+            (let [cs (ref->components r key)]
+              (recur (next exprs)
+                (reduce #(add-focused-query key tgt %1 %2)
+                  (cond-> tx'
+                    (empty? cs) (conj expr)) cs)))
             (recur (next exprs) (conj tx' expr))))
         tx'))))
 
