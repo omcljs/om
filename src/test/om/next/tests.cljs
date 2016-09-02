@@ -2238,3 +2238,12 @@
         (is (= expected (merge-idents {} config response nil)))))
     (testing "Merge works when a query is passed as an argument."
       (is (= expected (merge-idents {} config response query))))))
+
+;; -----------------------------------------------------------------------------
+;; transform-reads
+
+(deftest test-transform-reads-drops-exprs
+  (let [r (om/reconciler
+            {:state (atom nil)
+             :parser (om/parser {:read #(do {})})})]
+    (is (= '[:foo :bar] (om/transform-reads r '[:foo :bar])))))

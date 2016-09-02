@@ -652,7 +652,7 @@
           (if (keyword? key)
             (recur (next exprs)
               (reduce #(add-focused-query key tgt %1 %2)
-                tx' (ref->components r key)))
+                (conj tx' expr) (ref->components r key)))
             (recur (next exprs) (conj tx' expr))))
         tx'))))
 
