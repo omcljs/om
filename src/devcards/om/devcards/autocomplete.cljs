@@ -68,8 +68,10 @@
 (defn search-loop [c]
   (go
     (loop [[query cb] (<! c)]
-      (let [[_ results] (<! (jsonp (str base-url query)))]
-        (cb {:search/results results}))
+      (if-not (empty? query)
+        (let [[_ results] (<! (jsonp (str base-url query)))]
+          (cb {:search/results results}))
+        (cb {:search/results []}))
       (recur (<! c)))))
 
 (defn send-to-chan [c]
