@@ -10,21 +10,22 @@
 
   :source-paths  ["src/main" "src/devcards" "src/test"]
 
-  :dependencies [[org.clojure/clojure "1.8.0" :scope "provided"]
-                 [org.clojure/clojurescript "1.8.51" :scope "provided"
-                  :exclusions [org.clojure/tools.reader org.clojure/data.json]]
-                 [org.clojure/tools.reader "1.0.0-beta1" :scope "provided"]
-                 [org.clojure/data.json "0.2.6" :scope "provided"]
+  :dependencies [[org.clojure/clojure "1.9.0-alpha10" :scope "provided"]
+                 [org.clojure/clojurescript "1.9.227" :scope "provided" :classifier "aot"
+                  :exclusions [org.clojure/clojure
+                               org.clojure/data.json]]
+                 [org.clojure/data.json "0.2.6" :scope "provided" :classifier "aot"]
                  [cljsjs/react "15.2.1-0"]
                  [cljsjs/react-dom "15.2.1-0"]
-                 [com.cognitect/transit-clj "0.8.285"]
+                 [com.cognitect/transit-clj "0.8.288"]
                  [com.cognitect/transit-cljs "0.8.239"]
 
-                 [org.clojure/core.async "0.2.374" :scope "test"
+                 [org.clojure/core.async "0.2.385" :scope "test"
                   :exclusions [org.clojure/tools.reader]]
-                 [figwheel-sidecar "0.5.2" :scope "test"
-                  :exclusions [org.clojure/clojurescript org.clojure/tools.reader]]
-                 [devcards "0.2.1-6" :scope "test"
+                 [figwheel-sidecar "0.5.6" :scope "test"
+                  :exclusions [org.clojure/clojurescript
+                               org.clojure/tools.reader]]
+                 [devcards "0.2.1-7" :scope "test"
                   :exclusions [org.clojure/clojurescript]]]
 
   :plugins [[lein-cljsbuild "1.1.2"]]

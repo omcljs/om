@@ -1,6 +1,6 @@
 (ns om.devcards.core
   (:require [cljs.test :refer-macros [is async]]
-            [devcards.core :refer-macros [defcard deftest dom-node]]
+            [devcards.core :refer-macros [defcard deftest dom-node start-devcard-ui!]]
             [cljs.pprint :as pprint]
             [om.devcards.utils :as utils]
             [om.devcards.tutorials]
@@ -11,6 +11,7 @@
             [om.dom :as dom]))
 
 (enable-console-print!)
+(start-devcard-ui!)
 
 (defui Hello
   Object
@@ -61,7 +62,7 @@
 ;; -----------------------------------------------------------------------------
 ;; Counters
 
-(defmulti counters-read (fn [_ k] k))
+(defmulti counters-read (fn [_ k _] k))
 
 (defmulti counters-mutate (fn [_ k _] k))
 
@@ -73,7 +74,7 @@
       {:remote true})))
 
 (defmethod counters-read :counters/list
-  [{:keys [state query]} _]
+  [{:keys [state query]} _ _]
   (let [st @state
         xf (map #(select-keys (get-in st %) query))]
     {:value (into [] xf (:counters/list st))}))
