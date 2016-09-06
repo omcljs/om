@@ -925,20 +925,18 @@
    (let [tx (cond-> tx
               (and (component? x) (satisfies? Ident x))
               (annotate-mutations (get-ident x)))]
-     (if (reconciler? x)
-       (transact* x nil nil tx)
-       (do
-         (assert (iquery? x)
-           (str "transact! invoked by component " x
-             " that does not implement IQuery"))
-         (loop [p (parent x) x x tx tx]
-           (if (nil? p)
-             (let [r (get-reconciler x)]
-               (transact* r x nil (transform-reads r tx)))
-             (let [[x' tx] (if (implements? ITxIntercept p)
-                             [p (tx-intercept p tx)]
-                             [x tx])]
-               (recur (parent p) x' tx))))))))
+     (cond
+       (reconciler? x) (transact* x nil nil tx)
+       (not (iquery? x)) (transact* (get-reconciler x) nil nil tx)
+       :else (do
+               (loop [p (parent x) x x tx tx]
+                 (if (nil? p)
+                   (let [r (get-reconciler x)]
+                     (transact* r x nil (transform-reads r tx)))
+                   (let [[x' tx] (if (implements? ITxIntercept p)
+                                   [p (tx-intercept p tx)]
+                                   [x tx])]
+                     (recur (parent p) x' tx))))))))
   ([r ref tx]
    (transact* r nil ref tx)))
 
