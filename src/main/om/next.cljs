@@ -634,29 +634,31 @@
    reads have been replaced by the full query for each component that cares about
    the specified read."
   [r tx]
-  (letfn [(with-target [target q]
-            (if-not (nil? target)
-              [(force (first q) target)]
-              q))
-          (add-focused-query [k target tx c]
-            (let [transformed (->> (focus-query (get-query c) [k])
-                                (with-target target)
-                                (full-query c))]
-              (into tx (remove (set tx)) transformed)))]
-    (loop [exprs (seq tx) tx' []]
-      (if-not (nil? exprs)
-        (let [expr (first exprs)
-              ast  (parser/expr->ast expr)
-              key  (:key ast)
-              tgt  (:target ast)]
-          (if (keyword? key)
-            (let [cs (ref->components r key)]
-              (recur (next exprs)
-                (reduce #(add-focused-query key tgt %1 %2)
-                  (cond-> tx'
-                    (empty? cs) (conj expr)) cs)))
-            (recur (next exprs) (conj tx' expr))))
-        tx'))))
+  (if (-> r :config :easy-reads)
+    (letfn [(with-target [target q]
+             (if-not (nil? target)
+               [(force (first q) target)]
+               q))
+           (add-focused-query [k target tx c]
+             (let [transformed (->> (focus-query (get-query c) [k])
+                                 (with-target target)
+                                 (full-query c))]
+               (into tx (remove (set tx)) transformed)))]
+     (loop [exprs (seq tx) tx' []]
+       (if-not (nil? exprs)
+         (let [expr (first exprs)
+               ast (parser/expr->ast expr)
+               key (:key ast)
+               tgt (:target ast)]
+           (if (keyword? key)
+             (let [cs (ref->components r key)]
+               (recur (next exprs)
+                 (reduce #(add-focused-query key tgt %1 %2)
+                   (cond-> tx'
+                     (empty? cs) (conj expr)) cs)))
+             (recur (next exprs) (conj tx' expr))))
+         tx')))
+    tx))
 
 (defn set-query!
   "Change the query of a component. Takes a map containing :params and/or
@@ -2018,7 +2020,8 @@
            root-render root-unmount
            pathopt
            migrate id-key
-           instrument]
+           instrument
+           easy-reads]
     :or {ui->props    default-ui->props
          indexer      om.next/indexer
          merge-sends  #(merge-with into %1 %2)
@@ -2032,7 +2035,8 @@
          root-render  #(js/ReactDOM.render %1 %2)
          root-unmount #(js/ReactDOM.unmountComponentAtNode %)
          pathopt      false
-         migrate      default-migrate}
+         migrate      default-migrate
+         easy-reads   true}
     :as config}]
   {:pre [(map? config)]}
   (let [idxr   (indexer)
@@ -2054,7 +2058,8 @@
                   :root-render root-render :root-unmount root-unmount
                   :logger logger :pathopt pathopt
                   :migrate migrate :id-key id-key
-                  :instrument instrument}
+                  :instrument instrument
+                  :easy-reads easy-reads}
                  (atom {:queue [] :queued false :queued-sends {}
                         :sends-queued false
                         :target nil :root nil :render nil :remove nil
