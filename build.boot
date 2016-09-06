@@ -6,8 +6,8 @@
                                                  org.clojure/data.json]]
                  [org.clojure/data.json       "0.2.6"          :scope "provided"
                   :classifier "aot"]
-                 [cljsjs/react                "15.2.1-0"]
-                 [cljsjs/react-dom            "15.2.1-0"]
+                 [cljsjs/react                "15.3.1-0"]
+                 [cljsjs/react-dom            "15.3.1-0"]
                  [com.cognitect/transit-clj   "0.8.288"]
                  [com.cognitect/transit-cljs  "0.8.239"]
 
@@ -45,13 +45,13 @@
   (set-env! :source-paths #(conj % "src/devcards")
             :resource-paths #{"resources/public"})
   (comp
+    ;; remove possible artifacts of Figwheel compilation
+    (sift :include #{#"^devcards\/(out\/|main.js)"} :invert true)
     (serve :port 3449)
     (watch)
     (cljs-repl)
     (reload)
     (speak)
-    ;; remove possible artifacts of Figwheel compilation
-    (sift :include #{#"^devcards\/(out\/|main.js)"} :invert true)
     (cljs :source-map true
           :compiler-options {:devcards true
                              :main 'om.devcards.core
