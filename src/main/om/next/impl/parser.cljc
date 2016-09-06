@@ -12,14 +12,15 @@
    A query expression is composed of EDN values. The grammar for query
    expressions follows:
 
-   QueryRoot    := EdnVector(QueryExpr*)
-   QueryExpr    := (EdnKeyword | IdentExpr | ParamExpr | JoinExpr)
-   IdentExpr    := EdnVector2(Keyword, EdnValue)
-   ParamExpr    := EdnList2(QueryExpr | EdnSymbol, ParamMapExpr)
-   ParamMapExpr := EdnMap(Keyword, EdnValue)
-   JoinExpr     := EdnMap((Keyword | IdentExpr), (QueryRoot | UnionExpr | RecurExpr))
-   UnionExpr    := EdnMap(Keyword, QueryRoot)
-   RecurExpr    := ('... | Integer)
+   QueryRoot      := EdnVector(QueryExpr*)
+   PlainQueryExpr := (EdnKeyword | IdentExpr | JoinExpr)
+   QueryExpr      := (PlainQueryExpr | ParamExpr)
+   IdentExpr      := EdnVector2(Keyword, EdnValue)
+   ParamExpr      := EdnList2(PlainQueryExpr | EdnSymbol, ParamMapExpr)
+   ParamMapExpr   := EdnMap(Keyword, EdnValue)
+   JoinExpr       := EdnMap((Keyword | IdentExpr), (QueryRoot | UnionExpr | RecurExpr))
+   UnionExpr      := EdnMap(Keyword, QueryRoot)
+   RecurExpr      := ('... | Integer)
 
    Note most apis in Om Next expect a QueryRoot not a QueryExpr.
 
