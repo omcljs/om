@@ -843,6 +843,22 @@
     (instance? js/Error
       (get-in (p {} '[(this/throws)]) ['this/throws :om.next/error]))))
 
+(defn make-read-fn [ret-atom]
+  (fn [{:keys [parser query state] :as env} k _]
+    (when (= k :foo)
+      (reset! ret-atom (parser env query)))
+    {:value (get @state k)}))
+
+(deftest test-recursive-parsing-path-meta
+  (let [ret (atom nil)
+        p (parser/parser {:read (make-read-fn ret)})
+        state {:foo 42 :bar 43}
+        top-level-ret (p {:state (atom state)} [{:foo [:bar]}])]
+    (is (= top-level-ret {:foo 42}))
+    (is (= (meta top-level-ret) {:om-path []}))
+    (is (= @ret {:bar 43}))
+    (is (nil? (meta @ret)))))
+
 ;; -----------------------------------------------------------------------------
 ;; Edge cases
 

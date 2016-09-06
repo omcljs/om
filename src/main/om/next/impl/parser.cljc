@@ -245,7 +245,7 @@
   (fn self
     ([env query] (self env query nil))
     ([env query target]
-     (let [elide-paths? (boolean (:elide-paths config))
+     (let [elide-paths? (or (:elide-paths config) (:parser env))
            {:keys [path] :as env}
            (cond-> (assoc env :parser self :target target :query-root :om.next/root)
              (not (contains? env :path)) (assoc :path []))]
@@ -291,6 +291,6 @@
                              @mut-ret (assoc-in [key :result] @mut-ret)
                              @error (assoc key {:om.next/error @error}))))))))]
          (cond-> (reduce step (if (nil? target) {} []) query)
-           (not (or (not (nil? target)) elide-paths?)) (path-meta path query)))))))
+           (and (nil? target) (not elide-paths?)) (path-meta path query)))))))
 
 (defn dispatch [_ k _] k)
