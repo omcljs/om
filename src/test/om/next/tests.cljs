@@ -2271,6 +2271,12 @@
                   om/full-query (constantly [{:foo [:bar]}])]
       (is (= (om/transform-reads r '[:foo :baz])
              '[{:foo [:bar]} :baz])))
+    (with-redefs [om/ref->components (fn [r k]
+                                       (if (= k :foo) [nil] []))
+                  om/get-query (constantly [{:foo [:bar]}])
+                  om/full-query (constantly [{:foo [:bar]}])]
+      (is (= (om/transform-reads r '[:foo (:baz {:woz :noz})])
+            '[{:foo [:bar]} (:baz {:woz :noz})])))
     (with-redefs [om/ref->components (constantly [nil])
                   om/get-query (constantly [{:foo [:bar]}])
                   om/full-query (constantly [{:foo [:bar]}])]
@@ -2292,4 +2298,5 @@
                   om/get-query (constantly [{:foo [:bar]}])
                   om/full-query (constantly [{:foo [:bar]}])]
       (is (= (om/transform-reads r '[(do/it!) (do/it!) :foo :bar])
-             '[(do/it!) (do/it!) {:foo [:bar]}])))))
+             '[(do/it!) (do/it!) {:foo [:bar]}])))
+    ))
