@@ -1,0 +1,2 @@
+{:require [om.devcards.core]
+ :compiler-options {:asset-path "main.out"}}

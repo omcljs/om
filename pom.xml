@@ -75,20 +75,9 @@
             <exclusions>
                 <exclusion>
                     <groupId>org.clojure</groupId>
-                    <artifactId>tools.reader</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.clojure</groupId>
                     <artifactId>data.json</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.clojure</groupId>
-            <artifactId>tools.reader</artifactId>
-            <version>1.0.0-beta1</version>
-            <classifier>aot</classifier>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.clojure</groupId>
@@ -100,7 +89,7 @@
         <dependency>
             <groupId>org.clojure</groupId>
             <artifactId>core.async</artifactId>
-            <version>0.2.374</version>
+            <version>0.2.385</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -112,7 +101,7 @@
         <dependency>
             <groupId>com.cognitect</groupId>
             <artifactId>transit-clj</artifactId>
-            <version>0.8.285</version>
+            <version>0.8.288</version>
         </dependency>
         <dependency>
             <groupId>com.cognitect</groupId>
@@ -132,7 +121,7 @@
         <dependency>
             <groupId>org.clojure</groupId>
             <artifactId>tools.nrepl</artifactId>
-            <version>0.2.11</version>
+            <version>0.2.12</version>
             <scope>test</scope>
         </dependency>
         <dependency>
