@@ -245,7 +245,7 @@
   (fn self
     ([env query] (self env query nil))
     ([env query target]
-     (let [elide-paths? (or (:elide-paths config) (:parser env))
+     (let [elide-paths? (or (:elide-paths config) (:query-root env))
            {:keys [path] :as env}
            (cond-> (assoc env :parser self :target target :query-root :om.next/root)
              (not (contains? env :path)) (assoc :path []))]
