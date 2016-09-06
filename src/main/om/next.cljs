@@ -908,6 +908,13 @@
               (util/mutation? expr) (vary-meta assoc :mutator ident)))]
     (into [] (map #(annotate % ident)) tx)))
 
+(defn some-iquery? [c]
+  (loop [c c]
+    (cond
+      (nil? c) false
+      (iquery? c) true
+      :else (recur (parent c)))))
+
 (defn transact!
   "Given a reconciler or component run a transaction. tx is a parse expression
    that should include mutations followed by any necessary read. The reads will
@@ -927,7 +934,12 @@
               (annotate-mutations (get-ident x)))]
      (cond
        (reconciler? x) (transact* x nil nil tx)
-       (not (iquery? x)) (transact* (get-reconciler x) nil nil tx)
+       (not (iquery? x)) (do
+                           (invariant (some-iquery? x)
+                             (str "transact! should be called on a component"
+                                  "that implements IQuery or has a parent that"
+                                  "implements IQuery"))
+                           (transact* (get-reconciler x) nil nil tx))
        :else (do
                (loop [p (parent x) x x tx tx]
                  (if (nil? p)
