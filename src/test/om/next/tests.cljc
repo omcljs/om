@@ -1,8 +1,11 @@
 (ns om.next.tests
-  (:require [cljs.test :refer-macros [deftest is are testing run-tests]]
+  #?(:clj (:refer-clojure :exclude [read]))
+  (:require #?@(:clj  [[clojure.test :refer [deftest is are testing run-tests]]]
+                :cljs [[cljs.test :refer-macros [deftest is are testing run-tests]]
+                       [cljsjs.react]])
             [clojure.zip :as zip]
-            [cljsjs.react]
-            [om.next :as om :refer-macros [defui ui]]
+            [om.next :as om #?(:clj :refer
+                               :cljs :refer-macros) [defui ui]]
             [om.next.protocols :as p]
             [om.next.impl.parser :as parser]
             [om.tempid :refer [tempid]]
@@ -47,7 +50,8 @@
     '[{:some/key ?some/param} :app/title]))
 
 (deftest test-component?
-  (is (om/component? (Component. {}))))
+  (is (om/component? #?(:clj  (Component (atom nil) (atom nil) nil nil)
+                        :cljs (Component. {})))))
 
 (deftest test-pr-str-component
   (is (= (pr-str Component) "om.next.tests/Component")))
@@ -55,7 +59,7 @@
 (deftest test-construction
   (let [c (component-list {:foo/bar 1})]
     (is (= (om/react-type c) ComponentList))
-    (is (= (om/t c) 0))))
+    #?(:cljs (is (= (om/t c) 0)))))
 
 ;; -----------------------------------------------------------------------------
 ;; Anonymous Components
@@ -74,9 +78,11 @@
 ;; Queries
 
 (deftest test-query
-  (is (= (om/query Component)
+  (is (= #?(:clj  ((-> Component meta :query) Component)
+            :cljs (om/query Component))
          '[:foo/bar :baz/woz]))
-  (is (= (om/query ComponentList)
+  (is (= #?(:clj  ((-> ComponentList meta :query) ComponentList)
+            :cljs (om/query ComponentList))
          '[{:components/list ?component} :app/title])))
 
 (deftest test-get-query
@@ -129,15 +135,15 @@
             {:tree/foo [{:children {:tree/bar [{:counter [:value]}]}}]}}])))
 
 (deftest test-focus->path
-  (is (= (om/focus->path [{:baz/woz [{:bop/wop [:nop/sop]}]}])
+  (is (= (#'om/focus->path [{:baz/woz [{:bop/wop [:nop/sop]}]}])
          [:baz/woz :bop/wop]))
-  (is (= (om/focus->path [:app/title {:counters/list [:db/id :counter/count]}])
+  (is (= (#'om/focus->path [:app/title {:counters/list [:db/id :counter/count]}])
          []))
-  (is (= (om/focus->path [{:todos/list [{[:todo/by-id 0] [:id :title]}]}])
+  (is (= (#'om/focus->path [{:todos/list [{[:todo/by-id 0] [:id :title]}]}])
          [:todos/list [:todo/by-id 0]]))
-  (is (= (om/focus->path [{:todos/list [{'[:current-todo _] [:id :title]}]}])
+  (is (= (#'om/focus->path [{:todos/list [{'[:current-todo _] [:id :title]}]}])
          [:todos/list '[:current-todo _]]))
-  (is (= (om/focus->path [{:people/list [{[:person/by-id 0] [{:person/name [:name/first :name/last]}]}]}])
+  (is (= (#'om/focus->path [{:people/list [{[:person/by-id 0] [{:person/name [:name/first :name/last]}]}]}])
          [:people/list [:person/by-id 0] :person/name])))
 
 (comment
@@ -173,8 +179,8 @@
   (let [q1 '[^:query-root (:test {:a ?a})]
         q2 '[^:query-root {:foo [(:bar {:a ?a}) :b]} (:test {:a ?a, :b ?b})]
         params {:a 1 :b 2}
-        bq1 (om/bind-query q1 params)
-        bq2 (om/bind-query q2 params)]
+        bq1 (#'om/bind-query q1 params)
+        bq2 (#'om/bind-query q2 params)]
     (is (= bq1 '[(:test {:a 1})]))
     (is (not (nil? (-> bq1 first meta))))
     (is (= bq2 '[{:foo [(:bar {:a 1}) :b]} (:test {:a 1, :b 2})]))
@@ -216,64 +222,64 @@
 ;; Query Templating
 
 (deftest test-expr->key
-  (is (= :foo (om/expr->key {:foo []})))
-  (is (= :foo (om/expr->key '({:foo []} {:bar :baz}))))
-  (is (= :foo (om/expr->key '[:foo _])))
-  (is (= [:foo 0] (om/expr->key '[:foo 0]))))
+  (is (= :foo (#'om/expr->key {:foo []})))
+  (is (= :foo (#'om/expr->key '({:foo []} {:bar :baz}))))
+  (is (= :foo (#'om/expr->key '[:foo _])))
+  (is (= [:foo 0] (#'om/expr->key '[:foo 0]))))
 
 (deftest test-query-template
   (is (= [:app/title {:todos/list [:db/id :todo/title]}]
-         (-> (om/query-template
+         (-> (#'om/query-template
                [:app/title {:todos/list [:db/id :todo/title :todo/completed]}]
                [:todos/list])
-           (om/replace [:db/id :todo/title]))))
+           (#'om/replace [:db/id :todo/title]))))
   (is (= '[:app/title ({:todos/list [:db/id :todo/title]} {:start 0 :end 10})]
-         (-> (om/query-template
+         (-> (#'om/query-template
                '[:app/title ({:todos/list [:db/id :todo/title :todo/completed]}
                              {:start 0 :end 10})]
                '[:todos/list])
-           (om/replace [:db/id :todo/title])))))
+           (#'om/replace [:db/id :todo/title])))))
 
 (deftest test-query-template-root
   (is (= [:app/title]
-         (-> (om/query-template
+         (-> (#'om/query-template
                [:app/title {:todos/list [:db/id :todo/title :todo/completed]}]
                [])
-           (om/replace [:app/title])))))
+           (#'om/replace [:app/title])))))
 
 (deftest test-query-template-union
-  (is (= (-> (om/query-template
+  (is (= (-> (#'om/query-template
                [{:selected/item {:item/one [:title]
                                  :item/two [:author]}}]
                [:selected/item :item/two])
            zip/root)
          [{:selected/item [:author]}])
-      (= (-> (om/query-template
+      (= (-> (#'om/query-template
                [{:selected/item {:item/one [:title]
                                  :item/two [:author]}}]
                [:selected/item :item/two])
-           (om/replace [:caption]))
+           (#'om/replace [:caption]))
         [{:selected/item [:caption]}])))
 
 (deftest test-query-template-params
-  (is (= (-> (om/query-template
+  (is (= (-> (#'om/query-template
                '[({:join [*]} {:param 42})]
                 [:join])
            zip/root)
          '[({:join [*]} {:param 42})]))
-  (is (= (-> (om/query-template
+  (is (= (-> (#'om/query-template
                '[{:join [(:some/key {:param 42})]}]
                 [:join])
            zip/root)
          '[{:join [(:some/key {:param 42})]}]))
-  (is (= (-> (om/query-template
+  (is (= (-> (#'om/query-template
                '[({:selected/item {:item/one [:title]
                                    :item/two [:author]}}
                   {:some/param 42})]
                 [:selected/item :item/two])
            zip/root)
          '[({:selected/item [:author]} {:some/param 42})]))
-  (is (= (-> (om/query-template
+  (is (= (-> (#'om/query-template
                '[{:selected/item {:item/one [:title]
                                   :item/two [({:author [:name]} {:some/param 42})]}}]
                 [:selected/item :item/two])
@@ -410,16 +416,17 @@
   (let [r (om/reconciler
             {:state (atom nil)
              :ui->ref identity})]
-    (is (instance? om/Indexer (get-in r [:config :indexer])))))
+    (is (instance? om.next.Indexer (get-in r [:config :indexer])))))
 
 (deftest test-reindex-instances
   (let [r (om/reconciler
             {:state (atom nil)
-             :parser (om/parser {:read #(do {})})})
+             :parser (om/parser {:read (fn [_ _ _] {})})})
         idxr (get-in r [:config :indexer])
         ;; simulate mounting
         _ (p/add-root! r RootComponent nil nil)
-        _ (p/index-component! idxr (RootComponent. #js {:omcljs$reconciler r}))
+        _ (p/index-component! idxr #?(:clj  (RootComponent nil nil #js {:omcljs$reconciler r} nil)
+                                      :cljs (RootComponent. #js {:omcljs$reconciler r})))
         indexes @(:indexes idxr)
         classes (-> indexes :class->components keys)
         cps (-> indexes :class-path->query keys)
@@ -471,19 +478,24 @@
   (testing "1->1 joins of the same class in different data paths"
     (let [r (om/reconciler
               {:state (atom nil)
-               :parser (om/parser {:read #(do {})})})
+               :parser (om/parser {:read (fn [_ _ _] {})})})
           idxr (get-in r [:config :indexer])
           ;; simulate mounting
           _ (p/add-root! r ToOneRoot nil nil)
-          _ (p/index-component! idxr (ToOneRoot. #js {:omcljs$reconciler r
-                                                      :omcljs$path []}))
+          _ (p/index-component! idxr #?(:clj  (ToOneRoot nil nil #js {:omcljs$reconciler r
+                                                                     :omcljs$path []} nil)
+                                        :cljs (ToOneRoot. #js {:omcljs$reconciler r
+                                                               :omcljs$path []})))
           root (-> @idxr :class->components (get ToOneRoot) first)
-          _ (p/index-component! idxr (Child. #js {:omcljs$reconciler r
-                                                  :omcljs$path [:tab1]
-                                                  :omcljs$parent root}))
+          _ (p/index-component! idxr #?(:clj  (Child nil nil #js {:omcljs$reconciler r
+                                                                  :omcljs$path [:tab1]
+                                                                  :omcljs$parent root} nil)
+                                        :cljs (Child. #js {:omcljs$reconciler r
+                                                           :omcljs$path [:tab1]
+                                                           :omcljs$parent root})))
           c (first (get-in @idxr [:data-path->components [:tab1]]))]
       (is (not (nil? c)))
-      ;; will reindex
+      ;; will reindex
       (om/set-query! c {:query [:foo :bar]})
       (is (= (om/get-query c)
             [:foo :bar]))
@@ -492,16 +504,21 @@
   (testing "children in 1->many joins changing queries should not be reflected at the root"
     (let [r (om/reconciler
               {:state (atom nil)
-               :parser (om/parser {:read #(do {})})})
+               :parser (om/parser {:read (fn [_ _ _] {})})})
           idxr (get-in r [:config :indexer])
           _ (p/add-root! r ToManyRoot nil nil)
-          _ (p/index-component! idxr (ToManyRoot. #js {:omcljs$reconciler r
-                                                       :omcljs$path []}))
+          _ (p/index-component! idxr #?(:clj  (ToManyRoot nil nil #js {:omcljs$reconciler r
+                                                                       :omcljs$path []} nil)
+                                        :cljs (ToManyRoot. #js {:omcljs$reconciler r
+                                                                :omcljs$path []})))
           root (-> @idxr :class->components (get ToManyRoot) first)
           children (take 3 (repeatedly
-                             #(Child. #js {:omcljs$reconciler r
-                                           :omcljs$path [:children]
-                                           :omcljs$parent root})))
+                             #?(:clj  #(Child nil nil #js {:omcljs$reconciler r
+                                                           :omcljs$path [:children]
+                                                           :omcljs$parent root} nil)
+                                :cljs #(Child. #js {:omcljs$reconciler r
+                                                    :omcljs$path [:children]
+                                                    :omcljs$parent root}))))
           _ (run! #(p/index-component! idxr %) children)
           c (first (get-in @idxr [:data-path->components [:children]]))]
       (is (not (nil? c)))
@@ -513,15 +530,20 @@
   (testing "1->1 union queries can be changed from below"
     (let [r (om/reconciler
               {:state (atom nil)
-               :parser (om/parser {:read #(do {})})})
+               :parser (om/parser {:read (fn [_ _ _] {})})})
           idxr (get-in r [:config :indexer])
           _ (p/add-root! r UnionRoot nil nil)
-          _ (p/index-component! idxr (UnionRoot. #js {:omcljs$reconciler r
-                                                      :omcljs$path []}))
+          _ (p/index-component! idxr #?(:clj  (UnionRoot nil nil #js {:omcljs$reconciler r
+                                                                      :omcljs$path []} nil)
+                                        :cljs (UnionRoot. #js {:omcljs$reconciler r
+                                                               :omcljs$path []})))
           root (-> @idxr :class->components (get UnionRoot) first)
-          child-b (UnionChildB. #js {:omcljs$reconciler r
-                                     :omcljs$path [:union]
-                                     :omcljs$parent root})
+          child-b #?(:clj  (UnionChildB nil nil #js {:omcljs$reconciler r
+                                                     :omcljs$path [:union]
+                                                     :omcljs$parent root} nil)
+                     :cljs (UnionChildB. #js {:omcljs$reconciler r
+                                              :omcljs$path [:union]
+                                              :omcljs$parent root}))
           _ (p/index-component! idxr child-b)
           c (first (get-in @idxr [:data-path->components [:union]]))]
       (is (not (nil? c)))
@@ -532,12 +554,18 @@
             [{:union {:foo (om/get-query UnionChildA)
                       :bar [:baz :qux]}}]))
       ;; changing nested joins in the union
-      (let [child-a (UnionChildA. #js {:omcljs$reconciler r
-                                       :omcljs$path [:union]
-                                       :omcljs$parent root})
-            child-a-child (Child. #js {:omcljs$reconciler r
-                                       :omcljs$path [:union :nested/join]
-                                       :omcljs$parent child-a})
+      (let [child-a #?(:clj  (UnionChildA nil nil #js {:omcljs$reconciler r
+                                                       :omcljs$path [:union]
+                                                       :omcljs$parent root} nil)
+                       :cljs (UnionChildA. #js {:omcljs$reconciler r
+                                                :omcljs$path [:union]
+                                                :omcljs$parent root}))
+            child-a-child #?(:clj  (Child nil nil #js {:omcljs$reconciler r
+                                                       :omcljs$path [:union :nested/join]
+                                                       :omcljs$parent child-a} nil)
+                             :cljs (Child. #js {:omcljs$reconciler r
+                                                :omcljs$path [:union :nested/join]
+                                                :omcljs$parent child-a}))
             _ (p/drop-component! idxr c)
             _ (p/index-component! idxr child-a)
             _ (p/index-component! idxr child-a-child)
@@ -552,16 +580,21 @@
   (testing "query changes in 1->many unions should not be reflected at the root"
     (let [r (om/reconciler
               {:state (atom nil)
-               :parser (om/parser {:read #(do {})})})
+               :parser (om/parser {:read (fn [_ _ _] {})})})
           idxr (get-in r [:config :indexer])
           _ (p/add-root! r UnionRoot nil nil)
-          _ (p/index-component! idxr (UnionRoot. #js {:omcljs$reconciler r
-                                                      :omcljs$path []}))
+          _ (p/index-component! idxr #?(:clj (UnionRoot nil nil #js {:omcljs$reconciler r
+                                                                     :omcljs$path []} nil)
+                                        :cljs (UnionRoot. #js {:omcljs$reconciler r
+                                                               :omcljs$path []})))
           root (-> @idxr :class->components (get UnionRoot) first)
           children (take 3 (repeatedly
-                             #(UnionChildB. #js {:omcljs$reconciler r
-                                                 :omcljs$path [:union]
-                                                 :omcljs$parent root})))
+                             #?(:clj #(UnionChildB nil nil #js {:omcljs$reconciler r
+                                                                :omcljs$path [:union]
+                                                                :omcljs$parent root} nil)
+                                :cljs #(UnionChildB. #js {:omcljs$reconciler r
+                                                          :omcljs$path [:union]
+                                                          :omcljs$parent root}))))
           _ (run! #(p/index-component! idxr %) children)
           c (first (get-in @idxr [:data-path->components [:union]]))]
       (is (not (nil? c)))
@@ -836,11 +869,13 @@
 
 (defmethod mutate 'this/throws
   [_ _ _]
-  {:action #(throw (js/Error.))})
+  {:action #?(:clj  #(throw (Exception.))
+              :cljs #(throw (js/Error.)))})
 
 (deftest test-throw
   (is
-    (instance? js/Error
+    (instance? #?(:clj  Exception
+                  :cljs js/Error)
       (get-in (p {} '[(this/throws)]) ['this/throws :om.next/error]))))
 
 (defn make-read-fn [ret-atom]
@@ -855,7 +890,7 @@
         state {:foo 42 :bar 43}
         r (om/reconciler {:parser p
                           :state state})
-        top-level-ret (p (om/to-env r) [{:foo [:bar]}])]
+        top-level-ret (p (#'om/to-env r) [{:foo [:bar]}])]
     (is (= top-level-ret {:foo 42}))
     (is (= (meta top-level-ret) {:om-path []}))
     (is (= @ret {:bar 43}))
@@ -934,11 +969,11 @@
      :todos/list [0 1 2]}))
 
 (defmethod read :category
-  [{:keys [state data]} k]
+  [{:keys [state data]} k _]
   {:value (get-in @state [:categories (get data k)])})
 
 (defmethod read :todos/list
-  [{:keys [state query parser] :as env} _]
+  [{:keys [state query parser] :as env} _ _]
   (let [st @state
         pf #(parser (assoc env :data %) query)]
     {:value (into [] (comp (map (:todos st)) (map pf))
@@ -1560,7 +1595,8 @@
 ;; tempids
 
 (deftest test-temp-id-equality
-  (let [uuid (random-uuid)
+  (let [uuid #?(:clj  (java.util.UUID/randomUUID)
+                :cljs (random-uuid))
         id0  (tempid uuid)
         id1  (tempid uuid)]
     (is (= id0 id1))
@@ -1630,7 +1666,7 @@
 
 ; process-roots can cause duplicate top-level queries. merge-joins is used to pull them together
 (deftest test-merge-joins-on-non-merges
-  (are [merged raw] (= merged (om/merge-joins raw))
+  (are [merged raw] (= merged (#'om/merge-joins raw))
     ; calls
     '[(app/f) :a (app/g)] '[(app/f) :a (app/g)]
     ; plain properties
@@ -1642,27 +1678,27 @@
     [{:widget {:a [:type] :b [:type]}} {:j [:a]}] [{:j [:a]} {:widget {:a [:type] :b [:type]}}]))
 
 (deftest test-merge-joins-eliminates-exact-duplicates
-  (are [merged raw] (= merged (om/merge-joins raw))
+  (are [merged raw] (= merged (#'om/merge-joins raw))
     [:a] [:a :a]
     [{:j1 [:a :b]}] [{:j1 [:a :b]} {:j1 [:a :b]}]))
 
 (deftest test-merge-joins-merges-simple-joins
-  (is (= [{:j [:a :b]}] (om/merge-joins [{:j [:a]} {:j [:b]}]))))
+  (is (= [{:j [:a :b]}] (#'om/merge-joins [{:j [:a]} {:j [:b]}]))))
 
 (deftest test-merge-joins-eliminates-duplicate-selector-elements
-  (is (= [{:j [:a :b]}] (om/merge-joins [{:j [:a]} {:j [:a :b]}]))))
+  (is (= [{:j [:a :b]}] (#'om/merge-joins [{:j [:a]} {:j [:a :b]}]))))
 
 (deftest test-merge-joins-merges-nested-joins-of-duplicates
-  (is (= [{:j [:b {:a [:x :y]}]}] (om/merge-joins [{:j [{:a [:x]}]} {:j [{:a [:y]} :b]}]))))
+  (is (= [{:j [:b {:a [:x :y]}]}] (#'om/merge-joins [{:j [{:a [:x]}]} {:j [{:a [:y]} :b]}]))))
 
 (deftest test-merge-joins-retains-property-and-call-order-at-top-level
   (is (= '[(app/f) :b :d :e {:j [:b {:a [:x :y]}]} {:k [:x {:y [:b]}]} {:c [:ca :cb]} {:l [:m]}]
-         (om/merge-joins '[(app/f) {:j [{:a [:x]}]} :b {:k [:x]}
-                             {:c [:ca :cb]} {:j [{:a [:y]} :b]} :d
-                             {:k [{:y [:b]}]} :e {:l [:m]}]))))
+          (#'om/merge-joins '[(app/f) {:j [{:a [:x]}]} :b {:k [:x]}
+                              {:c [:ca :cb]} {:j [{:a [:y]} :b]} :d
+                              {:k [{:y [:b]}]} :e {:l [:m]}]))))
 
 (deftest test-merge-joins-handles-recursive-queries
-  (is (= [{:j '...}] (om/merge-joins [{:j '...} {:j '...}]))))
+  (is (= [{:j '...}] (#'om/merge-joins [{:j '...} {:j '...}]))))
 
 (deftest test-process-roots-recursive
   (let [p (om/parser {:read precise-read})
@@ -2009,7 +2045,7 @@
   (is (util/unique-ident? '[:foo _])))
 
 (deftest test-has-error?
-  (is (true? (om/has-error? (:foo {:foo {::om/error {:type :bar}}})))))
+  (is (true? (#'om/has-error? (:foo {:foo {::om/error {:type :bar}}})))))
 
 (deftest test-basic-errors
   (let [x (om/default-extract-errors nil
@@ -2263,7 +2299,7 @@
 (deftest test-transform-reads-drops-exprs
   (let [r (om/reconciler
             {:state (atom nil)
-             :parser (om/parser {:read #(do {})})})]
+             :parser (om/parser {:read (fn [_ _ _] {})})})]
     (is (= '[:foo :bar] (om/transform-reads r '[:foo :bar])))
     (with-redefs [om/ref->components (fn [r k]
                                        (if (= k :foo) [nil] []))
