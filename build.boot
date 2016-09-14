@@ -25,6 +25,7 @@
                  [pandeiro/boot-http          "0.7.3"          :scope "test"]
                  [adzerk/boot-cljs            "1.7.228-1"      :scope "test"]
                  [adzerk/boot-cljs-repl       "0.3.3"          :scope "test"]
+                 [adzerk/boot-test            "1.1.2"          :scope "test"]
                  [crisptrutski/boot-cljs-test "0.2.2-SNAPSHOT" :scope "test"]
                  [doo                         "0.1.7"          :scope "test"
                   :exclusions [org.clojure/clojurescript]]
@@ -35,11 +36,12 @@
                                org.clojure/clojurescript]]])
 
 (require
- '[adzerk.boot-cljs      :refer [cljs]]
- '[adzerk.boot-cljs-repl :as cr :refer [cljs-repl start-repl]]
- '[adzerk.boot-reload    :refer [reload]]
- '[crisptrutski.boot-cljs-test :refer [test-cljs]]
- '[pandeiro.boot-http :refer [serve]])
+ '[adzerk.boot-cljs            :refer [cljs]]
+ '[adzerk.boot-cljs-repl       :as cr :refer [cljs-repl start-repl]]
+ '[adzerk.boot-reload          :refer [reload]]
+ '[adzerk.boot-test            :as bt]
+ '[crisptrutski.boot-cljs-test :as bct]
+ '[pandeiro.boot-http          :refer [serve]])
 
 (deftask devcards []
   (set-env! :source-paths #(conj % "src/devcards")
@@ -65,17 +67,30 @@
 
 (ns-unmap 'boot.user 'test)
 
-(deftask test
+(deftask test-clj []
+  (comp
+    (testing)
+    (bt/test)))
+
+(deftask test-cljs
   [e exit?     bool  "Enable flag."]
   (let [exit? (cond-> exit?
                 (nil? exit?) not)]
     (comp
       (testing)
-      (test-cljs
+      (bct/test-cljs
         :js-env :node
         :namespaces #{'om.next.tests}
         :cljs-opts {:parallel-build true}
         :exit? exit?))))
+
+(deftask test
+  [e exit?     bool  "Enable flag."]
+  (let [exit? (cond-> exit?
+                (nil? exit?) not)]
+    (comp
+      (test-clj)
+      (test-cljs :exit? exit?))))
 
 (deftask auto-test []
   (comp
