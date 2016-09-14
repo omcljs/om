@@ -1827,12 +1827,13 @@
                              (not= c root)
                              props-change?)
                     (let [update-path (path c)]
-                      (loop [p (parent c)]
-                        (when (some? p)
-                          (let [update-path' (subvec update-path (count (path p)))]
-                            (update-props! p (assoc-in (props p) update-path' next-raw-props))
-                            (merge-pending-props! p)
-                            (recur (parent p)))))))))))))))
+                      (when-not (nil? update-path)
+                        (loop [p (parent c)]
+                          (when (some? p)
+                            (let [update-path' (subvec update-path (count (path p)))]
+                              (update-props! p (assoc-in (props p) update-path' next-raw-props))
+                              (merge-pending-props! p)
+                              (recur (parent p))))))))))))))))
 
   (send! [this]
     (let [sends (:queued-sends @state)]
