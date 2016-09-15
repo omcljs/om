@@ -2306,33 +2306,84 @@
                   om/get-query (constantly [{:foo [:bar]}])
                   om/full-query (constantly [{:foo [:bar]}])]
       (is (= (om/transform-reads r '[:foo :baz])
-             '[{:foo [:bar]} :baz])))
-    (with-redefs [om/ref->components (fn [r k]
-                                       (if (= k :foo) [nil] []))
-                  om/get-query (constantly [{:foo [:bar]}])
-                  om/full-query (constantly [{:foo [:bar]}])]
-      (is (= (om/transform-reads r '[:foo (:baz {:woz :noz})])
-            '[{:foo [:bar]} (:baz {:woz :noz})])))
-    (with-redefs [om/ref->components (constantly [nil])
-                  om/get-query (constantly [{:foo [:bar]}])
-                  om/full-query (constantly [{:foo [:bar]}])]
-      (is (= (om/transform-reads r '[:foo :bar])
-             '[{:foo [:bar]}])))
-    (with-redefs [om/ref->components (fn [r k]
-                                       (if (= k :foo) [nil] []))
-                  om/get-query (constantly [{:foo [:bar]}])
-                  om/full-query (constantly [{:foo [:bar]}])]
+             '[{:foo [:bar]} :baz]))
       (is (= (om/transform-reads r '[(do/it!) :foo :baz])
-             '[(do/it!) {:foo [:bar]} :baz])))
-    (with-redefs [om/ref->components (fn [r k]
-                                       (if (= k :foo) [nil] []))
-                  om/get-query (constantly [{:foo [:bar]}])
-                  om/full-query (constantly [{:foo [:bar]}])]
+             '[(do/it!) {:foo [:bar]} :baz]))
+      (is (= (om/transform-reads r '[:foo (:baz {:woz :noz})])
+            '[{:foo [:bar]} (:baz {:woz :noz})]))
       (is (= (om/transform-reads r '[(do/it!) (do/it!) :foo :baz])
              '[(do/it!) (do/it!) {:foo [:bar]} :baz])))
     (with-redefs [om/ref->components (constantly [nil])
                   om/get-query (constantly [{:foo [:bar]}])
                   om/full-query (constantly [{:foo [:bar]}])]
+      (is (= (om/transform-reads r '[:foo :bar])
+            '[{:foo [:bar]}]))
       (is (= (om/transform-reads r '[(do/it!) (do/it!) :foo :bar])
-             '[(do/it!) (do/it!) {:foo [:bar]}])))
-    ))
+             '[(do/it!) (do/it!) {:foo [:bar]}])))))
+
+#?(:cljs
+   (deftest test-reconcile!
+     ;; OM-766 / OM-768
+     (let [update-atom (atom {})
+           Comp (ui
+                  Object
+                  (componentWillReceiveProps [this next-props]
+                    (swap! update-atom assoc :componentWillReceiveProps next-props))
+                  (render [this]
+                    (swap! update-atom assoc :props (om/props this))))
+           Root (ui
+                  static om/IQuery
+                  (query [this]
+                    [:foo]))
+           r (om/reconciler {:indexer #(om/indexer
+                                         {:index-component (fn [indexes component] indexes)
+                                          :drop-component  (fn [indexes component] indexes)
+                                          :ref->components (fn [{:keys [class->components]} ref]
+                                                             (get class->components Comp))})})
+           ;; the important thing to note are the `:t`s. In this example we simulate
+           ;; a stale Root (< (t root) (t reconciler))
+           root (Root. #js {:omcljs$reconciler r
+                            :omcljs$path       [:x]
+                            :omcljs$value      (om/om-props {:foo 1} 1)})
+           c (Comp. #js {:omcljs$reconciler r
+                         :omcljs$parent     root
+                         :omcljs$value      (om/om-props {:foo 1} 2)})]
+       (set! (. c -forceUpdate) (fn [] (swap! update-atom assoc :forceUpdate true)))
+       (with-redefs [om/mounted? (constantly true)]
+         (p/index-component! (om/get-indexer r) c)
+         (swap! (:state r) assoc :queue [:foo] :root root :t 2)
+         (p/reconcile! r)
+         (is (not (contains? @update-atom :componentWillReceiveProps)))
+         (is (true? (:forceUpdate @update-atom)))))
+     (let [update-atom (atom {})
+           Comp (ui
+                  Object
+                  (componentWillReceiveProps [this next-props]
+                    (swap! update-atom assoc :componentWillReceiveProps next-props))
+                  (render [this]
+                    (swap! update-atom assoc :props (om/props this))))
+           Root (ui
+                  static om/IQuery
+                  (query [this]
+                    [:foo]))
+           r (om/reconciler {:indexer #(om/indexer
+                                         {:index-component (fn [indexes component] indexes)
+                                          :drop-component  (fn [indexes component] indexes)
+                                          :ref->components (fn [{:keys [class->components]} ref]
+                                                             (get class->components Comp))})})
+           ;; In this case, we simulate a state update at Comp, while something
+           ;; in Comp's subtree also has `transact!`ed, thus (< (t c) (t reconciler))
+           root (Root. #js {:omcljs$reconciler r
+                            :omcljs$path       [:x]
+                            :omcljs$value      (om/om-props {:foo 1} 1)})
+           c (Comp. #js {:omcljs$reconciler r
+                         :omcljs$parent     root
+                         :omcljs$value      (om/om-props {:foo 1} 1)})]
+       (set! (. c -forceUpdate) (fn [] (swap! update-atom assoc :forceUpdate true)))
+       (with-redefs [om/mounted? (constantly true)]
+         (p/index-component! (om/get-indexer r) c)
+         (swap! (:state r) assoc :queue [:foo] :root root :t 2)
+         (p/reconcile! r)
+         (is (= (-> @update-atom :componentWillReceiveProps)
+                {:foo 1}))
+         (is (true? (:forceUpdate @update-atom)))))))
