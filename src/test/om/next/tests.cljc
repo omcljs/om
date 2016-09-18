@@ -1905,6 +1905,50 @@
                           {:main [{:curr-item [:foo {:sub-items '...}]}]}}] state state)
           {:curr-view {:curr-item [{:foo :baz :sub-items [{:foo :bar}]}]}}))))
 
+(defui IdxrIdentChild
+  static om/Ident
+  (ident [this params]
+    [:users/by-id 2])
+  static om/IQuery
+  (query [this]
+    [:id :name :email]))
+
+(defui IdxrIdentParent
+  static om/IQuery
+  (query [this]
+    [{[:users/by-id 2] (om/get-query IdxrIdentChild)}]))
+
+(deftest test-om-772
+  (let [idxr (om/indexer)
+        c #?(:clj  (IdxrIdentProp nil nil {:omcljs$path []} nil)
+             :cljs (IdxrIdentProp. #js {:omcljs$path []}))]
+    (p/index-root idxr IdxrIdentProp)
+    (p/index-component! idxr c)
+    (is (= (-> @idxr :prop->classes keys set)
+           #{:foo [:users/by-id 2]}))
+    (is (= (map om/react-type (p/key->components idxr :foo)) [IdxrIdentProp]))
+    (is (= (map om/react-type (p/key->components idxr [:users/by-id 2])) [IdxrIdentProp])))
+  (let [idxr (om/indexer)
+        c #?(:clj  (IdxrLinkProp nil nil {:omcljs$path []} nil)
+             :cljs (IdxrLinkProp. #js {:omcljs$path []}))]
+    (p/index-root idxr IdxrLinkProp)
+    (p/index-component! idxr c)
+    (is (= (-> @idxr :prop->classes keys set)
+           #{:foo :current-user}))
+    (is (= (map om/react-type (p/key->components idxr :foo)) [IdxrLinkProp]))
+    (is (= (map om/react-type (p/key->components idxr :current-user)) [IdxrLinkProp]))
+    (is (empty? (p/key->components idxr '[:current-user _]))))
+  (let [idxr (om/indexer)
+        query-c #?(:clj (IdxrIdentParent nil nil {:omcljs$path []} nil)
+                   :cljs (IdxrIdentParent. #js {:omcljs$path []}))
+        ident-c #?(:clj (IdxrIdentChild nil nil {:omcljs$path [[:users/by-id 2]]} nil)
+                   :cljs (IdxrIdentChild. #js {:omcljs$path [[:users/by-id 2]]}))]
+    (p/index-root idxr IdxrIdentParent)
+    (p/index-component! idxr query-c)
+    (p/index-component! idxr ident-c)
+    (is (= (set (map om/react-type (p/key->components idxr [:users/by-id 2])))
+           #{IdxrIdentParent IdxrIdentChild}))))
+
 ;; -----------------------------------------------------------------------------
 ;; Union Migration
 

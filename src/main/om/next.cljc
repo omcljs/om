@@ -1894,16 +1894,10 @@
         #{k}
         (if-let [cs ((:ref->components extfs) indexes k)]
           cs
-          (let [cs (get-in indexes [:ref->components k] ::not-found)]
-            (if-not #?(:clj  (identical? ::not-found cs)
-                       :cljs (keyword-identical? ::not-found cs))
-              cs
-              (if (keyword? k)
-                ;; TODO: more robust validation, might be bogus key
-                (let [cs (get-in indexes [:prop->classes k])]
-                  (transduce (map #(get-in indexes [:class->components %]))
-                    (completing into) #{} cs))
-                #{}))))))))
+          (transduce (map #(get-in indexes [:class->components %]))
+            (completing into)
+            (get-in indexes [:ref->components k] #{})
+            (get-in indexes [:prop->classes k])))))))
 
 (defn indexer
   "Given a function (Component -> Ref), return an indexer."
