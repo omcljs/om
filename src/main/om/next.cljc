@@ -1105,7 +1105,8 @@
      {:pre [(component? component)]}
      (let [[ns _ c] (str/split (reflect/typename (type component)) #"\$")
            ns (clojure.main/demunge ns)]
-       @(find-var (symbol ns c)))))
+       @(or (find-var (symbol ns c))
+            (find-var (symbol ns (clojure.main/demunge c)))))))
 
 #?(:cljs
    (defn react-type
@@ -1665,6 +1666,12 @@
   "Given an AST convert it back into a query expression."
   (parser/ast->expr query-ast true))
 
+(defn- get-dispatch-key [prop]
+  (cond-> prop
+    (or (not (util/ident? prop))
+        (= (second prop) '_))
+    ((comp :dispatch-key parser/expr->ast))))
+
 ;; =============================================================================
 ;; Indexer
 
@@ -1722,12 +1729,7 @@
           rootq             (get-query x)
           class             (cond-> x (component? x) #?(:clj  react-type
                                                         :cljs type))]
-      (letfn [(get-dispatch-key [prop]
-                (cond-> prop
-                  (or (not (util/ident? prop))
-                      (= (second prop) '_))
-                  ((comp :dispatch-key parser/expr->ast))))
-              (build-index* [class query path classpath union-expr union-keys]
+      (letfn [(build-index* [class query path classpath union-expr union-keys]
                 (invariant (or (not (iquery? class))
                              (and (iquery? class)
                                (not (empty? query))))
@@ -1977,7 +1979,11 @@
        (if-not (empty? qs)
          ;; handle case where child appears multiple times at same class-path
          ;; but with different queries
-         (let [q (first (filter #(= path' (-> % zip/root (focus->path path'))) qs))]
+         (let [q (->> qs
+                   (filter #(= path'
+                               (mapv get-dispatch-key
+                                 (-> % zip/root (focus->path path')))))
+                   first)]
            (if-not (nil? q)
              (replace q query)
              (throw
