@@ -144,7 +144,9 @@
   (is (= (#'om/focus->path [{:todos/list [{'[:current-todo _] [:id :title]}]}])
          [:todos/list '[:current-todo _]]))
   (is (= (#'om/focus->path [{:people/list [{[:person/by-id 0] [{:person/name [:name/first :name/last]}]}]}])
-         [:people/list [:person/by-id 0] :person/name])))
+         [:people/list [:person/by-id 0] :person/name]))
+  (is (= (#'om/focus->path [{:people/list [{'[:current-user _] [:name/first :name/last]}]}] [:people/list '[:current-user _]])
+         [:people/list '[:current-user _]])))
 
 (comment
   (om/focus-query '[{:tree [:id :node-value {:children ...}]}]
@@ -217,6 +219,58 @@
 
 (deftest test-om-746
   (is (= (-> #'OM-746-Component meta :doc) "Some docstring")))
+
+(defui OM-773-Child
+  static om/IQuery
+  (query [this]
+    [:foo]))
+
+(defui OM-773-LinkRoot
+  static om/IQuery
+  (query [this]
+    [{[:a '_] (om/get-query OM-773-Child)}]))
+
+(defui OM-773-IdentRoot
+  static om/IQuery
+  (query [this]
+    [{[:users/by-id 2] (om/get-query OM-773-Child)}]))
+
+(deftest test-om-773
+  (testing "OM-773: `full-query` thinks no queries exist when the query path includes a link"
+    (let [r (om/reconciler
+              {:state (atom nil)
+               :parser (om/parser {:read (fn [_ _ _] {})})})
+          idxr (get-in r [:config :indexer])
+          _ (p/add-root! r OM-773-LinkRoot nil nil)
+          _ (p/index-component! idxr #?(:clj (OM-773-LinkRoot nil nil #js {:omcljs$reconciler r} nil)
+                                        :cljs (OM-773-LinkRoot. #js {:omcljs$reconciler r})))
+          root (-> @idxr :class->components (get OM-773-LinkRoot) first)
+          child #?(:clj (OM-773-Child nil nil #js {:omcljs$reconciler r
+                                                   :omcljs$path [:a]
+                                                   :omcljs$parent root} nil)
+                   :cljs (OM-773-Child. #js {:omcljs$reconciler r
+                                             :omcljs$path [:a]
+                                             :omcljs$parent root}))
+          _ (p/index-component! idxr child)]
+      (is (= (om/full-query child)
+            '[{[:a _] [:foo]}])))
+    (let [r (om/reconciler
+              {:state (atom nil)
+               :parser (om/parser {:read (fn [_ _ _] {})})})
+          idxr (get-in r [:config :indexer])
+          _ (p/add-root! r OM-773-IdentRoot nil nil)
+          _ (p/index-component! idxr #?(:clj (OM-773-IdentRoot nil nil #js {:omcljs$reconciler r} nil)
+                                        :cljs (OM-773-IdentRoot. #js {:omcljs$reconciler r})))
+          root (-> @idxr :class->components (get OM-773-IdentRoot) first)
+          child #?(:clj (OM-773-Child nil nil #js {:omcljs$reconciler r
+                                                   :omcljs$path [[:users/by-id 2]]
+                                                   :omcljs$parent root} nil)
+                   :cljs (OM-773-Child. #js {:omcljs$reconciler r
+                                             :omcljs$path [[:users/by-id 2]]
+                                             :omcljs$parent root}))
+          _ (p/index-component! idxr child)]
+      (is (= (om/full-query child)
+            '[{[:users/by-id 2] [:foo]}])))))
 
 ;; -----------------------------------------------------------------------------
 ;; Query Templating
