@@ -840,9 +840,7 @@
 #?(:clj
    (defn- munge-component-name [x]
      (let [ns-name (-> x meta :component-ns)
-           cl-name (-> x meta :component-name)
-           ;[ns-name cl-name] (str/split cl #"\.(?=[^.]*$)")
-           ]
+           cl-name (-> x meta :component-name)]
        (munge
          (str (str/replace (str ns-name) "." "$") "$" cl-name)))))
 
@@ -2504,31 +2502,34 @@
                    #(into %1 %2) #{} q)
               {:keys [ui->props]} config
               env (to-env config)
-              root (:root @state)
-              #?@(:cljs [props-change? (> (p/basis-t this) (t root))])]
+              root (:root @state)]
           #?(:cljs
              (doseq [c ((:optimize config) cs)]
-               (when (mounted? c)
-                 (let [computed   (get-computed (props c))
-                       next-raw-props (ui->props env c)
-                       next-props     (om.next/computed next-raw-props computed)]
-                   (when (and (exists? (.-componentWillReceiveProps c))
-                           (iquery? root)
-                           props-change?)
-                     ;; `componentWilReceiveProps` is always called before `shouldComponentUpdate`
-                     (.componentWillReceiveProps c
-                       #js {:omcljs$value (om-props next-props (p/basis-t this))}))
-                   (when (should-update? c next-props (get-state c))
-                     (if-not (nil? next-props)
-                       (update-component! c next-props)
-                       (.forceUpdate c))
-                     ;; Only applies if we're doing incremental rendering, not
-                     ;; the case in applications without queries
-                     (when (and (iquery? root)
-                             (not= c root)
+               (let [props-change? (> (p/basis-t this) (t c))]
+                 (when (mounted? c)
+                   (let [computed   (get-computed (props c))
+                         next-raw-props (ui->props env c)
+                         next-props     (om.next/computed next-raw-props computed)]
+                     (when (and (exists? (.-componentWillReceiveProps c))
+                             (iquery? root)
                              props-change?)
-                       (let [update-path (path c)]
-                         (when-not (nil? update-path)
+                       (let [next-props (if (nil? next-props)
+                                          (when-let [props (props c)]
+                                            props)
+                                          next-props)]
+                         ;; `componentWilReceiveProps` is always called before `shouldComponentUpdate`
+                         (.componentWillReceiveProps c
+                           #js {:omcljs$value (om-props next-props (p/basis-t this))})))
+                     (when (should-update? c next-props (get-state c))
+                       (if-not (nil? next-props)
+                         (update-component! c next-props)
+                         (.forceUpdate c))
+                       ;; Only applies if we're doing incremental rendering, not
+                       ;; the case in applications without queries
+                       (when (and (iquery? root)
+                               (not= c root)
+                               props-change?)
+                         (when-let [update-path (path c)]
                            (loop [p (parent c)]
                              (when (some? p)
                                (let [update-path' (subvec update-path (count (path p)))]
