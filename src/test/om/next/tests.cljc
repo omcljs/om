@@ -286,6 +286,18 @@
            zip/root)
          '[{:selected/item [({:author [:name]} {:some/param 42})]}])))
 
+(deftest test-query-template-links-idents
+  (is (= (-> (#'om/query-template
+               '[{:app/projects [{[:user/by-id 0] [:name]}]}]
+               '[:app/projects [:user/by-id 0]])
+           zip/root)
+         '[{:app/projects [{[:user/by-id 0] [:name]}]}]))
+  (is (= (-> (#'om/query-template
+               '[{:app/projects [{[:app/current-user _] [:name]}]}]
+               '[:app/projects [:app/current-user _]])
+           zip/root)
+         '[{:app/projects [{[:app/current-user _] [:name]}]}])))
+
 ;; -----------------------------------------------------------------------------
 ;; Indexer
 
