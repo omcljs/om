@@ -589,8 +589,7 @@
                   (recur (zip/down loc) path)
                   (let [[k & ks] path
                         k' (expr->key node)]
-                    (if #?(:clj  (identical? k k')
-                           :cljs (keyword-identical? k k'))
+                    (if (= k k')
                       (if (or (map? node)
                               (and (seq? node) (map? (first node))))
                         (let [loc'  (move-to-key (cond-> loc (seq? node) zip/down) k)
