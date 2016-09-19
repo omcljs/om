@@ -762,16 +762,14 @@
        {:component #?(:clj  (react-type component)
                       :cljs (type component))}))))
 
-#?(:clj
-   (defn iquery? [x]
-     (if (fn? x)
-       (some? (-> x meta :query))
-       (let [class (cond-> x (component? x) class)]
-         (extends? IQuery class)))))
-
-#?(:cljs
-   (defn ^boolean iquery? [x]
-     (implements? IQuery x)))
+(defn iquery?
+  #?(:cljs {:tag boolean})
+  [x]
+  #?(:clj  (if (fn? x)
+             (some? (-> x meta :query))
+             (let [class (cond-> x (component? x) class)]
+               (extends? IQuery class)))
+     :cljs (implements? IQuery x)))
 
 (defn- get-class-or-instance-query
   "Return a IQuery/IParams local bound query. Works for component classes
@@ -968,15 +966,11 @@
   {:pre [(component? c)]}
   (.-state c))
 
-#?(:clj
-   (defn- get-prop [c prop]
-     (get (p/-props c) prop)))
-
-#?(:cljs
-   (defn- get-prop
-     "PRIVATE: Do not use"
-     [c k]
-     (gobj/get (.-props c) k)))
+(defn- get-prop
+  "PRIVATE: Do not use"
+  [c k]
+  #?(:clj  (get (p/-props c) k)
+     :cljs (gobj/get (.-props c) k)))
 
 #?(:cljs
    (defn- get-props*
@@ -1006,17 +1000,11 @@
      [c k v]
      (gobj/set (.-props c) k v)))
 
-#?(:clj
-   (defn get-reconciler
-     [c]
-     {:pre [(component? c)]}
-     (get-prop c :omcljs$reconciler)))
-
-#?(:cljs
-   (defn- get-reconciler
-     [c]
-     {:pre [(component? c)]}
-     (get-prop c "omcljs$reconciler")))
+(defn get-reconciler
+  [c]
+  {:pre [(component? c)]}
+  (get-prop c #?(:clj  :omcljs$reconciler
+                 :cljs "omcljs$reconciler")))
 
 #?(:cljs
    (defn- props*
@@ -1100,7 +1088,7 @@
    (defn react-type
      "Returns the component type, regardless of whether the component has been
       mounted"
-      [component]
+     [component]
      {:pre [(component? component)]}
      (let [[ns _ c] (str/split (reflect/typename (type component)) #"\$")
            ns (clojure.main/demunge ns)]
@@ -2463,7 +2451,8 @@
                 (send snds
                   (fn send-cb
                     ([res]
-                     (send-cb res nil))
+                     (merge! this res nil)
+                     (renderf ((:parser config) env sel)))
                     ([res query]
                      (merge! this res query)
                      (renderf ((:parser config) env sel)))))))))
@@ -2556,11 +2545,14 @@
               (assoc :queued-sends {})
               (assoc :sends-queued false))))
         ((:send config) sends
-          (fn [res query]
-            (merge! this res query)))))))
+          (fn send-cb
+            ([res]
+             (merge! this res nil))
+            ([res query]
+             (merge! this res query))))))))
 
 (defn default-ui->props
-  [{:keys [parser ^boolean pathopt] :as env} c]
+  [{:keys [parser #?(:clj pathopt :cljs ^boolean pathopt)] :as env} c]
   (let [ui (when (and pathopt #?(:clj  (satisfies? Ident c)
                                  :cljs (implements? Ident c)) (iquery? c))
              (let [id (ident c (props c))]
@@ -2798,8 +2790,9 @@
                         :t 0 :normalized norm?}))]
     ret))
 
-(defn ^boolean reconciler?
+(defn reconciler?
   "Returns true if x is a reconciler."
+  #?(:cljs {:tag boolean})
   [x]
   (instance? Reconciler x))
 
@@ -2836,8 +2829,9 @@
   ([] (tempid/tempid))
   ([id] (tempid/tempid id)))
 
-(defn ^boolean tempid?
+(defn tempid?
   "Return true if x is a tempid, false otherwise"
+  #?(:cljs {:tag boolean})
   [x]
   (tempid/tempid? x))
 

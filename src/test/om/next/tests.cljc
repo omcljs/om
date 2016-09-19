@@ -1,11 +1,9 @@
 (ns om.next.tests
   #?(:clj (:refer-clojure :exclude [read]))
-  (:require #?@(:clj  [[clojure.test :refer [deftest is are testing run-tests]]]
-                :cljs [[cljs.test :refer-macros [deftest is are testing run-tests]]
-                       [cljsjs.react]])
+  (:require #?@(:cljs [[cljsjs.react]])
+            [clojure.test :refer [deftest is are testing run-tests]]
             [clojure.zip :as zip]
-            [om.next :as om #?(:clj :refer
-                               :cljs :refer-macros) [defui ui]]
+            [om.next :as om #?(:clj :refer :cljs :refer-macros) [defui ui]]
             [om.next.protocols :as p]
             [om.next.impl.parser :as parser]
             [om.tempid :refer [tempid]]
