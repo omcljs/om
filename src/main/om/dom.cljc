@@ -239,13 +239,13 @@
 
 #?(:clj
    (def lower-case-attrs
-     #{"accessKey" "allowFullScreen" "allowTransparency" "autoComplete"
+     #{"accessKey" "allowFullScreen" "allowTransparency" "as" "autoComplete"
        "autoFocus" "autoPlay" "contentEditable" "contextMenu" "crossOrigin"
        "cellPadding" "cellSpacing" "charSet" "classID" "colSpan" "dateTime"
        "encType" "formAction" "formEncType" "formMethod" "formNoValidate"
        "formTarget" "frameBorder" "hrefLang" "inputMode" "keyParams"
        "keyType" "marginHeight" "marginWidth" "maxLength" "mediaGroup"
-       "minLength" "noValidate" "radioGroup" "readOnly" "rowSpan"
+       "minLength" "noValidate" "playsInline" "radioGroup" "readOnly" "rowSpan"
        "spellCheck" "srcDoc" "srcLang" "srcSet" "tabIndex" "useMap"
        "autoCapitalize" "autoCorrect" "autoSave" "itemProp" "itemScope"
        "itemType" "itemID" "itemRef"}))
