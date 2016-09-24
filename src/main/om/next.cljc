@@ -1712,7 +1712,7 @@
     (let [prop->classes     (atom {})
           class-path->query (atom {})
           rootq             (get-query x)
-          class             (cond-> x (component? x) #?(:clj  react-type
+          root-class        (cond-> x (component? x) #?(:clj  react-type
                                                         :cljs type))]
       (letfn [(build-index* [class query path classpath union-expr union-keys]
                 (invariant (or (not (iquery? class))
@@ -1730,15 +1730,15 @@
                                    (conj class))
                       dp->cs     (get-in @indexes [:data-path->components])]
                   (when class
-                    (let [focused-query (query-template
-                                          (focus-query rootq path)
-                                          path)
-                          cp-query      (cond-> focused-query
-                                          (and (not= (zip/node focused-query) query)
-                                               (not recursive?))
-                                          (zip/replace query))]
-                      (swap! class-path->query update-in [classpath]
-                        (fnil conj #{}) cp-query)))
+                    ;; path could have changed when setting queries, so we only use
+                    ;; rootq on the first call (when there's no class-path->query
+                    ;; information) - António
+                    (let [root-query (if (empty? path)
+                                       rootq
+                                       (-> @class-path->query
+                                         (get [root-class]) first zip/root))]
+                      (swap! class-path->query update-in [classpath] (fnil conj #{})
+                        (query-template (focus-query root-query path) path))))
                   (let [recursive-join? (and recursive?
                                           (some (fn [e]
                                                   (and (util/join? e)
@@ -1826,7 +1826,7 @@
                                                   (zip/node q') union-keys))]
                                 (swap! class-path->query merge cp->q')))
                             (build-index* class' query'' path' classpath query (conj union-keys prop)))))))))]
-        (build-index* class rootq [] [] nil [])
+        (build-index* root-class rootq [] [] nil [])
         (swap! indexes merge
           {:prop->classes     @prop->classes
            :class-path->query @class-path->query}))))
