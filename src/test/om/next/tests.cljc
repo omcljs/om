@@ -270,6 +270,18 @@
       (is (= (om/full-query child)
             '[{[:users/by-id 2] [:foo]}])))))
 
+(defprotocol OM-786-Protocol
+  (some-func [this]))
+
+(defui OM-786-Component
+  static OM-786-Protocol
+  (some-func [this]
+    42))
+
+(deftest test-om-786
+  (is (= #?(:clj  ((-> OM-786-Component meta :some-func) OM-786-Component)
+            :cljs (some-func OM-786-Component)) 42)))
+
 ;; -----------------------------------------------------------------------------
 ;; Query Templating
 

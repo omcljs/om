@@ -313,9 +313,6 @@
            [other-protocols obj-dt] (split-with (complement '#{Object}) dt)
            class-methods (when-not (empty? (:protocols statics))
                            (->> (partition 2 (:protocols statics))
-                             (filter (fn [[p _]]
-                                       (some #{(clojure.core/name p)}
-                                         '#{"IQuery" "Ident" "IQueryParams"})))
                              (reduce
                                (fn [r [_ impl]]
                                  (assoc r (keyword (first impl))
@@ -408,14 +405,10 @@
             (fn [this# writer# opt#]
               (cljs.core/-write writer# ~(str rname)))))))))
 
-#?(:clj
-   (defmacro defui-clj [name & forms]
-     (defui*-clj name forms)))
-
 (defmacro defui [name & forms]
   (if (boolean (:ns &env))
     (defui* name forms &env)
-    `(defui-clj ~name ~@forms)))
+    #?(:clj (defui*-clj name forms))))
 
 (defmacro ui
   [& forms]
