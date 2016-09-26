@@ -1843,6 +1843,10 @@
                                 "two elements (a keyword and an EDN value). Check "
                                 "the Ident implementation of component `"
                                 (.. c -constructor -displayName) "`."))
+                            (invariant (some? (second ident))
+                              (str "component " (.. c -constructor -displayName)
+                                "'s ident (" ident ") has a `nil` second element."
+                                " This warning can be safely ignored if that is intended."))
                             ident))]
           (if-not (nil? ident)
             (cond-> indexes
