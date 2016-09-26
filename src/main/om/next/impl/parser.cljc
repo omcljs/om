@@ -208,7 +208,7 @@
                    v           (get ret key)]
                (recur (next joins)
                  (cond-> ret
-                   (contains? ret key)
+                   (and (map? ret) (contains? ret key))
                    (assoc key
                      (path-meta v (conj path key) sel union-entry)))))))
          (cond-> ret

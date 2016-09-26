@@ -824,7 +824,13 @@
           props (parser/path-meta x [] '[(counter/increment)])]
       (is (= props x))
       (is (= (-> props meta :om-path) []))
-      (is (= (-> props (get 'counter/increment) meta :om-path) nil)))))
+      (is (= (-> props (get 'counter/increment) meta :om-path) nil))))
+  (testing "path-meta doesn't throw on bad input"
+    (let [data {:people [[:person/by-id 1]]}
+          query [{:people [:person/id :person/name
+                           {:roles [:role/id :role/name]}]}]]
+      (is (= (parser/path-meta data [] query)
+             data)))))
 
 (deftest test-path-meta-lists
   (let [x {:children '({:name "John" :age 3} {:name "Mary" :age 5})}
