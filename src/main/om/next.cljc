@@ -752,8 +752,7 @@
        (str "Query violation, " component " reuses " c' " query"))
      (with-meta
        (bind-query q (:params query-data (params component)))
-       {:component #?(:clj  (react-type component)
-                      :cljs (type component))}))))
+       {:component (react-type component)}))))
 
 (defn iquery?
   #?(:cljs {:tag boolean})
@@ -1422,12 +1421,10 @@
   "Return the raw component class path associated with a component. Contains
    duplicates for recursive component trees."
   [c]
-  (loop [c c ret (list #?(:clj  (react-type c)
-                          :cljs (type c)))]
+  (loop [c c ret (list (react-type c))]
     (if-let [p (parent c)]
       (if (iquery? p)
-        (recur p (cons #?(:clj  (react-type p)
-                          :cljs (type p)) ret))
+        (recur p (cons (react-type p) ret))
         (recur p ret))
       ret)))
 
@@ -1705,8 +1702,7 @@
     (let [prop->classes     (atom {})
           class-path->query (atom {})
           rootq             (get-query x)
-          root-class        (cond-> x (component? x) #?(:clj  react-type
-                                                        :cljs type))]
+          root-class        (cond-> x (component? x) react-type)]
       (letfn [(build-index* [class query path classpath union-expr union-keys]
                 (invariant (or (not (iquery? class))
                              (and (iquery? class)
@@ -1768,8 +1764,7 @@
                                   cs (get dp->cs rendered-path')
                                   cascade-query? (and (= (count cs) 1)
                                                    (= (-> query' meta :component)
-                                                     #?(:clj  (react-type (first cs))
-                                                        :cljs (type (first cs))))
+                                                     (react-type (first cs)))
                                                    (not (map? query')))
                                   query''        (if cascade-query?
                                                    (get-query (first cs))
@@ -1790,8 +1785,7 @@
                         (doseq [[prop query'] query]
                           (let [path'          (conj path prop)
                                 class'         (-> query' meta :component)
-                                cs             (filter #(= class' #?(:clj  (react-type %)
-                                                                     :cljs (type %)))
+                                cs             (filter #(= class' (react-type %))
                                                  (get dp->cs path))
                                 cascade-query? (and class' (= (count cs) 1))
                                 query''        (if cascade-query?
@@ -1828,8 +1822,7 @@
     (swap! indexes
       (fn [indexes]
         (let [indexes (update-in ((:index-component extfs) indexes c)
-                        [:class->components #?(:clj  (react-type c)
-                                               :cljs (type c))]
+                        [:class->components (react-type c)]
                         (fnil conj #{}) c)
               data-path (into [] (remove number?) (path c))
               indexes (update-in ((:index-component extfs) indexes c)
@@ -1853,8 +1846,7 @@
     (swap! indexes
       (fn [indexes]
         (let [indexes (update-in ((:drop-component extfs) indexes c)
-                        [:class->components #?(:clj  (react-type c)
-                                               :cljs (type c))]
+                        [:class->components (react-type c)]
                         disj c)
               data-path (into [] (remove number?) (path c))
               indexes (update-in ((:drop-component extfs) indexes c)
