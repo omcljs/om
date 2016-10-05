@@ -307,6 +307,36 @@
         (.append sb s)))))
 
 #?(:clj
+   (defn escape-html ^String [^String s]
+     (let [len (count s)]
+       (loop [^StringBuilder sb nil
+              i                 (int 0)]
+         (if (< i len)
+           (let [char (.charAt s i)
+                 repl (case char
+                        \& "&amp;"
+                        \< "&lt;"
+                        \> "&gt;"
+                        \" "&quot;"
+                        \' "&#x27;"
+                        nil)]
+             (if (nil? repl)
+               (if (nil? sb)
+                 (recur nil (inc i))
+                 (recur (doto sb
+                          (.append char))
+                   (inc i)))
+               (if (nil? sb)
+                 (recur (doto (StringBuilder.)
+                          (.append s 0 i)
+                          (.append repl))
+                   (inc i))
+                 (recur (doto sb
+                          (.append repl))
+                   (inc i)))))
+           (if (nil? sb) s (str sb)))))))
+
+#?(:clj
    (defrecord Element [tag attrs react-key children]
      p/IReactDOMElement
      (-render-to-string [this react-id sb]
@@ -320,14 +350,14 @@
      p/IReactDOMElement
      (-render-to-string [this react-id sb]
        (assert (string? s))
-       (append! sb s))))
+       (append! sb (escape-html s)))))
 
 #?(:clj
    (defrecord ReactText [text]
      p/IReactDOMElement
      (-render-to-string [this react-id sb]
        (assert (string? text))
-       (append! sb "<!-- react-text: " @react-id " -->" text "<!-- /react-text -->")
+       (append! sb "<!-- react-text: " @react-id " -->" (escape-html text) "<!-- /react-text -->")
        (vswap! react-id inc))))
 
 #?(:clj
@@ -424,36 +454,6 @@
        (= k "htmlFor") "for"
        (contains? colon-between-attrs k) (camel->colon-between k)
        :else k)))
-
-#?(:clj
-   (defn escape-html ^String [^String s]
-     (let [len (count s)]
-       (loop [^StringBuilder sb nil
-              i                 (int 0)]
-         (if (< i len)
-           (let [char (.charAt s i)
-                 repl (case char
-                        \& "&amp;"
-                        \< "&lt;"
-                        \> "&gt;"
-                        \" "&quot;"
-                        \' "&#x27;"
-                        nil)]
-             (if (nil? repl)
-               (if (nil? sb)
-                 (recur nil (inc i))
-                 (recur (doto sb
-                          (.append char))
-                   (inc i)))
-               (if (nil? sb)
-                 (recur (doto (StringBuilder.)
-                          (.append s 0 i)
-                          (.append repl))
-                   (inc i))
-                 (recur (doto sb
-                          (.append repl))
-                   (inc i)))))
-           (if (nil? sb) s (str sb)))))))
 
 #?(:clj
    (defn render-xml-attribute! [sb name value]
