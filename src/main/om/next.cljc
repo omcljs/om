@@ -319,28 +319,32 @@
                                    (cons 'fn (rest impl)))) {:params '(fn [this])})))]
        `(let [c# (fn ~name [state# refs# props# children#]
                    ;; TODO: non-lifecycle methods defined in the JS prototype - António
-                   (reify
-                     om.next.protocols/IReactLifecycle
-                     ~@(rest (reshape obj-dt reshape-map-clj))
+                   (let [ret# (reify
+                                om.next.protocols/IReactLifecycle
+                                ~@(rest (reshape obj-dt reshape-map-clj))
 
-                     ~@other-protocols
+                                ~@other-protocols
 
-                     ~@(:protocols statics)
+                                ~@(:protocols statics)
 
-                     om.next.protocols/IReactChildren
-                     (~'-children [this#]
-                      children#)
+                                om.next.protocols/IReactChildren
+                                (~'-children [this#]
+                                 children#)
 
-                     om.next.protocols/IReactComponent
-                     (~'-render [this#]
-                      (p/componentWillMount this#)
-                      (p/render this#))
-                     (~'-props [this]
-                      props#)
-                     (~'-local-state [this]
-                      state#)
-                     (~'-refs [this]
-                      refs#)))]
+                                om.next.protocols/IReactComponent
+                                (~'-render [this#]
+                                 (p/componentWillMount this#)
+                                 (p/render this#))
+                                (~'-props [this]
+                                 props#)
+                                (~'-local-state [this]
+                                 state#)
+                                (~'-refs [this]
+                                 refs#))]
+                     (defmethod clojure.core/print-method (type ret#)
+                       [o# ^Writer w#]
+                       (.write w# (str "#object[" (ns-name *ns*) "/" ~(str name) "]")))
+                     ret#))]
           (def ~(with-meta name
                   (merge (meta name)
                     (when docstring
