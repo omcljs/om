@@ -282,6 +282,25 @@
   (is (= #?(:clj  ((-> OM-786-Component meta :some-func) OM-786-Component)
             :cljs (some-func OM-786-Component)) 42)))
 
+(defui OM-802-Child
+  static om/Ident
+  (ident [this {:keys [type id]}]
+    [type id])
+  static om/IQuery
+  (query [this]
+    '[:id :type {:children ...}]))
+
+(defui OM-802-Root
+  static om/IQuery
+  (query [this]
+    [{:root (om/get-query OM-802-Child)}]))
+
+(deftest test-om-802
+  (let [state {:root {:id 1 :type :branch
+                      :children [{:id 2 :type :leaf}
+                                 {:id 3 :type :branch}]}}
+        normalized (om/tree->db OM-802-Root state true)]
+    (is (contains? (:branch normalized) 3))))
 ;; -----------------------------------------------------------------------------
 ;; Query Templating
 
