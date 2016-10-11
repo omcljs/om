@@ -11,7 +11,7 @@
   :source-paths  ["src/main" "src/devcards" "src/test"]
 
   :dependencies [[org.clojure/clojure "1.9.0-alpha10" :scope "provided"]
-                 [org.clojure/clojurescript "1.9.227" :scope "provided" :classifier "aot"
+                 [org.clojure/clojurescript "1.9.229" :scope "provided" :classifier "aot"
                   :exclusions [org.clojure/clojure
                                org.clojure/data.json]]
                  [org.clojure/data.json "0.2.6" :scope "provided" :classifier "aot"]
@@ -63,7 +63,7 @@
               :source-paths ["src" "examples/state_bug/src"]
               :compiler {
                 :main examples.state-bug.core
-                :asset-path "out"         
+                :asset-path "out"
                 :output-to "examples/state_bug/main.js"
                 :output-dir "examples/state_bug/out"
                 :source-map true

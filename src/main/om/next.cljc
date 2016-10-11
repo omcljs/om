@@ -2022,10 +2022,11 @@
                                               :cljs #(ident class %))) xs)]
                       (if (vector? sel)
                         (when-not (empty? is)
-                          (swap! refs update-in [(ffirst is)]
-                            (fn [ys]
-                              (merge-with merge ys
-                                (zipmap (map second is) xs)))))
+                          (swap! refs
+                            (fn [refs]
+                              (reduce (fn [m [i x]]
+                                        (update-in m i merge x))
+                                refs (zipmap is xs)))))
                         ;; union case
                         (swap! refs
                           (fn [refs']
