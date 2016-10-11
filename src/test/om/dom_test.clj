@@ -3,7 +3,8 @@
   (:require [clojure.test :refer [deftest testing is are]]
             [om.test-utils :refer [remove-whitespace]]
             [om.next :as om :refer [defui]]
-            [om.dom :as dom]))
+            [om.dom :as dom]
+            [om.next.protocols :as p]))
 
 (defn test-tags [tags res-fn]
   `(are [element# res#] (let [sb# (StringBuilder.)]
@@ -518,3 +519,11 @@
   ;; https://github.com/facebook/react/commit/3013af
   (is (= (str (#'dom/render-to-str* (dom/input #js {:max 42 :value "foo" :min 10 :type "number" :name "points" :step 3})))
          "<input type=\"number\" step=\"3\" min=\"10\" max=\"42\" value=\"foo\" name=\"points\" data-reactroot=\"\" data-reactid=\"1\"/>")))
+
+(deftest test-om-800
+  (let [sb (StringBuilder.)]
+    (p/-render-to-string (dom/text-node "foo's") 0 sb)
+    (is (= (str sb) "foo&#x27;s")))
+  (let  [sb (StringBuilder.)]
+    (p/-render-to-string (dom/react-text-node "foo's") (volatile! 0) sb)
+    (is (= (str sb) (str "<!-- react-text: 0 -->foo&#x27;s<!-- /react-text -->")))))
