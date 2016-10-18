@@ -101,7 +101,7 @@
         <dependency>
             <groupId>com.cognitect</groupId>
             <artifactId>transit-clj</artifactId>
-            <version>0.8.288</version>
+            <version>0.8.290</version>
         </dependency>
         <dependency>
             <groupId>com.cognitect</groupId>
