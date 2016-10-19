@@ -3,7 +3,8 @@
                               :cljs [var? key replace force]))
   #?(:cljs (:require-macros [om.next :refer [defui invariant]]))
   (:require #?@(:clj  [[cljs.core :refer [deftype specify! this-as js-arguments]]
-                       [clojure.reflect :as reflect]]
+                       [clojure.reflect :as reflect]
+                       [cljs.util]]
                 :cljs [[goog.string :as gstring]
                        [goog.object :as gobj]
                        [goog.log :as glog]
@@ -291,9 +292,14 @@
          (#'cljs.core/add-obj-methods type type-sym sigs)
          (concat
            (when-not (skip-flag psym)
-             [`(do
-                 ~emit-static
-                 (set! ~(#'cljs.core/extend-prefix type-sym pprefix) true))])
+             (let [{:keys [major minor qualifier]} cljs.util/*clojurescript-version*]
+               (if (and (== major 1) (== minor 9) (>= qualifier 293))
+                [`(do
+                    ~emit-static
+                    (set! ~(#'cljs.core/extend-prefix type-sym pprefix) cljs.core/PROTOCOL_SENTINEL))]
+                [`(do
+                    ~emit-static
+                    (set! ~(#'cljs.core/extend-prefix type-sym pprefix) true))])))
            (mapcat
              (fn [sig]
                (if (= psym 'cljs.core/IFn)
