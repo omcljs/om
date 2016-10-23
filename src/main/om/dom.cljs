@@ -64,3 +64,12 @@
    (js/ReactDOM.findDOMNode component))
   ([component name]
    (some-> (.-refs component) (gobj/get name) (js/ReactDOM.findDOMNode))))
+
+(defn create-element
+  "Create a DOM element for which there exists no corresponding function.
+   Useful to create DOM elements not included in React.DOM. Equivalent
+   to calling `js/React.createElement`"
+  ([tag]
+   (create-element tag nil))
+  ([tag opts & children]
+   (js/React.createElement tag opts children)))

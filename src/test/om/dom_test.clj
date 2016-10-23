@@ -534,3 +534,21 @@
                                           :dangerouslySetInnerHTML {:__html "'foo bar'"}})
       (volatile! 0) sb)
     (is (= (str sb) "<script type=\"text/javascript\" data-reactid=\"0\">'foo bar'</script>"))))
+
+(deftest test-om-799
+  (let [elem (dom/create-element "use")
+        sb (StringBuilder.)]
+    (is (instance? om.dom.Element elem))
+    (p/-render-to-string elem (volatile! 0) sb)
+    (is (= (str sb) "<use data-reactid=\"0\"></use>")))
+  (let [sb (StringBuilder.)]
+    (p/-render-to-string (dom/create-element "use" nil "use-child") (volatile! 0) sb)
+    (is (= (str sb) "<use data-reactid=\"0\">use-child</use>")))
+  (let [elem (dom/create-element "use"
+               #js {:key "foo"
+                    :x "50" :y "10"
+                    :xlinkHref "#Port"}
+               "use-child")
+        sb (StringBuilder.)]
+    (p/-render-to-string elem (volatile! 0) sb)
+    (is (= (str sb) "<use x=\"50\" y=\"10\" xlink:href=\"#Port\" data-reactid=\"0\">use-child</use>"))))

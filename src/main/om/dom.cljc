@@ -609,3 +609,16 @@
      ([component name]
       {:pre [(satisfies? p/IReactComponent component)]}
       (some-> @(p/-refs component) (get name) p/-render))))
+
+#?(:clj
+   (defn create-element
+     "Create a DOM element for which there exists no corresponding function.
+      Useful to create DOM elements not included in React.DOM. Equivalent
+      to calling `js/React.createElement`"
+     ([tag]
+      (create-element tag nil))
+     ([tag opts & children]
+      (element {:tag tag
+                :attrs (dissoc opts :ref :key)
+                :react-key (:key opts)
+                :children children}))))
