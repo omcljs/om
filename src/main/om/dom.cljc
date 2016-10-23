@@ -1,5 +1,5 @@
 (ns om.dom
-  (:refer-clojure :exclude [map meta time use])
+  (:refer-clojure :exclude [map meta time])
   #?(:clj
      (:require [clojure.string :as str]
                [om.next.protocols :as p]
@@ -134,8 +134,7 @@
     polygon
     radialGradient
     stop
-    tspan
-    use])
+    tspan])
 
 (defn ^:private gen-react-dom-inline-fn [tag]
   `(defmacro ~tag [opts# & children#]
