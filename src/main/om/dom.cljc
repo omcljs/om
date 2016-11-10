@@ -489,12 +489,13 @@
          (not value))
        nil
 
-       (= key :style)
+       (identical? key :style)
        (render-styles! sb value)
+
        ;; TODO: not sure if we want to limit values to strings/numbers - António
        (and (or (contains? supported-attrs (name key))
-              (.startsWith (name key) "data-"))
-         (or (true? value) (string? value) (number? value)))
+                (.startsWith (name key) "data-"))
+            (or (true? value) (string? value) (number? value)))
        (if (true? value)
          (append! sb " " (coerce-attr-key (name key)))
          (render-xml-attribute! sb key value))
@@ -525,12 +526,18 @@
        "meta" "param" "source" "track" "wbr"}))
 
 #?(:clj
+   (defn render-unescaped-html! [sb m]
+     (if-not (contains? m :__html)
+       (throw (IllegalArgumentException. "`props.dangerouslySetInnerHTML` must be in the form `{:__html ...}`")))
+     (when-let [html (:__html m)]
+       (append! sb html))))
+
+#?(:clj
    (defn container-tag?
      "Returns true if the tag has content or is not a void tag. In non-HTML modes,
       all contentless tags are assumed to be void tags."
      [tag content]
-     (or content
-       (and (not (void-tags tag))))))
+     (or content (and (not (void-tags tag))))))
 
 #?(:clj
    (defn render-element!
@@ -546,7 +553,9 @@
      (if (container-tag? tag (seq children))
        (do
          (append! sb ">")
-         (run! #(p/-render-to-string % react-id sb) children)
+         (if-let [html-map (:dangerouslySetInnerHTML attrs)]
+           (render-unescaped-html! sb html-map)
+           (run! #(p/-render-to-string % react-id sb) children))
          (append! sb "</" tag ">"))
        (append! sb "/>"))))
 

@@ -527,3 +527,10 @@
   (let  [sb (StringBuilder.)]
     (p/-render-to-string (dom/react-text-node "foo's") (volatile! 0) sb)
     (is (= (str sb) (str "<!-- react-text: 0 -->foo&#x27;s<!-- /react-text -->")))))
+
+(deftest test-om-818
+  (let  [sb (StringBuilder.)]
+    (p/-render-to-string (dom/script #js {:type "text/javascript"
+                                          :dangerouslySetInnerHTML {:__html "'foo bar'"}})
+      (volatile! 0) sb)
+    (is (= (str sb) "<script type=\"text/javascript\" data-reactid=\"0\">'foo bar'</script>"))))
