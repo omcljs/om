@@ -301,6 +301,15 @@
                                  {:id 3 :type :branch}]}}
         normalized (om/tree->db OM-802-Root state true)]
     (is (contains? (:branch normalized) 3))))
+
+(deftest test-om-808
+  (let[p (om/parser {:read (fn [_ _ _] {:value 42})})]
+    (is (= (p {} [{:foo [:bar]}])
+           {:foo 42}))
+    (is (= (p {} [{[:foo/by-id 0] [:bar]}])
+           {[:foo/by-id 0] 42}))
+    (is (= (p {} [{'[:foo/by-id _] [:bar]}])
+           {:foo/by-id 42}))))
 ;; -----------------------------------------------------------------------------
 ;; Query Templating
 
