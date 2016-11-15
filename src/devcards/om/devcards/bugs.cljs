@@ -1018,6 +1018,12 @@
    (fn [_ node]
      (om/add-root! om-779-reconciler OM-779-Root node))))
 
+(defcard om-799-card
+  (dom/svg #js {:viewBox "0 0 400 100"}
+    (dom/rect #js {:id "rectangle" :x "100" :y "20"
+                   :width "50" :height "50" :fill "#29e"})
+    (dom/create-element "use" #js {:xlinkHref "#rectangle"
+                                   :x "150"})))
 
 (comment
 
