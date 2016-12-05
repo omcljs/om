@@ -454,64 +454,6 @@
          (.write w (str obj-ns "/" obj-name))
          (#'clojure.core/print-object o w)))))
 
-(comment
-  (collect-statics
-    '(static IFoo
-       (foo [_])
-       (bar [_])
-       static field sel '[:woz ?noz]
-       Object
-       (toString [_])))
-
-  (require '[clojure.pprint :refer [pprint]])
-
-  (pprint
-    (defui* 'Artist
-     '(static IFoo
-        (foo [_])
-        (bar [_])
-        static field sel '[:woz ?noz]
-        Object
-        (toString [_]))))
-
-  (pprint
-    (defui* 'Artist
-      '(static IFoo
-         (foo [_])
-         (bar [_])
-         static field sel '[:woz ?noz]
-         Object
-         (render [_ {:keys [self artists]}]
-           (om.dom/div nil "Hello!"))
-         (toString [_]))))
-
-  (pprint
-    (defui* 'Artist
-      '(static IFoo
-         (foo [_])
-         (bar [_])
-         static field sel '[:woz ?noz]
-         Object
-         (render [_ {:keys [self artists]}]
-           (om.dom/div nil "Hello!"))
-         (componentWillUnmount [this]
-           (first [1 2 3])))))
-
-  (pprint
-    (defui* 'Artist
-      '(Object
-        (initLocalState [this]
-          {:foo 'bar})
-        (render [_ {:keys [self artists]}]
-          (om.dom/div nil "Hello!")))))
-
-  (pprint
-    (defui* 'Component
-     '(static om.next/IQuery
-        (query [this] '[:foo/bar :baz/woz]))))
-  )
-
-
 ;; =============================================================================
 ;; CLJS
 
