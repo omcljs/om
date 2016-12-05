@@ -2412,7 +2412,9 @@
   (queue! [this ks]
     (p/queue! this ks false))
   (queue! [_ ks remote]
-    (swap! state update-in [:queue] into ks))
+    (if remote
+      (swap! state update-in [:remote-queue] into ks)
+      (swap! state update-in [:queue] into ks)))
 
   (queue-sends! [_ sends]
     (swap! state update-in [:queued-sends]
@@ -2437,9 +2439,13 @@
   ;; TODO: need to reindex roots after reconcilation
   (reconcile! [this remote]
     (let [st @state
-          q  (:queue st)]
+          q (if ^boolean remote
+              (:remote-queue st)
+              (:queue st))]
       (swap! state update-in [:queued] not)
-      (swap! state assoc :queue [])
+      (if remote
+        (swap! state assoc :remote-queue [])
+        (swap! state assoc :queue []))
       (if (empty? q)
         ;; TODO: need to move root re-render logic outside of batching logic
         ((:render st))
