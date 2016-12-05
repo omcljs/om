@@ -1216,6 +1216,8 @@
 (declare full-query to-env schedule-sends! reconciler? ref->components force)
 
 (defn gather-sends
+  "Given an environment, a query and a set of remotes return a hash map of remotes
+   mapped to the query specific to that remote."
   [{:keys [parser] :as env} q remotes]
   (into {}
     (comp
