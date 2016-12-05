@@ -2728,7 +2728,9 @@
                   :migrate migrate :id-key id-key
                   :instrument instrument
                   :easy-reads easy-reads}
-                 (atom {:queue [] :queued false :queued-sends {}
+                 (atom {:queue []
+                        :remote-queue []
+                        :queued false :queued-sends {}
                         :sends-queued false
                         :target nil :root nil :render nil :remove nil
                         :t 0 :normalized norm?}))]
