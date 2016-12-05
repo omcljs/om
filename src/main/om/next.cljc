@@ -2409,7 +2409,9 @@
               c (first (get-in @indexer [:class->components root]))]
           (p/index-root indexer (or c root))))))
 
-  (queue! [_ ks]
+  (queue! [this ks]
+    (p/queue! this ks false))
+  (queue! [_ ks remote]
     (swap! state update-in [:queue] into ks))
 
   (queue-sends! [_ sends]
@@ -2430,8 +2432,10 @@
         true)
       false))
 
-  ;; TODO: need to reindex roots after reconcilation
   (reconcile! [this]
+    (p/reconcile! this false))
+  ;; TODO: need to reindex roots after reconcilation
+  (reconcile! [this remote]
     (let [st @state
           q  (:queue st)]
       (swap! state update-in [:queued] not)

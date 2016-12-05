@@ -14,10 +14,10 @@
   (remove-root! [reconciler target])
   (schedule-render! [reconciler])
   (schedule-sends! [reconciler])
-  (queue! [reconciler ks])
+  (queue! [reconciler ks] [reconciler ks remote])
   (queue-sends! [reconciler sends])
   (reindex! [reconciler])
-  (reconcile! [reconciler])
+  (reconcile! [reconciler] [reconciler remote])
   (send! [reconciler]))
 
 
