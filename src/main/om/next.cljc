@@ -1508,11 +1508,13 @@
                         "transacted '" tx ", " (pr-str id))))])
         v    ((:parser cfg) env tx)
         snds (gather-sends env tx (:remotes cfg))
-        q    (cond-> []
+        xs   (cond-> []
                (not (nil? c)) (conj c)
                (not (nil? ref)) (conj ref))]
-    (p/queue! r (into q (remove symbol?) (keys v)))
+    (p/queue! r (into xs (remove symbol?) (keys v)))
     (when-not (empty? snds)
+      (doseq [[remote _] snds]
+        (p/queue! r xs remote))
       (p/queue-sends! r snds)
       (schedule-sends! r))
     v))
