@@ -2397,6 +2397,9 @@
                      (renderf ((:parser config) env sel)))
                     ([res query]
                      (merge! this res query)
+                     (renderf ((:parser config) env sel)))
+                    ([res query remote]
+                     (merge! this res query)
                      (renderf ((:parser config) env sel)))))))))
         @ret)))
 
@@ -2414,8 +2417,8 @@
   (queue! [this ks]
     (p/queue! this ks false))
   (queue! [_ ks remote]
-    (if remote
-      (swap! state update-in [:remote-queue] into ks)
+    (if (not (nil? remote))
+      (swap! state update-in [:remote-queue remote] into ks)
       (swap! state update-in [:queue] into ks)))
 
   (queue-sends! [_ sends]
@@ -2441,12 +2444,12 @@
   ;; TODO: need to reindex roots after reconcilation
   (reconcile! [this remote]
     (let [st @state
-          q (if ^boolean remote
-              (:remote-queue st)
+          q (if (not (nil? remote))
+              (get-in st [:remote-queue remote])
               (:queue st))]
       (swap! state update-in [:queued] not)
-      (if remote
-        (swap! state assoc :remote-queue [])
+      (if (not (nil? remote))
+        (swap! state assoc-in [:remote-queue remote] [])
         (swap! state assoc :queue []))
       (if (empty? q)
         ;; TODO: need to move root re-render logic outside of batching logic
