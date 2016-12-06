@@ -1275,6 +1275,7 @@
                 (get-reconciler x)
                 x)
          c    (when (component? x) x)
+         xs   (if-not (nil? c) [c] [])
          root (:root @(:state r))
          cfg  (:config r)
          st   (:state cfg)
@@ -1305,6 +1306,8 @@
            sends (gather-sends (to-env cfg)
                    (into (or rootq []) (transform-reads r reads)) (:remotes cfg))]
        (when-not (empty? sends)
+         (doseq [[remote _] sends]
+           (p/queue! r xs remote))
          (p/queue-sends! r sends)
          (schedule-sends! r)))
      nil)))
@@ -2307,11 +2310,14 @@
   ([reconciler delta]
     (merge! reconciler delta nil))
   ([reconciler delta query]
+   (merge! reconciler delta query nil))
+  ([reconciler delta query remote]
    (let [config (:config reconciler)
          state (:state config)
          merge* (:merge config)
          {:keys [keys next tempids]} (merge* reconciler @state delta query)]
-     (p/queue! reconciler keys)
+     (when (nil? remote)
+       (p/queue! reconciler keys))
      (reset! state
        (if-let [migrate (:migrate config)]
          (merge (select-keys next [:om.next/queries])
@@ -2403,7 +2409,7 @@
                     ([resp query remote]
                      (when-not (nil? remote)
                        (p/queue! this (keys resp) remote))
-                     (merge! this resp query)
+                     (merge! this resp query remote)
                      (p/reconcile! this remote))))))))
         @ret)))
 
@@ -2515,7 +2521,7 @@
             ([resp query remote]
              (when-not (nil? remote)
                (p/queue! this (keys resp) remote))
-             (merge! this resp query)
+             (merge! this resp query remote)
              (p/reconcile! this remote))))))))
 
 (defn default-ui->props
