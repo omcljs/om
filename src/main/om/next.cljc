@@ -2415,7 +2415,7 @@
           (p/index-root indexer (or c root))))))
 
   (queue! [this ks]
-    (p/queue! this ks false))
+    (p/queue! this ks nil))
   (queue! [_ ks remote]
     (if (not (nil? remote))
       (swap! state update-in [:remote-queue remote] into ks)
@@ -2440,7 +2440,7 @@
       false))
 
   (reconcile! [this]
-    (p/reconcile! this false))
+    (p/reconcile! this nil))
   ;; TODO: need to reindex roots after reconcilation
   (reconcile! [this remote]
     (let [st @state
