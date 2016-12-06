@@ -2394,15 +2394,17 @@
               (when-let [send (:send config)]
                 (send snds
                   (fn send-cb
-                    ([res]
-                     (merge! this res nil)
+                    ([resp]
+                     (merge! this resp nil)
                      (renderf ((:parser config) env sel)))
-                    ([res query]
-                     (merge! this res query)
+                    ([resp query]
+                     (merge! this resp query)
                      (renderf ((:parser config) env sel)))
-                    ([res query remote]
-                     (merge! this res query)
-                     (renderf ((:parser config) env sel)))))))))
+                    ([resp query remote]
+                     (when-not (nil? remote)
+                       (p/queue! this (keys resp) remote))
+                     (merge! this resp query)
+                     (p/reconcile! this remote))))))))
         @ret)))
 
   (remove-root! [_ target]
@@ -2506,10 +2508,15 @@
               (assoc :sends-queued false))))
         ((:send config) sends
           (fn send-cb
-            ([res]
-             (merge! this res nil))
-            ([res query]
-             (merge! this res query))))))))
+            ([resp]
+             (merge! this resp nil))
+            ([resp query]
+             (merge! this resp query))
+            ([resp query remote]
+             (when-not (nil? remote)
+               (p/queue! this (keys resp) remote))
+             (merge! this resp query)
+             (p/reconcile! this remote))))))))
 
 (defn default-ui->props
   [{:keys [parser #?(:clj pathopt :cljs ^boolean pathopt)] :as env} c]
@@ -2746,7 +2753,7 @@
                   :instrument instrument
                   :easy-reads easy-reads}
                  (atom {:queue []
-                        :remote-queue []
+                        :remote-queue {}
                         :queued false :queued-sends {}
                         :sends-queued false
                         :target nil :root nil :render nil :remove nil

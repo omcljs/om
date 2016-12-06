@@ -67,11 +67,11 @@
 
 (defn search-loop [c]
   (go
-    (loop [[query cb] (<! c)]
+    (loop [[query cb remote] (<! c)]
       (if-not (empty? query)
         (let [[_ results] (<! (jsonp (str base-url query)))]
-          (cb {:search/results results}))
-        (cb {:search/results []}))
+          (cb {:search/results results} query remote))
+        (cb {:search/results []} query remote))
       (recur (<! c)))))
 
 (defn send-to-chan [c]
@@ -79,7 +79,7 @@
     (when search
       (let [{[search] :children} (om/query->ast search)
             query (get-in search [:params :query])]
-        (put! c [query cb])))))
+        (put! c [query cb :search])))))
 
 (def send-chan (chan))
 
