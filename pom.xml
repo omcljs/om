@@ -63,7 +63,7 @@
         <dependency>
             <groupId>org.clojure</groupId>
             <artifactId>clojure</artifactId>
-            <version>1.9.0-alpha10</version>
+            <version>1.9.0-alpha14</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -89,7 +89,7 @@
         <dependency>
             <groupId>org.clojure</groupId>
             <artifactId>core.async</artifactId>
-            <version>0.2.385</version>
+            <version>0.2.395</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
