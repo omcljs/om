@@ -2419,7 +2419,7 @@
   (queue! [this ks]
     (p/queue! this ks nil))
   (queue! [_ ks remote]
-    (if (not (nil? remote))
+    (if-not (nil? remote)
       (swap! state update-in [:remote-queue remote] into ks)
       (swap! state update-in [:queue] into ks)))
 
@@ -2446,7 +2446,7 @@
   ;; TODO: need to reindex roots after reconcilation
   (reconcile! [this remote]
     (let [st @state
-          q (if (not (nil? remote))
+          q (if-not (nil? remote)
               (get-in st [:remote-queue remote])
               (:queue st))]
       (swap! state update-in [:queued] not)
