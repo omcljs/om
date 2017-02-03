@@ -2770,7 +2770,9 @@
   "Returns true if x is a reconciler."
   #?(:cljs {:tag boolean})
   [x]
-  (instance? Reconciler x))
+  #?(:cljs (implements? p/IReconciler x)
+     :clj  (or (instance? om.next.protocols.IReconciler x)
+               (satisfies? p/IReconciler x))))
 
 (defn app-state
   "Return the reconciler's application state atom. Useful when the reconciler
