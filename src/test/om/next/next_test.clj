@@ -39,7 +39,7 @@
       (is (= (.ident c {}) [:by-id 42])))
     (testing "allow defui not to implement lifecycle render"
       (is (om/component? c))
-      (is (not (om/renderable? c)))))
+      (is (nil? (.render c)))))
   (is (fn? (-> SimpleComponent meta :component)))
   (testing "`ui` macro"
     (is (= (om/get-query
