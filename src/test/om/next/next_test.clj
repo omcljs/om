@@ -877,3 +877,15 @@
     (dom/render-to-str c)
     (is (some? c))
     (is (not (empty? @r)))))
+
+(defui NonLifecycleMethodsComponent
+  Object
+  (someMethod [this]
+    "Hello World")
+  (render [this]
+    (.someMethod this)))
+
+(deftest test-defui-non-lifecycle-methods
+  (let [c ((om/factory NonLifecycleMethodsComponent))]
+    (is (= (.someMethod c) "Hello World"))
+    (is (= (.render c) "Hello World"))))
