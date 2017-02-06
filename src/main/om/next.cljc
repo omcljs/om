@@ -85,7 +85,7 @@
                        om.next/*instrument* (om.next/instrument this#)
                        om.next/*parent*     this#]
                (let [ret# (do ~@body)
-                     props# (om.next.protocols/-props this#)]
+                     props# (:props this#)]
                  (when-not @(:omcljs$mounted? props#)
                    (swap! (:omcljs$mounted? props#) not))
                  ret#)))))
@@ -98,7 +98,9 @@
                (om.next.protocols/index-component! indexer# this#))
              ~@body)))}
       :defaults
-      `{~'componentWillMount
+      `{~'initLocalState
+        ([this#])
+        ~'componentWillMount
         ([this#]
          (let [indexer# (get-in (om.next/get-reconciler this#) [:config :indexer])]
            (when-not (nil? indexer#)
@@ -317,48 +319,42 @@
                    docstring rest)
            {:keys [dt statics]} (collect-statics forms)
            [other-protocols obj-dt] (split-with (complement '#{Object}) dt)
+           klass-name (symbol (str name "_klass"))
            class-methods (when-not (empty? (:protocols statics))
                            (->> (partition 2 (:protocols statics))
                              (reduce
                                (fn [r [_ impl]]
                                  (assoc r (keyword (first impl))
                                    (cons 'fn (rest impl)))) {:params '(fn [this])})))]
-       `(let [c# (fn ~name [state# refs# props# children#]
-                   ;; TODO: non-lifecycle methods defined in the JS prototype - António
-                   (let [ret# (reify
-                                om.next.protocols/IReactLifecycle
-                                ~@(rest (reshape obj-dt reshape-map-clj))
+       `(do
+          (declare ~name)
+          (defrecord ~klass-name [~'state ~'refs ~'props ~'children]
+            ;; TODO: non-lifecycle methods defined in the JS prototype - António
+            om.next.protocols/IReactLifecycle
+            ~@(rest (reshape obj-dt reshape-map-clj))
 
-                                ~@other-protocols
+            ~@other-protocols
 
-                                ~@(:protocols statics)
+            ~@(:protocols statics)
 
-                                om.next.protocols/IReactChildren
-                                (~'-children [this#]
-                                 children#)
-
-                                om.next.protocols/IReactComponent
-                                (~'-render [this#]
-                                 (p/componentWillMount this#)
-                                 (p/render this#))
-                                (~'-props [this]
-                                 props#)
-                                (~'-local-state [this]
-                                 state#)
-                                (~'-refs [this]
-                                 refs#))]
-                     (defmethod clojure.core/print-method (type ret#)
-                       [o# ^Writer w#]
-                       (.write w# (str "#object[" (ns-name *ns*) "/" ~(str name) "]")))
-                     ret#))]
-          (def ~(with-meta name
-                  (merge (meta name)
-                    (when docstring
-                      {:doc docstring})))
-            (with-meta c# (merge {:component c#
-                                  :component-ns (ns-name *ns*)
-                                  :component-name ~(str name)}
-                            ~class-methods)))))))
+            om.next.protocols/IReactComponent
+            (~'-render [this#]
+             (p/componentWillMount this#)
+             (p/render this#)))
+          (defmethod clojure.core/print-method ~(symbol (str (munge *ns*) "." klass-name))
+            [o# ^Writer w#]
+            (.write w# (str "#object[" (ns-name *ns*) "/" ~(str name) "]")))
+          (let [c# (fn ~name [state# refs# props# children#]
+                     (~(symbol (str (munge *ns*) "." klass-name ".")) state# refs# props# children#))]
+            (def ~(with-meta name
+                    (merge (meta name)
+                      (when docstring
+                        {:doc docstring})))
+              (with-meta c#
+                (merge {:component c#
+                        :component-ns (ns-name *ns*)
+                        :component-name ~(str name)}
+                  ~class-methods))))))))
 
 (defn defui*
   ([name form] (defui* name form nil))
@@ -838,15 +834,11 @@
                         :omcljs$shared     *shared*
                         :omcljs$instrument *instrument*
                         :omcljs$depth      *depth*}
-                 component (ctor (atom nil) (atom nil) props children)
-                 init-state (try
-                              (.initLocalState component)
-                              (catch AbstractMethodError _))]
+                 component (ctor (atom nil) (atom nil) props children)]
              (when ref
                (assert (some? *parent*))
-               (swap! (p/-refs *parent*) assoc ref component))
-             (when init-state
-               (reset! (p/-local-state component) init-state))
+               (swap! (:refs *parent*) assoc ref component))
+             (reset! (:state component) (.initLocalState component))
              component)))))))
 
 #?(:cljs
@@ -887,20 +879,13 @@
                    :omcljs$depth      *depth*}
               (util/force-children children))))))))
 
-#?(:clj
-   (defn renderable? [x]
-     (and (satisfies? p/IReactComponent x)
-       (try
-         (boolean (p/render x))
-         (catch AbstractMethodError e
-           false)))))
-
 (defn component?
   "Returns true if the argument is an Om component."
   #?(:cljs {:tag boolean})
   [x]
   (if-not (nil? x)
-    #?(:clj  (satisfies? p/IReactComponent x)
+    #?(:clj  (or (instance? om.next.protocols.IReactComponent x)
+                 (satisfies? p/IReactComponent x))
        :cljs (true? (. x -om$isComponent)))
     false))
 
@@ -911,7 +896,7 @@
 (defn- get-prop
   "PRIVATE: Do not use"
   [c k]
-  #?(:clj  (get (p/-props c) k)
+  #?(:clj  (get (:props c) k)
      :cljs (gobj/get (.-props c) k)))
 
 #?(:cljs
@@ -1032,8 +1017,10 @@
       mounted"
      [component]
      {:pre [(component? component)]}
-     (let [[ns _ c] (str/split (reflect/typename (type component)) #"\$")
-           ns (clojure.main/demunge ns)]
+     (let [[klass-name] (str/split (reflect/typename (type component)) #"_klass")
+           last-idx-dot (.lastIndexOf klass-name ".")
+           ns (clojure.main/demunge (subs klass-name 0 last-idx-dot))
+           c (subs klass-name (inc last-idx-dot))]
        @(or (find-var (symbol ns c))
             (find-var (symbol ns (clojure.main/demunge c)))))))
 
@@ -1080,7 +1067,7 @@
 #?(:clj
    (defn props [component]
      {:pre [(component? component)]}
-     (:omcljs$value (p/-props component))))
+     (:omcljs$value (:props component))))
 
 #?(:cljs
    (defn props
@@ -1129,7 +1116,7 @@
      {:pre [(component? component)]}
      (if (satisfies? ILocalState component)
        (-set-state! component new-state)
-       (reset! (p/-local-state component) new-state))))
+       (reset! (:state component) new-state))))
 
 #?(:cljs
    (defn set-state!
@@ -1156,7 +1143,7 @@
    (let [cst (if #?(:clj  (satisfies? ILocalState component)
                     :cljs (implements? ILocalState component))
                  (-get-state component)
-               #?(:clj  @(p/-local-state component)
+               #?(:clj  @(:state component)
                   :cljs (when-let [state (. component -state)]
                           (or (gobj/get state "omcljs$pendingState")
                               (gobj/get state "omcljs$state")))))]
@@ -1349,13 +1336,13 @@
 (defn react-ref
   "Returns the component associated with a component's React ref."
   [component name]
-  #?(:clj  (some-> @(p/-refs component) (get name))
+  #?(:clj  (some-> @(:refs component) (get name))
      :cljs (some-> (.-refs component) (gobj/get name))))
 
 (defn children
   "Returns the component's children."
   [component]
-  #?(:clj  (p/-children component)
+  #?(:clj  (:children component)
      :cljs (.. component -props -children)))
 
 #?(:cljs

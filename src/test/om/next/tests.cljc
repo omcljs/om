@@ -616,13 +616,15 @@
                                         :cljs (ToManyRoot. #js {:omcljs$reconciler r
                                                                 :omcljs$path []})))
           root (-> @idxr :class->components (get ToManyRoot) first)
-          children (take 3 (repeatedly
-                             #?(:clj  #(Child nil nil #js {:omcljs$reconciler r
-                                                           :omcljs$path [:children]
-                                                           :omcljs$parent root} nil)
-                                :cljs #(Child. #js {:omcljs$reconciler r
-                                                    :omcljs$path [:children]
-                                                    :omcljs$parent root}))))
+          children (map
+                     (fn [idx]
+                       #?(:clj  (Child nil nil #js {:omcljs$reconciler r
+                                                    :omcljs$path [:children idx]
+                                                    :omcljs$parent root} nil)
+                          :cljs (Child. #js {:omcljs$reconciler r
+                                             :omcljs$path [:children idx]
+                                             :omcljs$parent root})))
+                     (range 3))
           _ (run! #(p/index-component! idxr %) children)
           c (first (get-in @idxr [:data-path->components [:children]]))]
       (is (not (nil? c)))
@@ -692,13 +694,15 @@
                                         :cljs (UnionRoot. #js {:omcljs$reconciler r
                                                                :omcljs$path []})))
           root (-> @idxr :class->components (get UnionRoot) first)
-          children (take 3 (repeatedly
-                             #?(:clj #(UnionChildB nil nil #js {:omcljs$reconciler r
-                                                                :omcljs$path [:union]
-                                                                :omcljs$parent root} nil)
-                                :cljs #(UnionChildB. #js {:omcljs$reconciler r
-                                                          :omcljs$path [:union]
-                                                          :omcljs$parent root}))))
+          children (map
+                     (fn [idx]
+                       #?(:clj  (UnionChildB nil nil #js {:omcljs$reconciler r
+                                                          :omcljs$path [:union idx]
+                                                          :omcljs$parent root} nil)
+                          :cljs (UnionChildB. #js {:omcljs$reconciler r
+                                                   :omcljs$path [:union idx]
+                                                   :omcljs$parent root})))
+                     (range 3))
           _ (run! #(p/index-component! idxr %) children)
           c (first (get-in @idxr [:data-path->components [:union]]))]
       (is (not (nil? c)))
