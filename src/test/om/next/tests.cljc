@@ -2541,3 +2541,22 @@
          (is (= (-> @update-atom :componentWillReceiveProps)
                 {:foo 1}))
          (is (true? (:forceUpdate @update-atom)))))))
+
+(deftest test-tx-listen
+  (let [ret (atom [])
+        r (om/reconciler {:state (atom {:app/count 0})
+                          :parser (om/parser {:mutate (fn [{:keys [state]} _ _]
+                                                        {:action (fn []
+                                                                   (swap! state update-in [:app/count] inc))})})
+                          :tx-listen (fn [tx-data tx]
+                                       (swap! ret conj {:tx tx
+                                                        :tx-data tx-data}))})]
+    (om/transact! r '[(app/inc!)])
+    (om/transact! r '[(app/inc!)])
+    (is (= (:app/count @r) 2))
+    (is (= (-> @ret first :tx-data :old-state) {:app/count 0}))
+    (is (= (-> @ret second :tx-data :old-state) {:app/count 1}))
+    (is (= (-> @ret second :tx-data :new-state) {:app/count 2}))
+    (is (= (-> @ret second :tx :tx) '[(app/inc!)]))
+    (is (empty? (-> @ret second :tx :sends)))
+    (is (= (-> @ret second :tx :ret) {'app/inc! {:result {:app/count 2}}}))))
