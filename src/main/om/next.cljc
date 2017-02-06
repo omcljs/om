@@ -1496,6 +1496,7 @@
                     (glog/info l
                       (str (when ref (str (pr-str ref) " "))
                         "transacted '" tx ", " (pr-str id))))])
+        old-state @(:state cfg)
         v    ((:parser cfg) env tx)
         snds (gather-sends env tx (:remotes cfg))
         xs   (cond-> []
@@ -1507,6 +1508,13 @@
         (p/queue! r xs remote))
       (p/queue-sends! r snds)
       (schedule-sends! r))
+    (when-let [f (:tx-listen cfg)]
+      (let [tx-data (merge env
+                      {:old-state old-state
+                       :new-state @(:state cfg)})]
+        (f tx-data {:tx tx
+                    :ret v
+                    :sends snds})))
     v))
 
 (defn annotate-mutations
@@ -2689,7 +2697,12 @@
      :root-render  - the root render function. Defaults to ReactDOM.render
      :root-unmount - the root unmount function. Defaults to
                      ReactDOM.unmountComponentAtNode
-     :logger       - supply a goog.log compatible logger"
+     :logger       - supply a goog.log compatible logger
+     :tx-listen    - a function of 2 arguments that will listen to transactions.
+                     The first argument is the parser's env map also containing
+                     the old and new state. The second argument is a map containing
+                     the transaction, its result and the remote sends that the
+                     transaction originated."
   [{:keys [state shared shared-fn
            parser indexer
            ui->props normalize
@@ -2701,7 +2714,7 @@
            root-render root-unmount
            pathopt
            migrate id-key
-           instrument
+           instrument tx-listen
            easy-reads]
     :or {ui->props    default-ui->props
          indexer      om.next/indexer
@@ -2743,7 +2756,7 @@
                   :root-render root-render :root-unmount root-unmount
                   :logger logger :pathopt pathopt
                   :migrate migrate :id-key id-key
-                  :instrument instrument
+                  :instrument instrument :tx-listen tx-listen
                   :easy-reads easy-reads}
                  (atom {:queue []
                         :remote-queue {}
