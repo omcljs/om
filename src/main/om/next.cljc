@@ -2354,7 +2354,9 @@
                                   #?@(:cljs [(not (nil? target)) ((:root-render config) (rctor data) target)])
                                   (nil? @ret) (rctor data)
                                   :else (when-let [c' @ret]
-                                          #?(:clj c'
+                                          #?(:clj (do
+                                                    (reset! ret nil)
+                                                    (rctor data))
                                              :cljs (when (mounted? c')
                                                      (.forceUpdate c' data)))))]
                           (when (and (nil? @ret) (not (nil? c)))
