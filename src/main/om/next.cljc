@@ -2,7 +2,8 @@
   (:refer-clojure :exclude #?(:clj  [deftype replace var? force]
                               :cljs [var? key replace force]))
   #?(:cljs (:require-macros [om.next :refer [defui invariant]]))
-  (:require #?@(:clj  [[cljs.core :refer [deftype specify! this-as js-arguments]]
+  (:require #?@(:clj  [clojure.main
+                       [cljs.core :refer [deftype specify! this-as js-arguments]]
                        [clojure.reflect :as reflect]
                        [cljs.util]]
                 :cljs [[goog.string :as gstring]
