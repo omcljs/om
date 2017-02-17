@@ -1910,7 +1910,7 @@
            (if-not (nil? q)
              (replace q query)
              (throw
-               (ex-info (str "No queries exist for component path " cp " or data path " path')
+               (ex-info (str "No queries exist at the intersection of component path " cp " and data path " path')
                  {:type :om.next/no-queries}))))
          (throw
            (ex-info (str "No queries exist for component path " cp)
