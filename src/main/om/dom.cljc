@@ -468,6 +468,8 @@
    (defn normalize-styles! [sb styles]
      (letfn [(coerce-value [k v]
                (cond-> v
+                 (string? v)
+                 escape-html
                  (and (number? v)
                    (not (contains? no-suffix k))
                    (pos? v))
