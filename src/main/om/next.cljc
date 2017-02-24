@@ -321,6 +321,12 @@
            {:keys [dt statics]} (collect-statics forms)
            [other-protocols obj-dt] (split-with (complement '#{Object}) dt)
            klass-name (symbol (str name "_klass"))
+           lifecycle-method-names (set (keys lifecycle-sigs))
+           {obj-dt false non-lifecycle-dt true} (group-by
+                                                  (fn [x]
+                                                    (and (sequential? x)
+                                                         (not (lifecycle-method-names (first x)))))
+                                                  obj-dt)
            class-methods (when-not (empty? (:protocols statics))
                            (->> (partition 2 (:protocols statics))
                              (reduce
@@ -328,6 +334,9 @@
                                  (assoc r (keyword (first impl))
                                    (cons 'fn (rest impl)))) {:params '(fn [this])})))]
        `(do
+          ~(when-not (empty? non-lifecycle-dt)
+             `(defprotocol ~(symbol (str name "_proto"))
+                ~@(map (fn [[m-name args]] (list m-name args)) non-lifecycle-dt)))
           (declare ~name)
           (defrecord ~klass-name [~'state ~'refs ~'props ~'children]
             ;; TODO: non-lifecycle methods defined in the JS prototype - António
@@ -337,6 +346,10 @@
             ~@other-protocols
 
             ~@(:protocols statics)
+
+            ~@(when-not (empty? non-lifecycle-dt)
+                (list* (symbol (str name "_proto"))
+                  non-lifecycle-dt))
 
             om.next.protocols/IReactComponent
             (~'-render [this#]
