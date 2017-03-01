@@ -2449,6 +2449,7 @@
         response     {[:person/by-id 1] {:id 1 :name "Joe"}}
         config       {:normalize true :merge-tree merge :merge-ident om/default-merge-ident}
         query        [{[:person/by-id 1] (om/get-query Person-Merge)}]
+        param-query  [`({[:person/by-id 1] ~(om/get-query Person-Merge)} {:query-param 1})]
         no-query     []
         expected     {:person/by-id {1 {:id 1 :name "Joe"}}}]
     (with-redefs [om/ref->any (fn [idx ident] (om/get-query Person-Merge))]
@@ -2456,7 +2457,9 @@
         (is (= expected (merge-idents {} config response no-query)))
         (is (= expected (merge-idents {} config response nil)))))
     (testing "Merge works when a query is passed as an argument."
-      (is (= expected (merge-idents {} config response query))))))
+      (is (= expected (merge-idents {} config response query))))
+    (testing "Merge works when a parameterized query is passed as an argument." ; OM-853
+      (is (= expected (merge-idents {} config response param-query))))))
 
 ;; -----------------------------------------------------------------------------
 ;; transform-reads
