@@ -1025,6 +1025,59 @@
     (dom/create-element "use" #js {:xlinkHref "#rectangle"
                                    :x "150"})))
 
+(defui om-860-Child
+  static om/IQueryParams
+  (params [this]
+    {:size 3})
+  static om/IQuery
+  (query [this]
+    '[(:items {:size ?size})])
+  Object
+  (render [this]
+    (let [{:keys [items]} (om/props this)]
+      (dom/div nil
+               (dom/button #js {:onClick #(om/set-query!
+                                            this {:params {:size 20}})}
+                           "Set this params to: {:size 20}")
+               (dom/button #js {:onClick #(println "my query" (om/get-query this))}
+                           "Get local component query")
+               (dom/button #js {:onClick #(om/transact! this `[(x/y) :count])}
+                           "Force root re-render")
+               (dom/p nil "Clicking on <Set this params to {:size 20}> and
+               then clicking on <Force root re-render> should render a 'Root
+               query: [:count {[:child1 _] [(:items {:size 3})]}]'")))))
+
+(def om-860-child (om/factory om-860-Child))
+
+(defui om-860-Parent
+  static om/IQuery
+  (query [this]
+    [:count {[:child1 '_] (om/get-query om-860-Child)}])
+  Object
+  (render [this]
+    (let [props (om/props this)]
+      (dom/div nil
+               (dom/div nil (:count props))
+               (dom/p nil (str "Root query: "
+                               (om/get-query this)))
+               (om-860-child (:child1 props))))))
+
+(def om-860-reconciler
+  (om/reconciler {:state  (atom {:count 1
+                                 :child1 {:items [1 2 3]}})
+                  :parser (om/parser
+                            {:read   (fn [{:keys [state query] :as env} key _]
+                                       (let [st @state]
+                                         {:value (get st key)}))
+                             :mutate (fn [{:keys [state]} _ _]
+                                       {:value  {}
+                                        :action #(swap! state update
+                                                        :count inc)})})}))
+
+(defcard om-860-card
+         (dom-node
+           (fn [_ node]
+             (om/add-root! om-860-reconciler om-860-Parent node))))
 (comment
 
   (require '[cljs.pprint :as pprint])
