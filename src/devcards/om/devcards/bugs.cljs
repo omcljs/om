@@ -1075,9 +1075,11 @@
                                                         :count inc)})})}))
 
 (defcard om-860-card
-         (dom-node
-           (fn [_ node]
-             (om/add-root! om-860-reconciler om-860-Parent node))))
+  (dom-node
+    (fn [_ node]
+      (om/add-root! om-860-reconciler om-860-Parent node))))
+
+
 (comment
 
   (require '[cljs.pprint :as pprint])
