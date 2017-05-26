@@ -889,3 +889,23 @@
   (let [c ((om/factory NonLifecycleMethodsComponent))]
     (is (= (.someMethod c) "Hello World"))
     (is (= (.render c) "Hello World"))))
+
+(deftest extracting-protocol-static-methods
+  (testing "extracts protocols with single methods"
+    (is (= '{:params (fn [this]), :query (fn ([this] [:a])), :ident (fn ([this props] [:a 1]))}
+          (#'om/extract-static-methods '[IQuery (query [this] [:a])
+                                         Ident (ident [this props] [:a 1])]))))
+  (testing "extracts protocols with multiple methods"
+    (is (= '{:params   (fn [this]), :query (fn ([this] [:a])), :ident (fn ([this props] [:a 1]))
+             :method-a (fn ([this] :a)) :method-b (fn ([this] :b)) :method-c (fn ([this] :c))}
+          (#'om/extract-static-methods '[IQuery (query [this] [:a]) Multi
+                                         (method-a [this] :a)
+                                         (method-b [this] :b)
+                                         (method-c [this] :c)
+                                         Ident
+                                         (ident [this props] [:a 1])]))))
+  (testing "extracts protocols with multiple arity methods"
+    (is (= '{:params (fn [this]) :method-a (fn ([this] :b) ([this arg] :a))}
+          (#'om/extract-static-methods '[Multi
+                                         (method-a [this arg] :a)
+                                         (method-a [this] :b)])))))

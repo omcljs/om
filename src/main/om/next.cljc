@@ -312,6 +312,29 @@
 
 #?(:clj (intern 'cljs.core 'proto-assign-impls proto-assign-impls))
 
+#?(:clj (defn- extract-static-methods [protocols]
+          (letfn [(add-protocol-method [existing-methods method]
+                    (let [nm              (first method)
+                          new-arity       (rest method)
+                          k               (keyword nm)
+                          existing-method (get existing-methods k)]
+                      (if existing-method
+                        (let [single-arity?    (vector? (second existing-method))
+                              existing-arities (if single-arity?
+                                                 (list (rest existing-method))
+                                                 (rest existing-method))]
+                          (assoc existing-methods k (conj existing-arities new-arity 'fn)))
+                        (assoc existing-methods k (list 'fn new-arity)))))]
+            (when-not (empty? protocols)
+              (let [result (->> protocols
+                             (filter #(not (symbol? %)))
+                             (reduce
+                               (fn [r impl] (add-protocol-method r impl))
+                               {}))]
+                (if (contains? result :params)
+                  result
+                  (assoc result :params '(fn [this]))))))))
+
 #?(:clj
    (defn defui*-clj [name forms]
      (let [docstring (when (string? (first forms))
@@ -327,12 +350,7 @@
                                                     (and (sequential? x)
                                                          (not (lifecycle-method-names (first x)))))
                                                   obj-dt)
-           class-methods (when-not (empty? (:protocols statics))
-                           (->> (partition 2 (:protocols statics))
-                             (reduce
-                               (fn [r [_ impl]]
-                                 (assoc r (keyword (first impl))
-                                   (cons 'fn (rest impl)))) {:params '(fn [this])})))]
+           class-methods (extract-static-methods (:protocols statics))]
        `(do
           ~(when-not (empty? non-lifecycle-dt)
              `(defprotocol ~(symbol (str name "_proto"))
