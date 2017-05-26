@@ -204,6 +204,12 @@ Please contact me via email to request an electronic Contributor
 Agreement. Once your electronic CA has been signed and returned to me
 I will accept pull requests.
 
+## Community
+
+If you are looking for help please get in touch either on the 
+[clojurians.slack.com **#om** channel](http://clojurians.net) or the 
+[om-cljs Google Group](https://groups.google.com/d/forum/om-cljs).  
+
 ## FAQ
 
 ### Can I use a different HTML Syntax?
@@ -240,6 +246,6 @@ well:
 
 ## Copyright and license
 
-Copyright © 2013-2015 David Nolen
+Copyright © 2013-2017 David Nolen
 
 Licensed under the EPL (see the file epl.html).
