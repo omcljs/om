@@ -63,13 +63,13 @@
         <dependency>
             <groupId>org.clojure</groupId>
             <artifactId>clojure</artifactId>
-            <version>1.9.0-alpha14</version>
+            <version>1.9.0-alpha16</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.clojure</groupId>
             <artifactId>clojurescript</artifactId>
-            <version>1.9.473</version>
+            <version>1.9.542</version>
             <classifier>aot</classifier>
             <scope>provided</scope>
             <exclusions>
@@ -89,7 +89,7 @@
         <dependency>
             <groupId>org.clojure</groupId>
             <artifactId>core.async</artifactId>
-            <version>0.2.395</version>
+            <version>0.3.443</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -101,7 +101,7 @@
         <dependency>
             <groupId>com.cognitect</groupId>
             <artifactId>transit-clj</artifactId>
-            <version>0.8.290</version>
+            <version>0.8.300</version>
         </dependency>
         <dependency>
             <groupId>com.cognitect</groupId>
@@ -111,23 +111,23 @@
         <dependency>
             <groupId>cljsjs</groupId>
             <artifactId>react</artifactId>
-            <version>15.3.1-0</version>
+            <version>15.5.4-0</version>
         </dependency>
         <dependency>
             <groupId>cljsjs</groupId>
             <artifactId>react-dom</artifactId>
-            <version>15.3.1-0</version>
+            <version>15.5.4-0</version>
         </dependency>
         <dependency>
             <groupId>org.clojure</groupId>
             <artifactId>tools.nrepl</artifactId>
-            <version>0.2.12</version>
+            <version>0.2.13</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>figwheel-sidecar</groupId>
             <artifactId>figwheel-sidecar</artifactId>
-            <version>0.5.6</version>
+            <version>0.5.10</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -143,7 +143,7 @@
         <dependency>
             <groupId>devcards</groupId>
             <artifactId>devcards</artifactId>
-            <version>0.2.1-7</version>
+            <version>0.2.3</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
