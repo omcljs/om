@@ -15,8 +15,8 @@
                   :exclusions [org.clojure/clojure
                                org.clojure/data.json]]
                  [org.clojure/data.json "0.2.6" :scope "provided" :classifier "aot"]
-                 [cljsjs/react "15.3.1-0"]
-                 [cljsjs/react-dom "15.3.1-0"]
+                 [cljsjs/react "15.5.4-0"]
+                 [cljsjs/react-dom "15.5.4-0"]
                  [com.cognitect/transit-clj "0.8.290"]
                  [com.cognitect/transit-cljs "0.8.239"]
 
