@@ -13,6 +13,27 @@ Falcor](http://netflix.github.io/falcor/) with a dash of inspiration from
 [Datomic pull syntax](http://docs.datomic.com/pull.html) to avoid the typical 
 incidental complexity that arises from client/server state management.
 
+## Dependency Information
+
+Latest release: 1.0.0-beta1
+
+[Leiningen](http://github.com/technomancy/leiningen/) and [Boot](http://boot-clj.com) 
+dependency information:
+
+```
+[org.omcljs/om "1.0.0-beta1"]
+```
+
+[Maven](http://maven.apache.org) dependency information:
+
+```
+<dependency>
+  <groupId>org.omcljs</groupId>
+  <artifactId>om</artifactId>
+  <version>1.0.0-beta1</version>
+</dependency>
+```
+
 ## Example
 
 ```clojure
