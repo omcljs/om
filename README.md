@@ -56,7 +56,8 @@ dependency information:
 
 There is an Quick Start tutorial that will introduce you to the core
 concepts of Om
-[here](https://github.com/omcljs/om/wiki/Quick-Start-%28om.next%29).
+[here](https://github.com/omcljs/om/wiki/Quick-Start-%28om.next%29). There are
+also a variety of other guides [here](https://github.com/omcljs/om/wiki#om-next).
 
 ## Documentation
 
