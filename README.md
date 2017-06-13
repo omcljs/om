@@ -42,13 +42,13 @@ dependency information:
             [om.next :as om]))
 
 (defui Widget
-  om/IRender
+  Object
   (render [this]
-    (dom/h1 nil (:text data)))
+    (dom/h1 nil (:text (om/props this)))))
 
-(def widget (om/factory Widget)
+(def widget (om/factory Widget))
 
-(om/root widget {:text "Hello world!"}
+(om/add-root! widget {:text "Hello world!"}
   {:target (. js/document (getElementById "my-app"))})
 ```
 
