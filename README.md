@@ -38,18 +38,18 @@ dependency information:
 
 ```clojure
 (ns example
-  (:require [om.dom :as dom]
-            [om.next :as om]))
+  (:require [goog.dom :as gdom]
+            [om.dom :as dom]
+            [om.next :as om :refer [defui]]))
 
-(defui Widget
+(defui Hello
   Object
   (render [this]
-    (dom/h1 nil (:text (om/props this)))))
+    (dom/h1 nil "Hello, world!")))
 
-(def widget (om/factory Widget))
+(def hello (om/factory Hello))
 
-(om/add-root! widget {:text "Hello world!"}
-  {:target (. js/document (getElementById "my-app"))})
+(.render js/ReactDOM (hello) (gdom/getElement "example"))
 ```
 
 ## Tutorials
