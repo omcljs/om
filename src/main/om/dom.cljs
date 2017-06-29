@@ -71,5 +71,7 @@
    to calling `js/React.createElement`"
   ([tag]
    (create-element tag nil))
+  ([tag opts]
+   (js/React.createElement tag opts))
   ([tag opts & children]
    (js/React.createElement tag opts children)))
