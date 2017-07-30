@@ -92,9 +92,10 @@
   (let [query-root? (-> join meta :query-root)
         [k v] (first join)
         ast (expr->ast k)
+        type (if (= :call (:type ast)) :call :join)
         component (-> v meta :component)]
     (merge ast
-      {:type :join :query v}
+      {:type type :query v}
       (when-not (nil? component)
         {:component component})
       (when query-root?
@@ -132,6 +133,11 @@
       {:query-root true})
     expr))
 
+(defn parameterize [expr params]
+  (if-not (empty? params)
+    (list expr params)
+    (list expr)))
+
 (defn ast->expr
   "Given a query expression AST convert it back into a query expression."
   ([ast]
@@ -142,27 +148,27 @@
        (not (nil? component)) (with-meta {:component component}))
      (let [{:keys [key query query-root params]} ast]
        (wrap-expr query-root
-         (if-not (nil? params)
+         (if (and params (not= :call type))
            (let [expr (ast->expr (dissoc ast :params) unparse?)]
-             (if-not (empty? params)
-               (list expr params)
-               (list expr)))
-           (if (= :join type)
-             (if (and (not= '... query) (not (number? query)) (true? unparse?))
-               (let [{:keys [children]} ast]
-                 (if (and (== 1 (count children))
-                          (= :union (:type (first children)))) ;; UNION
-                   {key (into (cond-> {}
-                                component (with-meta {:component component}))
-                          (map (fn [{:keys [union-key children component]}]
-                                 [union-key
-                                  (cond-> (into [] (map #(ast->expr % unparse?)) children)
-                                    (not (nil? component)) (with-meta {:component component}))]))
-                          (:children (first children)))}
-                   {key (cond-> (into [] (map #(ast->expr % unparse?)) children)
-                          (not (nil? component)) (with-meta {:component component}))}))
-               {key query})
-             key)))))))
+             (parameterize expr params))
+           (let [key (if (= :call type) (parameterize key params) key)]
+             (if (or (= :join type)
+                     (and (= :call type) (:children ast)))
+               (if (and (not= '... query) (not (number? query)) (true? unparse?))
+                 (let [{:keys [children]} ast]
+                   (if (and (== 1 (count children))
+                            (= :union (:type (first children)))) ;; UNION
+                     {key (into (cond-> {}
+                                  component (with-meta {:component component}))
+                                (map (fn [{:keys [union-key children component]}]
+                                       [union-key
+                                        (cond-> (into [] (map #(ast->expr % unparse?)) children)
+                                          (not (nil? component)) (with-meta {:component component}))]))
+                                (:children (first children)))}
+                     {key (cond-> (into [] (map #(ast->expr % unparse?)) children)
+                            (not (nil? component)) (with-meta {:component component}))}))
+                 {key query})
+               key))))))))
 
 (defn path-meta
   "Add path metadata to a data structure. data is the data to be worked on.
