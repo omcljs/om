@@ -736,7 +736,10 @@
   (is (= (parser/expr->ast '(do/it {:woz 1}))
          {:type :call :key 'do/it :dispatch-key 'do/it :params {:woz 1}}))
   (is (= (parser/expr->ast '(do/it))
-         {:type :call :key 'do/it :dispatch-key 'do/it :params {}})))
+         {:type :call :key 'do/it :dispatch-key 'do/it :params {}}))
+  (is (= (dissoc (parser/expr->ast '{(do/it) [:joined]}) :children)
+         {:type :call :key 'do/it :dispatch-key 'do/it :params {}
+          :query [:joined]})))
 
 (deftest test-ast->expr
   (is (= (parser/ast->expr {:type :prop :key :foo :dispatch-key :foo})
@@ -2175,10 +2178,12 @@
 (deftest test-ast<->query
   (let [q0 [{:foo [:bar :baz :woz]}]
         q1 [{:foo [:bar :baz {:woz [:goz :noz]}]}]
-        q2 [{:foo {:bar [:baz] :woz [:noz]}}]]
+        q2 [{:foo {:bar [:baz] :woz [:noz]}}]
+        q3 '[{(foo/bar {:foo :baz}) [:woz :noz]}]]
     (is (= q0 (-> q0 om/query->ast om/ast->query)))
     (is (= q1 (-> q1 om/query->ast om/ast->query)))
-    (is (= q2 (-> q2 om/query->ast om/ast->query)))))
+    (is (= q2 (-> q2 om/query->ast om/ast->query)))
+    (is (= q3 (-> q3 om/query->ast om/ast->query)))))
 
 (defui UiB
   static om/IQuery
