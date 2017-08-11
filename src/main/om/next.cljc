@@ -2301,9 +2301,11 @@
 
 (defn- merge-idents [tree config refs query]
   (let [{:keys [merge-ident indexer]} config
-        ident-joins (into {} (filter #(and (util/join? %)
-                                           (util/ident? (util/join-key %)))
-                               query))]
+        ident-joins (into {} (comp
+                               (map #(cond-> % (seq? %) first))
+                               (filter #(and (util/join? %)
+                                             (util/ident? (util/join-key %)))))
+                          query)]
     (letfn [ (step [tree' [ident props]]
               (if (:normalize config)
                 (let [c-or-q (or (get ident-joins ident) (ref->any indexer ident))
