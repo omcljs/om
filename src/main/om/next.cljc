@@ -1746,7 +1746,11 @@
                                                      query)
                                                    query')
                                   path'          (conj path prop)
-                                  rendered-path' (into [] (remove (set union-keys) path'))
+                                  rendered-path' (into []
+                                                       (remove
+                                                         (set union-keys)
+                                                         (conj path
+                                                               prop-dispatch-key)))
                                   cs (get dp->cs rendered-path')
                                   cascade-query? (and (= (count cs) 1)
                                                    (= (-> query' meta :component)
