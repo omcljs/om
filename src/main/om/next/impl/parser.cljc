@@ -154,7 +154,9 @@
            (let [key (if (= :call type) (parameterize key params) key)]
              (if (or (= :join type)
                      (and (= :call type) (:children ast)))
-               (if (and (not= '... query) (not (number? query)) (true? unparse?))
+               (if (and (not= '... query) (not (number? query))
+                        (or (true? unparse?)
+                            (= :call type)))
                  (let [{:keys [children]} ast]
                    (if (and (== 1 (count children))
                             (= :union (:type (first children)))) ;; UNION

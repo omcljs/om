@@ -1013,6 +1013,13 @@
     (is (= @ret {:bar 43}))
     (is (nil? (meta @ret)))))
 
+(deftest test-mutate-ast-children
+  (let [p (om/parser {:mutate
+                      (fn [{:keys [ast]} _ _]
+                        {:remote (assoc ast :children (:children (om/query->ast [:id])))})})]
+    (is (= (p {} `[(do-something {:foo "bar"})] :remote)
+           `[{(do-something {:foo "bar"}) [:id]}]))))
+
 ;; -----------------------------------------------------------------------------
 ;; Edge cases
 
