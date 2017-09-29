@@ -1,4 +1,2 @@
-/**
- * @constructor
- */
-React.Component = function() {};
+var _reactInternalFiber;
+

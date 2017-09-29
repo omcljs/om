@@ -188,7 +188,7 @@
    `{~'isMounted
      ([this#]
       (boolean
-        (or (some-> this# .-_reactInternalFiber .-tag)
+        (or (some-> this# .-_reactInternalFiber .-stateNode)
             ;; Pre React 16 support. Remove when we don't wish to support
             ;; React < 16 anymore - Antonio
             (some-> this# .-_reactInternalInstance .-_renderedComponent))))
