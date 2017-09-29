@@ -187,9 +187,11 @@
    :defaults
    `{~'isMounted
      ([this#]
-       (boolean
-         (goog.object/getValueByKeys this#
-           "_reactInternalInstance" "_renderedComponent")))
+      (boolean
+        (or (some-> this# .-_reactInternalFiber .-tag)
+            ;; Pre React 16 support. Remove when we don't wish to support
+            ;; React < 16 anymore - Antonio
+            (some-> this# .-_reactInternalInstance .-_renderedComponent))))
      ~'shouldComponentUpdate
      ([this# next-props# next-state#]
       (let [next-children# (. next-props# -children)
