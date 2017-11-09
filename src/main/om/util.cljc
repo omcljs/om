@@ -12,8 +12,9 @@
     (and (map? expr)
       (map? (-> expr first second)))))
 
-(defn join? [x]
+(defn join?
   #?(:cljs {:tag boolean})
+  [x]
   (let [x (if (seq? x) (first x) x)]
     (map? x)))
 
