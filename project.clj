@@ -1,4 +1,4 @@
-(defproject org.omcljs/om "1.0.0-beta2-SNAPSHOT"
+(defproject org.omcljs/om "1.0.0-beta2"
   :description "ClojureScript interface to Facebook's React"
   :url "http://github.com/swannodette/om"
   :license {:name "Eclipse"
@@ -25,7 +25,7 @@
                  [figwheel-sidecar "0.5.10" :scope "test"
                   :exclusions [org.clojure/clojurescript
                                org.clojure/tools.reader]]
-                 [devcards "0.2.4-SNAPSHOT" :scope "test"
+                 [devcards "0.2.4" :scope "test"
                   :exclusions [org.clojure/clojurescript]]]
 
   :plugins [[lein-cljsbuild "1.1.6"]]
