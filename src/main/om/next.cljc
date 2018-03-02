@@ -298,7 +298,9 @@
          (concat
            (when-not (skip-flag psym)
              (let [{:keys [major minor qualifier]} cljs.util/*clojurescript-version*]
-               (if (and (== major 1) (>= minor 9) (>= qualifier 293))
+               (if (or (> major 1)
+                       (and (== major 1) (> minor 9))
+                       (and (== major 1) (== minor 9) (>= qualifier 293)))
                 [`(do
                     ~emit-static
                     (set! ~(#'cljs.core/extend-prefix type-sym pprefix) cljs.core/PROTOCOL_SENTINEL))]
