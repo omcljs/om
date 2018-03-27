@@ -702,6 +702,9 @@
         tr (map #(bind-query % params))
         ret (cond
               (seq? query) (apply list (into [] tr query))
+              #?@(:cljs [(and (exists? cljs.core/IMapEntry)
+                              (implements? ^:cljs.analyzer/no-resolve cljs.core/IMapEntry query))
+                         (into [] tr query)])
               #?@(:clj [(instance? clojure.lang.IMapEntry query) (into [] tr query)])
               (coll? query) (into (empty query) tr query)
               :else (replace-var query params))]
