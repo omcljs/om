@@ -2522,7 +2522,8 @@
                    (let [computed   (get-computed (props c))
                          next-raw-props (ui->props env c)
                          next-props     (om.next/computed next-raw-props computed)]
-                     (when (and (exists? (.-componentWillReceiveProps c))
+                     (when (and
+                             (some? (.-componentWillReceiveProps c))
                              (iquery? root)
                              props-change?)
                        (let [next-props (if (nil? next-props)
