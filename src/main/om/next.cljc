@@ -285,11 +285,12 @@
 #?(:clj
    (defn- proto-assign-impls [env resolve type-sym type [p sigs]]
      (let [{:keys [major minor qualifier]} cljs.util/*clojurescript-version*]
-       (if (or (> major 1)
-               (and (== major 1) (> minor 10))
-               (and (== major 1) (== minor 10) (>= qualifier 597)))
-         (#'cljs.core/update-protocol-var p type env)
-         (#'cljs.core/warn-and-update-protocol p type env))
+       (eval
+        '(if (or (> major 1)
+                 (and (== major 1) (> minor 10))
+                 (and (== major 1) (== minor 10) (>= qualifier 597)))
+           (#'cljs.core/update-protocol-var p type env)
+           (#'cljs.core/warn-and-update-protocol p type env)))
        (let [psym      (resolve p)
              pprefix   (#'cljs.core/protocol-prefix psym)
              skip-flag (set (-> type-sym meta :skip-protocol-flag))
