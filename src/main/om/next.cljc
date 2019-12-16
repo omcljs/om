@@ -283,41 +283,45 @@
 #?(:clj (intern 'cljs.core 'add-proto-methods* add-proto-methods*))
 
 #?(:clj
-   (defn- proto-assign-impls [env resolve type-sym type [p sigs]]
+   (defmacro update-protocol-var [p type env]
      (let [{:keys [major minor qualifier]} cljs.util/*clojurescript-version*]
-       (eval
-        '(if (or (> major 1)
-                 (and (== major 1) (> minor 10))
-                 (and (== major 1) (== minor 10) (>= qualifier 597)))
-           (#'cljs.core/update-protocol-var p type env)
-           (#'cljs.core/warn-and-update-protocol p type env)))
-       (let [psym      (resolve p)
-             pprefix   (#'cljs.core/protocol-prefix psym)
-             skip-flag (set (-> type-sym meta :skip-protocol-flag))
-             static?   (-> p meta :static)
-             type-sym  (cond-> type-sym
-                         static? (vary-meta assoc :static true))
-             emit-static (when static?
-                           `(~'js* "/** @nocollapse */"))]
-         (if (= p 'Object)
-           (#'cljs.core/add-obj-methods type type-sym sigs)
-           (concat
-            (when-not (skip-flag psym)
-              (if (or (> major 1)
-                      (and (== major 1) (> minor 9))
-                      (and (== major 1) (== minor 9) (>= qualifier 293)))
+       (if (or (> major 1)
+               (and (== major 1) (> minor 10))
+               (and (== major 1) (== minor 10) (>= qualifier 597)))
+         `(#'cljs.core/update-protocol-var ~p ~type ~env)
+         `(#'cljs.core/warn-and-update-protocol ~p ~type ~env)))))
+
+#?(:clj
+   (defn- proto-assign-impls [env resolve type-sym type [p sigs]]
+     (update-protocol-var p type env)
+     (let [psym      (resolve p)
+           pprefix   (#'cljs.core/protocol-prefix psym)
+           skip-flag (set (-> type-sym meta :skip-protocol-flag))
+           static?   (-> p meta :static)
+           type-sym  (cond-> type-sym
+                       static? (vary-meta assoc :static true))
+           emit-static (when static?
+                         `(~'js* "/** @nocollapse */"))]
+       (if (= p 'Object)
+         (#'cljs.core/add-obj-methods type type-sym sigs)
+         (concat
+           (when-not (skip-flag psym)
+             (let [{:keys [major minor qualifier]} cljs.util/*clojurescript-version*]
+               (if (or (> major 1)
+                       (and (== major 1) (> minor 9))
+                       (and (== major 1) (== minor 9) (>= qualifier 293)))
                 [`(do
-                   ~emit-static
-                   (set! ~(#'cljs.core/extend-prefix type-sym pprefix) cljs.core/PROTOCOL_SENTINEL))]
+                    ~emit-static
+                    (set! ~(#'cljs.core/extend-prefix type-sym pprefix) cljs.core/PROTOCOL_SENTINEL))]
                 [`(do
-                   ~emit-static
-                   (set! ~(#'cljs.core/extend-prefix type-sym pprefix) true))]))
-            (mapcat
+                    ~emit-static
+                    (set! ~(#'cljs.core/extend-prefix type-sym pprefix) true))])))
+           (mapcat
              (fn [sig]
                (if (= psym 'cljs.core/IFn)
                  (#'cljs.core/add-ifn-methods type type-sym sig)
                  (#'cljs.core/add-proto-methods* pprefix type type-sym sig)))
-             sigs)))))))
+             sigs))))))
 
 #?(:clj (intern 'cljs.core 'proto-assign-impls proto-assign-impls))
 
