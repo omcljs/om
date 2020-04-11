@@ -1,6 +1,6 @@
 # Om
 
-> This project is no longer under active development. If you'd like to use
+> *NOTE*: This project is no longer under active development. If you'd like to use
 > a library that's well maintained that was inspired by some of the ideas
 > presented here see [Fulcro](https://github.com/fulcrologic/fulcro)
 
